@@ -17,9 +17,7 @@ import (
 	"github.com/yetone/magpie/internal/appdir"
 	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/claudebridge"
-	"github.com/yetone/magpie/internal/davsync"
 	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/imagemcp"
 	"github.com/yetone/magpie/internal/netproxy"
 	"github.com/yetone/magpie/internal/pluginrt"
 	"github.com/yetone/magpie/internal/proc"
@@ -61,13 +59,7 @@ const usage = `magpie — one place to pick every agent's model
   magpie profiles                 list profiles
   magpie rm <name>                delete a profile
 
-  magpie backup [--no-keys] [--no-library] [file]    providers, keys, settings, profiles, agent models and the library in one file, sealed with a passphrase
-  magpie restore [--no-agents] [--no-library] <file> put a backup in on this machine
-  magpie webdav [on <address>|set k=v…|now|off]      the same, kept the same on every computer through a WebDAV folder (magpie webdav help)
-  magpie s3 [on s3://<bucket>[/<prefix>]|set k=v…|now|off]   the same through an S3-compatible bucket: AWS, R2, B2, MinIO… (magpie s3 help)
-  magpie github [on github://<owner>/<repo>[/<folder>]|set k=v…|now|off]   the same in an encrypted GitHub repository (magpie github help)
 
-  magpie library [sync|instructions|mcp|skill]   the instructions, MCP servers and skills written into every agent (magpie library help)
 
   magpie providers                list your providers: host, key, models, who uses them
   magpie presets                  the vendors magpie knows: add one with just a key
@@ -98,10 +90,6 @@ const usage = `magpie — one place to pick every agent's model
   magpie accounts alias <agent> <email> [<name>|--clear]   a name of your own for an account, shown on its card, in the menu bar and in magpie quota
   magpie accounts switch-only codex [on|off]   only switch Codex's own sign-in to an account with room; its requests go straight to OpenAI, never through magpie
   magpie claude-code [install [--yes]|remove]   the Claude Code a Claude subscription runs; install downloads Anthropic's own build, checked against its manifest, for a server or container without one
-  magpie plugin [add <package>|rm|update|on|off|login <provider>|logout <provider>]
-                                  OpenCode provider plugins and pi packages: subscriptions signed in to, and served, through a plugin
-  magpie plugin move|migrate <subscription>   run a built-in subscription's accounts on its community plugin
-  magpie plugin move-back|unmigrate <subscription>   go back to the built-in, with its accounts
 
   magpie serve                    run the gateway alone (the app runs it too)
   magpie daemon [install|uninstall|start|stop|restart|status]
@@ -110,7 +98,6 @@ const usage = `magpie — one place to pick every agent's model
   magpie gateway-key list|add <name>|rotate <id>|remove <id>   manage the keys clients use to call a shared gateway
   magpie gateway-key limit <id> [off|reset|day|week|month|<N>d --tokens N --cost USD --cache-reads]   a key's own limit, and what it used
   magpie gateway-key models <id> [all|<provider>/<model>|<provider>/* ...]   the models a key may use, every one unless it names some
-  magpie mcp image                the image and video generation MCP server an agent is given from the library (stdio)
   magpie usage [today|7d|30d|all] tokens and cost per agent, model and subscription account (30d)
   magpie usage --csv [--account <name>] [today|7d|30d|all]   every request as CSV (or one account's): the model asked for, sent and served, tokens, cost, time, status, account
   magpie sessions [--model <m>] [--folder <f>] [--json]   the latest Claude Code, Codex, OpenCode and Pi sessions, with what each cost
@@ -250,8 +237,6 @@ func run(args []string) error {
 	// a Codex that reaches magpie for account failover alone is handed
 	// only its own models (#1385)
 	gateway.CodexOwnOnly = agent.CodexOwnOnly
-	// the setup kept the same on every computer, by whichever serves
-	gateway.WhileServing = append(gateway.WhileServing, davsync.Run)
 	// and dsh's patch lists, which dsh reads live: a route left behind by
 	// something else writing the file fails every session there until
 	// magpie writes its own list again
@@ -259,13 +244,6 @@ func run(args []string) error {
 	// and Cursor Private Inference's variables, which the Mac's launchd
 	// forgets at a restart, for the gateway's address now
 	gateway.WhileServing = append(gateway.WhileServing, agent.KeepCursorLocalEnv)
-	// and the request archive, when it is on, goes to the bucket sync is to
-	gateway.ArchiveBucket = func() (gateway.Putter, bool) {
-		if b, ok := davsync.S3Bucket(); ok {
-			return b, true
-		}
-		return nil, false
-	}
 	if len(args) == 0 {
 		if hasGUI {
 			return runGUI(true, "")
@@ -362,22 +340,8 @@ func run(args []string) error {
 		return quotaCmd(args)
 	case "update":
 		return updateCmd(args)
-	case "library", "lib":
-		return libraryCmd(args)
-	case "backup":
-		return backupCmd(args[1:])
-	case "restore":
-		return restoreCmd(args[1:])
-	case "webdav", "dav":
-		return webdavCmd(args[1:])
 	case "plugin", "plugins":
 		return pluginCmd(args)
-	case "s3":
-		return s3Cmd(args[1:])
-	case "github":
-		return githubCmd(args[1:])
-	case "mcp":
-		return imagemcp.Run(args[1:])
 	case "claude-code":
 		return claudeCodeCmd(args[1:])
 	case "claude-mcp-helper": // internal: stdio MCP subprocess spawned by Claude Code
@@ -680,9 +644,6 @@ func profiles(args []string) error {
 			return err
 		}
 		fmt.Println(green.Render("✓"), "saved profile", bold.Render(args[1]))
-		if p.Library != nil {
-			fmt.Println(" ", muted.Render("with the "+p.Library.Summary()))
-		}
 		return nil
 	case "use":
 		if len(args) < 2 {

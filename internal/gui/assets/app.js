@@ -24381,7 +24381,7 @@ async function show(v) {
   $("#prefs").classList.toggle("on", v === "settings");
   if (v === "settings") $("#prefs").setAttribute("aria-current", "page"); else $("#prefs").removeAttribute("aria-current");
   navSubs();
-  for (const id of ["agents", "providers", "gateway", "routing", "usage", "sessions", "library", "plugins", "settings"]) $("#view-" + id).hidden = v !== id;
+  for (const id of ["agents", "providers", "gateway", "routing", "usage", "sessions", "plugins", "settings"]) $("#view-" + id).hidden = v !== id;
   // back to where the reader was in it, and again once it has what it loads
   const back = () => backToReader($("#view-" + v));
   requestAnimationFrame(back);
@@ -25517,7 +25517,7 @@ navHides(); // the pages built-in plugins switched off have, from boot.js
 // from the tray or a reload) first, then the one kept; a page gateway mode
 // leaves out, or one there is no longer, gives way to the first page.
 // the pages the window can open on besides the first (Agents)
-const OPEN_VIEWS = ["providers", "gateway", "routing", "usage", "sessions", "library", "plugins", "settings"];
+const OPEN_VIEWS = ["providers", "gateway", "routing", "usage", "sessions", "plugins", "settings"];
 function keptView() {
   const asked = params.get("view");
   if (asked === "agents" || OPEN_VIEWS.includes(asked)) return asked;

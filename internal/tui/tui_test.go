@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"slices"
@@ -11,7 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/yetone/magpie/internal/agentenv"
-	"github.com/yetone/magpie/internal/library"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -243,144 +241,6 @@ func TestPutRule(t *testing.T) {
 	}
 	if err := putRule(&g, -1, "tokens=1k"); err == nil {
 		t.Fatal("a rule without its model")
-	}
-}
-
-func TestLibraryPage(t *testing.T) {
-	h := home(t)
-	m := press(t, model{w: 120, h: 40}, "6")
-	if m.page != pageLibrary || m.libErr != "" {
-		t.Fatalf("page %d: %s", m.page, m.libErr)
-	}
-	row := func(kind, name string) int {
-		t.Helper()
-		i := slices.IndexFunc(m.lib, func(r libRow) bool { return r.kind == kind && r.name == name })
-		if i < 0 {
-			t.Fatalf("no %s %s: %+v", kind, name, m.lib)
-		}
-		return i
-	}
-
-	// a server by URL
-	m = press(t, m, "a", "enter")
-	m = typeIn(m, "ctx https://example.com/mcp")
-	m = press(t, m, "enter")
-	wantFlash(t, m, true, "added ctx")
-
-	// given to Claude Code, from the list of agents
-	m.lrow = row("mcp", "ctx")
-	m = press(t, m, "enter")
-	m = typeIn(m, "claude")
-	m = press(t, m, "enter", "esc")
-	servers := func() []library.ServerView {
-		v, err := library.Read(nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return v.Servers
-	}
-	if s := servers(); len(s) != 1 || !slices.Equal(s[0].Agents, []string{"claude"}) {
-		t.Fatalf("servers %+v, flash %q", s, m.flash)
-	}
-	if !strings.Contains(m.View(), "Claude Code") {
-		t.Fatalf("its agents aren't shown:\n%s", m.View())
-	}
-
-	// its URL changed, its agents kept
-	m.lrow = row("mcp", "ctx")
-	m = press(t, m, "e", "ctrl+u")
-	m = typeIn(m, "ctx https://example.com/v2")
-	m = press(t, m, "enter")
-	if s := servers(); len(s) != 1 || s[0].URL != "https://example.com/v2" || !slices.Equal(s[0].Agents, []string{"claude"}) {
-		t.Fatalf("servers %+v, flash %q", s[0].Server, m.flash)
-	}
-	m = press(t, m, "s")
-	wantFlash(t, m, true, "synced")
-
-	// skills from a folder
-	src := filepath.Join(h, "src")
-	write(t, filepath.Join(src, "tidy/SKILL.md"), "---\nname: tidy\ndescription: Tidies up\n---\n")
-	m = press(t, m, "a", "down", "enter")
-	m = typeIn(m, src)
-	m = press(t, m, "enter")
-	if m.mode != modePick || len(m.pk.items) != 1 || m.pk.items[0].Value != "tidy" {
-		t.Fatalf("mode %d items %+v flash %q", m.mode, m.pk.items, m.flash)
-	}
-	m = press(t, m, "enter")
-	wantFlash(t, m, true, "added the skill")
-	row("skill", "tidy")
-
-	// d twice takes the server out
-	m.lrow = row("mcp", "ctx")
-	m = press(t, m, "d", "d")
-	if s := servers(); len(s) != 0 {
-		t.Fatalf("servers %+v", s)
-	}
-
-	// a skill of Claude Code's own: d twice takes it out of the agent
-	// without bringing it in (#1303)
-	old := filepath.Join(h, ".claude/skills/old")
-	write(t, filepath.Join(old, "SKILL.md"), "---\nname: old\ndescription: Not wanted\n---\n")
-	m = press(t, m, "s")
-	m.lrow = row("found-skill", "old")
-	m = press(t, m, "d")
-	if _, err := os.Stat(old); err != nil {
-		t.Fatal("one d removed it")
-	}
-	m = press(t, m, "d")
-	if _, err := os.Stat(old); !os.IsNotExist(err) {
-		t.Fatalf("still there, flash %q", m.flash)
-	}
-	if slices.ContainsFunc(m.lib, func(r libRow) bool { return r.name == "old" }) {
-		t.Fatal("still listed")
-	}
-
-	// an MCP server of Claude Code's own, the same (#1618): the rest of
-	// its .claude.json stays
-	cj := filepath.Join(h, ".claude.json")
-	read := func() string {
-		b, err := os.ReadFile(cj)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(b)
-	}
-	b, err := os.ReadFile(cj)
-	if err != nil && !os.IsNotExist(err) {
-		t.Fatal(err)
-	}
-	var doc map[string]any
-	if len(b) > 0 {
-		if err := json.Unmarshal(b, &doc); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if doc == nil {
-		doc = map[string]any{}
-	}
-	doc["numStartups"] = 7
-	srvs, _ := doc["mcpServers"].(map[string]any)
-	if srvs == nil {
-		srvs = map[string]any{}
-	}
-	srvs["stale"] = map[string]any{"type": "stdio", "command": "stale-mcp"}
-	doc["mcpServers"] = srvs
-	b, _ = json.Marshal(doc)
-	write(t, cj, string(b))
-	m = press(t, m, "s")
-	m.lrow = row("found-mcp", "stale")
-	m = press(t, m, "d")
-	if !strings.Contains(read(), "stale-mcp") {
-		t.Fatal("one d removed it")
-	}
-	m = press(t, m, "d")
-	after := read()
-	var kept map[string]any
-	if err := json.Unmarshal([]byte(after), &kept); err != nil || strings.Contains(after, "stale") || kept["numStartups"] != float64(7) {
-		t.Fatalf("after two d, flash %q:\n%s", m.flash, after)
-	}
-	if slices.ContainsFunc(m.lib, func(r libRow) bool { return r.name == "stale" }) {
-		t.Fatal("still listed")
 	}
 }
 

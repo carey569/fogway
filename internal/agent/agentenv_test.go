@@ -43,7 +43,7 @@ var notAnAgent = map[string]string{
 // meeting the agent a developer really has installed — which is how #522 came
 // about, four sandboxes clearing lists of their own that had each drifted.
 //
-// The five packages are this one, sessions, provider, library and gateway,
+// The four packages are this one, sessions, provider and gateway,
 // with appdir's codex.go, where CODEX_HOME is read for all of them:
 // every agent's folder variable magpie reads is read in one of them, and the
 // rest of the repository reads only magpie's own variables, the process' and
@@ -61,7 +61,7 @@ func TestFolderVarsAreListed(t *testing.T) {
 	for _, v := range agentenv.Vars {
 		listed[v] = true
 	}
-	dirs := []string{".", filepath.Join("..", "sessions"), filepath.Join("..", "provider"), filepath.Join("..", "library"), filepath.Join("..", "gateway")}
+	dirs := []string{".", filepath.Join("..", "sessions"), filepath.Join("..", "provider"), filepath.Join("..", "gateway")}
 	found := map[string]string{}
 	var files []string
 	for _, dir := range dirs {

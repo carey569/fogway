@@ -38,7 +38,6 @@ import (
 	"github.com/yetone/magpie/internal/fx"
 	"github.com/yetone/magpie/internal/gateway"
 	"github.com/yetone/magpie/internal/lastgood"
-	"github.com/yetone/magpie/internal/library"
 	"github.com/yetone/magpie/internal/netproxy"
 	"github.com/yetone/magpie/internal/profile"
 	"github.com/yetone/magpie/internal/provider"
@@ -582,12 +581,7 @@ func settingsState() settingsJSON {
 	s.Web = webPage.Load()
 	s.GatewayOn, s.GatewayWhy = gatewayMode(s.Web)
 	s.LANKey = "" // the retained credential belongs on disk, not in UI state
-	// the GitHub token, masked, and where the library's requests take one
-	// from: Settings, or the environment variable named
 	s.GitHubToken = ""
-	if tok, from := library.GitHubToken(); tok != "" {
-		s.GitHubTokenMask, s.GitHubTokenFrom = provider.Mask(tok), from
-	}
 	if found, err := discoverTerminals(); err == nil {
 		for _, app := range found.Apps {
 			s.TerminalApps = append(s.TerminalApps, terminalChoice{ID: app.ID, Name: app.Name})
@@ -1048,11 +1042,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 			if ps, err = profile.Load(); err == nil {
 				applied, err = profile.Apply(ps[in.Name])
 			}
-			if applied.Library != nil {
-				lastProblems.Lock()
-				lastProblems.p = applied.Library.Problems
-				lastProblems.Unlock()
-			}
 		case "delete":
 			err = profile.Delete(in.Name)
 		default:
@@ -1067,9 +1056,7 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		writeJSON(rw, struct {
 			stateJSON
 			Changed int `json:"changed"`
-			// Library is what bringing the profile's library setup back did
-			Library *library.Result `json:"library,omitempty"`
-		}{s, applied.Changed, applied.Library})
+		}{s, applied.Changed})
 	})
 	mux.HandleFunc("POST /api/sync", func(rw http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
@@ -1093,9 +1080,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 	callerKeyRoutes(mux)
 	sessionRoutes(mux, w)
 	sessionManageRoutes(mux, w)
-	backupRoutes(mux, w)
-	archiveRoutes(mux)
-	libraryRoutes(mux, w)
 	updateRoutes(mux, w)
 	whatsNewRoutes(mux)
 	cliBehindRoutes(mux)
@@ -2177,10 +2161,6 @@ func state() stateJSON {
 	if ps, err := profile.Load(); err == nil {
 		for _, n := range profile.Names(ps) {
 			pj := profileJSON{Name: n, Summary: profile.Summary(ps[n]), Agents: profile.Details(ps[n]), InUse: profile.InUse(ps[n], detected, now)}
-			if l := ps[n].Library; l != nil {
-				servers, skills := l.On()
-				pj.Library = &profileLibraryJSON{Servers: servers, Skills: skills, Instructions: l.GivesInstructions()}
-			}
 			s.Profiles = append(s.Profiles, pj)
 		}
 	}

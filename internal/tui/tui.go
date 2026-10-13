@@ -1,7 +1,7 @@
 // Package tui is magpie in the terminal: one row per agent, arrow keys to pick
 // a field, enter to change it; and pages for providers and usage beside it
-// (pages.go), routing groups (routing.go), sessions (sessions.go) and the
-// library (library.go), 1–6 to go between them.
+// (pages.go), routing groups (routing.go) and sessions (sessions.go), 1–5 to
+// go between them.
 package tui
 
 import (
@@ -19,7 +19,6 @@ import (
 
 	"github.com/yetone/magpie/internal/agent"
 	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/library"
 	"github.com/yetone/magpie/internal/profile"
 	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/sessions"
@@ -132,11 +131,6 @@ type model struct {
 	slist     []sessions.Session           // the latest sessions, the most recently active first
 	ssel      int                          // the session picked among those shown
 	sstat     bool                         // the page shows the range's stats, not its sessions
-	lib       []libRow
-	lrow      int
-	libView   *library.View
-	libAgents []library.AgentView
-	libErr    string
 }
 
 type flashMsg struct {
@@ -211,8 +205,6 @@ func (m *model) reload() {
 		m.sum, m.direct = usage.Summaries(m.period)
 	case pageSessions:
 		m.reloadSessions()
-	case pageLibrary:
-		m.reloadLibrary()
 	}
 }
 
@@ -319,10 +311,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case pickMsg:
 		m.openMemberPicker(msg)
 		return m, nil
-	case probedMsg:
-		m.flash = ""
-		m.openProbe(msg.p)
-		return m, nil
 	case renamedMsg:
 		if m.gid == msg.from {
 			m.gid = msg.to
@@ -330,12 +318,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.flash, m.flashOK = "group/"+msg.from+" is group/"+msg.to+" now", true
 		m.reload()
 		return m, nil
-	case editedMsg:
-		if msg.err != nil {
-			m.flash, m.flashOK = msg.err.Error(), false
-			return m, nil
-		}
-		return m, saveInstructions(msg.text)
 	case modelsMsg:
 		m.modelsChanged()
 		if msg.missing {
@@ -362,7 +344,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.goTo(p)
 			}
 			switch m.page {
-			case pageProviders, pageGroups, pageUsage, pageSessions, pageLibrary:
+			case pageProviders, pageGroups, pageUsage, pageSessions:
 				if s := msg.String(); s == "q" || s == "esc" {
 					return m, tea.Quit
 				}
@@ -388,9 +370,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case pageSessions:
 				m.flash = ""
 				return m.updateSessions(msg)
-			case pageLibrary:
-				m.flash = ""
-				return m.updateLibrary(msg)
 			}
 			return m.updateList(msg)
 		case modeAsk:
@@ -407,7 +386,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// pageKey is the page a key goes to: 1–6, or ] and [ for the next and
+// pageKey is the page a key goes to: 1–5, or ] and [ for the next and
 // the one before.
 func (m model) pageKey(k string) (page, bool) {
 	n := page(len(pageNames))
@@ -520,7 +499,7 @@ func (m *model) openProfiles() {
 				for _, line := range profile.Report(a) {
 					text += " · " + line
 				}
-				return flashMsg{text: text, ok: a.Library == nil || len(a.Library.Problems) == 0}
+				return flashMsg{text: text, ok: true}
 			}
 		},
 		onDel: func(n string) tea.Cmd {
@@ -744,26 +723,23 @@ func (m model) View() string {
 		switch m.page {
 		case pageProviders:
 			body = m.viewProviders()
-			footer = hints("↑↓", "provider", "↵", "models", "e", "key", "w", "address", "a", "add", "f", "family", "u", "list/groups only", "o", "on/off", "m", "fetch models", "t", "test", "b", "balances", "d", "remove", "1–6", "pages")
+			footer = hints("↑↓", "provider", "↵", "models", "e", "key", "w", "address", "a", "add", "f", "family", "u", "list/groups only", "o", "on/off", "m", "fetch models", "t", "test", "b", "balances", "d", "remove", "1–5", "pages")
 		case pageGroups:
 			body = m.viewGroups()
-			footer = hints("↑↓", "group", "↵", "open", "n", "new", "o", "routing", "d", "remove", "u", "bring back", "1–6", "pages", "q", "quit")
-		case pageLibrary:
-			body = m.viewLibrary()
-			footer = hints("↑↓", "item", "↵", "agents", "a", "add", "e", "edit", "u", "update skill", "i", "bring in", "d", "remove", "s", "sync", "r", "reload", "1–6", "pages", "q", "quit")
+			footer = hints("↑↓", "group", "↵", "open", "n", "new", "o", "routing", "d", "remove", "u", "bring back", "1–5", "pages", "q", "quit")
 		case pageSessions:
 			body = m.viewSessions()
 			if m.sstat {
-				footer = hints("←→", "range", "M", "model", "f", "folder", "x", "clear", "c", "tokens / cost", "s", "sessions", "r", "reload", "1–6", "pages", "q", "quit")
+				footer = hints("←→", "range", "M", "model", "f", "folder", "x", "clear", "c", "tokens / cost", "s", "sessions", "r", "reload", "1–5", "pages", "q", "quit")
 			} else {
-				footer = hints("↑↓", "session", "↵", "resume", "←→", "range", "M", "model", "f", "folder", "x", "clear", "s", "stats", "r", "reload", "1–6", "pages", "q", "quit")
+				footer = hints("↑↓", "session", "↵", "resume", "←→", "range", "M", "model", "f", "folder", "x", "clear", "s", "stats", "r", "reload", "1–5", "pages", "q", "quit")
 			}
 		case pageUsage:
 			body = m.viewUsage()
-			footer = hints("←→", "period", "t w m A", "today · 7 days · 30 days · all", "u", "used / left", "c", "daily check-in", "r", "reload", "1–6", "pages", "q", "quit")
+			footer = hints("←→", "period", "t w m A", "today · 7 days · 30 days · all", "u", "used / left", "c", "daily check-in", "r", "reload", "1–5", "pages", "q", "quit")
 		default:
 			body = m.viewList()
-			footer = hints("↑↓", "agent", "←→", "field", "↵", "change", "s", "save profile", "p", "profiles", "1–6", "pages", "q", "quit")
+			footer = hints("↑↓", "agent", "←→", "field", "↵", "change", "s", "save profile", "p", "profiles", "1–5", "pages", "q", "quit")
 		}
 	case modePick, modeProfiles:
 		body = m.viewPicker()
@@ -946,9 +922,6 @@ func (m model) viewName() string {
 	snap, _ := profile.Snapshot()
 	for _, k := range sortedKeys(snap.Fields) {
 		b.WriteString(pad + "  " + sFaint.Render(padRight(k, 18)) + sText.Render(snap.Fields[k]) + "\n")
-	}
-	if snap.Library != nil {
-		b.WriteString(pad + "  " + sFaint.Render(padRight("library", 18)) + sText.Render(strings.TrimPrefix(snap.Library.Summary(), "library: ")) + "\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
 }

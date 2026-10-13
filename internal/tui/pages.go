@@ -2,8 +2,7 @@ package tui
 
 // The pages beside the agents: providers (keys, models, balances) and
 // usage — what the app's Providers and Usage views do, in the terminal.
-// Routing is in routing.go, sessions in sessions.go, the library in
-// library.go.
+// Routing is in routing.go, sessions in sessions.go.
 
 import (
 	"context"
@@ -34,10 +33,9 @@ const (
 	pageGroups
 	pageUsage
 	pageSessions
-	pageLibrary
 )
 
-var pageNames = []string{"agents", "providers", "routing", "usage", "sessions", "library"}
+var pageNames = []string{"agents", "providers", "routing", "usage", "sessions"}
 
 // ask is a line to type: a key, a family, a group's name.
 type ask struct {
@@ -1337,4 +1335,13 @@ func (m model) viewAsk() string {
 		}
 	}
 	return b.String()
+}
+
+// trunc cuts s to n runes, with an ellipsis.
+func trunc(s string, n int) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if r := []rune(s); len(r) > n {
+		return string(r[:max(1, n-1)]) + "…"
+	}
+	return s
 }

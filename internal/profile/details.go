@@ -87,21 +87,6 @@ func Details(p Profile) []Group {
 		take(k[:i])
 		byID[k[:i]][k[i+1:]] = v
 	}
-	if l := p.Library; l != nil {
-		for _, m := range []map[string][]string{l.MCP, l.Skills} {
-			for _, ids := range m {
-				for _, id := range ids {
-					take(id)
-				}
-			}
-		}
-		for _, id := range l.Instructions.Agents {
-			take(id)
-		}
-		for id := range l.Instructions.Extra {
-			take(id)
-		}
-	}
 	// a list nobody picked for is told only beside the agent's model: an
 	// agent of no fields and no list of its own is no line of the details
 	for id, ml := range p.Models {
@@ -158,12 +143,6 @@ func Details(p Profile) []Group {
 		sort.Strings(rest)
 		for _, k := range rest {
 			add(k, k, vals[k])
-		}
-		if l := p.Library; l != nil {
-			g.Servers = givenTo(l.MCP, id)
-			g.Skills = givenTo(l.Skills, id)
-			i := l.Instructions
-			g.Instructions = i.Extra[id] != "" || i.Shared != "" && slices.Contains(i.Agents, id)
 		}
 		if ml, ok := p.Models[id]; ok && (!ml.Default() || len(g.Fields) > 0) {
 			g.Models = &Models{Hidden: len(ml.Hidden), Only: ml.Only, Picked: len(ml.Picked)}

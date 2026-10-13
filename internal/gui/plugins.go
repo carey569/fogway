@@ -183,12 +183,6 @@ func pluginsState(ctx context.Context, w Windows) pluginsJSON {
 	mws := middleware.States()
 	var agentErrs map[string]string
 	for _, e := range l.Plugins {
-		if f, _ := plugin.Agent(plugin.Target(e.Spec)); f != "" && !e.Off {
-			agentErrs = agent.PluginErrors()
-			break
-		}
-	}
-	for _, e := range l.Plugins {
 		j := pluginEntryJSON{Entry: e, Error: errs[e.Spec], Providers: names[e.Spec], Version: plugin.Installed(e.Spec), Named: answered}
 		if npmPlugin(e.Spec) {
 			j.Latest = known[plugin.Name(e.Spec)].Version

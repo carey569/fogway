@@ -68,12 +68,10 @@ func Clients() []*Agent {
 	return append(out, others...)
 }
 
-// All returns every agent magpie knows about, detected or not: its own,
-// then those plugins add.
+// All returns every agent magpie knows about, detected or not.
 func All() []*Agent {
 	home, cfg := homes()
-	own := builtins(home, cfg)
-	return append(own, pluggedAgents(home, own, nil)...)
+	return builtins(home, cfg)
 }
 
 func homes() (home, cfg string) {

@@ -43,8 +43,6 @@ func helpFor(args []string) string {
 			return ruleUsage
 		}
 		return groupUsage
-	case "library", "lib":
-		return "  " + libraryUsage
 	case "plugin", "plugins":
 		return pluginUsage
 	case "quota", "quotas":
@@ -55,12 +53,6 @@ func helpFor(args []string) string {
 		return searchUsage
 	case "visible":
 		return visibleUsage
-	case "webdav", "dav":
-		return webdavUsage
-	case "s3":
-		return s3Usage
-	case "github":
-		return githubUsage
 	case "claude-code":
 		return claudeCodeUsage
 	case "list":
