@@ -7232,8 +7232,9 @@ let archiveSaving = false;
 function renderArchive() {
   const box = $("#ledArchive");
   if (!box) return;
-  // not said Off before the gateway's state is in
-  box.hidden = !providers?.gateway;
+  // only where the gateway keeps an archive (none in fogway: it went with
+  // sync's S3 bucket)
+  box.hidden = !providers?.gateway?.archive;
   if (box.hidden) return;
   const a = providers.gateway.archive || {};
   let b = box.querySelector(".led-arch-sw");
@@ -20958,7 +20959,7 @@ function tabKeys(tabs, sel) {
 // tab. A click on a tab, like every click, leaves the page where it is: the
 // tabs at the top stay where they were and the part comes in under them.
 // Picked in the sidebar, a part opens at its top (navSubs).
-const SET_TABS = ["general", "usage", "network", "models", "privacy", "otel", "sync", "about"];
+const SET_TABS = ["general", "usage", "network", "models", "privacy", "otel", "about"];
 let setTab = "general";
 try { const k = localStorage.getItem("fogway.settingsTab"); if (SET_TABS.includes(k)) setTab = k; } catch {}
 let setShown = setTab; // the part shown: the one picked, or the first there
@@ -21324,14 +21325,12 @@ function renderSettings() {
   renderReplies(s, keep);
   renderDisabledModels(s);
   renderRedact(s, keep);
-  renderDiscovery(s);
   renderOTel(s, keep);
   renderPort(s);
   renderBareIds(s);
   renderLAN(s);
   renderAllow(s);
   renderCORS(s);
-  renderSync();
 
   const about = $("#about");
   about.replaceChildren();
@@ -23225,11 +23224,6 @@ function renderRedact(s, keep) {
   i.onblur = save;
   row(t("Masked words"), t("Your own words to keep from vendors, separated by commas"), i);
   renderRedactRules(s, row);
-  row(t("Count me as a user"), t("Once a day, a random id for this computer with fogway's version and system"),
-    onOff(!s.noStats, (on) => savePrefs({ ...keep, noStats: !on })));
-  // rides on that event: nothing goes without it
-  if (!s.noStats) row(t("Share the agents, providers and models I use"), t("Sent with that event, by fogway's own ids, with how many of each, and how often each partner was shown, opened and added; a provider you added yourself is only “custom”. No names, addresses, accounts, keys or usage"),
-    onOff(!s.noUsageStats, (on) => savePrefs({ ...keep, noUsageStats: !on })));
 }
 
 function renderOTel(s, keep) {
@@ -24878,8 +24872,6 @@ function navMorph(change) {
 // and picks them there, the page's own strip hidden (app.css)
 var NAV_SUBS = {
   usage: () => $("#usageTab"),
-  library: () => $("#view-library .lib-tabs"),
-  plugins: () => $("#view-plugins .lib-tabs"),
   settings: () => $("#setTabs"),
 };
 function navSubItems(v) { return [...(NAV_SUBS[v]?.()?.querySelectorAll(":scope > button") || [])].filter((b) => !b.hidden); }

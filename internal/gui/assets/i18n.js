@@ -4,6 +4,8 @@
 // works. {name} slots are filled by t(str, vars).
 const I18N = {
   zh: {
+    "Edge": "端侧",
+    "Local model": "本地模型",
     "Manage": "管理",
     "Manage agents": "批量管理",
     "Hiding only changes this list, not an agent's connection or settings. Unhidden agents may stay under Not set up.": "隐藏只改变列表显示，不影响 Agent 的接入或设置。取消隐藏后，Agent 仍可能留在「未设置」中。",
@@ -4721,6 +4723,8 @@ const I18N = {
     "~/.dsh/settings.yaml sets its own DeepSeek endpoint or key, which dsh puts over fogway's; clear it in dsh's Models page to go through fogway.": "~/.dsh/settings.yaml 设置了自己的 DeepSeek 地址或 Key，dsh 会优先用它而不是 fogway 的；请在 dsh 的 Models 页面清除它，才能走 fogway。",
   },
   "zh-TW": {
+    "Edge": "端側",
+    "Local model": "本機模型",
     "Codex thread descriptions": "Codex 對話描述",
     "Codex composer predictions": "Codex 輸入框預測",
     "no prediction, nothing sent": "不產生預測，不發出請求",
@@ -9421,6 +9425,8 @@ const I18N = {
     "~/.dsh/settings.yaml sets its own DeepSeek endpoint or key, which dsh puts over fogway's; clear it in dsh's Models page to go through fogway.": "~/.dsh/settings.yaml 設定了自己的 DeepSeek 位址或 Key，dsh 會優先用它而不是 fogway 的；請在 dsh 的 Models 頁面清除它，才能走 fogway。",
   },
   ja: {
+    "Edge": "エッジ",
+    "Local model": "ローカルモデル",
     "Manage": "管理",
     "Manage agents": "エージェントを一括管理",
     "Hiding only changes this list, not an agent's connection or settings. Unhidden agents may stay under Not set up.": "非表示は一覧の表示のみを変更し、エージェントの接続や設定には影響しません。非表示を解除しても「未設定」に残る場合があります。",
@@ -14123,6 +14129,8 @@ const I18N = {
     "~/.dsh/settings.yaml sets its own DeepSeek endpoint or key, which dsh puts over fogway's; clear it in dsh's Models page to go through fogway.": "~/.dsh/settings.yaml に独自の DeepSeek エンドポイントやキーがあり、dsh は fogway のものよりそちらを優先します。fogway を経由するには dsh の Models ページで消してください。",
   },
   de: {
+    "Edge": "Edge",
+    "Local model": "Lokales Modell",
     "Manage": "Verwalten",
     "Manage agents": "Agents verwalten",
     "Hiding only changes this list, not an agent's connection or settings. Unhidden agents may stay under Not set up.": "Ausblenden ändert nur die Liste, nicht die Verbindung oder Einstellungen eines Agents. Nach dem Einblenden können Agents unter „Nicht eingerichtet“ bleiben.",

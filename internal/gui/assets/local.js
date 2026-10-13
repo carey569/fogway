@@ -75,6 +75,9 @@
     if (!page.hidden && (ph === "preparing" || ph === "downloading" || ph === "starting")) poll = setTimeout(load, 1000);
   }
   window.loadLocal = load;
+  // the window opened on this page (a link, or where it was left) before
+  // this file was read: app.js asked for loadLocal before there was one
+  if (!page.hidden) queueMicrotask(load);
 
   async function act(action, body) {
     try {

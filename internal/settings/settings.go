@@ -213,8 +213,9 @@ type Settings struct {
 	// as by default, subscriptions are found as ever. This computer's own
 	// (KeepOwn), set only by its own switch or `fogway accounts discovery`.
 	NoAccountDiscovery bool `json:"noAccountDiscovery,omitempty"`
-	// NoStats stops the one event a day that counts fogway's users (see
-	// internal/stats).
+	// NoStats and NoUsageStats were magpie's switches for the event a day
+	// that counted its users; fogway sends none, and keeps them only so a
+	// settings.json that has them reads as it did.
 	NoStats bool `json:"noStats,omitempty"`
 	// NoUsageStats keeps which agents, providers and models fogway is
 	// used with out of that event, which then counts the user only.
