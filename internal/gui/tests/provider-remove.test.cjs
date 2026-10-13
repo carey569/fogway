@@ -53,8 +53,8 @@ function serve(lang, mode, deletes) {
 }
 
 const words = {
-  en: { remove: "Remove", stuck: "Relay removed · Hermes is still on relay/m1, which magpie no longer serves: permission denied" },
-  zh: { remove: "移除", stuck: "已移除 Relay · Hermes 仍在用 magpie 已不再提供的 relay/m1：permission denied" },
+  en: { remove: "Remove", stuck: "Relay removed · Hermes is still on relay/m1, which fogway no longer serves: permission denied" },
+  zh: { remove: "移除", stuck: "已移除 Relay · Hermes 仍在用 fogway 已不再提供的 relay/m1：permission denied" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -78,7 +78,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], deletes = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, mode, deletes));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator(".row.provider", { hasText: "Relay" }).click();
         await page.locator(".editor").waitFor();
         const del = page.locator(".editor .bar button.danger", { hasText: w.remove });
@@ -125,7 +125,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.deepEqual(errors, []);
       });
 
-      const missing = await pages[0].evaluate(() => ["{agent} is still on {model}, which magpie no longer serves: {error}"].filter((k) => !I18N.zh[k]));
+      const missing = await pages[0].evaluate(() => ["{agent} is still on {model}, which fogway no longer serves: {error}"].filter((k) => !I18N.zh[k]));
       assert.deepEqual(missing, []);
     });
   }

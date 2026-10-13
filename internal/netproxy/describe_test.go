@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // The settings status must not display credentials; requests still need them.

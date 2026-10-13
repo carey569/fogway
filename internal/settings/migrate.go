@@ -5,15 +5,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/yetone/magpie/internal/appdir"
+	"github.com/fogway/fogway/internal/appdir"
 )
 
 // Migrate carries the files of an install that predates the name over:
-// ~/.config/dial and ~/.cache/dial become ~/.config/magpie and
-// ~/.cache/magpie. It copies rather than moves, so a dial that is still
+// ~/.config/dial and ~/.cache/dial become ~/.config/fogway and
+// ~/.cache/fogway. It copies rather than moves, so a dial that is still
 // running keeps working, and it only fills folders that do not exist yet.
 // The old folders can be deleted once nothing uses them. A portable
-// magpie has only its own data folder and copies nothing in.
+// fogway has only its own data folder and copies nothing in.
 func Migrate() {
 	if Portable() != "" {
 		return
@@ -24,7 +24,7 @@ func Migrate() {
 		home, _ := os.UserHomeDir()
 		cache = filepath.Join(home, ".cache")
 	}
-	copyTree(filepath.Join(cache, "dial"), filepath.Join(cache, "magpie"))
+	copyTree(filepath.Join(cache, "dial"), filepath.Join(cache, "fogway"))
 }
 
 // copyTree copies src into dst, files and modes alike, when src exists and

@@ -22,7 +22,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const w = zh
         ? { label: "此密钥可用的模型", all: "全部模型", gone: "当前未提供", off: "当前未登录" }
         : { label: "Models this key may use", all: "All models", gone: "Not served now", off: "Not signed in now" };
-      await page.goto("http://magpie.test/?view=gateway");
+      await page.goto("http://fogway.test/?view=gateway");
       await page.locator("#gatewayKeys .acc[data-key]").last().waitFor();
       const row = (id) => page.locator(`#gatewayKeys .acc[data-key="${id}"]`);
       // what the menu sends on close is sent asynchronously: wait for it

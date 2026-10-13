@@ -2,7 +2,7 @@ package provider
 
 // Providers another app has already set up — CC Switch, Alma, Claude Code's
 // own settings — offered for the user to bring over: each source is read
-// (never written), every entry turned into the provider magpie would add,
+// (never written), every entry turned into the provider fogway would add,
 // and matched against what is already here, so the picker can say which are
 // new, which are already in, and which would take an id that is in use.
 // Nothing is added until the user picks.
@@ -20,14 +20,14 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/settings"
 	"github.com/tidwall/jsonc"
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/settings"
 	_ "modernc.org/sqlite"
 )
 
-// AppSource is one app magpie can import from, with what it holds.
+// AppSource is one app fogway can import from, with what it holds.
 type AppSource struct {
 	ID    string      `json:"id"`   // cc-switch, alma
 	Name  string      `json:"name"` // as the app calls itself
@@ -37,16 +37,16 @@ type AppSource struct {
 	Items []AppImport `json:"items"`
 }
 
-// AppImport is one provider an app holds, as magpie would add it.
+// AppImport is one provider an app holds, as fogway would add it.
 type AppImport struct {
 	Ref      string   `json:"ref"`            // stable within its source
 	From     string   `json:"from,omitempty"` // where in the app: Claude Code, Codex…
 	Provider Provider `json:"provider"`
-	// Status is "new", "same" (magpie has it already: same endpoint and
+	// Status is "new", "same" (fogway has it already: same endpoint and
 	// key) or "taken" (its id is another provider's here).
 	Status   string `json:"status"`
-	Existing string `json:"existing,omitempty"` // the magpie provider it matches or collides with
-	// KeyOf is a magpie provider at the same address with another key:
+	Existing string `json:"existing,omitempty"` // the fogway provider it matches or collides with
+	// KeyOf is a fogway provider at the same address with another key:
 	// this one can join it as one more key instead of being a provider
 	// of its own.
 	KeyOf string `json:"keyOf,omitempty"`
@@ -62,7 +62,7 @@ type AppImport struct {
 // ("add", beside any with its id), in place of the one with its id
 // ("replace"), or as one more key of the provider KeyOf names ("key").
 // Name is the name the user gave it in the picker, when its own collides
-// with one magpie has (#1487); a renamed entry is added, never replaces.
+// with one fogway has (#1487); a renamed entry is added, never replaces.
 type AppPick struct {
 	Source string `json:"source"`
 	Ref    string `json:"ref"`
@@ -70,7 +70,7 @@ type AppPick struct {
 	Name   string `json:"name,omitempty"`
 }
 
-// appReaders are the apps magpie knows, by name as the picker lists them.
+// appReaders are the apps fogway knows, by name as the picker lists them.
 var appReaders = []struct {
 	id, name string
 	path     func() string
@@ -82,7 +82,7 @@ var appReaders = []struct {
 	{"codex", "Codex", codexConfigPath, readCodexConfig},
 }
 
-// ImportSources reads every app magpie can import from.
+// ImportSources reads every app fogway can import from.
 func ImportSources() []AppSource {
 	have := load().Providers
 	used := map[string]bool{} // ids across all sources, so two never collide
@@ -160,7 +160,7 @@ func ImportFromApps(picks []AppPick) ([]string, error) {
 			// a subscription is never replaced by a provider of keys: its
 			// sign-in would be lost, and Kiro's would take the key to its
 			// own host
-			return added, errorf("%s: %q is a subscription in magpie and can't be replaced; add it as a new provider", p.Name, p.ID)
+			return added, errorf("%s: %q is a subscription in fogway and can't be replaced; add it as a new provider", p.Name, p.ID)
 		default:
 			// an account a provider holds already is not added twice: the
 			// same relay is often both a CC Switch entry and what Claude
@@ -192,14 +192,14 @@ func ImportFromApps(picks []AppPick) ([]string, error) {
 // reservedID is an id no imported provider can have: the gateway's own, a
 // subscription's or a plugin's, signed in or not.
 func reservedID(id string) bool {
-	if id == "magpie" {
+	if id == "fogway" {
 		return true
 	}
 	_, ok := find(Accounts(), id)
 	return ok
 }
 
-// holds says a provider of magpie's has p's account: its key at its
+// holds says a provider of fogway's has p's account: its key at its
 // address, as the import list's "same" says (settle).
 func holds(p Provider) bool {
 	for _, h := range load().Providers {
@@ -212,7 +212,7 @@ func holds(p Provider) bool {
 
 // freeID is id, or id-2, id-3… whichever no provider has.
 func freeID(id string) string {
-	taken := map[string]bool{"magpie": true}
+	taken := map[string]bool{"fogway": true}
 	for _, id := range accountIDs {
 		taken[id] = true
 	}
@@ -236,7 +236,7 @@ func itoa(n int) string {
 }
 
 // settle gives each importable entry a unique id and says how it stands
-// against the providers magpie has.
+// against the providers fogway has.
 func settle(items []AppImport, have []Provider, used map[string]bool) []AppImport {
 	for i := range items {
 		it := &items[i]
@@ -244,10 +244,10 @@ func settle(items []AppImport, have []Provider, used map[string]bool) []AppImpor
 			continue
 		}
 		p := &it.Provider
-		if p.ID == "" || p.ID == "magpie" {
+		if p.ID == "" || p.ID == "fogway" {
 			p.ID = Slug(p.Name)
 		}
-		if p.ID == "" || p.ID == "magpie" {
+		if p.ID == "" || p.ID == "fogway" {
 			p.ID = "imported"
 		}
 		for base, n := p.ID, 2; used[p.ID]; n++ {
@@ -296,7 +296,7 @@ func settle(items []AppImport, have []Provider, used map[string]bool) []AppImpor
 }
 
 // sameProvider: the same key, host, and headers are the same account; a is
-// the provider magpie has, which may hold the key among its others.
+// the provider fogway has, which may hold the key among its others.
 func sameProvider(a, b Provider) bool {
 	if !maps.Equal(cleanHeaders(a.Headers), cleanHeaders(b.Headers)) {
 		return false
@@ -334,7 +334,7 @@ func hostOf(raw string) string {
 type endpoints struct{ chat, responses, anthropic string }
 
 // imported builds the provider for an entry: a preset's when the entry
-// points at one magpie knows (its endpoints whole when the URL is the
+// points at one fogway knows (its endpoints whole when the URL is the
 // preset's own, only its name and logo when it is another path on the same
 // host, like a coding plan), a custom one otherwise.
 func imported(name, key string, e endpoints, models []string) (Provider, string) {
@@ -348,7 +348,7 @@ func imported(name, key string, e endpoints, models []string) (Provider, string)
 			return Provider{}, "its base URL isn't valid"
 		}
 		if gatewayURL(pu) {
-			return Provider{}, "it points at magpie itself"
+			return Provider{}, "it points at fogway itself"
 		}
 	}
 	if e.chat == "" && e.responses == "" && e.anthropic == "" {
@@ -390,7 +390,7 @@ func cleanBase(u string) string {
 	return u
 }
 
-// gatewayURL is magpie's own address, on the port it listens on now or
+// gatewayURL is fogway's own address, on the port it listens on now or
 // the one Settings has: importing it would loop.
 func gatewayURL(u *url.URL) bool {
 	h := u.Hostname()
@@ -482,8 +482,8 @@ func claudeSettingsPath() string {
 }
 
 // readClaudeSettings is the relay Claude Code was pointed at in its own
-// settings.json, before magpie: its base URL and token under env. While
-// Claude Code goes through magpie those are in magpie's stash, to be put
+// settings.json, before fogway: its base URL and token under env. While
+// Claude Code goes through fogway those are in fogway's stash, to be put
 // back when it leaves; the stash is read then.
 func readClaudeSettings(path string) ([]AppImport, error) {
 	raw, err := os.ReadFile(path)
@@ -655,7 +655,7 @@ func ccSwitchEntry(e ccEntry) (name, key string, eps endpoints, models []string,
 		base := str(env, "ANTHROPIC_BASE_URL")
 		key = str(env, "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY")
 		if base == "" && key == "" {
-			return name, "", eps, nil, "it is the agent's own sign-in; add the subscription in magpie"
+			return name, "", eps, nil, "it is the agent's own sign-in; add the subscription in fogway"
 		}
 		if base == "" {
 			base = "https://api.anthropic.com"
@@ -679,7 +679,7 @@ func ccSwitchEntry(e ccEntry) (name, key string, eps endpoints, models []string,
 			key = mp["experimental_bearer_token"]
 		}
 		if base == "" && key == "" {
-			return name, "", eps, nil, "it is the agent's own sign-in; add the subscription in magpie"
+			return name, "", eps, nil, "it is the agent's own sign-in; add the subscription in fogway"
 		}
 		if base == "" {
 			base = "https://api.openai.com/v1"
@@ -695,7 +695,7 @@ func ccSwitchEntry(e ccEntry) (name, key string, eps endpoints, models []string,
 	case "gemini":
 		key = str(env, "GEMINI_API_KEY", "GOOGLE_API_KEY")
 		if str(env, "GOOGLE_GEMINI_BASE_URL") != "" {
-			return name, "", eps, nil, "magpie doesn't talk the Gemini protocol to relays yet"
+			return name, "", eps, nil, "fogway doesn't talk the Gemini protocol to relays yet"
 		}
 		if key == "" {
 			return name, "", eps, nil, "it is the agent's own sign-in"
@@ -835,7 +835,7 @@ func readAlma(path string) ([]AppImport, error) {
 		skip := ""
 		switch {
 		case almaSignIns[typ]:
-			skip = "it is a sign-in, not a key; add the subscription in magpie"
+			skip = "it is a sign-in, not a key; add the subscription in fogway"
 		case typ == "azure":
 			// the resource's endpoint (or only its name); one behind a
 			// gateway of the user's is kept as it is, asked as Azure's
@@ -852,7 +852,7 @@ func readAlma(path string) ([]AppImport, error) {
 		case format == "anthropic" || typ == "anthropic":
 			eps.anthropic = base
 		case format == "gemini" || typ == "google" && base != "":
-			skip = "magpie doesn't talk the Gemini protocol to relays yet"
+			skip = "fogway doesn't talk the Gemini protocol to relays yet"
 		case responses || format == "openai-responses":
 			eps.responses = base
 		default:

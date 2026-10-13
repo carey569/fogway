@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // xaiUndecryptable is what xAI answers — a Grok API key or a SuperGrok

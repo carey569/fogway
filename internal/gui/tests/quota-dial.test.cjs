@@ -84,7 +84,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/?mode=panel");
+        await page.goto("http://fogway.test/?mode=panel");
         await page.locator('#ptabs [data-ptab="usage"]').click();
         const dials = page.locator(".pq-dial");
         await dials.first().waitFor();

@@ -12,7 +12,7 @@ package gui
 
 static const NSWindowButton lightKinds[3] = {NSWindowCloseButton, NSWindowMiniaturizeButton, NSWindowZoomButton};
 
-// MagpieLights keeps a window's traffic lights where its toolbar had put
+// FogwayLights keeps a window's traffic lights where its toolbar had put
 // them, once the toolbar is gone. AppKit lays the title bar out again
 // whenever it changes (a resize or zoom, leaving full screen, a new title or
 // appearance), with its own height for the title bar and its own place for
@@ -24,7 +24,7 @@ static const NSWindowButton lightKinds[3] = {NSWindowCloseButton, NSWindowMiniat
 // on the way into full screen, AppKit draws the title bar at its own height
 // before the run loop turns: the lights keep their distance from its top,
 // not its bottom, which would draw them above the window.
-@interface MagpieLights : NSObject {
+@interface FogwayLights : NSObject {
 @public
 	NSWindow *win;  // not held: the window holds this; nil once it closes
 	CGFloat height; // the title bar's, as the toolbar had it
@@ -33,7 +33,7 @@ static const NSWindowButton lightKinds[3] = {NSWindowCloseButton, NSWindowMiniat
 }
 @end
 
-@implementation MagpieLights
+@implementation FogwayLights
 - (void)apply {
 	if (busy || win == nil || (win.styleMask & NSWindowStyleMaskFullScreen)) return;
 	NSView *bar = [win standardWindowButton:NSWindowCloseButton].superview, *box = bar.superview, *frame = box.superview;
@@ -96,7 +96,7 @@ static char lightsKey;
 // began below the toolbar. With neither, AppKit lets it rise to the window's
 // top, over the header: macOS 26 centres a sheet, so in a short window.
 static NSRect sheetBelowTitlebar(id self, SEL _cmd, NSWindow *w, NSWindow *sheet, NSRect r) {
-	MagpieLights *l = objc_getAssociatedObject(w, &lightsKey);
+	FogwayLights *l = objc_getAssociatedObject(w, &lightsKey);
 	if (l != nil && l->win != nil && !(w.styleMask & NSWindowStyleMaskFullScreen)) r.origin.y = NSHeight(w.frame) - l->height;
 	return r;
 }
@@ -109,7 +109,7 @@ static NSRect sheetBelowTitlebar(id self, SEL _cmd, NSWindow *w, NSWindow *sheet
 // view that takes it (a traffic light, an edge that resizes) is left alone.
 static NSEvent *firstPress(NSEvent *e) {
 	NSWindow *w = e.window;
-	MagpieLights *l = w == nil ? nil : objc_getAssociatedObject(w, &lightsKey);
+	FogwayLights *l = w == nil ? nil : objc_getAssociatedObject(w, &lightsKey);
 	if (l == nil || l->win == nil || w.isKeyWindow || !w.isMovable || e.clickCount != 1 || (w.styleMask & NSWindowStyleMaskFullScreen)) return e;
 	NSView *frame = w.contentView.superview;
 	NSPoint p = e.locationInWindow;
@@ -164,7 +164,7 @@ static void insetLights(void *p) {
 	NSView *bar = [w standardWindowButton:NSWindowCloseButton].superview, *box = bar.superview, *frame = box.superview;
 	if (frame == nil) return;
 	[frame layoutSubtreeIfNeeded];
-	MagpieLights *l = [[[MagpieLights alloc] init] autorelease];
+	FogwayLights *l = [[[FogwayLights alloc] init] autorelease];
 	l->win = w;
 	l->height = NSHeight(box.frame);
 	NSView *views[5] = {box, bar};

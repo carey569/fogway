@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // A request turned away by a key's or account's queue answers 429 (that part

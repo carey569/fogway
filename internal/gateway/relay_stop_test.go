@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Anthropic-shaped relays in front of other vendors' models (Grok's, as
@@ -20,7 +20,7 @@ import (
 
 // relayAnthropic serves a translated request's model from an Anthropic
 // upstream answering with events, as they are, and returns the Chat
-// stream magpie made of it.
+// stream fogway made of it.
 func relayAnthropic(t *testing.T, events ...string) string {
 	t.Helper()
 	fresh(t)
@@ -134,7 +134,7 @@ func TestRelayStreamEndedShort(t *testing.T) {
 
 // relayResponses serves a translated request's model from a Responses
 // upstream answering with events, as they are, and returns the Chat
-// stream magpie made of it.
+// stream fogway made of it.
 func relayResponses(t *testing.T, events ...string) string {
 	t.Helper()
 	fresh(t)

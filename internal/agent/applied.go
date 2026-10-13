@@ -12,22 +12,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // An agent's config is a file anyone can write: another switcher, an
-// installer, the agent's own setup. One that takes magpie out leaves the
-// row showing a magpie model while the agent asks its own vendor for it, and
-// the user blames magpie. So magpie remembers what it last set on each agent
+// installer, the agent's own setup. One that takes fogway out leaves the
+// row showing a fogway model while the agent asks its own vendor for it, and
+// the user blames fogway. So fogway remembers what it last set on each agent
 // (applied.json, beside the stash) and says when that no longer holds —
 // Drift — with the way to set it again.
 
 var appliedMu sync.Mutex
 
-// applied is what magpie last set on one agent, and when.
+// applied is what fogway last set on one agent, and when.
 type applied struct {
 	At     time.Time         `json:"at"`
 	Fields map[string]string `json:"fields"` // field key → value
@@ -35,7 +35,7 @@ type applied struct {
 
 func appliedPath() string { return filepath.Join(filepath.Dir(provider.Path()), "applied.json") }
 
-// appliedLoad is agent id → what magpie set on it.
+// appliedLoad is agent id → what fogway set on it.
 func appliedLoad() map[string]applied {
 	out := map[string]applied{}
 	if b, err := os.ReadFile(appliedPath()); err == nil {
@@ -56,8 +56,8 @@ func appliedOf(id string) applied {
 	return appliedLoad()[id]
 }
 
-// record keeps what a field reads after magpie set it; a field put back to
-// the agent's default is magpie's no longer.
+// record keeps what a field reads after fogway set it; a field put back to
+// the agent's default is fogway's no longer.
 func record(id, key, v string) {
 	appliedMu.Lock()
 	defer appliedMu.Unlock()
@@ -76,12 +76,12 @@ func record(id, key, v string) {
 	appliedSave(m)
 }
 
-// Apply sets one of the agent's fields and remembers it as magpie's, so it
+// Apply sets one of the agent's fields and remembers it as fogway's, so it
 // can be told apart from what something else writes there later. Every
-// setting of a field by the user goes through here. A field magpie set
-// before that this one moves too is magpie's doing as well: Claude Code's
-// Default takes its tiers and subagent model out with magpie's endpoint,
-// which read as changed outside magpie, and the drift kept the row up
+// setting of a field by the user goes through here. A field fogway set
+// before that this one moves too is fogway's doing as well: Claude Code's
+// Default takes its tiers and subagent model out with fogway's endpoint,
+// which read as changed outside fogway, and the drift kept the row up
 // among the connected ones while it said Not connected (#834).
 func (a *Agent) Apply(key, v string) error {
 	if a.Native != nil {
@@ -102,7 +102,7 @@ func (a *Agent) Apply(key, v string) error {
 		}
 	}
 	record(a.ID, f.Key, f.Get())
-	// magpie picked in by the user's own hand (magpie model, a pick in
+	// fogway picked in by the user's own hand (fogway model, a pick in
 	// the CLI) connects it again
 	if a.Wired() {
 		forget(a.ID + disconnectedKey)
@@ -110,12 +110,12 @@ func (a *Agent) Apply(key, v string) error {
 	return nil
 }
 
-// Drift is how an agent differs from what magpie set on it.
+// Drift is how an agent differs from what fogway set on it.
 type Drift struct {
 	// Kind says what is off:
-	//   "unwired"  the model is magpie's but the config no longer sends it
-	//              through magpie (Check);
-	//   "replaced" a magpie model magpie set was replaced by the agent's own;
+	//   "unwired"  the model is fogway's but the config no longer sends it
+	//              through fogway (Check);
+	//   "replaced" a fogway model fogway set was replaced by the agent's own;
 	//   "bypassed" the config is right, yet the agent was used since and
 	//              nothing of it reached the gateway — it runs on an old
 	//              config, or something outside the file overrides it;
@@ -139,11 +139,11 @@ type Drift struct {
 // then, a request the gateway missed says nothing about the agent.
 var started = time.Now()
 
-// Drift says what, if anything, keeps the agent off what magpie set: its
-// config first (wiring, then each field against magpie's record), then —
+// Drift says what, if anything, keeps the agent off what fogway set: its
+// config first (wiring, then each field against fogway's record), then —
 // the config being right — whether its latest use actually came through.
-// A field moved from one magpie model to another (the agent's own picker)
-// isn't drift; one moved off magpie is.
+// A field moved from one fogway model to another (the agent's own picker)
+// isn't drift; one moved off fogway is.
 func (a *Agent) Drift() *Drift {
 	if a.Native != nil {
 		s := a.Native.Read()
@@ -156,12 +156,12 @@ func (a *Agent) Drift() *Drift {
 		return nil
 	}
 	vals := a.Values()
-	// the field on one of magpie's models: where drift shows, and what
+	// the field on one of fogway's models: where drift shows, and what
 	// setting it again sets
-	on, onMagpie := a.Fields[0], false
+	on, onFogway := a.Fields[0], false
 	for _, f := range a.Fields {
-		if magpieValue(a, f, vals[f.Key], vals) {
-			on, onMagpie = f, true
+		if fogwayValue(a, f, vals[f.Key], vals) {
+			on, onFogway = f, true
 			break
 		}
 	}
@@ -171,27 +171,27 @@ func (a *Agent) Drift() *Drift {
 		}
 	}
 	rec := appliedOf(a.ID)
-	// still joined, a model off magpie is one picked in the agent, beside
-	// magpie's in its list (dsh's /model), not a change from outside
+	// still joined, a model off fogway is one picked in the agent, beside
+	// fogway's in its list (dsh's /model), not a change from outside
 	joined := a.Joined != nil && a.Joined()
 	for _, f := range a.Fields {
 		want, ok := rec.Fields[f.Key]
 		// a field that reads empty while it follows another (Claude Code's
 		// tiers and subagents on its main model) runs on that one's model:
-		// the main model moved onto the one magpie set the field to reads
+		// the main model moved onto the one fogway set the field to reads
 		// as following it, not as the field put back to the agent's own
 		// default (#1050)
 		now := vals[f.Key]
 		if now == "" && f.Follows != "" {
 			now = vals[f.Follows]
 		}
-		if !ok || joined || now == want || !magpieValue(a, f, want, vals) || magpieValue(a, f, now, vals) || sameGroup(want, now) {
+		if !ok || joined || now == want || !fogwayValue(a, f, want, vals) || fogwayValue(a, f, now, vals) || sameGroup(want, now) {
 			continue
 		}
 		return &Drift{Kind: "replaced", Field: f.Key, Now: vals[f.Key], Want: want,
-			Detail: a.Name + "'s config was changed outside magpie: " + f.Label + " is " + orDefault(vals[f.Key]) + ", not " + want + " as magpie set it"}
+			Detail: a.Name + "'s config was changed outside fogway: " + f.Label + " is " + orDefault(vals[f.Key]) + ", not " + want + " as fogway set it"}
 	}
-	if onMagpie || joined {
+	if onFogway || joined {
 		if d := a.unreachable(on, vals[on.Key]); d != nil {
 			return d
 		}
@@ -199,40 +199,40 @@ func (a *Agent) Drift() *Drift {
 			return d
 		}
 	}
-	if a.Reached != nil && onMagpie {
+	if a.Reached != nil && onFogway {
 		if at, to, refused := a.Reached(rec.At); !at.IsZero() {
 			switch {
 			// a request the gateway saw since, or one to where the config
-			// keeps magpie (Codex's kept address, a reverse proxy, #1985),
+			// keeps fogway (Codex's kept address, a reverse proxy, #1985),
 			// came through
 			case !sameHost(to, gateway.URL()) && !sameHost(to, a.pointedAt()) && lastSeen(a.ID).Before(at.Add(-2*time.Second)):
 				return &Drift{Kind: "bypassed", Field: on.Key, Now: vals[on.Key], Want: vals[on.Key],
-					Detail: a.Name + "'s last request (" + at.Format("15:04") + ") went to " + hostOf(to) + ", not magpie — it was started before magpie set it up and still runs on its old config: quit and reopen it"}
+					Detail: a.Name + "'s last request (" + at.Format("15:04") + ") went to " + hostOf(to) + ", not fogway — it was started before fogway set it up and still runs on its old config: quit and reopen it"}
 			case refused:
 				return &Drift{Kind: "bypassed", Field: on.Key, Now: vals[on.Key], Want: vals[on.Key],
-					Detail: a.Name + " couldn't reach magpie at " + at.Format("15:04") + " — magpie wasn't running then, so it has none of magpie's models: quit and reopen it"}
+					Detail: a.Name + " couldn't reach fogway at " + at.Format("15:04") + " — fogway wasn't running then, so it has none of fogway's models: quit and reopen it"}
 			}
 		}
 	}
-	if a.LastUsed != nil && onMagpie {
+	if a.LastUsed != nil && onFogway {
 		if used := a.LastUsed(); bypassed(used, rec.At, lastSeen(a.ID)) {
 			return &Drift{Kind: "bypassed", Field: on.Key, Now: vals[on.Key], Want: vals[on.Key],
-				Detail: a.Name + " was used at " + used.Format("15:04") + " but none of its requests reached magpie — one started before magpie set it up still runs on its old config: restart it"}
+				Detail: a.Name + " was used at " + used.Format("15:04") + " but none of its requests reached fogway — one started before fogway set it up still runs on its old config: restart it"}
 		}
 	}
 	return nil
 }
 
-// installedURL is the gateway of the magpie people install, on its own
-// port, the one its Settings have; a magpie MAGPIE_ADDR puts on another
-// (magpie-dev, a sandbox) is run beside it.
+// installedURL is the gateway of the fogway people install, on its own
+// port, the one its Settings have; a fogway FOGWAY_ADDR puts on another
+// (fogway-dev, a sandbox) is run beside it.
 var installedURL = gateway.SavedURL
 
-// elsewhere: this magpie is not on the installed one's port.
+// elsewhere: this fogway is not on the installed one's port.
 func elsewhere() bool { return !sameHost(gateway.URL(), installedURL()) }
 
-// theInstalled: this magpie runs beside the installed one, and the agent is
-// wired to that one's gateway, not this one's — the installed magpie set it
+// theInstalled: this fogway runs beside the installed one, and the agent is
+// wired to that one's gateway, not this one's — the installed fogway set it
 // up, so it is that one's to check, not drift here. Otherwise the two would
 // take turns flagging each other's wiring.
 func (a *Agent) theInstalled() bool {
@@ -246,7 +246,7 @@ func (a *Agent) theInstalled() bool {
 	return strings.Contains(string(b), hostOf(installedURL())) && !strings.Contains(string(b), hostOf(gateway.URL()))
 }
 
-// bypassed: the agent was used — while this gateway was up and after magpie
+// bypassed: the agent was used — while this gateway was up and after fogway
 // last set it — and no request of it arrived since. A request leaves within
 // moments of the prompt; a little grace keeps one in flight from counting.
 // lastSeen is when the agent's last request reached this process's gateway
@@ -260,10 +260,10 @@ func bypassed(used, applied, seen time.Time) bool {
 		time.Since(used) > grace && seen.Before(used.Add(-2*time.Second))
 }
 
-// magpieValue: the value is one of magpie's models as this agent spells it,
+// fogwayValue: the value is one of fogway's models as this agent spells it,
 // its suffix after the model (SplitSuffix) aside; a list of models is the
 // user's own.
-func magpieValue(a *Agent, f Field, v string, vals map[string]string) bool {
+func fogwayValue(a *Agent, f Field, v string, vals map[string]string) bool {
 	if v == "" {
 		return false
 	}
@@ -271,12 +271,12 @@ func magpieValue(a *Agent, f Field, v string, vals map[string]string) bool {
 	if !one || a.Spelled != nil && !a.Spelled(v) {
 		return false
 	}
-	if isMagpie(v) {
+	if isFogway(v) {
 		return true
 	}
-	// spelled as magpie's provider in the agent's own config (OpenCode's
-	// magpie/…): magpie's even when its list there doesn't have the model
-	if ref, ok := strings.CutPrefix(v, magpieID+"/"); ok && isMagpie(ref) {
+	// spelled as fogway's provider in the agent's own config (OpenCode's
+	// fogway/…): fogway's even when its list there doesn't have the model
+	if ref, ok := strings.CutPrefix(v, fogwayID+"/"); ok && isFogway(ref) {
 		return true
 	}
 	if f.Options == nil {
@@ -298,9 +298,9 @@ func groupNamed(v string) string {
 	// Claude Code's [1m] mark rides on the group's id as it does on a
 	// model's, and one of the two values here comes from the agent's own
 	// settings: without it off, a group read back marked is not the one
-	// magpie set (GroupFor takes it off; so does GroupFinder)
+	// fogway set (GroupFor takes it off; so does GroupFinder)
 	v = strings.TrimSuffix(strings.TrimSpace(v), "[1m]")
-	v = strings.TrimPrefix(v, magpieID+"/")
+	v = strings.TrimPrefix(v, fogwayID+"/")
 	if strings.HasPrefix(v, provider.GroupPrefix) {
 		return v
 	}
@@ -310,7 +310,7 @@ func groupNamed(v string) string {
 
 // sameGroup: two values of a field reach the same routing group, one by
 // the group's id and the other by its model's name (#750: Codex's config
-// read gpt-6.1-sol where magpie had set group/auto-gpt-6-1-sol). Asked for
+// read gpt-6.1-sol where fogway had set group/auto-gpt-6-1-sol). Asked for
 // either, the gateway serves the group, so the one is not the other
 // replaced.
 func sameGroup(a, b string) bool {
@@ -318,11 +318,11 @@ func sameGroup(a, b string) bool {
 	return g != "" && g == groupNamed(b)
 }
 
-// setAsGroup: magpie set the agent's field to a routing group, and v names
-// that group by its model's name (sameGroup) — magpie's model still, for an
-// agent whose config sends v to magpie's gateway.
+// setAsGroup: fogway set the agent's field to a routing group, and v names
+// that group by its model's name (sameGroup) — fogway's model still, for an
+// agent whose config sends v to fogway's gateway.
 func setAsGroup(id, key, v string) bool {
-	if v == "" || isMagpie(v) {
+	if v == "" || isFogway(v) {
 		return false
 	}
 	want, ok := appliedOf(id).Fields[key]
@@ -336,9 +336,9 @@ func orDefault(v string) string {
 	return v
 }
 
-// Reapply sets again what magpie set on the agent: what drifted, else its
-// fields as they read now — for a config taken off magpie in a way no check
-// catches. A replaced field brings back the others magpie set with it.
+// Reapply sets again what fogway set on the agent: what drifted, else its
+// fields as they read now — for a config taken off fogway in a way no check
+// catches. A replaced field brings back the others fogway set with it.
 // Either way the record is renewed, so a use before now no longer counts.
 func (a *Agent) Reapply() error {
 	if a.Native != nil {
@@ -365,11 +365,11 @@ func (a *Agent) Reapply() error {
 	}
 	vals := a.Values()
 	for _, f := range a.Fields {
-		// magpie as the agent's provider too (Claude Desktop's provider
-		// field, beside its tiers on magpie's models), as Wired takes it:
+		// fogway as the agent's provider too (Claude Desktop's provider
+		// field, beside its tiers on fogway's models), as Wired takes it:
 		// left out, Reconnect set the tiers again and never the gateway
 		// Check found off (dumplings on Discord)
-		if v := vals[f.Key]; v != "" && (d != nil && f.Key == d.Field || v == magpieID || magpieValue(a, f, v, vals)) {
+		if v := vals[f.Key]; v != "" && (d != nil && f.Key == d.Field || v == fogwayID || fogwayValue(a, f, v, vals)) {
 			if err := a.Apply(f.Key, v); err != nil {
 				return err
 			}
@@ -378,7 +378,7 @@ func (a *Agent) Reapply() error {
 	return nil
 }
 
-// Keep takes the agent's config as it is now: what magpie set before is
+// Keep takes the agent's config as it is now: what fogway set before is
 // forgotten, and no longer said to have been changed.
 func (a *Agent) Keep() {
 	appliedMu.Lock()
@@ -391,8 +391,8 @@ func (a *Agent) Keep() {
 	appliedSave(m)
 }
 
-// Wired reports whether magpie is in the agent's config: a field on one of
-// magpie's models, or on magpie itself (an app whose one setting is magpie
+// Wired reports whether fogway is in the agent's config: a field on one of
+// fogway's models, or on fogway itself (an app whose one setting is fogway
 // as its provider).
 func (a *Agent) Wired() bool {
 	if a.Native != nil {
@@ -403,17 +403,17 @@ func (a *Agent) Wired() bool {
 	}
 	vals := a.Values()
 	for _, f := range a.Fields {
-		if v := vals[f.Key]; v == magpieID || magpieValue(a, f, v, vals) || a.Routed != nil && setAsGroup(a.ID, f.Key, v) && a.Routed() {
+		if v := vals[f.Key]; v == fogwayID || fogwayValue(a, f, v, vals) || a.Routed != nil && setAsGroup(a.ID, f.Key, v) && a.Routed() {
 			return true
 		}
 	}
 	return false
 }
 
-// Pick sets a field from the Agents page's model picker. One of magpie's
+// Pick sets a field from the Agents page's model picker. One of fogway's
 // models picked on an agent not connected yet connects it first, as its
 // switch does, then starts it on that model (the owner: the switch, and a
-// model picked in magpie in one click, both): the agent gets magpie's whole
+// model picked in fogway in one click, both): the agent gets fogway's whole
 // list, and Disconnect puts back what it had before.
 func (a *Agent) Pick(key, v string) error {
 	if a.Native != nil {
@@ -426,7 +426,7 @@ func (a *Agent) Pick(key, v string) error {
 	if f := a.Field(key); f != nil && !a.Wired() {
 		vals := a.Values()
 		vals[key] = v
-		if v == magpieID || magpieValue(a, *f, v, vals) {
+		if v == fogwayID || fogwayValue(a, *f, v, vals) {
 			if _, err := a.connect(); err != nil {
 				return err
 			}
@@ -435,21 +435,21 @@ func (a *Agent) Pick(key, v string) error {
 	return a.Apply(key, v)
 }
 
-// Connect puts magpie into the agent's config, the Agents page's switch
-// (the owner: an agent is connected to magpie, and its models are picked in
-// the agent): the agent's main field goes to one of magpie's models — the
-// one serving the model it is on now, else the first — or to magpie itself
-// for an app whose one setting is magpie as its provider. Setting it writes
+// Connect puts fogway into the agent's config, the Agents page's switch
+// (the owner: an agent is connected to fogway, and its models are picked in
+// the agent): the agent's main field goes to one of fogway's models — the
+// one serving the model it is on now, else the first — or to fogway itself
+// for an app whose one setting is fogway as its provider. Setting it writes
 // the provider and the whole catalog in, so the agent's own model list has
-// every one of magpie's models. An agent that can keep the model it is on
+// every one of fogway's models. An agent that can keep the model it is on
 // (Join) keeps it. An agent already connected is left as it is.
-// NoModelsError is Connect's answer while magpie has no models to give
+// NoModelsError is Connect's answer while fogway has no models to give
 // the agent: no provider or subscription has been added yet. The GUI says
 // it in the reader's language by its code (no_models).
 type NoModelsError struct{ Agent string }
 
 func (e *NoModelsError) Error() string {
-	return "Add a provider or subscription in magpie first, then connect " + e.Agent
+	return "Add a provider or subscription in fogway first, then connect " + e.Agent
 }
 
 func (a *Agent) Connect() error {
@@ -459,19 +459,19 @@ func (a *Agent) Connect() error {
 
 // Connection is how Connect chose the model an agent starts on, for the
 // Agents page to say it (#726: Codex showed its last pick, Claude Code a
-// Sonnet through magpie and Antigravity some model, with nothing saying
+// Sonnet through fogway and Antigravity some model, with nothing saying
 // why). How is one of:
 //
 //   - "kept": it was connected already, left as it was
 //   - "again": the models it was on when it was switched off, put back
 //   - "joined": the model it is on stays its own (Codex signed in with
-//     ChatGPT), magpie's models join its list
-//   - "magpie": an app whose one setting is magpie as its provider
-//   - "same": the model it is on now, through magpie
-//   - "alike": the model its alias (opus) stands for, through magpie
+//     ChatGPT), fogway's models join its list
+//   - "fogway": an app whose one setting is fogway as its provider
+//   - "same": the model it is on now, through fogway
+//   - "alike": the model its alias (opus) stands for, through fogway
 //   - "default": on its own default with no model set: the first of its
-//     own models in its list (the newest, for Claude Code), through magpie
-//   - "first": magpie has none of the model it is on: the first on the
+//     own models in its list (the newest, for Claude Code), through fogway
+//   - "first": fogway has none of the model it is on: the first on the
 //     account it is signed in to, else a subscription's, else the first
 //
 // Field and Value are the field set and what it was set to, where Connect
@@ -512,16 +512,16 @@ func (a *Agent) connect() (Connection, error) {
 	if ok, err := a.reconnect(now); ok || err != nil {
 		return Connection{How: "again"}, err
 	}
-	// the model it is on stays, where the agent can have magpie's models
+	// the model it is on stays, where the agent can have fogway's models
 	// beside it (the owner: Codex keeps its own last pick)
 	if a.Join != nil {
 		if ok, err := a.Join(); ok || err != nil {
 			return Connection{How: "joined"}, err
 		}
 	}
-	// the field magpie is picked in: the one listing magpie's models (for
+	// the field fogway is picked in: the one listing fogway's models (for
 	// Gemini CLI its model, its first field being how it signs in), else one
-	// whose value is magpie itself
+	// whose value is fogway itself
 	vals := a.Values()
 	var f *Field
 	var opts []Option
@@ -532,7 +532,7 @@ func (a *Agent) connect() (Connection, error) {
 			}
 			list := a.Fields[i].Options(vals)
 			for _, o := range list {
-				if pass == 0 && o.Ref != "" || pass == 1 && o.Value == magpieID {
+				if pass == 0 && o.Ref != "" || pass == 1 && o.Value == fogwayID {
 					f, opts = &a.Fields[i], list
 					break
 				}
@@ -548,7 +548,7 @@ func (a *Agent) connect() (Connection, error) {
 		if shown, hidden := provider.CatalogFor(a.ListsFor()); len(shown)+len(hidden) == 0 {
 			return Connection{}, &NoModelsError{Agent: a.Name}
 		}
-		return Connection{}, fmt.Errorf("%s can't be connected to magpie", a.Name)
+		return Connection{}, fmt.Errorf("%s can't be connected to fogway", a.Name)
 	}
 	cur := connectWas(vals[f.Key], opts)
 	if cur == "" && f.Key != a.Fields[0].Key {
@@ -558,21 +558,21 @@ func (a *Agent) connect() (Connection, error) {
 	if cur == "" {
 		// on its default: the first of its own models
 		for _, o := range opts {
-			if o.Ref == "" && o.Group == a.Name && o.Value != magpieID {
+			if o.Ref == "" && o.Group == a.Name && o.Value != fogwayID {
 				cur = connectWas(o.Value, opts)
 				break
 			}
 		}
 	}
-	// the model it is on now, through magpie (or of its family, for an
+	// the model it is on now, through fogway (or of its family, for an
 	// alias): on the account it is signed in to (its vendor's) first, then
 	// on a subscription, before a key's; else its own vendor's; else a
 	// subscription's; else the first
 	var pick, same, alike, own, sub, group string
 	sameRank, alikeRank := -1, -1
 	for _, o := range opts {
-		if o.Value == magpieID {
-			return Connection{How: "magpie", Field: f.Key, Value: magpieID}, a.Apply(f.Key, magpieID)
+		if o.Value == fogwayID {
+			return Connection{How: "fogway", Field: f.Key, Value: fogwayID}, a.Apply(f.Key, fogwayID)
 		}
 		if o.Ref != "" && o.Group == RoutingGroups && group == "" {
 			group = o.Value
@@ -604,7 +604,7 @@ func (a *Agent) connect() (Connection, error) {
 			sub = o.Value
 		}
 	}
-	// the model it is on, of its own, as magpie serves it on a sign-in of
+	// the model it is on, of its own, as fogway serves it on a sign-in of
 	// the user's, which its field lists as its own (Codex's on a ChatGPT
 	// account it can't join, #940)
 	if same == "" && alike == "" && cur != "" && a.OwnVia != nil {
@@ -629,7 +629,7 @@ func (a *Agent) connect() (Connection, error) {
 		pick = group
 	}
 	if pick == "" {
-		return Connection{}, fmt.Errorf("magpie has no models %s can use: add a subscription or a provider first", a.Name)
+		return Connection{}, fmt.Errorf("fogway has no models %s can use: add a subscription or a provider first", a.Name)
 	}
 	return Connection{How: how, Field: f.Key, Value: pick}, a.Apply(f.Key, pick)
 }
@@ -652,12 +652,12 @@ func connectWas(v string, opts []Option) string {
 	return strings.TrimSpace(v)
 }
 
-// Disconnect takes magpie out of the agent's config and puts back what the
-// user had, the Agents page's "Disconnect from magpie" (Fate on Discord:
+// Disconnect takes fogway out of the agent's config and puts back what the
+// user had, the Agents page's "Disconnect from fogway" (Fate on Discord:
 // picking the agent's default did it, but nothing said so). Unwire first,
 // for an agent whose default would leave it as installed; then each field
-// still on magpie goes to its default, as picking it does, and so does
-// each one magpie set that reads as magpie set it (an effort). What magpie
+// still on fogway goes to its default, as picking it does, and so does
+// each one fogway set that reads as fogway set it (an effort). What fogway
 // remembered setting is forgotten.
 func (a *Agent) Disconnect() error {
 	if a.Native != nil {
@@ -670,8 +670,8 @@ func (a *Agent) Disconnect() error {
 	if !a.Wired() {
 		return nil
 	}
-	// the user's say, kept till they connect it again: nothing magpie does
-	// by itself (a start's Sync, Codex's account failover) puts magpie back
+	// the user's say, kept till they connect it again: nothing fogway does
+	// by itself (a start's Sync, Codex's account failover) puts fogway back
 	// in, this Disconnect's own writes included (paynezhuang on Discord)
 	stash(map[string]string{a.ID + disconnectedKey: "1"})
 	before, rec := a.Values(), appliedOf(a.ID)
@@ -683,9 +683,9 @@ func (a *Agent) Disconnect() error {
 	for _, f := range a.Fields {
 		vals := a.Values()
 		v := vals[f.Key]
-		// set by magpie: as it set it, or its group by the model's name
+		// set by fogway: as it set it, or its group by the model's name
 		set := v != "" && (rec.Fields[f.Key] == v || sameGroup(rec.Fields[f.Key], v)) && before[f.Key] == v
-		if v == "" || !set && v != magpieID && !magpieValue(a, f, v, vals) {
+		if v == "" || !set && v != fogwayID && !fogwayValue(a, f, v, vals) {
 			continue
 		}
 		if err := f.Set(""); err != nil {
@@ -698,7 +698,7 @@ func (a *Agent) Disconnect() error {
 	json.Unmarshal([]byte(unstash(a.ID+".connect.was")), &was)
 	after := a.Values()
 	for _, f := range a.Fields {
-		if w := was[f.Key]; w != "" && after[f.Key] == "" && w != magpieID && !magpieValue(a, f, w, was) {
+		if w := was[f.Key]; w != "" && after[f.Key] == "" && w != fogwayID && !fogwayValue(a, f, w, was) {
 			if err := f.Set(w); err != nil {
 				return fmt.Errorf("%s: %w", f.Label, err)
 			}
@@ -709,12 +709,12 @@ func (a *Agent) Disconnect() error {
 			return err
 		}
 	}
-	// what it was on through magpie, for switching it on again
-	back := reconnection{Magpie: map[string]string{}, Left: a.Values()}
+	// what it was on through fogway, for switching it on again
+	back := reconnection{Fogway: map[string]string{}, Left: a.Values()}
 	for _, f := range a.Fields {
 		if v := before[f.Key]; v != back.Left[f.Key] {
-			back.Magpie[f.Key] = v
-			if v == magpieID || magpieValue(a, f, v, before) {
+			back.Fogway[f.Key] = v
+			if v == fogwayID || fogwayValue(a, f, v, before) {
 				back.Routed = append(back.Routed, f.Key)
 			}
 		}
@@ -739,17 +739,17 @@ func (a *Agent) DisconnectOffline() error {
 }
 
 // reconnection is what Disconnect took an agent off: the values of its
-// fields it changed (Routed: those that were magpie's) and what it left
+// fields it changed (Routed: those that were fogway's) and what it left
 // every field at.
 type reconnection struct {
-	Magpie map[string]string `json:"magpie"`
+	Fogway map[string]string `json:"fogway"`
 	Routed []string          `json:"routed,omitempty"`
 	Left   map[string]string `json:"left"`
 }
 
 // reconnect puts back the models an agent was on when it was disconnected
 // (the owner: an agent remembers its last pick), if nothing has changed
-// it since and magpie still routes them; false when it doesn't apply.
+// it since and fogway still routes them; false when it doesn't apply.
 func (a *Agent) reconnect(now map[string]string) (bool, error) {
 	var rec reconnection
 	if json.Unmarshal([]byte(unstash(a.ID+".reconnect")), &rec) != nil || len(rec.Routed) == 0 {
@@ -762,32 +762,32 @@ func (a *Agent) reconnect(now map[string]string) (bool, error) {
 	}
 	for _, k := range rec.Routed {
 		f := a.Field(k)
-		if f == nil || rec.Magpie[k] != magpieID && !magpieValue(a, *f, rec.Magpie[k], rec.Magpie) {
+		if f == nil || rec.Fogway[k] != fogwayID && !fogwayValue(a, *f, rec.Fogway[k], rec.Fogway) {
 			return false, nil
 		}
 	}
-	// the models on magpie first, as Connect sets them (setting Gemini
-	// CLI's model signs it in through magpie, which its sign-in field
+	// the models on fogway first, as Connect sets them (setting Gemini
+	// CLI's model signs it in through fogway, which its sign-in field
 	// can't), then the rest that aren't so by then
 	var keys []string
 	for _, k := range rec.Routed {
-		if rec.Magpie[k] != magpieID {
+		if rec.Fogway[k] != fogwayID {
 			keys = append(keys, k)
 		}
 	}
 	for _, f := range a.Fields {
-		if _, ok := rec.Magpie[f.Key]; ok && !slices.Contains(keys, f.Key) {
+		if _, ok := rec.Fogway[f.Key]; ok && !slices.Contains(keys, f.Key) {
 			keys = append(keys, f.Key)
 		}
 	}
 	for _, k := range keys {
-		v := rec.Magpie[k]
+		v := rec.Fogway[k]
 		if v != a.Values()[k] {
 			if err := a.Apply(k, v); err != nil {
 				return true, err
 			}
 		} else {
-			// set along with the model (Codex's effort): magpie's as before,
+			// set along with the model (Codex's effort): fogway's as before,
 			// for Disconnect to take out again
 			record(a.ID, k, v)
 		}
@@ -837,29 +837,29 @@ func lastJSONLTime(path, key, textKey string) time.Time {
 }
 
 // sameHost: two URLs name the same server, whatever their scheme (Codex
-// asks magpie's http gateway over ws) or path.
+// asks fogway's http gateway over ws) or path.
 func sameHost(a, b string) bool { return hostOf(a) == hostOf(b) }
 
-// wiringOff checks what magpie wrote into an agent's config to reach the
+// wiringOff checks what fogway wrote into an agent's config to reach the
 // gateway — pairs of key and value, read with get — and says which no longer
 // holds, "" when all do. A URL is quoted; a key's value never is. A URL
-// that reaches magpie another way (reachesMagpie: a reverse proxy, #1985)
+// that reaches fogway another way (reachesFogway: a reverse proxy, #1985)
 // holds.
 func wiringOff(name, file string, get func(string) (string, bool), kvs ...string) string {
 	for i := 0; i+1 < len(kvs); i += 2 {
 		k, want := kvs[i], kvs[i+1]
 		v, _ := get(k)
-		if v == want || v != "" && reachesMagpie(v, want) {
+		if v == want || v != "" && reachesFogway(v, want) {
 			continue
 		}
 		where := name + "'s " + k + " (" + filepath.Base(file) + ")"
 		switch {
 		case v == "":
-			return where + " is gone, so it no longer reaches magpie"
+			return where + " is gone, so it no longer reaches fogway"
 		case strings.Contains(strings.ToLower(k), "url"):
-			return where + " is " + v + ", not magpie's gateway at " + want
+			return where + " is " + v + ", not fogway's gateway at " + want
 		default:
-			return where + " was changed, so magpie's gateway won't take its requests"
+			return where + " was changed, so fogway's gateway won't take its requests"
 		}
 	}
 	return ""

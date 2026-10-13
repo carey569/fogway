@@ -9,8 +9,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func TestOpenCodeVariants(t *testing.T) {
@@ -63,7 +63,7 @@ func mustJSON(t *testing.T, v any) string {
 	return string(b)
 }
 
-// TestOpenCodeWritesVariants: each model of magpie's in opencode.json names
+// TestOpenCodeWritesVariants: each model of fogway's in opencode.json names
 // the reasoning levels it has as variants — OpenCode 2 otherwise offers low,
 // medium and high for every one — and the rest of the entry is as before.
 func TestOpenCodeWritesVariants(t *testing.T) {
@@ -87,7 +87,7 @@ func TestOpenCodeWritesVariants(t *testing.T) {
 	}
 	path := filepath.Join(home, ".config", "opencode", "opencode.json")
 	writeFile(t, path, `{"theme":"dark"}`)
-	if err := opencode(home, filepath.Join(home, ".config")).Field("model").Set("magpie/think/deep"); err != nil {
+	if err := opencode(home, filepath.Join(home, ".config")).Field("model").Set("fogway/think/deep"); err != nil {
 		t.Fatal(err)
 	}
 	b, err := os.ReadFile(path)
@@ -105,10 +105,10 @@ func TestOpenCodeWritesVariants(t *testing.T) {
 	if err := json.Unmarshal(b, &cfg); err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Theme != "dark" || cfg.Model != "magpie/think/deep" {
+	if cfg.Theme != "dark" || cfg.Model != "fogway/think/deep" {
 		t.Fatalf("config: %s", b)
 	}
-	p := cfg.Provider["magpie"]
+	p := cfg.Provider["fogway"]
 	if p.NPM != "@ai-sdk/openai-compatible" {
 		t.Fatalf("npm %q", p.NPM)
 	}
@@ -153,7 +153,7 @@ func TestOpenCodeWritesVariants(t *testing.T) {
 // TestOpenCodeZenModelReasons: an OpenCode Zen model that thinks with no
 // levels to pick (mimo-v2.6-flash-free, models.dev: reasoning true, no
 // reasoning_options) is marked reasoning in opencode.json, which OpenCode's
-// model tooltip showed as 不支持推理 through magpie (#725); so is one whose
+// model tooltip showed as 不支持推理 through fogway (#725); so is one whose
 // levels hold OpenCode's own low, medium and high. One with fewer levels
 // isn't (OpenCode would add the levels it lacks), nor one that doesn't think.
 func TestOpenCodeZenModelReasons(t *testing.T) {
@@ -182,7 +182,7 @@ func TestOpenCodeZenModelReasons(t *testing.T) {
 	}
 	path := filepath.Join(home, ".config", "opencode", "opencode.json")
 	writeFile(t, path, `{}`)
-	if err := opencode(home, filepath.Join(home, ".config")).Field("model").Set("magpie/opencode-zen/mimo-v2.6-flash-free"); err != nil {
+	if err := opencode(home, filepath.Join(home, ".config")).Field("model").Set("fogway/opencode-zen/mimo-v2.6-flash-free"); err != nil {
 		t.Fatal(err)
 	}
 	b, err := os.ReadFile(path)
@@ -200,7 +200,7 @@ func TestOpenCodeZenModelReasons(t *testing.T) {
 	if err := json.Unmarshal(b, &cfg); err != nil {
 		t.Fatal(err)
 	}
-	ms := cfg.Provider["magpie"].Models
+	ms := cfg.Provider["fogway"].Models
 	for id, want := range map[string]bool{"mimo-v2.6-flash-free": true, "laguna-s-2.1-free": true,
 		"deepseek-v4-flash-free": false, "ling-2.6-flash-free": false} {
 		m, ok := ms["opencode-zen/"+id]

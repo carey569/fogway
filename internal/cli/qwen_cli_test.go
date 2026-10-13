@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-// `magpie qwen a/m` writes its provider entries and the gateway's key,
-// `magpie qwen default` takes magpie back out and restores the model the
+// `fogway qwen a/m` writes its provider entries and the gateway's key,
+// `fogway qwen default` takes fogway back out and restores the model the
 // user had, their own provider entry and settings kept.
 func TestAgentQwenDefault(t *testing.T) {
 	groupsHome(t)
@@ -46,7 +46,7 @@ func TestAgentQwenDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := read()
-	for _, want := range []string{`"id": "a/m"`, `"name": "m · A"`, `"MAGPIE_QWEN_API_KEY"`, `"selectedType": "openai"`, `"baseUrl": "https://idealab.example.com/v1"`, `"outputLanguage": "zh-CN"`} {
+	for _, want := range []string{`"id": "a/m"`, `"name": "m · A"`, `"FOGWAY_QWEN_API_KEY"`, `"selectedType": "openai"`, `"baseUrl": "https://idealab.example.com/v1"`, `"outputLanguage": "zh-CN"`} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("not wired (%s missing):\n%s", want, s)
 		}

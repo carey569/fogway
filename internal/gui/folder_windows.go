@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/fogway/fogway/internal/proc"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/yetone/magpie/internal/proc"
 )
 
 // openFolder starts Explorer on the folder and leaves it to open: not on the

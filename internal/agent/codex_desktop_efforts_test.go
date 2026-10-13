@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // #310: the Codex app's model picker offers only the efforts in its
 // [desktop] enabled-reasoning-efforts (unset: low … xhigh, ultra,
-// persistent), so a magpie model's "max" was never offered. Routed to one,
-// magpie adds what its models take and the app knows; the user's entries,
+// persistent), so a fogway model's "max" was never offered. Routed to one,
+// fogway adds what its models take and the app knows; the user's entries,
 // order and comments stay, and nothing is written when nothing is missing.
 func TestCodexDesktopEfforts(t *testing.T) {
 	setup := func(t *testing.T, config string) (string, func() string) {
@@ -53,7 +53,7 @@ func TestCodexDesktopEfforts(t *testing.T) {
 		}
 		// again: nothing missing, nothing written
 		before, _ := os.Stat(filepath.Join(home, ".codex", "config.toml"))
-		if err := codexEnableEfforts(filepath.Join(home, ".codex", "config.toml"), magpieModels("codex")); err != nil {
+		if err := codexEnableEfforts(filepath.Join(home, ".codex", "config.toml"), fogwayModels("codex")); err != nil {
 			t.Fatal(err)
 		}
 		if after, _ := os.Stat(filepath.Join(home, ".codex", "config.toml")); !after.ModTime().Equal(before.ModTime()) || read() != cfg {

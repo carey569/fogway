@@ -20,7 +20,7 @@ const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skill
 const sk = (name) => ({ name, description: name + " skill", kind: "github", source: `https://github.com/${REPO}/tree/HEAD/skills/${name}`, agents: ["claude", "codex"], check: { name, status: "current" } });
 const fresh = (name, description) => ({ id: `https://github.com/${REPO}/tree/HEAD/skills/${name}`, name, description, repo: REPO, path: "skills/" + name, from: `https://github.com/${REPO}/tree/HEAD/skills`, agents: ["claude", "codex"] });
 const lib = (st) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex"), agent("pi", "Pi")],
   instructions: { agents: [] }, servers: [], skills: st.skills, foundServers: [], projects: [], foundSkills: [],
   newSkills: st.checked ? st.newSkills : [],
@@ -78,12 +78,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const st = { checked: false, skills: [sk("dbs"), sk("dbs-goal")], newSkills: [fresh("dbs-hook", "Hooks"), fresh("dbs-save", "Saves"), fresh("dbs-xhs-title", "Titles")] };
         // all of the page in view, the narrow one too
         const ctx = await browser.newContext({ viewport: { width, height: 1300 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, posts, st));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
         const v = page.locator("#view-library");

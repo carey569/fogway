@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/pluginrt"
-	_ "github.com/yetone/magpie/plugins/all"
+	"github.com/fogway/fogway/internal/pluginrt"
+	_ "github.com/fogway/fogway/plugins/all"
 )
 
 func builtinHome(t *testing.T) http.Handler {

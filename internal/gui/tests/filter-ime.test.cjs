@@ -15,7 +15,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
-const assets = process.env.MAGPIE_FILTER_ASSETS || path.resolve(__dirname, "../assets");
+const assets = process.env.FOGWAY_FILTER_ASSETS || path.resolve(__dirname, "../assets");
 
 const models = [
   { id: "a/one", name: "one", providerName: "A", icon: "generic" },
@@ -118,7 +118,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, held));
-        await page.goto("http://magpie.test/?view=" + view);
+        await page.goto("http://fogway.test/?view=" + view);
         return { page, errors };
       };
       // typeIn: through an IME where there is one to drive, by key elsewhere

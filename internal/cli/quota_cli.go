@@ -9,42 +9,42 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-const quotaUsage = `usage: magpie quota [<provider>…] [--json]
-       magpie quota alert [<percent>|off] [--balance <amount>|off]
-       magpie quota wait <provider|account> [--timeout <duration>] [--quiet]
-       magpie quota history [<provider|account>…] [--days <n>] [--json]
-  what is left of every subscription, plan and key magpie has: each window's use and
+const quotaUsage = `usage: fogway quota [<provider>…] [--json]
+       fogway quota alert [<percent>|off] [--balance <amount>|off]
+       fogway quota wait <provider|account> [--timeout <duration>] [--quiet]
+       fogway quota history [<provider|account>…] [--days <n>] [--json]
+  what is left of every subscription, plan and key fogway has: each window's use and
   when it starts again, and each key's balance, asked of the vendors now (or less than
   a minute ago). --json is for scripts and agents, each entry with lastServedAt, when it
   last answered through the gateway, and last: true on the latest; the gateway answers the same at
-  GET http://127.0.0.1:3425/v1/magpie/quotas (on Settings' Gateway port), and to another machine only while magpie is
+  GET http://127.0.0.1:3725/v1/fogway/quotas (on Settings' Gateway port), and to another machine only while fogway is
   shared on the local network, with its key as the API key (Authorization: Bearer or x-api-key)
-  quota alert 80 has the magpie app notify when any window of a subscription or plan
+  quota alert 80 has the fogway app notify when any window of a subscription or plan
   reaches 80% used, once each time the window runs (not windows set aside, such as
   on-demand spending); --balance 5 when a balance falls to 5 or under, in its own
   currency or credits, once until topped up past it. off turns either off, and alone
   it says what is set. Both are off until set.
-  quota wait codex returns once any Codex account magpie has on has allowance again
+  quota wait codex returns once any Codex account fogway has on has allowance again
   (a window that stops it no longer used up), and an account's email or login, or
   <provider>/<account>, waits for that one alone: it reads the vendors itself, gateway
   running or not, again shortly after the soonest reset (every 1 to 10 minutes), and
   says on stderr what it waits for. For a script to go on with work it stopped:
-  until codex exec …; do magpie quota wait codex || break; done. Exit 0 once there
+  until codex exec …; do fogway quota wait codex || break; done. Exit 0 once there
   is allowance, 1 when --timeout (30m, 6h) passes first, 2 for a name it doesn't
   know, 130 on Ctrl+C.
-  quota history is what magpie has read of each subscription's and plan's windows
+  quota history is what fogway has read of each subscription's and plan's windows
   over time, kept 45 days (UTC times, a reading only when it changed, each window's
   runs apart by when they reset): the latest readings of each window, or with --json
-  every one since --days days ago, as GET /v1/magpie/quotas/history?days=&provider=&user=
+  every one since --days days ago, as GET /v1/fogway/quotas/history?days=&provider=&user=
   answers. A provider, an account's email or login, or <provider>/<account> narrows it.
   A reading is kept at the time it was read: a Claude account's, which Claude Code
   tells only as it answers or runs /usage, isn't written again each time it is shown.`
 
-// quotaCmd: magpie quota [<provider>…] [--json]
+// quotaCmd: fogway quota [<provider>…] [--json]
 func quotaCmd(args []string) error {
 	if len(args) > 1 && args[1] == "alert" {
 		return quotaAlertCmd(args[2:])
@@ -68,7 +68,7 @@ func quotaCmd(args []string) error {
 			only = append(only, strings.ToLower(a))
 		}
 	}
-	// magpie quota is the user asking: read even when allowances are read
+	// fogway quota is the user asking: read even when allowances are read
 	// only when asked (#1518)
 	ctx, cancel := context.WithTimeout(provider.Asked(context.Background()), 15*time.Second)
 	defer cancel()
@@ -113,7 +113,7 @@ func quotaCmd(args []string) error {
 		line += quotaReadingCell(q.AsOf, q.ReadAt, q.Windows)
 		fmt.Println(line)
 	}
-	fmt.Println(faint.Render("  % is how much of a window is used · ↻ when it starts again · --json for scripts, or GET /v1/magpie/quotas on the gateway"))
+	fmt.Println(faint.Render("  % is how much of a window is used · ↻ when it starts again · --json for scripts, or GET /v1/fogway/quotas on the gateway"))
 	return nil
 }
 
@@ -124,7 +124,7 @@ func balanceCell(balance, id, user string) string {
 	return cell
 }
 
-// quotaAlertCmd: magpie quota alert [<percent>|off] [--balance <amount>|off]
+// quotaAlertCmd: fogway quota alert [<percent>|off] [--balance <amount>|off]
 // — the usage alerts Settings sets (#368), the notifications the app shows.
 func quotaAlertCmd(args []string) error {
 	s := settings.Load()
@@ -183,7 +183,7 @@ func quotaAlertCmd(args []string) error {
 		fmt.Println("; no balance alert")
 	}
 	if s.UsageAlert > 0 || s.BalanceAlert > 0 {
-		fmt.Println(muted.Render("  the notifications come from the magpie app, while it runs"))
+		fmt.Println(muted.Render("  the notifications come from the fogway app, while it runs"))
 	}
 	return nil
 }
@@ -230,7 +230,7 @@ func withUntold(qs []provider.Quota, only []string) ([]provider.Quota, error) {
 	return qs, nil
 }
 
-// quotaHistoryCmd: magpie quota history [<provider|account>…] [--days <n>] [--json]
+// quotaHistoryCmd: fogway quota history [<provider|account>…] [--days <n>] [--json]
 func quotaHistoryCmd(args []string) error {
 	asJSON, days := false, ""
 	var only []string
@@ -277,7 +277,7 @@ func quotaHistoryCmd(args []string) error {
 		if len(only) > 0 {
 			return fmt.Errorf("no readings kept of %s", strings.Join(only, ", "))
 		}
-		fmt.Println(muted.Render("nothing kept yet ·"), "a subscription's or plan's windows are kept here as magpie reads them")
+		fmt.Println(muted.Render("nothing kept yet ·"), "a subscription's or plan's windows are kept here as fogway reads them")
 		return nil
 	}
 	for _, h := range hs {
@@ -290,7 +290,7 @@ func quotaHistoryCmd(args []string) error {
 			fmt.Println("  " + l.Name + "  " + quotaPointsCell(l.Points, 8))
 		}
 	}
-	fmt.Println(faint.Render("  % is how much was left · ↻ a new run of the window · --json for every reading, or GET /v1/magpie/quotas/history on the gateway"))
+	fmt.Println(faint.Render("  % is how much was left · ↻ a new run of the window · --json for every reading, or GET /v1/fogway/quotas/history on the gateway"))
 	return nil
 }
 

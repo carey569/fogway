@@ -47,7 +47,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", serve());
-    await page.goto("http://magpie.test/?view=routing");
+    await page.goto("http://fogway.test/?view=routing");
     await page.locator(".rt-group").nth(30).waitFor();
     const bar = () => page.evaluate(() => {
       const v = [...document.querySelectorAll(".view")].find((x) => x.offsetParent && x.scrollHeight > x.clientHeight);

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
 func reportedHome(t *testing.T) {
@@ -35,7 +35,7 @@ func forgetReported() {
 }
 
 // A reported call (#1874) is written beside the gateway's own, marked
-// reported: priced at magpie's prices when it said no cost, at its own
+// reported: priced at fogway's prices when it said no cost, at its own
 // when it did; counted in the totals and in a source of its own, which
 // via=reported narrows to and the gateway's "through" leaves out. A rid
 // already reported is skipped, in one batch, in a later one, and after a
@@ -78,7 +78,7 @@ func TestIngestReported(t *testing.T) {
 		byRID[r.RequestID+"/"+r.Source] = r
 	}
 	if r := byRID["r-1/reported"]; !r.Priced || math.Abs(r.Cost-priced) > 1e-9 || SourceOf(r) != SourceReported {
-		t.Fatalf("priced at magpie's prices: %+v", r)
+		t.Fatalf("priced at fogway's prices: %+v", r)
 	}
 	if r := byRID["r-2/reported"]; !r.Priced || r.Cost != own || r.OwnCost == nil || *r.OwnCost != own {
 		t.Fatalf("its own cost: %+v", r)

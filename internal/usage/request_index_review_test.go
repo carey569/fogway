@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/sessions"
+	"github.com/fogway/fogway/internal/sessions"
 )
 
 func TestQueryPageIOOutsideCacheLock(t *testing.T) {

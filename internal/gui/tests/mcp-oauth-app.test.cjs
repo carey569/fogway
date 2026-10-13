@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // 新v学员 on Discord: GitHub's remote MCP server signs in with GitHub's own
-// OAuth, which doesn't let an app register itself, so magpie couldn't sign
+// OAuth, which doesn't let an app register itself, so fogway couldn't sign
 // in to it. The server's editor takes an OAuth app of the user's own (a
 // client ID, its secret, a callback port: Claude Code's --client-id,
 // --client-secret, --callback-port), and the sign-in's error says so and
@@ -23,11 +23,11 @@ const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skill
 const GH = "https://api.githubcopilot.com/mcp/";
 const ID = "Ov23liAbCdEfGhIjKlMn", SECRET = "0123456789abcdef0123456789abcdef01234567";
 // mcpauth.ErrNoRegistration, as the backend says it
-const NO_REG = "the server's sign-in doesn't let an app register itself (no dynamic client registration), so magpie signs in to it only as an OAuth app of your own: make one with the server's vendor (GitHub's under Settings › Developer settings › OAuth Apps), with http://localhost/callback as its callback URL, then give its client ID and secret under \"OAuth app\" in the server's editor";
+const NO_REG = "the server's sign-in doesn't let an app register itself (no dynamic client registration), so fogway signs in to it only as an OAuth app of your own: make one with the server's vendor (GitHub's under Settings › Developer settings › OAuth Apps), with http://localhost/callback as its callback URL, then give its client ID and secret under \"OAuth app\" in the server's editor";
 
 function server(lang, calls) {
   const lib = {
-    dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+    dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
     agents: [agent("claude", "Claude Code")],
     instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], skills: [],
     servers: [{ name: "github", transport: "http", url: GH, agents: ["claude"], signIn: { signedIn: false } }],
@@ -82,12 +82,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const w = (s, v) => tr(lang, s, v);
           const calls = [];
           const ctx = await browser.newContext({ viewport: { width, height: 800 } });
-          await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+          await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
           const page = await ctx.newPage();
           page.setDefaultTimeout(5000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang, calls));
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator('button[data-view="library"]').click();
           const row = page.locator("#view-library .lib-server", { has: page.locator('.lib-health[data-server="github"]') });
           const ed = page.locator("#modal .lib-editor");

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // The add form's Fetch models (#578) asks the vendor for its list with the

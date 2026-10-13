@@ -8,14 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 func TestOTelPreferencesAPI(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "config"))
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	t.Setenv("MAGPIE_OTEL_ENDPOINT", "https://environment.test")
-	t.Setenv("MAGPIE_OTEL_HEADERS", "Authorization=PRIVATE-ENV-SECRET")
+	t.Setenv("FOGWAY_OTEL_ENDPOINT", "https://environment.test")
+	t.Setenv("FOGWAY_OTEL_HEADERS", "Authorization=PRIVATE-ENV-SECRET")
 	h := Handler(nil, nil)
 	r := httptest.NewRecorder()
 	h.ServeHTTP(r, httptest.NewRequest("POST", "/api/settings", strings.NewReader(`{"otel":{"enabled":true,"endpoint":"https://saved.test/","headers":{"Authorization":"Bearer saved"}}}`)))

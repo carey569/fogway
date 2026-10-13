@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 // its requests come with GitHubCopilotChat/<version>
@@ -54,7 +54,7 @@ func TestVSCodeInsiders(t *testing.T) {
 		t.Fatal(err)
 	}
 	g, ok := edit.GetJSONItem(filepath.Join(ins.Dir, "chatLanguageModels.json"), vscodeGroup)
-	if !ok || gjson.Get(g, "models.0.requestHeaders.Authorization").String() != "Bearer magpie-vscode-insiders" || !ins.Wired() || ins.Check() != "" {
+	if !ok || gjson.Get(g, "models.0.requestHeaders.Authorization").String() != "Bearer fogway-vscode-insiders" || !ins.Wired() || ins.Check() != "" {
 		t.Fatalf("connected: %s %v %q", g, ins.Wired(), ins.Check())
 	}
 	if readFile(st.Path) != `{"chat.defaultModel": "gpt-5"}`+"\n" || isFile(filepath.Join(st.Dir, "chatLanguageModels.json")) || st.Wired() {
@@ -71,7 +71,7 @@ func TestVSCodeInsiders(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, ok := edit.GetJSONItem(filepath.Join(ins.Dir, "chatLanguageModels.json"), vscodeGroup); ok || ins.Wired() {
-		t.Fatal("disconnected, magpie's group kept")
+		t.Fatal("disconnected, fogway's group kept")
 	}
 }
 

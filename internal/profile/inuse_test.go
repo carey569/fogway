@@ -3,7 +3,7 @@ package profile
 import (
 	"testing"
 
-	"github.com/yetone/magpie/internal/agent"
+	"github.com/fogway/fogway/internal/agent"
 )
 
 // inUse is which of the saved profiles InUse names, read as the GUI's state

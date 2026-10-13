@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Plugins kept on this computer: the market's field takes a folder, chosen
-// with the system's picker rather than typed — and `magpie web`, which has
+// with the system's picker rather than typed — and `fogway web`, which has
 // no picker, offers no button for it. A folder plugin's page shows the
 // README that folder carries, where npm knows nothing of it: no npm link,
 // the version facts left out, and the folder's own name for the plugin.
@@ -22,7 +22,7 @@ const README = [
   "## Install",
   "",
   "```sh",
-  "magpie plugin add " + FOLDER,
+  "fogway plugin add " + FOLDER,
   "```",
 ].join("\n");
 
@@ -59,7 +59,7 @@ function server(lang, asked, opts = {}) {
     }
     if (url.pathname === "/api/open") { asked.push(["open", body()]); return route.fulfill({ status: 204 }); }
     if (url.pathname.startsWith("/api/")) return json({});
-    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "magpie.test") { asked.push(["fetched", url.href]); return route.fulfill({ status: 404, body: "" }); }
+    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "fogway.test") { asked.push(["fetched", url.href]); return route.fulfill({ status: 404, body: "" }); }
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -91,7 +91,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, asked));
 
-        await page.goto("http://magpie.test/?view=plugins");
+        await page.goto("http://fogway.test/?view=plugins");
         const view = page.locator("#view-plugins");
         await view.waitFor({ state: "visible" });
 
@@ -136,13 +136,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       });
     }
 
-    // `magpie web` has no picker: no button, and the field is typed into
-    await t.test("no picker where magpie can't show one", async () => {
+    // `fogway web` has no picker: no button, and the field is typed into
+    await t.test("no picker where fogway can't show one", async () => {
       const asked = [];
       const page = await (await browser.newContext({ viewport: { width: 980, height: 820 } })).newPage();
       page.setDefaultTimeout(5000);
       await page.route("**/*", server("en", asked, { picker: false }));
-      await page.goto("http://magpie.test/?view=plugins");
+      await page.goto("http://fogway.test/?view=plugins");
       const manual = page.locator("#view-plugins .pm-manual");
       await manual.waitFor();
       assert.equal(await manual.locator(".pm-browse").count(), 0, "no picker to offer");

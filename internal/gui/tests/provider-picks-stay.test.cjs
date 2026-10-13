@@ -77,7 +77,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const shut = () => { gate.waiting = 0; gate.shut = new Promise((r) => { release = () => { gate.shut = null; r(); }; }); };
       const posts = [];
       await page.route("**/*", serve(lang, gate, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
 
       const editor = page.locator("#modal:not([hidden]) .editor");
       const open = async (name) => {

@@ -13,10 +13,10 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/loosheng";
-const LIB = `${HOME}/.config/magpie/library`;
+const LIB = `${HOME}/.config/fogway/library`;
 const agent = (id, name, icon, more = {}) => ({ id, name, icon, skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json`, ...more });
 const base = () => ({
-  dir: LIB, backups: `${HOME}/.config/magpie/backups`, home: HOME,
+  dir: LIB, backups: `${HOME}/.config/fogway/backups`, home: HOME,
   agents: [
     agent("claude", "Claude Code", "claudecode-color"),
     agent("codex", "Codex", "codex-color"),
@@ -73,7 +73,7 @@ const words = {
     bring: "Lists it in the library where it is, nothing moved: you can give it to any agent",
     always: (a) => `${a} reads ~/.agents/skills itself, where this skill is kept — it has it whatever is ticked here`,
     stays: "It is taken out of every agent it was given to. The folder it was linked from stays where it is.",
-    moved: "It is taken out of every agent it was given to, and its folder is moved to magpie's backups.",
+    moved: "It is taken out of every agent it was given to, and its folder is moved to fogway's backups.",
     cancel: "Cancel",
   },
   zh: {
@@ -81,7 +81,7 @@ const words = {
     bring: "在原处列入资源库，不移动文件：可分配给任何 Agent",
     always: (a) => `${a} 会自行读取此技能所在的 ~/.agents/skills，无论是否勾选都能使用`,
     stays: "将从所有已启用的 Agent 中移除，链接的原文件夹保持不动。",
-    moved: "将从所有已启用的 Agent 中移除，文件夹移到 magpie 的备份。",
+    moved: "将从所有已启用的 Agent 中移除，文件夹移到 fogway 的备份。",
     cancel: "取消",
   },
 };
@@ -97,12 +97,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     });
     const open = async (lang, posts) => {
       const ctx = await browser.newContext({ viewport: { width: 980, height: 800 } });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
-      await page.route("http://magpie.test/**", server(lang, posts));
-      await page.goto("http://magpie.test/");
+      await page.route("http://fogway.test/**", server(lang, posts));
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
       // the page's entrance played out: a button still sliding in isn't

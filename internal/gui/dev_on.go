@@ -21,15 +21,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
 // Development build (`make dev`): the UI is read from internal/gui/assets on
 // every request, and the page reloads itself when a file there changes.
 //
 // `make dev` also splits the app in two, so a Go change doesn't close the
-// windows: a shell (MAGPIE_DEV_ROLE=shell) has the windows and the tray and
-// passes every request on to a backend (MAGPIE_DEV_ROLE=backend) with the
+// windows: a shell (FOGWAY_DEV_ROLE=shell) has the windows and the tray and
+// passes every request on to a backend (FOGWAY_DEV_ROLE=backend) with the
 // API and the gateway. A Go change rebuilds and restarts only the backend;
 // the page, told so, refreshes what it shows in place. What the backend asks
 // of the windows goes back to the shell's control address.
@@ -115,11 +115,11 @@ func devPage(next http.Handler) http.Handler {
 	})
 }
 
-// devListen also serves the whole UI over plain HTTP when MAGPIE_DEV_UI names
+// devListen also serves the whole UI over plain HTTP when FOGWAY_DEV_UI names
 // an address, so it can be opened in a browser with real devtools. The
 // window actions become no-ops there; everything else is the real thing.
 func devListen(h http.Handler) {
-	addr := os.Getenv("MAGPIE_DEV_UI")
+	addr := os.Getenv("FOGWAY_DEV_UI")
 	if addr == "" {
 		return
 	}
@@ -133,14 +133,14 @@ func devListen(h http.Handler) {
 	go devUI.Serve(ln)
 }
 
-// devUI is the page served on MAGPIE_DEV_UI, nil when it isn't.
+// devUI is the page served on FOGWAY_DEV_UI, nil when it isn't.
 var devUI *http.Server
 
 // devRole is this process's half of `make dev`: "backend", "shell", or ""
 // for the whole app in one process.
-func devRole() string { return os.Getenv("MAGPIE_DEV_ROLE") }
+func devRole() string { return os.Getenv("FOGWAY_DEV_ROLE") }
 
-// devBackend serves the page and the API on MAGPIE_DEV_BACKEND for the shell.
+// devBackend serves the page and the API on FOGWAY_DEV_BACKEND for the shell.
 //
 // A restart is a handover (build/dev.sh): the new backend listens on the
 // same addresses beside this one, then this one is sent handoverSignal and
@@ -149,8 +149,8 @@ func devRole() string { return os.Getenv("MAGPIE_DEV_ROLE") }
 // longer cuts off the agents using the dev gateway.
 func devBackend(handler func(Windows) http.Handler) error {
 	gateway.Handover = handoverSignal != nil
-	addr := os.Getenv("MAGPIE_DEV_BACKEND")
-	h := handler(remoteWindows(os.Getenv("MAGPIE_DEV_CONTROL")))
+	addr := os.Getenv("FOGWAY_DEV_BACKEND")
+	h := handler(remoteWindows(os.Getenv("FOGWAY_DEV_CONTROL")))
 	ln, err := gateway.Listen(addr)
 	if err != nil {
 		return err
@@ -325,11 +325,11 @@ func devShell(h *host) http.Handler {
 		rw.WriteHeader(http.StatusNoContent)
 	})
 	go func() {
-		if err := http.ListenAndServe(os.Getenv("MAGPIE_DEV_CONTROL"), control); err != nil {
+		if err := http.ListenAndServe(os.Getenv("FOGWAY_DEV_CONTROL"), control); err != nil {
 			log.Println("dev control:", err)
 		}
 	}()
-	p := httputil.NewSingleHostReverseProxy(&url.URL{Scheme: "http", Host: os.Getenv("MAGPIE_DEV_BACKEND")})
+	p := httputil.NewSingleHostReverseProxy(&url.URL{Scheme: "http", Host: os.Getenv("FOGWAY_DEV_BACKEND")})
 	p.Transport = backendClient.Transport
 	// A restart cuts off whatever was in flight. A read is asked again, of
 	// the backend that comes up (the dial waits for it), so the page never
@@ -358,7 +358,7 @@ func stash(link string) string {
 	if devRole() != "shell" {
 		return stashImport(link)
 	}
-	res, err := backendClient.PostForm("http://"+os.Getenv("MAGPIE_DEV_BACKEND")+"/api/dev/import", url.Values{"link": {link}})
+	res, err := backendClient.PostForm("http://"+os.Getenv("FOGWAY_DEV_BACKEND")+"/api/dev/import", url.Values{"link": {link}})
 	if err != nil {
 		log.Println("dev import:", err)
 		return ""

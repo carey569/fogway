@@ -52,7 +52,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, [anthropic], posted));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#addProvider").click();
         const sheet = page.locator("#addSheet");
         await sheet.locator(".tile").first().waitFor();
@@ -78,7 +78,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server("en", list, []));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const r = page.locator('#providers .row[data-id="chatgpt-api"]');
       await r.waitFor();
       assert.match(await r.textContent(), /ChatGPT Plus/);

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agentenv"
+	"github.com/fogway/fogway/internal/agentenv"
 )
 
 // folderOnly is a window host whose OpenFolder does nothing.

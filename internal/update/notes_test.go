@@ -36,7 +36,7 @@ func TestShowNotes(t *testing.T) {
 }
 
 func TestStripInstall(t *testing.T) {
-	md := "## Bug Fixes\n\n- Fixed a thing. (#464)\n\n### Install\n\nDownload from [usemagpie.ai](https://usemagpie.ai).\n\n- **macOS:** `magpie.dmg`\n"
+	md := "## Bug Fixes\n\n- Fixed a thing. (#464)\n\n### Install\n\nDownload from [usemagpie.ai](https://usemagpie.ai).\n\n- **macOS:** `fogway.dmg`\n"
 	if got, want := StripInstall(md), "## Bug Fixes\n\n- Fixed a thing. (#464)"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -102,7 +102,7 @@ func TestNotesBetween(t *testing.T) {
 		}})
 	}))
 	defer srv.Close()
-	t.Setenv("MAGPIE_NOTES_FEED", srv.URL)
+	t.Setenv("FOGWAY_NOTES_FEED", srv.URL)
 	got, err := NotesBetween(context.Background(), "0.1.600", "0.1.604", "")
 	if err != nil {
 		t.Fatal(err)

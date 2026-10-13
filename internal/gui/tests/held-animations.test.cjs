@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve);
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-ctx .ctx-waffle > i").first().waitFor();
       assert.equal(await page.locator(".rt-ctx .ctx-waffle > i").count(), 400);
       // the cells come in, staggered: the last has begun within 1.5s

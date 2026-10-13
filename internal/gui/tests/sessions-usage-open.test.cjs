@@ -3,7 +3,7 @@
 // had resume, delete and the trash but no tokens or cost; Usage → Sessions'
 // latest sessions had tokens, cost and models but no delete, and both could
 // resume and open the same details). Now each Sessions page row shows what
-// the session spent, and its details the models and where magpie routed it;
+// the session spent, and its details the models and where fogway routed it;
 // its filter finds a model. Usage's list keeps its numbers, under the page's
 // range and filters, and a row there opens the session on the Sessions page:
 // on its agent, its folder unfolded, the row opened and brought into sight
@@ -61,7 +61,7 @@ function serve(lang) {
           { agent: "claude", count: store.claude.length, deletable: true, name: "Claude Code", icon: "claudecode-color" },
           { agent: "codex", count: store.codex.length, deletable: true, name: "Codex", icon: "openai" },
         ],
-        agent, sessions: store[agent].map(managed), terminal: true, trash: [], trashDir: "~/magpie/trash/sessions",
+        agent, sessions: store[agent].map(managed), terminal: true, trash: [], trashDir: "~/fogway/trash/sessions",
       });
     }
     if (url.pathname === "/api/groups") return json({ groups: [] });
@@ -97,8 +97,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("console", (m) => { if (m.type() === "warning" && /refused/.test(m.text())) errors.push(m.text()); });
       await page.route("**/*", serve(lang));
-      await page.addInitScript(() => { localStorage.setItem("magpie.usageTab", "sessions"); localStorage.setItem("magpie.sessRange", "all"); });
-      await page.goto("http://magpie.test/?view=usage");
+      await page.addInitScript(() => { localStorage.setItem("fogway.usageTab", "sessions"); localStorage.setItem("fogway.sessRange", "all"); });
+      await page.goto("http://fogway.test/?view=usage");
 
       // the reader's wheel brings a row into sight (a scroll by code is put back)
       const reach = async (v, l) => {
@@ -154,7 +154,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.match(await r12.locator(".sub").innerText(), /claude-opus-4 → opus-x · high/);
       assert(await r12.locator(".sess-resume").isVisible(), "resume stays on the Sessions page");
       assert(await r12.locator(".sm-del").count() === 1, "and delete");
-      // its details: what each model spent, and where magpie routed it
+      // its details: what each model spent, and where fogway routed it
       const det = view.locator(".sm-item.open .sess-detail");
       assert.match(await det.locator(".sess-models").innerText(), /claude-opus-4/);
       assert((await det.locator(".sess-line .k").allInnerTexts()).includes(w.routed));

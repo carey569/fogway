@@ -68,7 +68,7 @@ const rows = page => page.locator(".accts [data-account-id]");
 const ids = page => rows(page).evaluateAll(rs => rs.map(r => r.dataset.accountId));
 const settled = page => page.waitForFunction(() => !accountArranging && !accountSaving);
 async function open(page, id) {
-  await page.goto(`http://magpie.test/?view=providers&edit=${id}`);
+  await page.goto(`http://fogway.test/?view=providers&edit=${id}`);
   await rows(page).first().waitFor();
 }
 async function point(row) {
@@ -181,7 +181,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     assert(await page.evaluate(() => { const row = document.querySelector(".acc.dragging"); renderProviders(); return row === document.querySelector(".acc.dragging") && accountRenderPending; }));
     await page.mouse.up(); await settled(page); await checkFirst(page, f, "antigravity");
     // Existing Agent sorting still works, with no unused landing styles.
-    await page.goto("http://magpie.test/?view=agents");
+    await page.goto("http://fogway.test/?view=agents");
     await page.locator("#agents > .agent").first().waitFor();
     const agents = await page.locator("#agents > .agent").evaluateAll(rs => rs.map(r => ({ id: r.dataset.id, box: r.querySelector(".ag-handle").getBoundingClientRect().toJSON() })));
     const h = agents[0].box, target = agents[1].box;

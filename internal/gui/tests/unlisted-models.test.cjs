@@ -17,8 +17,8 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 const options = [
-  { value: "magpie/group/mine", label: "Mine", note: "routing group · via magpie", group: "Routing groups", ref: "group/mine", icon: "generic" },
-  { value: "magpie/other/m1", label: "m1", note: "Other · via magpie", group: "Other", ref: "other/m1", icon: "generic" },
+  { value: "fogway/group/mine", label: "Mine", note: "routing group · via fogway", group: "Routing groups", ref: "group/mine", icon: "generic" },
+  { value: "fogway/other/m1", label: "m1", note: "Other · via fogway", group: "Other", ref: "other/m1", icon: "generic" },
 ];
 const unlisted = [
   { id: "hunyuan/hy4", name: "hy4", provider: "Hunyuan", icon: "generic", groups: [] },
@@ -47,7 +47,7 @@ const words = {
 };
 
 function serve(lang, posts) {
-  const state = () => ({ agents: [{ id: "claude", name: "Claude Code", path: "/test/claude", wired: true, fields: [{ key: "model", label: "model", value: "magpie/other/m1", options }] }],
+  const state = () => ({ agents: [{ id: "claude", name: "Claude Code", path: "/test/claude", wired: true, fields: [{ key: "model", label: "model", value: "fogway/other/m1", options }] }],
     profiles: [], unlisted, settings: { lang, theme: "light" } });
   const groups = { groups: [], pools: [], deciders: [], models: [{ id: "hunyuan/hy4", name: "hy4", provider: "hunyuan", providerName: "Hunyuan", icon: "generic" }] };
   return async (r) => {
@@ -100,7 +100,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the window's picker: hy3 is reached through Mine, picked at a click
       let posts = [];
-      let page = await open("http://magpie.test/", posts);
+      let page = await open("http://fogway.test/", posts);
       // connected: its picker is in its row
       const field = page.locator(`${row} > .field.ag-start[data-key="model"]`);
       await field.waitFor();
@@ -115,7 +115,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await kept.getByRole("button", { name: w.pick }).click();
       await page.waitForFunction(() => document.querySelector("#pop").hidden);
       for (let i = 0; i < 40 && !posts.some((p) => p.path === "/api/set"); i++) await page.waitForTimeout(50);
-      assert.deepEqual(posts.find((p) => p.path === "/api/set")?.body, { agent: "claude", field: "model", value: "magpie/group/mine" });
+      assert.deepEqual(posts.find((p) => p.path === "/api/set")?.body, { agent: "claude", field: "model", value: "fogway/group/mine" });
       assert.equal(await view.evaluate((v) => v.scrollTop), top, "the pick moved the page");
 
       // hy4, in none: said, and a click opens a new group of it, saved as one
@@ -137,7 +137,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(saved.id, "hy4");
 
       // the provider's editor names the model in no group under the tick
-      page = await open("http://magpie.test/?view=providers", posts);
+      page = await open("http://fogway.test/?view=providers", posts);
       await page.locator(".row.provider", { hasText: "Hunyuan" }).click();
       const lost = page.locator(".editor .model-hint.warn");
       await lost.waitFor();
@@ -153,13 +153,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(await ed2.locator("input").first().inputValue(), "hy4");
 
       // opened with ?newgroup=, as the tray panel asks the window
-      page = await open("http://magpie.test/?view=routing&newgroup=hunyuan%2Fhy4", posts);
+      page = await open("http://fogway.test/?view=routing&newgroup=hunyuan%2Fhy4", posts);
       await page.locator(".rt-gedit").waitFor();
       assert.equal(await page.locator(".rt-gedit input").first().inputValue(), "hy4");
 
       // the tray panel opens the window on it
       posts = [];
-      page = await open("http://magpie.test/?mode=panel", posts, { width: 440, height: 620 });
+      page = await open("http://fogway.test/?mode=panel", posts, { width: 440, height: 620 });
       await page.locator(`${row} .ag-sum`).click();
       await page.waitForTimeout(500);
       await filterFor(page, page.locator(`${row} .ag-open .field[data-key="model"]`), "hy4");

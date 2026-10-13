@@ -40,7 +40,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
         await route.fulfill({ body: await fs.readFile(file), contentType });
       });
-      await page.goto("http://magpie.test/?view=agents");
+      await page.goto("http://fogway.test/?view=agents");
       await page.locator("#sync").waitFor();
       const end = await page.evaluate(() => new Promise((done) => {
         const b = document.querySelector("#sync");

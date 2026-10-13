@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 func TestPurposeAssetMatchesUsage(t *testing.T) {

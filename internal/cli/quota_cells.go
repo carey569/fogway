@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // openInBrowser opens url in the user's browser. It is a variable so the
@@ -37,7 +37,7 @@ type quotaSpan = provider.QuotaSpan
 func quotaCell(w quotaSpan, now time.Time) string {
 	name := strings.NewReplacer(" hours", "h", " hour", "h", " days", "d", " day", "d", " · ", " ").Replace(w.Name)
 	if w.Unlimited {
-		// no cap is not 0% of one: a remote magpie's gateway key held to
+		// no cap is not 0% of one: a remote fogway's gateway key held to
 		// no limit (#1547) read "Limit 0%"
 		return name + " unlimited"
 	}

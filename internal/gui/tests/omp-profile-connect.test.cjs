@@ -11,7 +11,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const options = [{ value: "gpt-5.4", label: "GPT-5.4" }, { value: "relay/m1", label: "m1", ref: "relay/m1", note: "Relay · via magpie" }];
+const options = [{ value: "gpt-5.4", label: "GPT-5.4" }, { value: "relay/m1", label: "m1", ref: "relay/m1", note: "Relay · via fogway" }];
 const fresh = () => ({
   agents: [
     { id: "omp", name: "omp", icon: "generic", path: "/fixture/omp", fields: [{ key: "model", label: "model", value: "gpt-5.4", options }] },
@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("dialog", (d) => { dialogs.push(d.message()); d.dismiss(); });
     await page.route("**/*", server(posts));
-    await page.goto("http://magpie.test/?view=agents");
+    await page.goto("http://fogway.test/?view=agents");
     const row = '.row.agent[data-id="omp#work"] .ag-conn';
     await page.locator(row).waitFor();
     await page.evaluate(() => api("usage?period=today"));

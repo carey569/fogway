@@ -11,12 +11,12 @@ import (
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 
-	"github.com/yetone/magpie/internal/appdir"
+	"github.com/fogway/fogway/internal/appdir"
 )
 
-// appPath is where Win+R and `start magpie` look magpie.exe up: the user's
+// appPath is where Win+R and `start fogway` look fogway.exe up: the user's
 // own, no administrator needed
-const appPath = `Software\Microsoft\Windows\CurrentVersion\App Paths\magpie.exe`
+const appPath = `Software\Microsoft\Windows\CurrentVersion\App Paths\fogway.exe`
 
 func registerAppPath(exe string) {
 	if k, _, err := registry.CreateKey(registry.CURRENT_USER, appPath, registry.SET_VALUE); err == nil {

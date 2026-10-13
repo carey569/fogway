@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // upstreamOf is the provider an aggregator's reply (a JSON body, or one

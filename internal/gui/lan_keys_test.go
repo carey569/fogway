@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 func TestSettingsMigratesOldLANCredentialToManagedKey(t *testing.T) {
 	sandboxHome(t)
-	old := "sk-magpie-0123456789abcdef0123456789abcdef01234567"
+	old := "sk-fogway-0123456789abcdef0123456789abcdef01234567"
 	s := settings.Load()
 	s.LAN, s.LANKey = true, old
 	if err := settings.Save(s); err != nil {
@@ -27,10 +27,10 @@ func TestSettingsMigratesOldLANCredentialToManagedKey(t *testing.T) {
 		t.Fatal("old credential leaked", w.Code, w.Body)
 	}
 	if settings.Load().LANKey != old {
-		t.Fatal("migration did not retain the old credential for older Magpie")
+		t.Fatal("migration did not retain the old credential for older Fogway")
 	}
 	keys, _ := access.List()
-	if len(keys) != 1 || keys[0].Name != "Magpie" || settings.Load().LANKeyID != keys[0].ID {
+	if len(keys) != 1 || keys[0].Name != "Fogway" || settings.Load().LANKeyID != keys[0].ID {
 		t.Fatal(keys)
 	}
 	who, ok := access.Authenticate(old)

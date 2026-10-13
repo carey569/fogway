@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // ---- OpenAI Responses -------------------------------------------------------
@@ -84,7 +84,7 @@ type rFormat struct {
 // the models its catalog puts in code mode (gpt-6.1-sol, gpt-6-luna…),
 // exec, through which every other tool of Codex's is called (#534: offered
 // none, the model said it had only the collaboration and wait tools). A
-// model magpie translates for is offered it as a function taking the text
+// model fogway translates for is offered it as a function taking the text
 // as its one argument, and its call goes back to Codex as the
 // custom_tool_call Codex runs, the text as its input.
 
@@ -129,7 +129,7 @@ func customInput(args string) string {
 // ChatGPT apps' among them) and its sub-agent tools only in the search's
 // description, and hands the model the ones it searched for in a
 // tool_search_output, instead of every schema on every request (#258).
-// Codex runs the search itself ("execution": "client"): a model magpie
+// Codex runs the search itself ("execution": "client"): a model fogway
 // translates for is offered it as the function it is, and its call goes
 // back to Codex as the tool_search_call Codex runs.
 const toolSearch = "tool_search"
@@ -349,7 +349,7 @@ func parseResponses(body []byte) (*Request, error) {
 				r.Messages = append(r.Messages, Message{Role: "user", Parts: []Part{part}})
 			case it.Type == "reasoning":
 				// the reasoning itself when the item carries it, else its
-				// summary (all magpie gives a client of a translated reply)
+				// summary (all fogway gives a client of a translated reply)
 				var b strings.Builder
 				var content []rText
 				_ = decodeJSON(it.Content, &content)
@@ -813,7 +813,7 @@ func replaysReasoning(model, host string) bool {
 // carries no reasoning_text its summary as one, else noReasoning, and has
 // each step that needs one lead with a reasoning item (reasonFirst), for an
 // upstream that wants the reasoning back (replaysReasoning). Codex sends an
-// item back as it got it: one from a turn magpie translated has only a
+// item back as it got it: one from a turn fogway translated has only a
 // summary, one the ChatGPT backend sealed has only encrypted_content, and a
 // turn another model in a mixed group served may have no reasoning item at
 // all. DeepSeek refuses the whole request over any of them, and over an
@@ -928,7 +928,7 @@ func noReasoningItem() map[string]any {
 // back to the API") when a step of the turn being continued starts with
 // anything else: a call (#1592), or what the model said, as Codex sends a
 // step that said something before its call with its reasoning between them,
-// or with none, which magpie put between them (#1822). Checked against
+// or with none, which fogway put between them (#1822). Checked against
 // api.deepseek.com on 2026-10-12: [text, reasoning, call] and [output,
 // text] are refused, [reasoning, text, call] and [output, reasoning, text]
 // are taken. ok is false, and items comes back as it is, when every such
@@ -1146,10 +1146,10 @@ func buildResponses(r *Request, model, host string, rejectTemp bool) []byte {
 		out["reasoning"] = map[string]any{"summary": "auto"}
 	}
 	// the client's include goes on as the request would have without
-	// magpie. Sealed reasoning is asked for only with reasoning, as Codex
+	// fogway. Sealed reasoning is asked for only with reasoning, as Codex
 	// asks for it: OpenAI refuses it of a model that doesn't reason. What
 	// comes back sealed goes to a Responses client as it came, and the
-	// input's goes back to a Responses upstream, as it would without magpie
+	// input's goes back to a Responses upstream, as it would without fogway
 	// (#1445); an account or vendor that can't read another's turns it away,
 	// and is asked again without it (foreignReasoning, withoutRefused).
 	var include []string
@@ -1450,7 +1450,7 @@ func callTo(item map[string]any, name string, named map[string]nsTool) map[strin
 		}
 	} else if q, ok := named[name]; ok {
 		item["name"], item["namespace"] = q.Name, q.Namespace
-		// Nothing magpie serves seals arguments. Codex reads a namespaced call
+		// Nothing fogway serves seals arguments. Codex reads a namespaced call
 		// without this list as sealed: spawn_agent's message in MultiAgentV2
 		// would reach the subagent as ciphertext, which is really plain text.
 		item["encrypted_function_args"] = []any{}

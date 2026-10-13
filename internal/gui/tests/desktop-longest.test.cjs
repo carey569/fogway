@@ -19,7 +19,7 @@ function fixture(lang) {
   const state = () => ({
     agents: [{
       id: "claude-desktop", name: "Claude Desktop", path: "/test/claude_desktop_config.json", icon: "claude-color", wired: true,
-      fields: [{ key: "provider", label: "provider", value: "magpie", options: [{ value: "magpie", label: "magpie", icon: "magpie" }] }],
+      fields: [{ key: "provider", label: "provider", value: "fogway", options: [{ value: "fogway", label: "fogway", icon: "fogway" }] }],
       models: { shown: 2, listed: 2, by: [{ name: "OpenCode Go", icon: "opencode", n: 2 }], names: ["DeepSeek V4 Pro", "Exo Free"] },
     }],
     profiles: [], settings,
@@ -68,7 +68,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const fx = fixture(lang);
         await page.route("**/*", fx.serve);
         t.after(() => browser.close());
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator(cd).waitFor();
         await page.locator(`${cd} .ag-link`, { hasText: w.details }).click();
         const line = page.locator(`${cd} .ag-exp .ag-longest`);

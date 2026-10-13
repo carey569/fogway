@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func resetUsageTest(t *testing.T) {
@@ -52,7 +52,7 @@ func TestGatewaySessionsCacheRefreshAndOwnership(t *testing.T) {
 	}
 }
 
-// magpie makes up no session ids, so one starting "request-" is the
+// fogway makes up no session ids, so one starting "request-" is the
 // client's own and is counted like any other (#1355).
 func TestClientRequestPrefixedSessionsCount(t *testing.T) {
 	resetUsageTest(t)

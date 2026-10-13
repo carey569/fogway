@@ -7,17 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// On a real WSL: MAGPIE_WSL_TEST_DISTRO names a throwaway distro with a
+// On a real WSL: FOGWAY_WSL_TEST_DISTRO names a throwaway distro with a
 // ~/.codex of its own, which the test writes to.
 func TestWSLCodexLive(t *testing.T) {
-	name := os.Getenv("MAGPIE_WSL_TEST_DISTRO")
+	name := os.Getenv("FOGWAY_WSL_TEST_DISTRO")
 	if name == "" {
-		t.Skip("MAGPIE_WSL_TEST_DISTRO not set")
+		t.Skip("FOGWAY_WSL_TEST_DISTRO not set")
 	}
 	names, _ := wslList()
 	found := false
@@ -77,10 +77,10 @@ func TestWSLCodexLive(t *testing.T) {
 	if !strings.Contains(got, `model = "fake/m1"`) || !strings.Contains(got, `base_url = "`+d.base()+`/v1"`) {
 		t.Fatal("not written")
 	}
-	if !strings.Contains(before, "OPENAI_API_KEY") && !strings.Contains(got, `model_catalog_json = "`+d.Home+`/.codex/magpie-models.json"`) {
+	if !strings.Contains(before, "OPENAI_API_KEY") && !strings.Contains(got, `model_catalog_json = "`+d.Home+`/.codex/fogway-models.json"`) {
 		t.Fatal("catalog path")
 	}
-	if !strings.Contains(cat(d.Home+"/.codex/magpie-models.json"), "fake/m1") {
+	if !strings.Contains(cat(d.Home+"/.codex/fogway-models.json"), "fake/m1") {
 		t.Fatal("catalog not seen inside WSL")
 	}
 	if c := a.Check(); c != "" {

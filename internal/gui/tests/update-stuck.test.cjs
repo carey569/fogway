@@ -1,11 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Settings → Version and the Update pill, for a magpie that can't replace
-// itself where it runs: a magpie.exe kept at C:\ (#1277) said only that a new
+// Settings → Version and the Update pill, for a fogway that can't replace
+// itself where it runs: a fogway.exe kept at C:\ (#1277) said only that a new
 // version was out, and its Download opened the release page with nothing
-// saying why. Both now say the folder magpie may not write to, in English,
+// saying why. Both now say the folder fogway may not write to, in English,
 // Chinese, Japanese and German, at a narrow window too. In a container (the
-// Docker image's /magpie, run as nonroot) they say to pull the new image
-// rather than to move magpie to another folder. No backend, the API is
+// Docker image's /fogway, run as nonroot) they say to pull the new image
+// rather than to move fogway to another folder. No backend, the API is
 // faked here.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
@@ -17,30 +17,30 @@ const assets = path.resolve(__dirname, "../assets");
 const DIR = "C:\\";
 
 const words = {
-  en: { version: "Version", why: "magpie can't write to the folder it runs from (C:\\), so it can't update itself; move it to a folder you can write to and open it from there." },
-  zh: { version: "版本", why: "magpie 无法写入它所在的文件夹（C:\\），所以无法自动更新；请把它移到你有写入权限的文件夹，再从那里打开。" },
-  ja: { why: "magpie は実行中のフォルダ（C:\\）に書き込めないため、自動アップデートできません。書き込み可能なフォルダに移動し、そこから開いてください。" },
-  de: { why: "magpie kann nicht in den Ordner schreiben, aus dem es läuft (C:\\), und kann sich daher nicht selbst aktualisieren; verschieben Sie es in einen Ordner mit Schreibrechten und öffnen Sie es von dort." },
+  en: { version: "Version", why: "fogway can't write to the folder it runs from (C:\\), so it can't update itself; move it to a folder you can write to and open it from there." },
+  zh: { version: "版本", why: "fogway 无法写入它所在的文件夹（C:\\），所以无法自动更新；请把它移到你有写入权限的文件夹，再从那里打开。" },
+  ja: { why: "fogway は実行中のフォルダ（C:\\）に書き込めないため、自動アップデートできません。書き込み可能なフォルダに移動し、そこから開いてください。" },
+  de: { why: "fogway kann nicht in den Ordner schreiben, aus dem es läuft (C:\\), und kann sich daher nicht selbst aktualisieren; verschieben Sie es in einen Ordner mit Schreibrechten und öffnen Sie es von dort." },
 };
 
-const folder = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/yetone/magpie-releases/releases/tag/v0.1.401", stuck: "not-writable", stuckDir: DIR };
-const container = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/yetone/magpie-releases/releases/tag/v0.1.401", stuck: "container" };
+const folder = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/fogway/fogway/releases/tag/v0.1.401", stuck: "not-writable", stuckDir: DIR };
+const container = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/fogway/fogway/releases/tag/v0.1.401", stuck: "container" };
 const pull = {
-  en: "magpie runs in a container, so it can't update itself; pull the new image (docker pull ghcr.io/yetone/magpie:latest) and recreate the container.",
-  zh: "magpie 运行在容器里，无法自动更新；请拉取新镜像（docker pull ghcr.io/yetone/magpie:latest）并重新创建容器。",
-  "zh-TW": "magpie 在容器中執行，無法自動更新；請拉取新映像（docker pull ghcr.io/yetone/magpie:latest）並重新建立容器。",
-  ja: "magpie はコンテナで実行されているため、自動アップデートできません。新しいイメージを取得し（docker pull ghcr.io/yetone/magpie:latest）、コンテナを作り直してください。",
-  de: "magpie läuft in einem Container und kann sich daher nicht selbst aktualisieren; laden Sie das neue Image (docker pull ghcr.io/yetone/magpie:latest) und erstellen Sie den Container neu.",
+  en: "fogway runs in a container, so it can't update itself; pull the new image (docker pull ghcr.io/fogway/fogway:latest) and recreate the container.",
+  zh: "fogway 运行在容器里，无法自动更新；请拉取新镜像（docker pull ghcr.io/fogway/fogway:latest）并重新创建容器。",
+  "zh-TW": "fogway 在容器中執行，無法自動更新；請拉取新映像（docker pull ghcr.io/fogway/fogway:latest）並重新建立容器。",
+  ja: "fogway はコンテナで実行されているため、自動アップデートできません。新しいイメージを取得し（docker pull ghcr.io/fogway/fogway:latest）、コンテナを作り直してください。",
+  de: "fogway läuft in einem Container und kann sich daher nicht selbst aktualisieren; laden Sie das neue Image (docker pull ghcr.io/fogway/fogway:latest) und erstellen Sie den Container neu.",
 };
 const cases = [
-  { name: "a magpie that can't write to its folder says why it can't update", update: folder, langs: ["en", "zh", "ja", "de"], why: (lang) => words[lang].why },
-  { name: "a magpie in a container says to pull the new image", update: container, langs: ["en", "zh", "zh-TW", "ja", "de"], why: (lang) => pull[lang] },
+  { name: "a fogway that can't write to its folder says why it can't update", update: folder, langs: ["en", "zh", "ja", "de"], why: (lang) => words[lang].why },
+  { name: "a fogway in a container says to pull the new image", update: container, langs: ["en", "zh", "zh-TW", "ja", "de"], why: (lang) => pull[lang] },
 ];
 
 function server(lang, ctl, update) {
   const settings = {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3999",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3999",
     proxyNow: "none", proxySource: "none", login: false, redactWords: [],
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -76,7 +76,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.setDefaultTimeout(5000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang, ctl, c.update));
-          await page.goto("http://magpie.test/?view=settings&tab=about");
+          await page.goto("http://fogway.test/?view=settings&tab=about");
           const want = c.why(lang);
           // the Version row: the version out, then why it can't be put in here
           // (the row is drawn again as the answer is read, so it is found

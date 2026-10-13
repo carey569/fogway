@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // accountRecs are a month of two Codex accounts' calls, one Claude account's

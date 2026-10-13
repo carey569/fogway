@@ -10,11 +10,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A client's web search, offered to a model that can't search: the model
-// is given magpie's web_search tool, the search is done by a provider that
+// is given fogway's web_search tool, the search is done by a provider that
 // can, and the client gets one reply with what was found.
 func TestWebSearchForAModelThatCannot(t *testing.T) {
 	var mu sync.Mutex
@@ -324,7 +324,7 @@ func TestZhipuSearchesOnResponses(t *testing.T) {
 }
 
 // A relay in front of Anthropic's API searches as Anthropic does, which
-// magpie can't tell from its host (#359). One that serves only Claude Code
+// fogway can't tell from its host (#359). One that serves only Claude Code
 // refuses a request without Claude Code's metadata.user_id. Set as
 // searching by itself, it is sent Claude Code's WebSearch as it was sent;
 // not set, the request built again for it keeps the metadata.
@@ -391,13 +391,13 @@ func TestWebSearchOfARelayThatSearches(t *testing.T) {
 	if err := provider.Save(p); err != nil {
 		t.Fatal(err)
 	}
-	// it searches for Claude Code, not for magpie's other models: it would
-	// spend the relay's quota, and refuse magpie's request without metadata
+	// it searches for Claude Code, not for fogway's other models: it would
+	// spend the relay's quota, and refuse fogway's request without metadata
 	if _, err := p.Fetch(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if sp, _, ok := searcher(); ok {
-		t.Fatalf("magpie searches with %s", sp.ID)
+		t.Fatalf("fogway searches with %s", sp.ID)
 	}
 	if rec := ask(); rec.Code != 200 || !strings.Contains(rec.Body.String(), "Go 1.27.1 is out.") {
 		t.Fatalf("%d %s", rec.Code, rec.Body.String())
@@ -410,7 +410,7 @@ func TestWebSearchOfARelayThatSearches(t *testing.T) {
 		t.Fatalf("sent %s %s", got[0]["tools"], got[0]["system"])
 	}
 
-	// not said to search, it is given no search of its own: magpie has no
+	// not said to search, it is given no search of its own: fogway has no
 	// searcher here, so the request is built again, without the tool
 	got = nil
 	p.Searches = false

@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // usageHalfLife is how fast the tokens a key served stop counting against
@@ -107,7 +107,7 @@ const (
 	// someone does, or lifts its rest in the app
 	verifyRest = 30 * time.Minute
 	// verifyHold is how long the last one left, refused for verification,
-	// is answered that way by magpie without asking again: an agent's
+	// is answered that way by fogway without asking again: an agent's
 	// reconnects don't all land on the account Google has stopped
 	verifyHold = time.Minute
 	// restrictedRest: an account its vendor restricted (WorkBuddy's 403
@@ -134,7 +134,7 @@ var (
 	usedUpWords = regexp.MustCompile(`(?i)quota|usage.?limit|out of budget|budget (exceeded|exhausted)|limit.?reached|hit your .*limit|limit.{0,24}resets|exceeded.*(plan|limit)|额度|用量|套餐|上限`)
 	// rateWords: a 429 that is a short rate limit — requests or tokens per
 	// minute — which usedUpWords took for a used-up plan ("Rate limit
-	// exceeded", "reached"): as magpie words an upstream error, with
+	// exceeded", "reached"): as fogway words an upstream error, with
 	// "rate_limit_error" for its type, every such 429 was, and rested a
 	// quarter of an hour rather than a minute (#153).
 	rateWords = regexp.MustCompile(`(?i)rate.?limit|too many requests|per.?(second|sec|minute|min)\b|\b[rt]pm\b|频率|太频繁`)
@@ -201,7 +201,7 @@ const (
 	// failEffort: the account's plan doesn't take the reasoning level
 	// asked for (#520) — another account is asked, and nobody rests
 	failEffort = "effort"
-	// failProxy: the proxy magpie sends through (its own setting, the
+	// failProxy: the proxy fogway sends through (its own setting, the
 	// *_PROXY variables, the system's) didn't take the connection (#381) —
 	// nothing reached the vendor, so the next one is asked, and nobody rests
 	failProxy = "proxy"
@@ -722,7 +722,7 @@ func (c candidate) full(now time.Time) time.Time {
 }
 
 // allowance is the candidate's allowance as last known: a subscription
-// account's, or a key's own windows when magpie reads them (a sub2api
+// account's, or a key's own windows when fogway reads them (a sub2api
 // key's limits, provider.KeyAllowance). ok is false when it isn't known.
 func (c candidate) allowance() (provider.Allowance, bool) {
 	return keyAllowance(c.p)
@@ -758,12 +758,12 @@ func keepRetry(dst, src http.Header, body []byte) {
 
 // refusedHeader carries, from keepRetry to settle, that an error status
 // was the safety filter refusing the request, and what it said.
-const refusedHeader = "X-Magpie-Refused"
+const refusedHeader = "X-Fogway-Refused"
 
 // resetsHeader carries, from keepRetry to restAfter, when a subscription
 // out of quota said it's back. A held error that is passed on after all
 // leaves it out; one written straight to the agent carries it, harmlessly.
-const resetsHeader = "X-Magpie-Resets-At"
+const resetsHeader = "X-Fogway-Resets-At"
 
 // resetsNoted is how long until the time keepRetry noted, if it did.
 func resetsNoted(h http.Header, now time.Time) time.Duration {
@@ -936,7 +936,7 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 		// one not known that tells what it has left as it answers goes
 		// first, once: else, kept after those known, it would never answer
 		// and never be known (Anthropic's usage endpoint can turn
-		// magpie away for hours)
+		// fogway away for hours)
 		sort.SliceStable(fine, func(i, j int) bool {
 			if li, lj := learns(fine[i], lefts), learns(fine[j], lefts); li != lj {
 				return li
@@ -979,7 +979,7 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 	case provider.LeastUsed:
 		// a subscription, or a key that reads its own windows, by the
 		// share of its allowance used, as the vendor says; then, and for
-		// other keys, by what magpie sent it lately
+		// other keys, by what fogway sent it lately
 		routed.Lock()
 		tokens := make([]float64, len(cs))
 		wg.tokens = map[string]float64{}
@@ -1018,7 +1018,7 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 		// share used. Among the rest, one not known that tells what it
 		// has left as it answers goes first while it isn't, as in Smart,
 		// else it would never be known; then the pace, those alike within
-		// a tenth by what magpie sent them lately, then in their order,
+		// a tenth by what fogway sent them lately, then in their order,
 		// keeping the vendor's prompt cache warm. An account not known
 		// counts as a whole week ahead of it; a key has no week, unless it
 		// reads its own windows (a sub2api key's limits). A Codex

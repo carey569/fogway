@@ -5,7 +5,7 @@ package provider
 // image, how hard the agent asked the model to think, which agent sent it.
 // Those are never guessed: the same request is always routed the same way,
 // and the trace tells which rule did it. A rule may also hold only at some
-// hours of the day (a vendor's peak-price hours, say), on magpie's clock. The one exception is a rule with
+// hours of the day (a vendor's peak-price hours, say), on fogway's clock. The one exception is a rule with
 // an intent (what the user asks for, in the user's words): as a turn
 // begins, a model the group names (its Classifier) is asked which of the
 // intents the user's message is, once, and the trace tells what it said.

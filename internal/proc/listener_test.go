@@ -41,40 +41,40 @@ func evalPath(p string) string {
 	return p
 }
 
-// Only magpie's own programs are taken for magpie. An update moves a running
+// Only fogway's own programs are taken for fogway. An update moves a running
 // exe aside to exe.old, and to exe.old-2, -3 when that one is held too, so
-// every name it can take while it still runs is magpie's.
-func TestIsMagpie(t *testing.T) {
+// every name it can take while it still runs is fogway's.
+func TestIsFogway(t *testing.T) {
 	for path, want := range map[string]bool{
-		"/Applications/Magpie.app/Contents/MacOS/magpie": true,
-		"/usr/local/bin/magpie":                          true,
-		`C:\Users\u\AppData\Local\magpie\magpie.exe`:     true,
-		`C:\Users\u\AppData\Local\magpie\magpie.exe.old`: true,
+		"/Applications/Fogway.app/Contents/MacOS/fogway": true,
+		"/usr/local/bin/fogway":                          true,
+		`C:\Users\u\AppData\Local\fogway\fogway.exe`:     true,
+		`C:\Users\u\AppData\Local\fogway\fogway.exe.old`: true,
 		// an update that finds .old still held leaves the running exe at
 		// .old-2, the name it holds the gateway port under
-		`C:\Users\u\AppData\Local\magpie\magpie.exe.old-2`: true,
-		`C:\Users\u\AppData\Local\magpie\magpie.exe.old-3`: true,
-		"/home/u/magpie.old-2":                             true,
+		`C:\Users\u\AppData\Local\fogway\fogway.exe.old-2`: true,
+		`C:\Users\u\AppData\Local\fogway\fogway.exe.old-3`: true,
+		"/home/u/fogway.old-2":                             true,
 		"/home/u/dial.old-4":                               true,
 		// the numbered suffix is an update's, not another program's
 		`C:\Users\u\other-server.old-2`:   false,
-		`C:\Users\u\magpie.old-backup`:    false,
+		`C:\Users\u\fogway.old-backup`:    false,
 		"/home/u/.local/bin/dial":         true,
-		"/opt/magpie-dev":                 true,
+		"/opt/fogway-dev":                 true,
 		"/usr/bin/python3":                false,
-		"/usr/bin/magpies":                false,
+		"/usr/bin/fogways":                false,
 		"/tmp/other-server":               false,
 		`C:\Windows\System32\svchost.exe`: false,
 		"":                                false,
 	} {
-		if IsMagpie(path) != want {
-			t.Errorf("IsMagpie(%q) = %v", path, !want)
+		if IsFogway(path) != want {
+			t.Errorf("IsFogway(%q) = %v", path, !want)
 		}
 	}
 }
 
 // The programs holding a port for a container are told apart from others:
-// a magpie answering there runs inside it, out of this one's reach.
+// a fogway answering there runs inside it, out of this one's reach.
 func TestIsForwarder(t *testing.T) {
 	for path, want := range map[string]bool{
 		"/Applications/OrbStack.app/Contents/Frameworks/OrbStack Helper.app/Contents/MacOS/OrbStack Helper": true,
@@ -84,7 +84,7 @@ func TestIsForwarder(t *testing.T) {
 		`C:\Windows\System32\wslrelay.exe`:                                true,
 		"/opt/homebrew/bin/limactl":                                       true,
 		"/usr/libexec/podman/gvproxy":                                     true,
-		"/Applications/Magpie.app/Contents/MacOS/magpie":                  false,
+		"/Applications/Fogway.app/Contents/MacOS/fogway":                  false,
 		"/usr/bin/python3":                                                false,
 		"/tmp/other-server":                                               false,
 		"":                                                                false,

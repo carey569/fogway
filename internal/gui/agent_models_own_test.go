@@ -10,14 +10,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// DeepSeek Harness's own DeepSeek models, beside magpie's in its picker,
+// DeepSeek Harness's own DeepSeek models, beside fogway's in its picker,
 // can be left out (MizuIro-H, #1642): the agent's model list has a switch
-// for them, its pickers then offer magpie's alone, the model it is set to
+// for them, its pickers then offer fogway's alone, the model it is set to
 // stays, and another agent's pickers are as they were.
 func TestAgentOwnModelsHidden(t *testing.T) {
 	home := t.TempDir()
@@ -49,28 +49,28 @@ func TestAgentOwnModelsHidden(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	values := func(a *agent.Agent, vals map[string]string) (own, magpie []string) {
+	values := func(a *agent.Agent, vals map[string]string) (own, fogway []string) {
 		for _, f := range agentFields(a, vals) {
 			if f.Key != "model" {
 				continue
 			}
 			for _, o := range f.Options {
 				if o.Ref != "" {
-					magpie = append(magpie, o.Value)
+					fogway = append(fogway, o.Value)
 				} else {
 					own = append(own, o.Value)
 				}
 			}
 		}
-		return own, magpie
+		return own, fogway
 	}
 	all := []string{"deepseek-flash", "deepseek-v4-pro", "deepseek-v4-flash"}
 
 	if got := call("GET", ""); !got.Own || got.OwnHidden {
 		t.Fatalf("dsh's list: %+v, want its own models there and shown", got)
 	}
-	if own, magpie := values(dsh, map[string]string{}); !slices.Equal(own, all) || len(magpie) == 0 {
-		t.Fatalf("before: own %v, magpie's %v", own, magpie)
+	if own, fogway := values(dsh, map[string]string{}); !slices.Equal(own, all) || len(fogway) == 0 {
+		t.Fatalf("before: own %v, fogway's %v", own, fogway)
 	}
 
 	if got := call("POST", `{"ownHidden":true}`); !got.OwnHidden {
@@ -82,9 +82,9 @@ func TestAgentOwnModelsHidden(t *testing.T) {
 	if got := call("GET", ""); !got.Own || !got.OwnHidden {
 		t.Fatalf("dsh's list after: %+v", got)
 	}
-	own, magpie := values(dsh, map[string]string{})
-	if len(own) != 0 || !slices.Contains(magpie, "magpie/relay/m1") {
-		t.Fatalf("hidden: own %v left, magpie's %v", own, magpie)
+	own, fogway := values(dsh, map[string]string{})
+	if len(own) != 0 || !slices.Contains(fogway, "fogway/relay/m1") {
+		t.Fatalf("hidden: own %v left, fogway's %v", own, fogway)
 	}
 	// the one it is set to stays, the others go
 	if own, _ := values(dsh, map[string]string{"model": "deepseek-v4-pro"}); !slices.Equal(own, []string{"deepseek-v4-pro"}) {
@@ -94,7 +94,7 @@ func TestAgentOwnModelsHidden(t *testing.T) {
 	if provider.OwnModelsHidden("codex") {
 		t.Fatal("codex hides its own too")
 	}
-	// the effort field, not a picker of magpie's models, keeps every level
+	// the effort field, not a picker of fogway's models, keeps every level
 	for _, f := range agentFields(dsh, map[string]string{}) {
 		if f.Key == "effort" && len(f.Options) == 0 {
 			t.Fatal("effort lost its levels")

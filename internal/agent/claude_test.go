@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func TestClaudeTiers(t *testing.T) {
@@ -76,7 +76,7 @@ func TestClaudeTiers(t *testing.T) {
 
 // Claude Code's subagents can have a model of their own (#468):
 // CLAUDE_CODE_SUBAGENT_MODEL, the model a subagent runs on when neither the
-// call nor its definition names one. Unset, magpie writes it as before;
+// call nor its definition names one. Unset, fogway writes it as before;
 // set, it outlives a tier of its own and a new main model.
 func TestClaudeSubagentModel(t *testing.T) {
 	home := t.TempDir()

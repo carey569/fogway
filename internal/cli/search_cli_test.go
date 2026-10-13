@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// magpie search add, with a key and an address in either order, and rm.
+// fogway search add, with a key and an address in either order, and rm.
 func TestSearchCLI(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", os.Getenv("HOME"))
@@ -68,7 +68,7 @@ func TestSearchCLI(t *testing.T) {
 	}
 }
 
-// magpie search add you, with no key, adds You.com's free search (#1626).
+// fogway search add you, with no key, adds You.com's free search (#1626).
 func TestSearchCLIYouWithoutKey(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", os.Getenv("HOME"))

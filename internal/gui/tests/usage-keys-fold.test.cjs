@@ -93,8 +93,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
-      await page.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("magpie.quotaRange", "off"); sessionStorage.setItem("set", "1"); } } catch {} });
-      await page.goto("http://magpie.test/?view=usage");
+      await page.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("fogway.quotaRange", "off"); sessionStorage.setItem("set", "1"); } } catch {} });
+      await page.goto("http://fogway.test/?view=usage");
       await page.waitForSelector("#subscriptionUsage > [data-key=openrouter] .subscription-account .user", { state: "attached" });
 
       let got = await cards(page);

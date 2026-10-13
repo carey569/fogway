@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf16"
 
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
 func utf16le(s string, bom bool) []byte {
@@ -74,11 +74,11 @@ func TestParseProbe(t *testing.T) {
 	}
 }
 
-// A path magpie opens through \\wsl.localhost is the distro's own path in
+// A path fogway opens through \\wsl.localhost is the distro's own path in
 // the distro's config.
 func TestWSLPaths(t *testing.T) {
 	d := distro{Root: `\\wsl.localhost\Ubuntu`}
-	if got := d.native(`\\wsl.localhost\Ubuntu\home\me\.codex\magpie-models.json`); got != "/home/me/.codex/magpie-models.json" {
+	if got := d.native(`\\wsl.localhost\Ubuntu\home\me\.codex\fogway-models.json`); got != "/home/me/.codex/fogway-models.json" {
 		t.Error(got)
 	}
 	if got := d.native(`\\WSL.LOCALHOST\Ubuntu\home\me`); got != "/home/me" {
@@ -149,7 +149,7 @@ func fakeWSL(t *testing.T, installed, running string, probes, roots map[string]s
 }
 
 // A stopped distro is never asked anything nor opened: one Codex was found
-// in before is listed as magpie last saw it, and picking a value goes to its
+// in before is listed as fogway last saw it, and picking a value goes to its
 // files (which starts it). Running ones are probed once; one without Codex,
 // or one no longer installed, isn't kept.
 func TestWSLStoppedDistro(t *testing.T) {
@@ -251,7 +251,7 @@ func TestWSLListFails(t *testing.T) {
 	}
 }
 
-// TJHHHH on Discord: magpie kept starting WSL while they repaired it. An
+// TJHHHH on Discord: fogway kept starting WSL while they repaired it. An
 // agent made while its distro ran is still read after the user stops it
 // (wsl --shutdown): its fields shown, the catalog synced, its check, the
 // requests it made. None of them opens the stopped distro, which would

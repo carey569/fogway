@@ -48,10 +48,10 @@ func TestReleased(t *testing.T) {
 
 func TestHomebrew(t *testing.T) {
 	for exe, want := range map[string]bool{
-		"/opt/homebrew/Cellar/magpie/0.1.126/bin/magpie":              true,
-		"/home/linuxbrew/.linuxbrew/Cellar/magpie/0.1.126/bin/magpie": true,
-		"/usr/local/bin/magpie":                                       false,
-		"/Applications/magpie.app/Contents/MacOS/magpie":              false,
+		"/opt/homebrew/Cellar/fogway/0.1.126/bin/fogway":              true,
+		"/home/linuxbrew/.linuxbrew/Cellar/fogway/0.1.126/bin/fogway": true,
+		"/usr/local/bin/fogway":                                       false,
+		"/Applications/fogway.app/Contents/MacOS/fogway":              false,
 	} {
 		if Homebrew(exe) != want {
 			t.Errorf("%s: %v", exe, !want)

@@ -1,6 +1,6 @@
 package gateway
 
-// GET /v1/magpie/route: where a session's turn went, for an agent's UI to
+// GET /v1/fogway/route: where a session's turn went, for an agent's UI to
 // show while the reply is still on its way (#405). Routing decides the
 // member, and a group's decision model the effort, before the vendor is
 // asked; each fallback is in the trace as it happens. This tells one
@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // routeWaitMax caps how long one ask waits for the route to change.
@@ -94,8 +94,8 @@ func sessionRouteOf(r Route) SessionRoute {
 	return out
 }
 
-// sessionRoute answers GET /v1/magpie/route?session=<id>, or with the
-// session in X-Magpie-Session (or the agent's own session header): the
+// sessionRoute answers GET /v1/fogway/route?session=<id>, or with the
+// session in X-Fogway-Session (or the agent's own session header): the
 // session's latest route, null before it has one. With after=<seq> and
 // wait=<seconds> it waits, up to a minute, for the route to change past
 // seq. Like the quotas, it answers this machine, and another only with the
@@ -104,7 +104,7 @@ func sessionRouteOf(r Route) SessionRoute {
 // secret the key can be trusted to lack.
 func (s *Server) sessionRoute(w http.ResponseWriter, r *http.Request) {
 	if !local(r) && !sharedWith(r) {
-		writeError(w, provider.Chat, http.StatusForbidden, "magpie's routes are told to another machine only when magpie is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
+		writeError(w, provider.Chat, http.StatusForbidden, "fogway's routes are told to another machine only when fogway is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
 		return
 	}
 	q := r.URL.Query()

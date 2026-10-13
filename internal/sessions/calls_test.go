@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/agentenv"
+	"github.com/fogway/fogway/internal/agentenv"
 )
 
 var callT0 = time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC)

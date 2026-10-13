@@ -29,7 +29,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "copilot", trayUsages: ["copilot"], trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -37,7 +37,7 @@ function settingsPayload(over) {
   };
 }
 
-// server answers as magpie does: trayUsage kept as the first of trayUsages
+// server answers as fogway does: trayUsage kept as the first of trayUsages
 function server(lang, posts, cards = quotas, over = {}) {
   let cur = settingsPayload({ lang, ...over });
   return async (route) => {
@@ -91,7 +91,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, posts));
 
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         await page.locator("#prefs").click();
         await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").click();
         const pill = page.locator("#trayUsagePick button");
@@ -112,7 +112,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const menu = page.locator(".proto-menu");
         await menu.waitFor();
         const items = menu.locator(".pm-item");
-        // magpie's own two totals follow the cards (#1984, tray-totals.test.cjs)
+        // fogway's own two totals follow the cards (#1984, tray-totals.test.cjs)
         const cards = (xs) => xs.slice(0, -2);
         assert.deepEqual(cards((await items.locator(".pm-name").allTextContents()).map((s) => s.trim())), [off, "Claude Code", "Codex", "Copilot"]);
         assert.deepEqual(cards(await items.evaluateAll((bs) => bs.map((b) => b.getAttribute("role")))),
@@ -177,7 +177,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
   });
 }
 
-// MizuIro-H's `magpie quota --json` on #1658: one Command Code key told both
+// MizuIro-H's `fogway quota --json` on #1658: one Command Code key told both
 // its plan's windows and its balance, neither with a user, beside other
 // providers' balances; and a plan whose balance is a stale stand-in
 const keyed = [
@@ -202,7 +202,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts, keyed, { trayUsage: "", trayUsages: [] }));
 
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator("#prefs").click();
       await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").click();
       const pill = page.locator("#trayUsagePick button");
@@ -211,7 +211,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const menu = page.locator(".proto-menu");
       await menu.waitFor();
       const items = menu.locator(".pm-item");
-      const names = (await items.locator(".pm-name").allTextContents()).map((s) => s.trim()).slice(1, -2); // magpie's own totals follow (#1984)
+      const names = (await items.locator(".pm-name").allTextContents()).map((s) => s.trim()).slice(1, -2); // fogway's own totals follow (#1984)
       assert.deepEqual(names, ["Codex", "Command Code", "SudoCode", "DeepSeek", "Kimi Code"], "each card once, by name");
 
       // ticking Command Code ticks that row alone, and saves it once

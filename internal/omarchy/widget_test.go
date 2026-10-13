@@ -9,7 +9,7 @@ import (
 )
 
 func TestWidgetFiles(t *testing.T) {
-	exe := `/opt/my "apps"/magpie`
+	exe := `/opt/my "apps"/fogway`
 	files, err := widget(exe)
 	if err != nil {
 		t.Fatal(err)
@@ -26,10 +26,10 @@ func TestWidgetFiles(t *testing.T) {
 		t.Errorf("manifest: %+v", m)
 	}
 	qml := string(files["Widget.qml"])
-	if strings.Contains(qml, "__MAGPIE__") || !strings.Contains(qml, `magpie: "/opt/my \"apps\"/magpie"`) {
+	if strings.Contains(qml, "__FOGWAY__") || !strings.Contains(qml, `fogway: "/opt/my \"apps\"/fogway"`) {
 		t.Errorf("the executable isn't written in, quoted:\n%s", qml)
 	}
-	for _, s := range []string{`[root.magpie, "panel"]`, `[root.magpie, "app"]`, "Qt.RightButton"} {
+	for _, s := range []string{`[root.fogway, "panel"]`, `[root.fogway, "app"]`, "Qt.RightButton"} {
 		if !strings.Contains(qml, s) {
 			t.Errorf("Widget.qml lacks %s", s)
 		}
@@ -44,25 +44,25 @@ func TestKeepWidget(t *testing.T) {
 	if WidgetOn() {
 		t.Fatal("on in an empty config")
 	}
-	if err := KeepWidget("/usr/bin/magpie"); err != nil {
+	if err := KeepWidget("/usr/bin/fogway"); err != nil {
 		t.Fatal(err)
 	}
 	if WidgetOn() {
 		t.Fatal("KeepWidget put it in")
 	}
-	files, _ := widget("/usr/bin/magpie")
+	files, _ := widget("/usr/bin/fogway")
 	os.MkdirAll(widgetDir(), 0o755)
 	for name, b := range files {
 		os.WriteFile(filepath.Join(widgetDir(), name), b, 0o644)
 	}
-	if err := KeepWidget("/usr/bin/magpie"); err != nil {
+	if err := KeepWidget("/usr/bin/fogway"); err != nil {
 		t.Fatalf("up to date: %v", err)
 	}
 	// moved: it is written again, then the shell is asked to load it
-	if err := KeepWidget("/opt/magpie"); err == nil || !strings.Contains(err.Error(), "omarchy") {
+	if err := KeepWidget("/opt/fogway"); err == nil || !strings.Contains(err.Error(), "omarchy") {
 		t.Fatalf("moved: %v", err)
 	}
-	if b, _ := os.ReadFile(filepath.Join(widgetDir(), "Widget.qml")); !strings.Contains(string(b), `"/opt/magpie"`) {
+	if b, _ := os.ReadFile(filepath.Join(widgetDir(), "Widget.qml")); !strings.Contains(string(b), `"/opt/fogway"`) {
 		t.Error("not rewritten")
 	}
 }

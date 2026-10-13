@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
 const (
@@ -126,13 +126,13 @@ func TestTencentCloud(t *testing.T) {
 			}
 		}
 	}
-	// a magpie://import link: Tencent Cloud at a region, an old link by
+	// a fogway://import link: Tencent Cloud at a region, an old link by
 	// its old id, and an old id at another region, each where it says
 	for _, c := range tcRegions {
 		for _, link := range []string{
-			"magpie://import?preset=tencent-cloud&region=" + c.region,
-			"magpie://import?preset=" + c.old,
-			"magpie://import?preset=tencent-tokenhub&region=" + c.region,
+			"fogway://import?preset=tencent-cloud&region=" + c.region,
+			"fogway://import?preset=" + c.old,
+			"fogway://import?preset=tencent-tokenhub&region=" + c.region,
 		} {
 			p, err := ParseImport(link)
 			if err != nil {
@@ -183,7 +183,7 @@ func TestTencentCloudEnterprisePlan(t *testing.T) {
 				t.Fatalf("imported from %+v at %+v", e, got)
 			}
 		}
-		p, err := ParseImport("magpie://import?preset=tencent-cloud&region=" + c.region)
+		p, err := ParseImport("fogway://import?preset=tencent-cloud&region=" + c.region)
 		if err != nil || p.Chat != r.Chat || p.Responses != r.Responses || p.Anthropic != r.Anthropic || p.KeysURL != c.keys {
 			t.Fatalf("link: %v %+v", err, p)
 		}
@@ -215,7 +215,7 @@ func TestTencentCloudOldPresetsKeepWorking(t *testing.T) {
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	// providers.json as an older magpie wrote it
+	// providers.json as an older fogway wrote it
 	old := `{"providers":[
 {"id":"tencent-token-plan","name":"Tencent Cloud Token Plan","icon":"tencentcloud-color","preset":"tencent-token-plan","key":"sk-tp-plan",
  "chat":"` + tcPlanChat + `","anthropic":"` + tcPlanMsgs + `","models":["glm-5.3","hy3"],"website":"` + tcPlanDocs + `","keysUrl":"` + tcPlanKeys + `"},

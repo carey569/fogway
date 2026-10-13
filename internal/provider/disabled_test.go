@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 func TestDisabledGlob(t *testing.T) {

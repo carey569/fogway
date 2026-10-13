@@ -17,7 +17,7 @@ import (
 // before its first exec, a quarter of a second alone and several seconds
 // while other new programs start (a go test ./... starting its test
 // binaries), which ate the wait of every test that times a fake's answer
-// (TestDevinSignedInOnlyInMagpie, TestClaudeRunEndsWhenTheClientLeaves).
+// (TestDevinSignedInOnlyInFogway, TestClaudeRunEndsWhenTheClientLeaves).
 // The check is made once a file: one already run keeps its pass when it is
 // renamed or written over in place. So Program takes a file that has run
 // from a pool, renames it to path and writes the script into it; when the
@@ -164,7 +164,7 @@ func reclaim(path string) {
 		return
 	}
 	if pool.dir == "" {
-		d, err := os.MkdirTemp("", "magpie-test-programs-")
+		d, err := os.MkdirTemp("", "fogway-test-programs-")
 		if err != nil {
 			return
 		}

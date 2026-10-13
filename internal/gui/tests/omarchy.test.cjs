@@ -30,7 +30,7 @@ function settingsPayload(lang) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -90,7 +90,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, null, { available: true, on: false }, asked, posted));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator("#prefs").click();
         await page.locator("#themeSegs .opt").first().waitFor();
         assert.equal(await page.evaluate(() => document.documentElement.classList.contains("omarchy")), false);
@@ -112,7 +112,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, theme, { available: true, on: false }, asked, posted));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         assert.equal(await page.evaluate(() => document.documentElement.classList.contains("omarchy")), true);
         assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(26, 27, 38)", "the theme's background");
         await page.locator("#prefs").click();
@@ -154,7 +154,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, theme, { available: false, on: false }, asked, posted));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator("#prefs").click();
         await page.locator("#langPick span").first().waitFor();
         await page.waitForTimeout(300);

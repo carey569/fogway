@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // desktopPicker is Claude Desktop's tIt (index.chunk-D3OyLXgG.js, 2.7032):
@@ -82,7 +82,7 @@ func TestClaudeDesktopEffortReachesModel(t *testing.T) {
 // a Claude model a provider spells with a dot is listed to Desktop by its
 // dashed id, so Claude Code knows it for the Claude model it is, and a turn
 // on that id reaches the provider's own spelling (Copilot's claude-opus-5.5
-// listed as mythos-magpie-<n> ran as a model Claude Code doesn't know: 32000
+// listed as mythos-fogway-<n> ran as a model Claude Code doesn't know: 32000
 // output tokens, effort high, and claude-haiku-4.5 asked for an effort Copilot
 // answers with 400)
 func TestClaudeDesktopDottedClaudeReachesItsModel(t *testing.T) {
@@ -98,7 +98,7 @@ func TestClaudeDesktopDottedClaudeReachesItsModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	listed := claudeLooking(provider.Entry{ID: "fake/claude-opus-5.5", Model: "claude-opus-5.5", Efforts: []string{"low", "medium", "high"}})
-	if want := "magpie-" + aliasNumber("fake/claude-opus-5.5") + ".anthropic.claude-opus-5-5"; listed != want {
+	if want := "fogway-" + aliasNumber("fake/claude-opus-5.5") + ".anthropic.claude-opus-5-5"; listed != want {
 		t.Fatalf("listed as %q, want %q", listed, want)
 	}
 	for _, asked := range []string{listed, listed + "[1m]"} {

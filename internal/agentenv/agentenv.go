@@ -1,27 +1,27 @@
 // Package agentenv names the environment variables through which an agent
-// really installed on this machine reaches magpie: the one list a test
+// really installed on this machine reaches fogway: the one list a test
 // sandbox clears, so that a test meets only the agents it put there itself.
 //
-// A sandbox fakes magpie's own folders through HOME, USERPROFILE and the XDG
+// A sandbox fakes fogway's own folders through HOME, USERPROFILE and the XDG
 // variables (appdir decides those), and an agent's folder through the
 // variable that agent's own CLI reads before it falls back to its folder in
 // the home: CLAUDE_CONFIG_DIR, CODEX_HOME, QODER_CONFIG_DIR and the rest.
-// Any one of them left over from the developer's shell points magpie at a
+// Any one of them left over from the developer's shell points fogway at a
 // real agent, whose sessions and settings a test then reads — and, where
-// magpie writes what it wires, writes into (#522). Qoder's CLI sets both of
-// its variables for every child it starts, and magpie manages Qoder, so
-// writing magpie from inside Qoder was one way to meet this.
+// fogway writes what it wires, writes into (#522). Qoder's CLI sets both of
+// its variables for every child it starts, and fogway manages Qoder, so
+// writing fogway from inside Qoder was one way to meet this.
 //
 // Each package keeps its own sandbox, because a test in internal/sessions
 // cannot import internal/agent, which imports it, to ask which variables
-// there are; this is the list they all clear. A name here is one magpie
-// reads, and TestVarsAreRead says so, so a variable magpie stopped reading
+// there are; this is the list they all clear. A name here is one fogway
+// reads, and TestVarsAreRead says so, so a variable fogway stopped reading
 // does not linger — that is how GEMINI_CLI_HOME and OPENCODE_CONFIG came to
-// be cleared by a sandbox while OPENCODE_CONFIG_DIR, the one magpie reads,
+// be cleared by a sandbox while OPENCODE_CONFIG_DIR, the one fogway reads,
 // was not. What is deliberately not here: APPDATA and LOCALAPPDATA, Windows'
 // folders rather than an agent's, which a sandbox sets to a folder of its
 // own instead of clearing; and CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC, a
-// behaviour flag whose one test sets it on purpose to read what magpie then
+// behaviour flag whose one test sets it on purpose to read what fogway then
 // does.
 package agentenv
 
@@ -31,7 +31,7 @@ var Vars = []string{
 	// Claude Code and Codex
 	"CLAUDE_CONFIG_DIR", "CODEX_HOME",
 	// Zed, or a fork of it that keeps its settings (ZedG)
-	"MAGPIE_ZED_BIN", "MAGPIE_ZED_CONFIG_DIR", "MAGPIE_ZED_PROCESS_NAMES",
+	"FOGWAY_ZED_BIN", "FOGWAY_ZED_CONFIG_DIR", "FOGWAY_ZED_PROCESS_NAMES",
 	// Codex's state database, when it is kept apart from CODEX_HOME
 	"CODEX_SQLITE_HOME",
 	// Gemini CLI's session/config home
@@ -84,5 +84,5 @@ var Vars = []string{
 var NotPaths = map[string]bool{
 	"PI_PROFILE": true, "OMP_PROFILE": true,
 	"PI_CONFIG_DIR": true, "OPENCODE_DB": true,
-	"MAGPIE_ZED_BIN": true, "MAGPIE_ZED_PROCESS_NAMES": true,
+	"FOGWAY_ZED_BIN": true, "FOGWAY_ZED_PROCESS_NAMES": true,
 }

@@ -1,11 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Settings › Gateway port (Magic_zero on Discord: 3425 was taken by another
+// Settings › Gateway port (Magic_zero on Discord: 3725 was taken by another
 // program, and a port of one's own is easier to tell apart): any port from
 // 1024 to 65535 can be typed and applied. One out of range is refused in the
 // page; one another program has is refused with the gateway's reason, in the
 // page's language, what was typed kept; a free one moves the gateway and
 // says how many agents moved with it, and the row then says the new URL.
-// With MAGPIE_ADDR set the field is off and says why. The field is an
+// With FOGWAY_ADDR set the field is off and says why. The field is an
 // input, not a native <select>; applying never scrolls the page; no
 // coloured left border. English and Chinese, Chromium and WebKit; no
 // backend, the API is faked here.
@@ -24,7 +24,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.900", dir: "/config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.900", dir: "/config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [],
     lan: false, lanURLs: [],
@@ -63,19 +63,19 @@ function server(lang, over, posts) {
 const words = {
   en: {
     name: "Gateway port", apply: "Apply",
-    now: (u) => "Agents magpie connected move with it. Now " + u,
+    now: (u) => "Agents fogway connected move with it. Now " + u,
     range: "A port is a number from 1024 to 65535",
     taken: "Port 3500 is in use by another program: pick another one",
     moved: "Gateway on port 3591; 2 agents moved with it",
-    env: "MAGPIE_ADDR=127.0.0.1:3426 sets the gateway’s address: unset it to set the port here",
+    env: "FOGWAY_ADDR=127.0.0.1:3726 sets the gateway’s address: unset it to set the port here",
   },
   zh: {
     name: "网关端口", apply: "应用",
-    now: (u) => "改了之后，已接入 magpie 的 Agent 会一起换过去。当前 " + u,
+    now: (u) => "改了之后，已接入 fogway 的 Agent 会一起换过去。当前 " + u,
     range: "端口是 1024 到 65535 之间的数字",
     taken: "端口 3500 已被其他程序占用，请换一个",
     moved: "网关已换到端口 3591，2 个 Agent 已跟着换过去",
-    env: "MAGPIE_ADDR=127.0.0.1:3426 已指定网关地址：去掉这个环境变量后才能在这里设端口",
+    env: "FOGWAY_ADDR=127.0.0.1:3726 已指定网关地址：去掉这个环境变量后才能在这里设端口",
   },
 };
 
@@ -100,7 +100,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, over, posts));
       await watchSettingsReads(page);
-      await page.goto("http://localhost:3430/?view=settings&tab=network");
+      await page.goto("http://localhost:3730/?view=settings&tab=network");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       await page.locator("#portList .port-row").waitFor();
       return { page, errors, posts };
@@ -116,8 +116,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const sub = row.locator(".sub");
           const apply = row.getByRole("button", { name: w.apply });
           assert.equal((await row.locator(".name").textContent()).trim(), w.name);
-          assert.equal(await field.inputValue(), "3425");
-          assert.equal((await sub.textContent()).trim(), w.now("http://127.0.0.1:3425"));
+          assert.equal(await field.inputValue(), "3725");
+          assert.equal((await sub.textContent()).trim(), w.now("http://127.0.0.1:3725"));
           assert.equal(await page.locator("#portList select").count(), 0, "no native select");
           const border = await row.evaluate((r) => getComputedStyle(r).borderLeftWidth);
           assert(border === "0px" || border === "", "no left border accent: " + border);
@@ -163,9 +163,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.equal(await scroll(), before, "applying moved the page");
           assert.deepEqual(errors, []);
         }
-        // MAGPIE_ADDR comes first: the field is off and says why
+        // FOGWAY_ADDR comes first: the field is off and says why
         {
-          const { page, errors, posts } = await open(lang, { addrEnv: "127.0.0.1:3426", gateway: "http://127.0.0.1:3426" });
+          const { page, errors, posts } = await open(lang, { addrEnv: "127.0.0.1:3726", gateway: "http://127.0.0.1:3726" });
           const row = page.locator("#portList .port-row");
           assert(await row.locator("input.gateway-port").isDisabled());
           assert(await row.getByRole("button", { name: w.apply }).isDisabled());

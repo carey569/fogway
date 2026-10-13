@@ -3,9 +3,9 @@ package gateway
 import (
 	"net/http"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/redact"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/redact"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // redacted masks a request's secrets, as the settings say, before it goes

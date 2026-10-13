@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // MultiAgentV2 reads a namespaced call's message as sealed unless the call
-// says none of its arguments are; nothing magpie serves seals them.
+// says none of its arguments are; nothing fogway serves seals them.
 func TestNamespacedCallArgsArePlain(t *testing.T) {
 	res := Result{Parts: []Part{
 		{Kind: ToolCall, ID: "c1", Name: "collaboration__spawn_agent", Args: json.RawMessage(`{"message":"hi"}`)},

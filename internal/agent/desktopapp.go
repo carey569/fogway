@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/proc"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/proc"
 )
 
 // An agent that is a desktop app as well as a CLI has the app's version shown
@@ -84,7 +84,7 @@ var (
 )
 
 // AppVersion is the version of the agent's desktop app installed here, ""
-// for an agent without one magpie knows, one not installed, or an Info.plist
+// for an agent without one fogway knows, one not installed, or an Info.plist
 // that doesn't say (a binary one isn't read).
 func (a *Agent) AppVersion() string {
 	app, ok := desktopApps[a.ID]

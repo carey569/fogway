@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/codexcat"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/codexcat"
 )
 
-// A ChatGPT account's model in a catalog magpie writes (model_catalog_json)
-// takes its entry from Codex's cache under magpie's id, with the window
-// magpie resolved for it, not the one the cache kept (#674).
+// A ChatGPT account's model in a catalog fogway writes (model_catalog_json)
+// takes its entry from Codex's cache under fogway's id, with the window
+// fogway resolved for it, not the one the cache kept (#674).
 func TestCodexCatalogOwnEntryTakesResolvedWindow(t *testing.T) {
 	home := t.TempDir()
 	setHome(t, home)

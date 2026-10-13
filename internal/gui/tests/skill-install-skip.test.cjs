@@ -17,11 +17,11 @@ const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skill
 const cand = (name) => ({ path: "skills/" + name, name, description: name + " like caveman", have: false });
 const probe = { source: "JuliusBrussee/caveman", kind: "github", candidates: [cand("caveman"), cand("caveman-commit"), cand("caveman-review")] };
 const lib = () => ({
-  dir: `${HOME}/.config/magpie/library`, backups: `${HOME}/.config/magpie/backups`, home: HOME,
+  dir: `${HOME}/.config/fogway/library`, backups: `${HOME}/.config/fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code")],
   instructions: { agents: [] }, servers: [], skills: [], foundServers: [], projects: [], foundSkills: [],
 });
-const why = `the library's folder already has a caveman-commit that isn't this one (${HOME}/.config/magpie/library/skills/caveman-commit), left as it is: bring it in from the skills found there to use it`;
+const why = `the library's folder already has a caveman-commit that isn't this one (${HOME}/.config/fogway/library/skills/caveman-commit), left as it is: bring it in from the skills found there to use it`;
 
 function server(lang, posts) {
   return async (route) => {
@@ -60,12 +60,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const install = async (lang, width) => {
       const posts = [];
       const ctx = await browser.newContext({ viewport: { width, height: 800 } });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       const src = page.locator('#view-library input[data-lib="source"]');
       await src.fill("JuliusBrussee/caveman");

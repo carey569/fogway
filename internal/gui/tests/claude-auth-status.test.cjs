@@ -5,7 +5,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const lapse = "Claude Code could not authenticate this account; sign in again in magpie";
+const lapse = "Claude Code could not authenticate this account; sign in again in fogway";
 const error = "Failed to authenticate: OAuth session expired and could not be refreshed";
 const at = new Date().toISOString();
 const expired = { id: "claude@expired", provider: "claude", name: "Claude Code", kind: "account", who: "expired@example.com", model: "claude-opus-5-5" };
@@ -80,7 +80,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       page.setDefaultTimeout(5000);
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const steps = page.locator(".rt-steps");
       await steps.getByText(lang === "zh" ? /当前登录不再重试/ : /this login is not retried/).waitFor();
       let story = await steps.textContent();
@@ -95,7 +95,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await steps.getByText(lang === "zh" ? /没有其他账号可以回答/ : /No other account could answer/).waitFor();
       assert((await steps.textContent()).includes(error));
 
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider", { hasText: "Claude Code" }).first().click();
       const row = page.locator(`.editor .acc[data-account-id="${expired.who}"]`);
       await row.waitFor();
@@ -129,7 +129,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       page.setDefaultTimeout(5000);
       await page.route("**/*", serve(lang, [signedInRefused, codex]));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider", { hasText: "Claude Code" }).first().click();
       const own = page.locator(`.editor .acc[data-account-id="${expired.who}"]`);
       await own.waitFor();
@@ -137,7 +137,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await own.getByRole("button", { name: lang === "zh" ? "重新登录" : "Sign in again", exact: true }).waitFor();
       assert.equal(await own.getByRole("button", { name: lang === "zh" ? "移除" : "Remove", exact: true }).count(), 0, "Claude Code's own account can't be forgotten");
 
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider", { hasText: "Codex" }).first().click();
       const other = page.locator('.editor .acc[data-account-id="b@example.com"]');
       await other.waitFor();

@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-// Busy is what a restart of the magpie serving the gateway would cut
+// Busy is what a restart of the fogway serving the gateway would cut
 // short (#577): the agents' requests in flight — a reply streaming, an
 // image being made — and the turns of Claude Code run through the
 // subscription bridge waiting on their caller's tool results, whose
 // Claude Code lives only in this process. A request in flight is one
-// that does work (not a GET: the model lists, the info another magpie
+// that does work (not a GET: the model lists, the info another fogway
 // asks for every 15 s); the bridge's own helper calls are not counted
 // apart, a turn waiting on them being in Tools. Last is when the last
 // counted request ended, so a caller can tell a tool chain's gap — the
@@ -38,7 +38,7 @@ func (s *Server) Busy() Busy {
 // counted is h with its requests counted for Busy.
 func (s *Server) counted(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions || strings.HasPrefix(r.URL.Path, "/_magpie/") || strings.HasPrefix(r.URL.Path, "/mcp/") {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions || strings.HasPrefix(r.URL.Path, "/_fogway/") || strings.HasPrefix(r.URL.Path, "/mcp/") {
 			h.ServeHTTP(w, r)
 			return
 		}

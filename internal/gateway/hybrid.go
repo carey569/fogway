@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/redact"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/redact"
 )
 
 // HybridHit is what the trace tells of the edge-cloud route's decision.

@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/yetone/magpie/internal/steady"
+	"github.com/fogway/fogway/internal/steady"
 )
 
 func TestSaveConcurrent(t *testing.T) {

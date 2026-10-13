@@ -9,7 +9,7 @@ import (
 
 func home(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("MAGPIE_PORTABLE", "")
+	t.Setenv("FOGWAY_PORTABLE", "")
 }
 
 var three = []Manifest{

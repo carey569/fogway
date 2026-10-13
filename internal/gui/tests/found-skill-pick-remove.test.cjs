@@ -27,7 +27,7 @@ const FOUND = [
 ];
 const local = (name) => ({ name, description: name + " does a thing", kind: "local", agents: ["claude"] });
 const lib = (found) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex"), agent("gemini", "Gemini CLI"), agent("goose", "Goose")],
   instructions: { agents: [] }, servers: [], skills: [local("lib-a"), local("lib-b")], foundServers: [], projects: [], foundSkills: found, problems: [],
 });
@@ -73,7 +73,7 @@ function server(lang, state, posts) {
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -131,13 +131,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const state = { found: FOUND.map((f) => ({ ...f })) };
         const posts = [], errors = [];
         const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         page.on("dialog", (d) => { errors.push("a browser dialog: " + d.message()); d.dismiss(); });
         await page.route("**/*", server(lang, state, posts));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         const row = (name) => v.locator(".lib-found").filter({ has: page.locator(".name", { hasText: new RegExp("^" + name + "$") }) });
@@ -186,7 +186,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal((await sheet.locator(".ehead b").textContent()).trim(), w("Remove {n} skills?", { n: 3 }));
         assert.deepEqual(await lines(), [
           w("They are taken out of {agents}.", { agents: "Claude Code, Codex, Goose" }),
-          w("{n} folders are moved to magpie's backups (Backups, at the top of the Library), not deleted.", { n: 2 }) + " " + w("{n} linked from folders of your own are only unlinked: those folders stay where they are.", { n: 1 }),
+          w("{n} folders are moved to fogway's backups (Backups, at the top of the Library), not deleted.", { n: 2 }) + " " + w("{n} linked from folders of your own are only unlinked: those folders stay where they are.", { n: 1 }),
           w("{n} have an entry in the shared skills folder, which goes to the backups too, so no agent reads them from there.", { n: 1 }),
           w("Another agent's own skill by one of these names stays."),
         ]);
@@ -221,7 +221,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await sheet.waitFor();
         await settled(page);
         assert.equal((await sheet.locator(".ehead b").textContent()).trim(), w("Remove {name}?", { name: "stuck" }));
-        assert.deepEqual(await lines(), [w("It is taken out of {agents}, and its folder is moved to magpie's backups.", { agents: "Gemini CLI" })]);
+        assert.deepEqual(await lines(), [w("It is taken out of {agents}, and its folder is moved to fogway's backups.", { agents: "Gemini CLI" })]);
         assert.equal((await sheet.locator(".bar button.primary").textContent()).trim(), w("Remove"));
         await sheet.locator(".bar button.primary").click();
         await page.locator("#status").filter({ hasText: STUCK }).waitFor();

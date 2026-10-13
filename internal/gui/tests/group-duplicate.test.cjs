@@ -89,7 +89,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // round is delivered on the next frame and nothing is painted wrong.
       page.on("pageerror", (e) => { if (!/^ResizeObserver loop completed with undelivered notifications/.test(e.message)) errors.push(e.message); });
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-groups > .rt-group").nth(1).waitFor();
       // tall enough that the rows are in view unscrolled: a scroll closes
       // the menu, and the page settles its own scroll as it loads

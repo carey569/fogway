@@ -10,10 +10,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 // pickEfforts saves the levels picked in Settings for Image recognition's

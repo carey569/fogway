@@ -44,7 +44,7 @@ static int traitWeight(CTFontRef font) {
     return (best + 1) * 100;
 }
 
-char *magpieInstalledFonts(void) {
+char *fogwayInstalledFonts(void) {
     @autoreleasepool {
         CTFontCollectionRef collection = CTFontCollectionCreateFromAvailableFonts(NULL);
         if (!collection) return NULL;

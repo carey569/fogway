@@ -13,8 +13,8 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/yetone/magpie/internal/omarchy"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/omarchy"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // The windows, h.main and h.panel, are nil while lightweight mode has let
@@ -40,10 +40,10 @@ func (h *host) makeMain(url string) *application.WebviewWindow {
 	}
 	// Windows' title bar in the page's colour from the first frame; the
 	// page keeps it so as its theme changes (TintTitleBar)
-	winOpts, winBg := windowChrome(cmp.Or(os.Getenv("MAGPIE_THEME"), settings.Load().Theme))
+	winOpts, winBg := windowChrome(cmp.Or(os.Getenv("FOGWAY_THEME"), settings.Load().Theme))
 	w := h.app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:             "main",
-		Title:            "magpie",
+		Title:            "Fogway",
 		URL:              url,
 		Width:            width,
 		Height:           height,
@@ -94,7 +94,7 @@ func (h *host) makeMain(url string) *application.WebviewWindow {
 		}
 		h.hideMain()
 	})
-	// Out of full screen, magpie leaves the Dock again if it was there only
+	// Out of full screen, fogway leaves the Dock again if it was there only
 	// for that (dockOnFullscreen).
 	w.OnWindowEvent(events.Mac.WindowDidExitFullScreen, func(*application.WindowEvent) {
 		if h.closing.Swap(false) {
@@ -123,7 +123,7 @@ func (h *host) makePanel() *application.WebviewWindow {
 	// The system's close hides the panel, as Escape does: a title bar's X
 	// (KWin's, #1283), Alt+F4 or the window manager's close key. Closed, it
 	// was gone while the tray still opened it, and the icon did nothing
-	// until magpie restarted. One lightweight mode let go (no longer
+	// until fogway restarted. One lightweight mode let go (no longer
 	// h.panel by then) is closed.
 	w.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		if !application.InvokeSyncWithResult(func() bool { return h.panel == w }) {
@@ -233,7 +233,7 @@ func (h *host) panelWin() (w *application.WebviewWindow, again bool) {
 // lightShown says whether lightweight mode keeps w: it is up (windowUp),
 // or it is the main window leaving full screen to be closed; on the main
 // thread. A window open under another app's was let go as closed, and
-// Command-Tab back to magpie found it blank or gone (#1381).
+// Command-Tab back to fogway found it blank or gone (#1381).
 func (h *host) lightShown(w *application.WebviewWindow) bool {
 	return windowUp(w) || w == h.main && h.closing.Load()
 }
@@ -272,8 +272,8 @@ func (h *host) openMain(url string) {
 	showHere(h.main)
 }
 
-// reopenMain answers a click on magpie's Dock icon (#1252). A window that is
-// open, on whichever Space, is left there, and magpie is activated as any
+// reopenMain answers a click on fogway's Dock icon (#1252). A window that is
+// open, on whichever Space, is left there, and fogway is activated as any
 // app is: the Mac takes the user to the window's Space. One closed or
 // minimised is shown as openMain shows it, on the Space the user is on.
 func (h *host) reopenMain() {
@@ -295,7 +295,7 @@ const spaceSettle = 500 * time.Millisecond
 
 // showHere shows w and makes it key on the Space the user is on, wherever it
 // was last; on the main thread. It moves only while being shown: left on,
-// activating magpie in any way (the Dock, Command-Tab) would pull the open
+// activating fogway in any way (the Dock, Command-Tab) would pull the open
 // window off its own Space onto the user's (#1252).
 func showHere(w *application.WebviewWindow) {
 	setMovesToActiveSpace(w, true)

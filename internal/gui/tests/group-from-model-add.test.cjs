@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const errors = [];
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang, posts, refuse));
-          await page.goto(`http://magpie.test/?view=routing&newgroup=${encodeURIComponent(MODEL)}`);
+          await page.goto(`http://fogway.test/?view=routing&newgroup=${encodeURIComponent(MODEL)}`);
           const ed = page.locator("#view-routing:not([hidden]) .rt-gedit");
           await ed.waitFor();
           await ed.locator("input").first().fill("Hy4 preview");

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// dialsOut has magpie's own requests go as netproxy.Install has them, and
+// dialsOut has fogway's own requests go as netproxy.Install has them, and
 // tells every host dialed that isn't this machine's, never dialing it.
 func dialsOut(t *testing.T) func() []string {
 	t.Helper()
@@ -65,7 +65,7 @@ func TestKeyReadsOnlyWhenAsked(t *testing.T) {
 	}
 	setQuotaReads(t, "asked")
 	t.Cleanup(func() { setQuotaReads(t, "") })
-	dialsOut(t) // magpie's own transport, which holds what nobody asked for
+	dialsOut(t) // fogway's own transport, which holds what nobody asked for
 	bg := context.Background()
 	KeyBalances(bg)
 	PlanQuotas(bg)

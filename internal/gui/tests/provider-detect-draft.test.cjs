@@ -7,7 +7,7 @@
 // models) and what went wrong are said in place under the buttons, not in
 // a toast. No click moves the page, there is no native <select> and no
 // left-border accent, and at 360px nothing runs off the side. In every
-// language magpie speaks.
+// language fogway speaks.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
@@ -79,7 +79,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           if (keyless) return json({ results: PROTOS.map((p) => ({ ...one(m, p), ok: false, status: 401, error: "invalid api key" })) });
           return json({ results: PROTOS.map((p) => one(m, p)) });
         }));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const T = (s) => tr(lang, s);
         await page.locator("#addProvider").click();
         await page.locator("#addSheet .custom-foot .custom").click();

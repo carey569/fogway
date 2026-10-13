@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Plugins › Built-in (Lxxyx on X: too much to look through): magpie's
+// Plugins › Built-in (Lxxyx on X: too much to look through): fogway's
 // built-in plugins (internal/pluginrt, plugins/), each with a switch kept in
 // plugins.yml. Off, a plugin's parts leave the window: its page leaves the
 // nav — the sidebar's and the header's — and an address kept for it opens
@@ -43,7 +43,7 @@ function server(lang, posts, broken) {
   const cur = () => ({
     theme: "light", lang, tray: "panel", currency: "usd", textSize: 100, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "",
-    version: "0.1.400", dir: "/config/home/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "/config/home/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
     builtins: list(),
@@ -74,7 +74,7 @@ function server(lang, posts, broken) {
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/window/fit") return route.fulfill({ status: 204 });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -112,7 +112,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], posts = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, posts));
-        await page.goto("http://magpie.test/?view=sessions");
+        await page.goto("http://fogway.test/?view=sessions");
         await page.waitForSelector("#nav button.on");
         const side = await page.evaluate(() => document.body.classList.contains("side-nav"));
         assert.equal(side, width >= 1024, `${where}: the layout`);
@@ -123,7 +123,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await page.locator("#setTab-features").count(), 0, `${where}: no Settings › Features`);
         assert.ok(await page.locator("#setTab-otel").isHidden(), `${where}: Observability's tab, off`);
 
-        await page.goto("http://magpie.test/?view=plugins");
+        await page.goto("http://fogway.test/?view=plugins");
         await pluginTabs(page, side).first().waitFor();
         // Built-in first, in the page's language
         const first = (await pluginTabs(page, side).first().textContent()).trim();
@@ -176,7 +176,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts, "/config/plugins.yml doesn't parse: yaml: line 2"));
-      await page.goto("http://magpie.test/?view=plugins");
+      await page.goto("http://fogway.test/?view=plugins");
       await builtinTab(page, false);
       const say = await page.locator("#builtinList .feat-say.warn").textContent();
       assert.ok(say.includes("yaml: line 2"), `${where}: says the error`);

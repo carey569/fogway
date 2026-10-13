@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/yetone/magpie/internal/autostart"
+	"github.com/fogway/fogway/internal/autostart"
 )
 
-// magpie autostart [on|off]: whether magpie opens at login, in the tray.
+// fogway autostart [on|off]: whether fogway opens at login, in the tray.
 func autostartCmd(args []string) error {
 	if len(args) > 1 {
-		return fmt.Errorf("usage: magpie autostart [on|off]")
+		return fmt.Errorf("usage: fogway autostart [on|off]")
 	}
 	if len(args) == 1 {
 		switch args[0] {
@@ -19,17 +19,17 @@ func autostartCmd(args []string) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("usage: magpie autostart [on|off]")
+			return fmt.Errorf("usage: fogway autostart [on|off]")
 		}
 	}
 	if autostart.Enabled() {
 		if runtime.GOOS == "android" {
-			fmt.Println(green.Render("✓"), "magpie starts the gateway at boot (requires Termux:Boot)")
+			fmt.Println(green.Render("✓"), "fogway starts the gateway at boot (requires Termux:Boot)")
 		} else {
-			fmt.Println(green.Render("✓"), "magpie opens at login, in the tray")
+			fmt.Println(green.Render("✓"), "fogway opens at login, in the tray")
 		}
 	} else {
-		fmt.Println("magpie doesn't open at login")
+		fmt.Println("fogway doesn't open at login")
 	}
 	return nil
 }

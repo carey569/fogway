@@ -16,7 +16,7 @@ const { chromium, webkit } = require("playwright");
 const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/nf";
 const fixture = (off) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [
     { id: "claude", name: "Claude Code", icon: "claudecode-color", skills: `${HOME}/.claude/skills`, mcp: `${HOME}/.claude.json`, toolsOff: true },
     { id: "cursor", name: "Cursor", icon: "cursor", skills: `${HOME}/.cursor/skills`, mcp: `${HOME}/.cursor/mcp.json` },
@@ -86,12 +86,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         t.after(async () => { await browser.close(); });
         const w = words[lang], sends = [];
         const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 820 : 500 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.route("http://magpie.test/**", server(lang, sends));
-        await page.goto("http://magpie.test/");
+        await page.route("http://fogway.test/**", server(lang, sends));
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
         const pill = page.locator('#view-library .lib-health[data-server="filesystem"]');

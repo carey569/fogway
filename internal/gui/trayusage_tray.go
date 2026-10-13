@@ -10,11 +10,11 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// watchTrayUsage keeps the tray's cards up to date, and plain "magpie" in
+// watchTrayUsage keeps the tray's cards up to date, and plain "fogway" in
 // the tooltip while there are none.
 func (h *host) watchTrayUsage() {
 	wake := make(chan struct{}, 1)
@@ -43,7 +43,7 @@ func (h *host) watchTrayUsage() {
 				cells = trayPlain(cells)
 			}
 			if tip == "" {
-				tip = "magpie"
+				tip = "fogway"
 			}
 			if runtime.GOOS != "darwin" {
 				cells = nil

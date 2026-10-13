@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/klauspost/compress/zstd"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // Bound a single body and its read time without limiting how long a client
@@ -19,8 +19,8 @@ import (
 //
 // The limit is on the decoded body. Codex sends the whole conversation on
 // every turn, its screenshots inline as base64, and zstd-compressed to a
-// ChatGPT account, which magpie compresses again on the way out: a long
-// session that read many images went past 128 MB decoded and got magpie's
+// ChatGPT account, which fogway compresses again on the way out: a long
+// session that read many images went past 128 MB decoded and got fogway's
 // 413 on every retry, while the same turn is a fraction of that on the
 // wire (NeoPengZhile, #1422). 512 MB leaves such a session room and still
 // bounds what one request may hold in memory.
@@ -69,7 +69,7 @@ func (b *idleBody) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// errBodyEncoding is a Content-Encoding magpie can't decode.
+// errBodyEncoding is a Content-Encoding fogway can't decode.
 var errBodyEncoding = errors.New("unsupported Content-Encoding")
 
 // decodedBody reads r.Body through its Content-Encoding: Codex sends its
@@ -93,7 +93,7 @@ func decodedBody(r *http.Request) (io.ReadCloser, error) {
 		}
 		rd = g
 	default:
-		return nil, fmt.Errorf("%w: magpie can't read a %q body; send it as identity, gzip or zstd", errBodyEncoding, enc)
+		return nil, fmt.Errorf("%w: fogway can't read a %q body; send it as identity, gzip or zstd", errBodyEncoding, enc)
 	}
 	r.Header.Del("Content-Encoding")
 	return rd, nil
@@ -155,12 +155,12 @@ func readBoundedRequestBody(w http.ResponseWriter, r *http.Request, limits reque
 	return body, 0, nil
 }
 
-// overLimit says a body is over magpie's own limit, and that it is
-// magpie's, not the provider's: an agent shows the message as it comes,
+// overLimit says a body is over fogway's own limit, and that it is
+// fogway's, not the provider's: an agent shows the message as it comes,
 // and a bare "Payload Too Large" read as the model's or the vendor's
 // (#1422). writeError adds what to do about it.
 func overLimit(limit int64) error {
-	return fmt.Errorf("request body is over magpie's gateway limit of %s (decoded); the provider was not asked", sizeWord(limit))
+	return fmt.Errorf("request body is over fogway's gateway limit of %s (decoded); the provider was not asked", sizeWord(limit))
 }
 
 // sizeWord is a byte count in MB, or in KB or bytes when it is smaller,

@@ -60,7 +60,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const posted = [];
       await page.route("**/*", serve(lang, posted));
       t.after(() => browser.close());
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider", { hasText: "Factory" }).click();
       const adds = page.locator(".editor .accts .acc.add");
       await adds.nth(1).waitFor();

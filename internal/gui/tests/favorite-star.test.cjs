@@ -47,7 +47,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, theme));
-        await page.goto("http://magpie.test/" + (panel ? "?mode=panel" : ""));
+        await page.goto("http://fogway.test/" + (panel ? "?mode=panel" : ""));
         await page.locator(row).waitFor();
         if (panel) {
           await page.locator(`${row} .ag-sum`).click();

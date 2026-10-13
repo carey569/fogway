@@ -6,8 +6,8 @@ import (
 	"log"
 	"unsafe"
 
+	"github.com/fogway/fogway/internal/settings"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/yetone/magpie/internal/settings"
 	"golang.org/x/sys/windows"
 )
 
@@ -21,11 +21,11 @@ func webView2Check(app *application.App) bool {
 	if !webView2Missing(app.Env.Info().PlatformInfo) {
 		return true
 	}
-	log.Printf("magpie: no Microsoft Edge WebView2 Runtime, which magpie's windows need; install it from %s, or use magpie web / magpie tui", webView2Page)
+	log.Printf("fogway: no Microsoft Edge WebView2 Runtime, which fogway's windows need; install it from %s, or use fogway web / fogway tui", webView2Page)
 	title, body := webView2Notice(trayLang(settings.Load().Lang, systemLang))
 	if webView2Box(title, body) == idYes {
 		if err := windows.ShellExecute(0, windows.StringToUTF16Ptr("open"), windows.StringToUTF16Ptr(webView2Page), nil, nil, windows.SW_SHOWNORMAL); err != nil {
-			log.Println("magpie: opening the WebView2 page:", err)
+			log.Println("fogway: opening the WebView2 page:", err)
 		}
 	}
 	return false

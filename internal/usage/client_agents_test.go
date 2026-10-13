@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // #1958 (NorethSea): a bridge that starts Codex's app-server under a name

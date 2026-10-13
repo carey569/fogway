@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // 悠悠哥 on Discord (macOS): the Agents page listed "Codex 0.162.1" under Not
 // set up, while `which -a codex` found nothing and ~/.codex wasn't there.
-// magpie had found a codex in a folder it adds to its own PATH (an npm
+// fogway had found a codex in a folder it adds to its own PATH (an npm
 // install under a Node nvm no longer uses) that the terminal's PATH lacks.
 // Now a CLI found off the terminal's PATH says so beside its version, its
 // tip (and the version's) naming where it is, in every language; one on the
@@ -56,17 +56,17 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator(`${row("codex")} .ag-ver`).first().waitFor();
       return page;
     };
 
     for (const [lang, said, tip] of [
-      ["en", "Not on your terminal's PATH", `magpie found Codex 0.162.1 at ${BIN}. That folder is one magpie looks in, but your terminal's PATH doesn't have it`],
-      ["zh", "不在终端的 PATH 里", `magpie 在 ${BIN} 找到了 Codex 0.162.1。`],
-      ["zh-TW", "不在終端機的 PATH 裡", `magpie 在 ${BIN} 找到了 Codex 0.162.1。`],
-      ["ja", "ターミナルの PATH にありません", `magpie は Codex 0.162.1 を ${BIN} で見つけました。`],
-      ["de", "Nicht im PATH des Terminals", `magpie hat Codex 0.162.1 unter ${BIN} gefunden.`],
+      ["en", "Not on your terminal's PATH", `fogway found Codex 0.162.1 at ${BIN}. That folder is one fogway looks in, but your terminal's PATH doesn't have it`],
+      ["zh", "不在终端的 PATH 里", `fogway 在 ${BIN} 找到了 Codex 0.162.1。`],
+      ["zh-TW", "不在終端機的 PATH 裡", `fogway 在 ${BIN} 找到了 Codex 0.162.1。`],
+      ["ja", "ターミナルの PATH にありません", `fogway は Codex 0.162.1 を ${BIN} で見つけました。`],
+      ["de", "Nicht im PATH des Terminals", `fogway hat Codex 0.162.1 unter ${BIN} gefunden.`],
     ]) {
       await t.test(lang + ": the note and where, beside the version", async () => {
         const page = await open(lang);

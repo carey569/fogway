@@ -12,7 +12,7 @@ import (
 
 // NeoPengZhile's Codex session had read many images; Codex sends the
 // whole conversation each turn, screenshots inline, zstd-compressed, and
-// past 128 MB decoded magpie answered 413 on all five retries (#1422).
+// past 128 MB decoded fogway answered 413 on all five retries (#1422).
 // Such a turn is read now: a zstd body of inline images decoding to
 // 136 MB, on Codex's backend path, with the gateway's own limit.
 func TestImageHeavyCodexTurnIsRead(t *testing.T) {

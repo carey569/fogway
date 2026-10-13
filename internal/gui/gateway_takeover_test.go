@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
 // fakeOlderGateway is the test binary run as another process holding the
-// gateway's port and answering as magpie 0.1.550 would, until it is ended.
+// gateway's port and answering as fogway 0.1.550 would, until it is ended.
 func fakeOlderGateway(addr string) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -24,18 +24,18 @@ func fakeOlderGateway(addr string) {
 	}
 	http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"name":"magpie","version":"0.1.550","models":3}`)
+		io.WriteString(w, `{"name":"fogway","version":"0.1.550","models":3}`)
 	}))
 }
 
 // The Gateway page's button (leslie_luo on Discord: the page said an older
-// magpie served the gateway, and there was no telling which one to quit).
+// fogway served the gateway, and there was no telling which one to quit).
 // It quits the process on the gateway's port only when its program is a
-// magpie, by its pid and path, then serves the gateway here at once; a
-// program of another name answering as magpie is left running and named.
+// fogway, by its pid and path, then serves the gateway here at once; a
+// program of another name answering as fogway is left running and named.
 // Restart then serves it here again. Both run on a port of the test's own,
 // against copies of the test binary.
-func TestGatewayFixQuitsOnlyAMagpie(t *testing.T) {
+func TestGatewayFixQuitsOnlyAFogway(t *testing.T) {
 	h := t.TempDir()
 	t.Setenv("HOME", h)
 	t.Setenv("USERPROFILE", h)
@@ -43,7 +43,7 @@ func TestGatewayFixQuitsOnlyAMagpie(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
 	port := freePort(t)
 	addr := "127.0.0.1:" + strconv.Itoa(port)
-	t.Setenv("MAGPIE_ADDR", addr)
+	t.Setenv("FOGWAY_ADDR", addr)
 	was := gateway.Version
 	gateway.Version = "0.1.630"
 	defer func() { gateway.Version = was }()
@@ -71,7 +71,7 @@ func TestGatewayFixQuitsOnlyAMagpie(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
-	// start runs the test binary under name, as the older magpie holding
+	// start runs the test binary under name, as the older fogway holding
 	// the port; ended is closed once it has ended
 	start := func(name string) (*exec.Cmd, chan struct{}) {
 		if runtime.GOOS == "windows" {
@@ -88,7 +88,7 @@ func TestGatewayFixQuitsOnlyAMagpie(t *testing.T) {
 			}
 		}
 		cmd := exec.Command(bin, "-test.run=^$")
-		cmd.Env = append(os.Environ(), "MAGPIE_TEST_FAKE_GATEWAY="+addr)
+		cmd.Env = append(os.Environ(), "FOGWAY_TEST_FAKE_GATEWAY="+addr)
 		if err := cmd.Start(); err != nil {
 			t.Fatal(err)
 		}
@@ -103,15 +103,15 @@ func TestGatewayFixQuitsOnlyAMagpie(t *testing.T) {
 		return cmd, ended
 	}
 
-	// a program that isn't magpie is never ended, however it answers
+	// a program that isn't fogway is never ended, however it answers
 	other, otherEnded := start("other-server")
 	out := takeOverGateway()
-	if out.OK || out.Reason != "not-magpie" || out.PID != other.Process.Pid || filepath.Base(out.Path) != filepath.Base(other.Path) {
+	if out.OK || out.Reason != "not-fogway" || out.PID != other.Process.Pid || filepath.Base(out.Path) != filepath.Base(other.Path) {
 		t.Fatalf("another program's port: %+v", out)
 	}
 	select {
 	case <-otherEnded:
-		t.Fatal("ended a program that isn't magpie")
+		t.Fatal("ended a program that isn't fogway")
 	case <-time.After(300 * time.Millisecond):
 	}
 	if served.Load() != nil {
@@ -120,8 +120,8 @@ func TestGatewayFixQuitsOnlyAMagpie(t *testing.T) {
 	other.Process.Kill()
 	<-otherEnded
 
-	// an older magpie is quit, and this one serves at once
-	old, oldEnded := start("magpie")
+	// an older fogway is quit, and this one serves at once
+	old, oldEnded := start("fogway")
 	_ = old
 	if g := providersState().Gateway; !g.Older || g.Mine {
 		t.Fatalf("not seen as older: %+v", g)
@@ -133,7 +133,7 @@ func TestGatewayFixQuitsOnlyAMagpie(t *testing.T) {
 	select {
 	case <-oldEnded:
 	case <-time.After(5 * time.Second):
-		t.Fatal("the older magpie is still running")
+		t.Fatal("the older fogway is still running")
 	}
 	gw := served.Load()
 	if g := providersState().Gateway; gw == nil || !g.Mine || !g.Running || g.Older {

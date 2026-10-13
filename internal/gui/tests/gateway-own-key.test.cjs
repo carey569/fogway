@@ -6,10 +6,10 @@ const { chromium, webkit } = require("playwright");
 const { fixture } = require("./fixtures/caller-keys.cjs");
 
 const words = {
-  en: { create: "Create", name: "Gateway key name", own: "Gateway key value", placeholder: "Your own key (optional)", made: "Clients that send this key reach magpie now", short: "Use a key between 8 and 256 characters" },
-  zh: { create: "创建", name: "网关密钥名称", own: "网关密钥的值", placeholder: "自定义密钥（可选）", made: "发送这个密钥的客户端现在就能连接 magpie", short: "密钥长度需在 8 到 256 个字符之间" },
-  ja: { create: "作成", name: "ゲートウェイキー名", own: "ゲートウェイキーの値", placeholder: "独自のキー（任意）", made: "このキーを送るクライアントはそのまま magpie に接続できます", short: "キーは 8〜256 文字にしてください" },
-  de: { create: "Erstellen", name: null, own: "Wert des Zugangsschlüssels", placeholder: "Eigener Schlüssel (optional)", made: "Clients, die diesen Schlüssel senden, erreichen magpie jetzt", short: "Der Schlüssel muss 8 bis 256 Zeichen lang sein" },
+  en: { create: "Create", name: "Gateway key name", own: "Gateway key value", placeholder: "Your own key (optional)", made: "Clients that send this key reach fogway now", short: "Use a key between 8 and 256 characters" },
+  zh: { create: "创建", name: "网关密钥名称", own: "网关密钥的值", placeholder: "自定义密钥（可选）", made: "发送这个密钥的客户端现在就能连接 fogway", short: "密钥长度需在 8 到 256 个字符之间" },
+  ja: { create: "作成", name: "ゲートウェイキー名", own: "ゲートウェイキーの値", placeholder: "独自のキー（任意）", made: "このキーを送るクライアントはそのまま fogway に接続できます", short: "キーは 8〜256 文字にしてください" },
+  de: { create: "Erstellen", name: null, own: "Wert des Zugangsschlüssels", placeholder: "Eigener Schlüssel (optional)", made: "Clients, die diesen Schlüssel senden, erreichen fogway jetzt", short: "Der Schlüssel muss 8 bis 256 Zeichen lang sein" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -24,7 +24,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const events = [], errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", fixture(lang, "light", events, { lan: true }));
-        await page.goto("http://magpie.test/?view=gateway");
+        await page.goto("http://fogway.test/?view=gateway");
         await page.locator("#gatewayKeys .acc[data-key]").last().waitFor();
         await page.locator("#addGatewayKey").click();
         const own = page.getByRole("textbox", { name: w.own, exact: true });
@@ -48,7 +48,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.match(await row.textContent(), /…0042/);
         assert.doesNotMatch(await page.locator("#gatewayKeys").textContent(), /cpa-family/);
         await page.waitForFunction((m) => document.body.textContent.includes(m), w.made);
-        // the next key starts empty: magpie makes it
+        // the next key starts empty: fogway makes it
         await page.locator("#addGatewayKey").click();
         assert.equal(await page.getByRole("textbox", { name: w.own, exact: true }).inputValue(), "");
         await page.locator("#gatewayKeys .adding .kf input").first().fill("Tablet");

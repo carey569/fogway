@@ -88,7 +88,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const zh = lang === "zh";
       const L = {
         each: zh ? "逐个检测已选模型" : "Each picked model", use: zh ? "使用检测结果" : "Use these", taken: zh ? "已填入 · 保存后生效" : "Taken · save to keep",

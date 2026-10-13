@@ -72,7 +72,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, feed));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const rows = page.locator(".rt-req");
       await rows.nth(fixtures.length - 1).waitFor();
       const check = async () => {

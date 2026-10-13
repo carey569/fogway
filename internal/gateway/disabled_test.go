@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // An embeddings model the user disabled is refused before its provider is
@@ -16,7 +16,7 @@ func TestDisabledEmbeddingsModelRefused(t *testing.T) {
 	}
 	for _, model := range []string{"lib/embed-1", "embed-1"} {
 		code, raw := postRetrieval(t, s, "/v1/embeddings", `{"model":"`+model+`","input":"hi"}`)
-		if code != 403 || !strings.Contains(raw, "is disabled in magpie") {
+		if code != 403 || !strings.Contains(raw, "is disabled in fogway") {
 			t.Fatalf("%s: %d %s", model, code, raw)
 		}
 	}

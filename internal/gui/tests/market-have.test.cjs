@@ -20,7 +20,7 @@ const pdf = { name: "pdf", kind: "folder", description: "PDFs", agents: ["claude
 
 function serve(lang, lib, calls) {
   const view = (result) => ({
-    dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+    dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
     agents: [agent("claude", "Claude Code", "claudecode-color")],
     instructions: { agents: [], sets: [] }, servers: structuredClone(lib.servers), foundServers: [], projects: [], foundSkills: [],
     skills: structuredClone(lib.skills), problems: [], ...(result ? { result } : {}),
@@ -86,7 +86,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const lib = { servers: [structuredClone(pw)], skills: [structuredClone(pdf)] };
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, lib, calls));
-      await page.addInitScript(() => { localStorage.setItem("magpie.libTab", "mcp"); });
+      await page.addInitScript(() => { localStorage.setItem("fogway.libTab", "mcp"); });
       // nothing here may count on the window being focused again
       await page.addInitScript(() => {
         window.__focus = 0;
@@ -94,7 +94,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         document.addEventListener("visibilitychange", () => window.__focus++);
       });
       t.after(() => browser.close());
-      await page.goto("http://magpie.test/?view=library");
+      await page.goto("http://fogway.test/?view=library");
       const view = page.locator("#view-library");
       const card = (kind, id) => view.locator(`.mk[data-market="${kind}"] .mk-card[data-id="${id}"]`);
       await card("mcp", "playwright").locator(".mk-have").waitFor();

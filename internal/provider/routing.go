@@ -47,10 +47,10 @@ func SetSink(id string, sink bool) error {
 	return Save(*p)
 }
 
-// SwitchOnly reports whether magpie only moves agent's own sign-in between
+// SwitchOnly reports whether fogway only moves agent's own sign-in between
 // its accounts, sending none of its requests through the gateway for
 // account failover (Provider.SwitchOnly). While providers.json can't be
-// read the user's choice is unknown, and failover, magpie's own idea, is
+// read the user's choice is unknown, and failover, fogway's own idea, is
 // not taken up on it.
 func SwitchOnly(agent string) bool {
 	f, err := read()
@@ -96,7 +96,7 @@ var usedCache struct {
 }
 
 // firstWait is how long a request waits for an agent's allowances the
-// first time they are asked for, so the first requests after magpie
+// first time they are asked for, so the first requests after fogway
 // starts are routed by them too; later ones never wait.
 var firstWait = 3 * time.Second
 

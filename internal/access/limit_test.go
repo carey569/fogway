@@ -138,8 +138,8 @@ func TestLimitSetAndReset(t *testing.T) {
 	clock := time.Date(2026, 10, 10, 8, 0, 0, 0, time.UTC)
 	Now = func() time.Time { return clock }
 	t.Cleanup(func() { Now = time.Now })
-	// a key as an older magpie kept it
-	old := `[{"id":"k1","name":"Old","secret":"sk-magpie-key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","limit":{"period":"week","tokens":5000}}]`
+	// a key as an older fogway kept it
+	old := `[{"id":"k1","name":"Old","secret":"sk-fogway-key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","limit":{"period":"week","tokens":5000}}]`
 	if err := os.MkdirAll(strings.TrimSuffix(Path(), "caller-keys.json"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestLimitSetAndReset(t *testing.T) {
 		t.Fatalf("reset: %+v", l)
 	}
 	// the store reloads as a restart would
-	if who, ok := Authenticate("sk-magpie-key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"); !ok || !who.Limit.Since.Equal(clock) {
+	if who, ok := Authenticate("sk-fogway-key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"); !ok || !who.Limit.Since.Equal(clock) {
 		t.Fatalf("after a reload: %+v", who.Limit)
 	}
 	set(&Limit{Period: "month", Tokens: 10})

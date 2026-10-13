@@ -75,7 +75,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         const calls = [];
         await page.route("**/*", serve(lang, calls));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const tr = (s) => page.evaluate(([l, s]) => (l === "en" ? s : I18N[l][s]), [lang, s]);
         const w = {
           fetch: await tr("Fetch models"), again: await tr("Fetch models again"),

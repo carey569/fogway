@@ -24,7 +24,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
 // MemberEfforts are the levels a group's member may be fixed at, lowest
@@ -108,7 +108,7 @@ func fixedLevels(fixed []string) []string {
 
 // CleanLevels are the reasoning levels a group names for itself
 // (Group.Levels) as they are kept: lowercase, each once, lowest first.
-// Only the levels magpie knows are taken.
+// Only the levels fogway knows are taken.
 func CleanLevels(in []string) ([]string, error) {
 	var want []string
 	for _, l := range in {
@@ -117,7 +117,7 @@ func CleanLevels(in []string) ([]string, error) {
 			continue
 		}
 		if !slices.Contains(Levels, l) {
-			return nil, fmt.Errorf("%q is not a reasoning level magpie knows (they are %s)", l, strings.Join(Levels, ", "))
+			return nil, fmt.Errorf("%q is not a reasoning level fogway knows (they are %s)", l, strings.Join(Levels, ", "))
 		}
 		want = append(want, l)
 	}

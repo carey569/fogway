@@ -11,39 +11,39 @@ meet it.
 
 `claudeBinary` (and the sign-in's `claudeExecutable`) take
 `claudecode.Find`: the machine's own `claude` (`proc.FindTool`), else the
-one `magpie claude-code install` downloaded into
+one `fogway claude-code install` downloaded into
 `<cache>/claude-code/<version>/` (`internal/claudecode`), else, on Windows,
 one in WSL. The download is Anthropic's native build from
 `downloads.claude.ai/claude-code-releases`, the "latest" channel, as
 `claude.ai/install.sh` takes it: the release's `manifest.json` gives the
 platform's SHA-256 and size, and a build that doesn't match both is not
-kept. It is only made when the user asks (`magpie claude-code install`, or
-yes to `magpie accounts add claude`'s offer on a machine without one), for
+kept. It is only made when the user asks (`fogway claude-code install`, or
+yes to `fogway accounts add claude`'s offer on a machine without one), for
 a server or a container (Jorben on Discord). It is not on PATH and stands
 in for no agent. It doesn't update itself (the bridge sets
 `DISABLE_AUTOUPDATER`); installing again takes the newest and removes the
 older one.
 
 A run is started with `--dangerously-skip-permissions` (`claudeCLIArgs`):
-its only tools are magpie's MCP ones, answered by the client, and
+its only tools are fogway's MCP ones, answered by the client, and
 Anthropic's web search. Claude Code run as root refuses that flag ("cannot
 be used with root/sudo privileges") unless `IS_SANDBOX` is `1` or
-`CLAUDE_CODE_BUBBLEWRAP` is set, so a run as root, magpie's own euid 0 or
+`CLAUDE_CODE_BUBBLEWRAP` is set, so a run as root, fogway's own euid 0 or
 a WSL distro whose default user is root (the probe's `uid`,
 `wslrun.Tool.Root`), is given `IS_SANDBOX=1` (`claudeCLI.asRoot`;
 FrierenF on Discord). A run as anyone else has its env as before. Only the
 bridge's run gets it; the warm-up and `/usage` runs don't skip
 permissions.
 
-The run's MCP server is magpie itself (`magpie claude-mcp-helper`,
+The run's MCP server is fogway itself (`fogway claude-mcp-helper`,
 `internal/claudebridge`), which hands each tool call back to the gateway
-at `POST /_magpie/claude-mcp/<token>` (`mcpCall`), where the call is
+at `POST /_fogway/claude-mcp/<token>` (`mcpCall`), where the call is
 registered in `b.calls` for the turn with its results to find. The token
 is `randomToken` (24 bytes from `crypto/rand`), one per run. The callback
 URL is written to `callback` in the run's own temp folder (0600) and the
 helper is given that file's path, so the token is never on Claude Code's
 command line. The helper calls the address the gateway listens on
-(`callbackBaseURL`: `MAGPIE_ADDR`, `0.0.0.0`/`::` as `127.0.0.1`), which,
+(`callbackBaseURL`: `FOGWAY_ADDR`, `0.0.0.0`/`::` as `127.0.0.1`), which,
 pinned to one interface's address, isn't loopback, and it sends no
 gateway key. `lanGuard` therefore lets in exactly that path, by POST, with
 the token of a run now live (`ownCallback`: `addCallback` when the run is
@@ -59,7 +59,7 @@ A run started anew is told the whole conversation in one user message
 (`renderClaudePrompt`), a prefix the prompt cache has never seen, so the
 conversation is written to the cache again and its images are sent again.
 That message holds the history in blocks of `historyChunk` messages, and
-magpie's one mark (Claude Code keeps three of Anthropic's four) is on the
+fogway's one mark (Claude Code keeps three of Anthropic's four) is on the
 last whole block, else on the caller's instructions: a later run started
 anew for the same conversation within the hour reads the history up to an
 earlier run's mark, found within Anthropic's 20-block lookback. A
@@ -186,7 +186,7 @@ other (`serveSubscription`'s ended callback runs only when `gone()`
 stopped the `AfterFunc` that calls `letGo`), so it isn't those two of one
 request. `keepIdle` holds the rule whichever caller it was (#1596). Past `idleMost`, the
 eviction loop takes out the key it found as oldest, not the run's own.
-Before (X, Sma1lboy: magpie at 158 GB after two days of omp agents), one
+Before (X, Sma1lboy: fogway at 158 GB after two days of omp agents), one
 run under two keys was the oldest on every pass, the pass took out only
 its newer key, and the loop never ended: it held `b.mu`, stopping every
 Claude subscription request, and grew its list of runs to let go without
@@ -307,7 +307,7 @@ whose text is replaced by the line is not this shape, and starts anew.
 
 A run started anew still sends every image in the conversation. Replacing
 earlier images with a placeholder would change what the model sees, and
-magpie doesn't do it.
+fogway doesn't do it.
 
 ## Tool results another request answers first
 
@@ -384,7 +384,7 @@ kept either.
 
 A Claude Code signed in to claude.ai (its sign-in field set to
 `claudeai`, `claudeSignIns` in `internal/agent/claude.go`) reads these into its status line's `rate_limits`, which
-claude-hud shows. One that signs in to magpie with magpie's key
+claude-hud shows. One that signs in to fogway with fogway's key
 (`ANTHROPIC_AUTH_TOKEN`) ignores them: Claude Code 2.1.293 reads the
 headers only for a claude.ai subscriber. A reply another provider answered
 carries none.

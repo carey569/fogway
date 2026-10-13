@@ -19,7 +19,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -83,7 +83,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await browser.close();
       });
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings");
+      await page.goto("http://fogway.test/?view=settings");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const segs = page.locator("#plainNamesSegs .opt");
       await segs.first().waitFor();

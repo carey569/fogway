@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // noNamespaces answers as a vendor's Responses API that knows no
@@ -31,13 +31,13 @@ func noNamespaces(got *[]string, refuse bool) http.HandlerFunc {
 }
 
 // hasImageTool reports whether a request offers Codex's image tool, in its
-// namespace or flat as magpie translates it.
+// namespace or flat as fogway translates it.
 func hasImageTool(body string) bool {
 	return strings.Contains(body, `"type":"namespace"`) || strings.Contains(body, `"image_gen__imagegen"`)
 }
 
-// Codex on a magpie model offers its image tool, as #870 has it, in the
-// namespace image_gen (testdata: what Codex 0.160.0 sends, magpie's
+// Codex on a fogway model offers its image tool, as #870 has it, in the
+// namespace image_gen (testdata: what Codex 0.160.0 sends, fogway's
 // provider table and catalog). A vendor that knows no namespaces turned
 // every chat away with a bare 400 (#949, AnyRouter's "bad response status
 // code 400" to "只回复 OK"). It is asked again without the tool, and not
@@ -47,7 +47,7 @@ func TestImageToolLeftOutWhereRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Codex's own web_search has magpie translate the request and search
+	// Codex's own web_search has fogway translate the request and search
 	// for the vendor, which then gets the tool flat; without it the body
 	// passes through with the namespace
 	for name, search := range map[string]string{

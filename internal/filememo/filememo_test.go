@@ -53,7 +53,7 @@ func TestReadSameSizeSameTick(t *testing.T) {
 
 // While a request holds what was read, a file found unchanged is not looked
 // at again (the GUI's state looked a few thousand times, seconds on a slow
-// disk); a write magpie makes (Forget), a second gone by or the release has
+// disk); a write fogway makes (Forget), a second gone by or the release has
 // it looked at, and a file just written is always read again.
 func TestHold(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "f")
@@ -76,7 +76,7 @@ func TestHold(t *testing.T) {
 	}
 	Forget()
 	if v, _ := Read("hold", p, parse); v != "bb" {
-		t.Fatalf("after a write magpie made: %q", v)
+		t.Fatalf("after a write fogway made: %q", v)
 	}
 	write("ccc")
 	release()

@@ -43,7 +43,7 @@ func TestHideWithoutConsole(t *testing.T) {
 // was given. A " in an argument isn't among them: it comes back doubled to
 // Go's parser, which reads "" the way C runtimes did before 2008.
 func TestBatchFileInFolderWithSpace(t *testing.T) {
-	if os.Getenv("MAGPIE_PROC_ECHO") == "1" {
+	if os.Getenv("FOGWAY_PROC_ECHO") == "1" {
 		return
 	}
 	self, err := os.Executable()
@@ -63,7 +63,7 @@ func TestBatchFileInFolderWithSpace(t *testing.T) {
 	args := []string{"install", "-g", "--prefix", dir, "@anthropic-ai/claude-code@latest",
 		"x&y", "a b|c", "%PATH%", `C:\a dir\`, `C:\b\`, "", "^(<>)!,;=", "中文 路径"}
 	want, _ := json.Marshal(args)
-	t.Setenv("MAGPIE_PROC_ECHO", "1")
+	t.Setenv("FOGWAY_PROC_ECHO", "1")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	for _, name := range []string{filepath.Join(dir, "npm.cmd"), filepath.Join(dir, "tool.bat"), "npm"} {
 		for _, cmd := range []*exec.Cmd{Command(name, args...), CommandContext(context.Background(), name, args...)} {
@@ -78,7 +78,7 @@ func TestBatchFileInFolderWithSpace(t *testing.T) {
 
 // TestEchoArgs is the program TestBatchFileInFolderWithSpace's scripts run.
 func TestEchoArgs(t *testing.T) {
-	if os.Getenv("MAGPIE_PROC_ECHO") != "1" {
+	if os.Getenv("FOGWAY_PROC_ECHO") != "1" {
 		t.Skip("run by TestBatchFileInFolderWithSpace")
 	}
 	i := slices.Index(os.Args, "--")
@@ -87,7 +87,7 @@ func TestEchoArgs(t *testing.T) {
 	os.Exit(0)
 }
 
-// a probe still asking when magpie exits is ended by EndProbes, and
+// a probe still asking when fogway exits is ended by EndProbes, and
 // EndProbes returns once its kill is over, not after its whole wait (#1278)
 func TestEndProbesWindows(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

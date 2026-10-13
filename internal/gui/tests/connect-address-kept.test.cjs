@@ -28,7 +28,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         };
         const shown = (sel) => page.locator(sel).textContent();
         const open = async () => {
-          await page.goto("http://magpie.test/?view=gateway");
+          await page.goto("http://fogway.test/?view=gateway");
           await page.locator("#connect .val code").first().waitFor();
         };
 

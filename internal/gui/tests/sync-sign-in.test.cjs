@@ -18,8 +18,8 @@ const assets = path.resolve(__dirname, "../assets");
 
 function serve(lang, sync, imported) {
   const settings = {
-    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/magpie",
-    gateway: "http://127.0.0.1:3425", visionModels: [], imageGenModels: [],
+    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/fogway",
+    gateway: "http://127.0.0.1:3725", visionModels: [], imageGenModels: [],
     fx: { rate: 7.2, stale: false },
   };
   return async (route) => {
@@ -65,7 +65,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang, { ...base, signIn }, imported));
           page.setDefaultTimeout(5000);
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator("#prefs").click();
           await page.locator(":is(#setTab-sync, .nav-s[data-of=setTab-sync]):visible").click();
           const first = page.locator("#syncList .row.pref").first();
@@ -89,7 +89,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           await reach(page, open);
           await open.click();
           const form = page.locator("#syncList .sync-form");
-          await form.locator("input[type=file]").setInputFiles({ name: "magpie.magpie-backup", mimeType: "application/octet-stream", buffer: Buffer.from("sealed") });
+          await form.locator("input[type=file]").setInputFiles({ name: "fogway.fogway-backup", mimeType: "application/octet-stream", buffer: Buffer.from("sealed") });
           await form.locator("input[type=password]").fill("correct horse");
           // at 440px in German the form's foot is under the window's
           const go = form.locator("button.primary");

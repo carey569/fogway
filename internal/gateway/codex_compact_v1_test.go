@@ -5,17 +5,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // #1301: Codex compacts remotely (compaction v2: a compaction_trigger on
 // /responses, exactly one compaction item back) for any provider table
-// named "OpenAI", as CC Switch names its relay tables. magpie points those
-// tables at /v1 while a magpie model is on, so the trigger reached /v1, went
+// named "OpenAI", as CC Switch names its relay tables. fogway points those
+// tables at /v1 while a fogway model is on, so the trigger reached /v1, went
 // on to the relay as it came, and the relay's message came back: "remote
 // compaction v2 expected exactly one compaction output item, got 0 from 1
-// output items". On /v1 the summary is magpie's to make, as on Codex's
-// backend path, and magpie's summary goes back to the model as text.
+// output items". On /v1 the summary is fogway's to make, as on Codex's
+// backend path, and fogway's summary goes back to the model as text.
 func TestCodexCompactionTriggerOnV1(t *testing.T) {
 	f := &fake{t: t, reply: sse(
 		`data: {"type":"response.created","response":{"id":"resp_r1","status":"in_progress","output":[]}}`,
@@ -43,7 +43,7 @@ func TestCodexCompactionTriggerOnV1(t *testing.T) {
 		t.Fatalf("Codex wants exactly one compaction output item, got %v\n%s", done, body)
 	}
 	enc, _ := done[0]["encrypted_content"].(string)
-	if b, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(enc, magpieCompaction)); string(b) != "SUMMARY" {
+	if b, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(enc, fogwayCompaction)); string(b) != "SUMMARY" {
 		t.Errorf("compaction holds %q", enc)
 	}
 
@@ -54,7 +54,7 @@ func TestCodexCompactionTriggerOnV1(t *testing.T) {
 	if code != 200 {
 		t.Fatalf("%d %s", code, body)
 	}
-	if strings.Contains(string(f.got), magpieCompaction) || !strings.Contains(string(f.got), "SUMMARY") {
+	if strings.Contains(string(f.got), fogwayCompaction) || !strings.Contains(string(f.got), "SUMMARY") {
 		t.Errorf("relay got %s", f.got)
 	}
 }

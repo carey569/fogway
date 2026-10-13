@@ -29,7 +29,7 @@ func sharedAt(t *testing.T, id string) Group {
 }
 
 // laincatx on X: a routing group is shared as text and pasted into
-// another magpie. What goes is the group's routing, rules and members,
+// another fogway. What goes is the group's routing, rules and members,
 // never a key; pasted back, it is the same group under a name of its own.
 func TestSharedGroupRoundTrip(t *testing.T) {
 	const secret = "sk-shared-secret-0123456789"
@@ -57,7 +57,7 @@ func TestSharedGroupRoundTrip(t *testing.T) {
 	if strings.Contains(text, secret) || strings.Contains(text, "127.0.0.1") || strings.Contains(text, "acme-secret") || strings.Contains(text, "big-secret") {
 		t.Fatalf("the shared text carries a provider's key or address, or the sharer's folder: %s", text)
 	}
-	if !strings.Contains(text, `"magpie":"routing-group"`) || !strings.Contains(text, `"version":1`) {
+	if !strings.Contains(text, `"fogway":"routing-group"`) || !strings.Contains(text, `"version":1`) {
 		t.Fatalf("the shared text doesn't say what it is: %s", text)
 	}
 
@@ -91,7 +91,7 @@ func TestSharedGroupRoundTrip(t *testing.T) {
 // to it; a rule by intent goes when its classifier does.
 func TestSharedGroupMissingMembers(t *testing.T) {
 	shareHome(t, Provider{ID: "mine", Name: "Mine", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"x"}})
-	text, _ := json.Marshal(SharedGroup{Magpie: ShareMark, Version: ShareVersion, Group: Group{
+	text, _ := json.Marshal(SharedGroup{Fogway: ShareMark, Version: ShareVersion, Group: Group{
 		ID: "theirs", Name: "Theirs", Members: []string{"relay/x", "gone/y", "group/nested"}, Routing: Ordered,
 		Off: []string{"gone/y"}, Classifier: "gone/judge",
 		Rules: []Rule{
@@ -121,7 +121,7 @@ func TestSharedGroupMissingMembers(t *testing.T) {
 	}
 
 	// nothing of it here: nothing is added, and the reader is told why
-	none, _ := json.Marshal(SharedGroup{Magpie: ShareMark, Version: ShareVersion, Group: Group{Name: "N", Members: []string{"gone/y"}}})
+	none, _ := json.Marshal(SharedGroup{Fogway: ShareMark, Version: ShareVersion, Group: Group{Name: "N", Members: []string{"gone/y"}}})
 	n := len(Groups())
 	if _, err := ImportGroup(string(none)); err == nil || !strings.Contains(err.Error(), "gone/y") {
 		t.Fatalf("none here: %v", err)
@@ -134,12 +134,12 @@ func TestSharedGroupMissingMembers(t *testing.T) {
 func TestSharedGroupBadText(t *testing.T) {
 	shareHome(t, Provider{ID: "a", Name: "A", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"x"}})
 	for _, c := range []struct{ text, says string }{
-		{"", "not a routing group shared from magpie"},
-		{"hello {not json}", "not a routing group shared from magpie"},
-		{`{"magpie":"something-else","version":1,"group":{"members":["a/x"]}}`, "not a routing group shared from magpie"},
-		{`{"magpie":"routing-group","version":2,"group":{"members":["a/x"]}}`, "newer magpie (format 2)"},
-		{`{"magpie":"routing-group","group":{"members":["a/x"]}}`, "no format"},
-		{`{"magpie":"routing-group","version":1,"group":{"members":"a/x"}}`, "can't be read"},
+		{"", "not a routing group shared from fogway"},
+		{"hello {not json}", "not a routing group shared from fogway"},
+		{`{"fogway":"something-else","version":1,"group":{"members":["a/x"]}}`, "not a routing group shared from fogway"},
+		{`{"fogway":"routing-group","version":2,"group":{"members":["a/x"]}}`, "newer fogway (format 2)"},
+		{`{"fogway":"routing-group","group":{"members":["a/x"]}}`, "no format"},
+		{`{"fogway":"routing-group","version":1,"group":{"members":"a/x"}}`, "can't be read"},
 	} {
 		if _, err := ImportGroup(c.text); err == nil || !strings.Contains(err.Error(), c.says) {
 			t.Errorf("ImportGroup(%q) = %v, want an error saying %q", c.text, err, c.says)

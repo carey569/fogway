@@ -20,7 +20,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const w = zh
         ? { label: "此密钥可用的模型", all: "全部模型", groups: "全部路由组", relay: "Relay 的全部模型" }
         : { label: "Models this key may use", all: "All models", groups: "Every routing group", relay: "Every Relay model" };
-      await page.goto("http://magpie.test/?view=gateway");
+      await page.goto("http://fogway.test/?view=gateway");
       await page.locator("#gatewayKeys .acc[data-key]").last().waitFor();
       const row = (id) => page.locator(`#gatewayKeys .acc[data-key="${id}"]`);
       const badge = (id) => row(id).getByRole("button", { name: w.label, exact: true });

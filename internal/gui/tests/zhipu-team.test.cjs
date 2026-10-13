@@ -76,7 +76,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const posts = [];
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       return { page, errors, posts };
     };
     const edit = async (page, name) => {

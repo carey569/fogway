@@ -9,12 +9,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// #1756: Claude Code in auto mode through magpie to Copilot's
+// #1756: Claude Code in auto mode through fogway to Copilot's
 // claude-opus-5.5 got 400 invalid_request_error "safeguards: Extra inputs
-// are not permitted" on every turn. magpie asks again at once without the
+// are not permitted" on every turn. fogway asks again at once without the
 // safeguards, and sends that provider none from then on; the rest of the
 // request goes as it was.
 func TestSafeguardsRefusedLeftOut(t *testing.T) {

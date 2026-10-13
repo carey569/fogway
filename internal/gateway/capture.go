@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/yetone/magpie/internal/redact"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/redact"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // Recent-call bodies are diagnostics, not an unbounded traffic log. Keeping the
@@ -89,7 +89,7 @@ func (s *spool) add(p []byte) {
 	if s.f == nil {
 		pattern := s.pattern
 		if pattern == "" {
-			pattern = "magpie-archive-*"
+			pattern = "fogway-archive-*"
 		}
 		f, err := os.CreateTemp("", pattern)
 		if err != nil {

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// Gateway mode (Player on Discord): magpie web with no agents on its
+// Gateway mode (Player on Discord): fogway web with no agents on its
 // machine is in it by itself, and so is one started with --gateway;
 // Settings' On or Off wins over both, and the Settings page's own save
 // leaves it as it is. The app's windows are never in it. The page is told

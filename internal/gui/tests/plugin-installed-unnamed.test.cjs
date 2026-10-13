@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // A plugin installed a moment ago has no subscriptions named for it yet: the
-// Installed list is drawn from what the plugins said the last time magpie asked
+// Installed list is drawn from what the plugins said the last time fogway asked
 // them, which a plugin installed since hasn't been asked about yet, and asking
 // them means every plugin's vendor answering, one at a time.
 //
@@ -21,7 +21,7 @@ const EMPTY = "opencode-nothing-auth";
 const OLD = "opencode-copilot-auth";
 const claude = { id: "claude", name: "Claude Code", icon: "", skills: `${HOME}/.claude/skills`, mcp: `${HOME}/.claude/mcp.json` };
 const lib = {
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [claude],
   instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], skills: [], servers: [],
 };
@@ -45,8 +45,8 @@ function server(lang, state) {
 }
 
 const words = {
-  en: { signsIn: "Signs in to", nothing: "Signs in to nothing magpie can use" },
-  zh: { signsIn: "可登录", nothing: "没有 magpie 能用的登录" },
+  en: { signsIn: "Signs in to", nothing: "Signs in to nothing fogway can use" },
+  zh: { signsIn: "可登录", nothing: "没有 fogway 能用的登录" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -79,12 +79,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           providers: { providers: [], gateway: { running: true } },
         };
         const ctx = await browser.newContext({ viewport: { width: 980, height: 800 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.pluginTab", "installed"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.pluginTab", "installed"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, state));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="plugins"]').click();
         const v = page.locator("#view-plugins");
         await v.locator(".pm-row", { hasText: NEW }).waitFor();

@@ -23,7 +23,7 @@ const skills = [
   { name: "kiwi", kind: "folder", source: `${HOME}/skills/kiwi`, description: "d", agents: ["claude"] },
 ];
 const lib = () => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code", "claudecode-color")],
   instructions: { agents: [], sets: [] }, servers: structuredClone(servers), foundServers: [], projects: [], foundSkills: [], skills: structuredClone(skills), problems: [],
 });
@@ -50,7 +50,7 @@ function server(lang) {
     if (url.pathname === "/api/groups") return json({ groups: [], pools: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -71,7 +71,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await t.test(lang, async () => {
         const w = L[lang];
         const ctx = await browser.newContext({ viewport: { width: 980, height: 760 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { if (!localStorage.getItem("magpie.libTab")) localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+        await ctx.addInitScript(() => { try { if (!localStorage.getItem("fogway.libTab")) localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         const errors = [];
@@ -93,10 +93,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const names = (sel) => page.locator(sel).evaluateAll((ns) => ns.map((n) => n.textContent.trim()));
         const tips = (sort) => page.locator(`.segs.sortby[data-sort="${sort}"] .opt`).evaluateAll((os) => os.map((o) => o.title));
 
-        // the Library's MCP servers: A→Z first, whatever order magpie gave them in
+        // the Library's MCP servers: A→Z first, whatever order fogway gave them in
         const serverNames = () => names("#view-library .lib-list .lib-row > .who > .name");
         const openLib = async () => {
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator('button[data-view="library"]').click();
           await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
         };
@@ -133,7 +133,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // the plugins: by name, not in the order they were installed in
         const pluginNames = () => names("#view-plugins .pm-list .pm-row > .who > .name > span:first-child");
         const openPlugins = async () => {
-          await page.goto("http://magpie.test/?view=plugins");
+          await page.goto("http://fogway.test/?view=plugins");
           await page.locator(":is(#view-plugins .lib-tabs .opt, .nav-s):visible").nth(2).click(); // Built-in, Discover, Installed
           await page.locator("#view-plugins .pm-row").first().waitFor();
         };

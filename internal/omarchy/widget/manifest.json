@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "id": "usemagpie.magpie",
-  "name": "magpie",
+  "id": "fogway.fogway",
+  "name": "fogway",
   "version": "1.0.0",
-  "author": "magpie",
+  "author": "fogway",
   "license": "MIT",
-  "description": "magpie's icon in the bar: a click drops down its panel, a right click opens its window.",
+  "description": "fogway's icon in the bar: a click drops down its panel, a right click opens its window.",
   "kinds": ["bar-widget"],
   "entryPoints": {
     "barWidget": "Widget.qml"
   },
   "barWidget": {
-    "displayName": "magpie",
-    "description": "Pick every agent's model from the bar: a click drops down magpie's panel, a right click opens its window.",
+    "displayName": "fogway",
+    "description": "Pick every agent's model from the bar: a click drops down fogway's panel, a right click opens its window.",
     "category": "AI",
-    "aliases": ["magpie"],
+    "aliases": ["fogway"],
     "allowMultiple": false,
     "defaultSection": "right"
   }

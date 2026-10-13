@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// effortHome is a sandbox HOME with a provider for magpie to serve.
+// effortHome is a sandbox HOME with a provider for fogway to serve.
 func effortHome(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()
@@ -68,7 +68,7 @@ func setEffort(t *testing.T, a *Agent, v, keep string) {
 	}
 }
 
-// #473: a model through magpie listing no levels (LongCat-2.5-Preview) had
+// #473: a model through fogway listing no levels (LongCat-2.5-Preview) had
 // dsh's own off, low, high and max offered on the Agents page, and each was
 // turned away with "takes an effort of  for this model". It has none in dsh:
 // none is offered, and one asked for says so.
@@ -84,10 +84,10 @@ func TestDshEffortModelWithoutLevels(t *testing.T) {
 	writeFile(t, patch, "[]\n")
 	a := dsh(home)
 	f := a.Field("effort")
-	if err := a.Field("model").Set("magpie/deepseek/plain"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/plain"); err != nil {
 		t.Fatal(err)
 	}
-	cur := map[string]string{"model": "magpie/deepseek/plain"}
+	cur := map[string]string{"model": "fogway/deepseek/plain"}
 	if got := f.Options(cur); len(got) != 0 {
 		t.Fatalf("offered %+v for a model with no levels", got)
 	}
@@ -99,7 +99,7 @@ func TestDshEffortModelWithoutLevels(t *testing.T) {
 		t.Fatalf("default: %v %q", err, f.Get())
 	}
 	// every level offered for any model is one dsh takes
-	for _, m := range []string{"magpie/deepseek/pro", "magpie/deepseek/plain", "deepseek-v4-pro"} {
+	for _, m := range []string{"fogway/deepseek/pro", "fogway/deepseek/plain", "deepseek-v4-pro"} {
 		if err := a.Field("model").Set(m); err != nil {
 			t.Fatal(err)
 		}
@@ -136,14 +136,14 @@ func TestDshEffort(t *testing.T) {
 	if err := f.Set("max"); err != nil || f.Get() != "max" {
 		t.Fatalf("max: %v, effort %q\n%s", err, f.Get(), readFile(patch))
 	}
-	// a model through magpie offers its own levels, off for its none
-	if err := a.Field("model").Set("magpie/deepseek/pro"); err != nil {
+	// a model through fogway offers its own levels, off for its none
+	if err := a.Field("model").Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	if f.Get() != "max" {
 		t.Fatalf("effort: %q\n%s", f.Get(), readFile(patch))
 	}
-	if got := f.Options(map[string]string{"model": "magpie/deepseek/pro"}); len(got) != 4 || got[0].Value != "off" || got[3].Value != "max" {
+	if got := f.Options(map[string]string{"model": "fogway/deepseek/pro"}); len(got) != 4 || got[0].Value != "off" || got[3].Value != "max" {
 		t.Fatalf("levels: %+v", got)
 	}
 	if err := f.Set("medium"); err == nil {
@@ -159,7 +159,7 @@ func TestDshEffort(t *testing.T) {
 		t.Fatal(err)
 	}
 	// kept when the model changes and when the catalog is synced
-	if err := a.Field("model").Set("magpie/deepseek/flash"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/flash"); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.Sync(); err != nil {
@@ -170,13 +170,13 @@ func TestDshEffort(t *testing.T) {
 		t.Fatalf("patch:\n%s", raw)
 	}
 	// one the model hasn't goes when it changes
-	if err := a.Field("model").Set("magpie/deepseek/pro"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	if err := f.Set("low"); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Field("model").Set("magpie/deepseek/flash"); err != nil || f.Get() != "" {
+	if err := a.Field("model").Set("fogway/deepseek/flash"); err != nil || f.Get() != "" {
 		t.Fatalf("flash has no low: %v %q", err, f.Get())
 	}
 	if err := f.Set("high"); err != nil {

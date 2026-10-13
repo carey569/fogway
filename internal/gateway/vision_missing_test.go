@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // pickVision saves the Image recognition model the user picked.
@@ -21,8 +21,8 @@ func pickVision(t *testing.T, v string) {
 	}
 }
 
-// An Image recognition model the user picked that magpie can't find any
-// more (its provider removed) is not replaced in silence by the one magpie
+// An Image recognition model the user picked that fogway can't find any
+// more (its provider removed) is not replaced in silence by the one fogway
 // picks: the description's row in Routing names it, on every route an
 // agent sends an image by and for a group's member, and a request turned
 // away for want of any describer says it is missing.

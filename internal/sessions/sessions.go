@@ -8,7 +8,7 @@
 //
 // The files grow long (hundreds of MB), so each one's parse is kept by path,
 // size and time, and a file that only grew is read on from where it was left.
-// The parses are kept on disk too, in magpie's cache folder.
+// The parses are kept on disk too, in fogway's cache folder.
 package sessions
 
 import (
@@ -30,11 +30,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 	"github.com/klauspost/compress/zstd"
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 // Tokens is a count of tokens. Input excludes what was read from cache.
@@ -94,10 +94,10 @@ type Model struct {
 // Session is one agent session.
 type Session struct {
 	ReadOnly bool `json:"read_only,omitempty"`
-	// Gateway: seen only through magpie's gateway, with no file of the
+	// Gateway: seen only through fogway's gateway, with no file of the
 	// agent's on this computer (external.go)
 	Gateway bool      `json:"gateway,omitempty"`
-	Agent   string    `json:"agent"` // magpie agent id: claude, codex, opencode, pi, omp, zcode, dsh, cline, qoder, qoder-cn, grok, workbuddy, droid, cursor, hermes, alma, kimi
+	Agent   string    `json:"agent"` // fogway agent id: claude, codex, opencode, pi, omp, zcode, dsh, cline, qoder, qoder-cn, grok, workbuddy, droid, cursor, hermes, alma, kimi
 	ID      string    `json:"id"`
 	Cwd     string    `json:"cwd"`
 	Title   string    `json:"title"` // the name it was given, else the agent's own title, else the first prompt
@@ -540,7 +540,7 @@ var (
 func CachePath() string { return filepath.Join(filepath.Dir(catalog.CachePath()), "sessions.json") }
 
 // cacheVersion changes when a parse would come out differently, so the
-// parses kept by an older magpie are read again.
+// parses kept by an older fogway are read again.
 // 2: each file's usage by day, and its active time
 // 3: the active time by hour of the day
 // 4: the tool calls and skills a day
@@ -773,7 +773,7 @@ func refresh(want, all []file) {
 	}
 	// What is read is kept on disk every checkpointEvery, not only at the
 	// end: a first read of a long history on a slow disk runs for minutes,
-	// and a magpie quit before the end (its CPU full, #1665) kept nothing
+	// and a fogway quit before the end (its CPU full, #1665) kept nothing
 	// of it, so the next start read it all again.
 	tick := time.NewTicker(checkpointEvery)
 	defer tick.Stop()
@@ -1282,7 +1282,7 @@ func title(s string) string {
 
 var dated = regexp.MustCompile(`-\d{8}$`)
 
-// priceOf prices a model as a session names it: one through magpie as
+// priceOf prices a model as a session names it: one through fogway as
 // "<provider>/<model>" at the price the gateway counts it at — what the user
 // set for that provider and model, else that provider's own list price, else
 // its maker's on models.dev — and a bare id only ever at its maker's, which is

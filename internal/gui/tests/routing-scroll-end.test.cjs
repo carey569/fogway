@@ -62,12 +62,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         const view = page.locator("#view-routing");
         await page.locator("#view-routing .rt-req").nth(11).waitFor();
         await page.waitForTimeout(500);
 
-        // the layouts by width: magpie and the agent side by side over the
+        // the layouts by width: fogway and the agent side by side over the
         // accounts when the stage is narrow, each request on three lines in
         // a narrow list, the accounts beside the requests on a wide page
         const narrow = width <= 600;

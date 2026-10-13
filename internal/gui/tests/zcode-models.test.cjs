@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// ZCode's row picks which of magpie's models its picker lists, as every
+// ZCode's row picks which of fogway's models its picker lists, as every
 // other agent's does (#1508, NovaTrailX: settings.hiddenModels had no
-// zcode, and ZCode got every model). Its one field puts magpie in ZCode's
+// zcode, and ZCode got every model). Its one field puts fogway in ZCode's
 // own picker, so, as Cursor Private Inference's, its row has the models
 // button the server says it has (menu), which opens the list; unticking
 // one is posted at once and the row says so. In the window and the tray
@@ -35,7 +35,7 @@ function fixture(lang) {
   const state = () => ({
     agents: [{
       id: "zcode", name: "ZCode", path: "~/.zcode/v2/config.json", icon: "zcode", wired: true, menu: true,
-      fields: [{ key: "provider", label: "provider", value: "magpie", options: [{ value: "magpie", label: "magpie", icon: "magpie", note: "every magpie model in ZCode's picker" }] }],
+      fields: [{ key: "provider", label: "provider", value: "fogway", options: [{ value: "fogway", label: "fogway", icon: "fogway", note: "every fogway model in ZCode's picker" }] }],
       models: count(),
     }],
     profiles: [], settings: { lang, theme: "light" },
@@ -83,7 +83,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const fx = fixture(lang);
         await page.route("**/*", fx.serve);
         t.after(() => browser.close());
-        await page.goto("http://magpie.test/" + (where === "panel" ? "?mode=panel" : ""));
+        await page.goto("http://fogway.test/" + (where === "panel" ? "?mode=panel" : ""));
         await page.locator(cd).waitFor();
         const said = (n) => page.evaluate((n) => t("Connected · {n} models in {agent}'s model menu", { n, agent: "ZCode" }), n);
 

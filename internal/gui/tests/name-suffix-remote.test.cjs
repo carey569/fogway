@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// ARNO on Discord (我在设置里关闭了"模型名称带供应商"但是接入的remote-magpie的
-// 模型名字还是带上了…): a remote magpie's models are named in its list with
-// its own provider after them ("DeepSeek Chat · Relay A"), by that magpie's
+// ARNO on Discord (我在设置里关闭了"模型名称带供应商"但是接入的remote-fogway的
+// 模型名字还是带上了…): a remote fogway's models are named in its list with
+// its own provider after them ("DeepSeek Chat · Relay A"), by that fogway's
 // setting, and Off here kept it. Names & levels says what the agents' lists
 // show under each choice: On, that label with this provider after it; Off,
 // the model's name there alone. Every language.
@@ -19,7 +19,7 @@ function serve(lang, posts) {
   const models = [
     { id: "relaya/deepseek-chat", name: "DeepSeek Chat · Relay A", plain: "DeepSeek Chat", on: true, efforts: [], images: false },
   ];
-  const provider = { id: "remote-magpie", name: "Remote magpie", preset: "remote-magpie", icon: "generic", chat: "http://192.168.1.20:3425/v1", responses: "http://192.168.1.20:3425/v1", anthropic: "http://192.168.1.20:3425",
+  const provider = { id: "remote-fogway", name: "Remote fogway", preset: "remote-fogway", icon: "generic", chat: "http://192.168.1.20:3725/v1", responses: "http://192.168.1.20:3725/v1", anthropic: "http://192.168.1.20:3725",
     models, agents: [], key: { set: true, masked: "sk-…1234" }, ready: true };
   return async (r) => {
     const req = r.request(), url = new URL(req.url());
@@ -56,7 +56,7 @@ async function says(loc, want) {
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh", "zh-TW", "ja", "de"]) {
-    test(`${engine} ${lang}: a remote magpie's model is named alone under Off`, async (t) => {
+    test(`${engine} ${lang}: a remote fogway's model is named alone under Off`, async (t) => {
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "chromium" }));
       t.after(() => browser.close());
       // narrow, as the panel is
@@ -65,14 +65,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const tr = (k, vars = {}) => page.evaluate(([k, vars]) => t(k, vars), [k, vars]);
       await page.locator(".row.provider").click();
       if (!(await page.locator(".mnames:not([hidden])").count())) await page.getByRole("button", { name: await tr("Names & levels"), exact: true }).click();
       const sfx = page.locator(".mnames:not([hidden]) .msuffix");
       await sfx.waitFor();
       assert.equal((await sfx.locator(".opt.on").textContent()).trim(), await tr("On"));
-      assert.equal(await sfx.locator(".hint").textContent(), await tr("Agents’ lists show “{label}”", { label: "DeepSeek Chat · Relay A · Remote magpie" }));
+      assert.equal(await sfx.locator(".hint").textContent(), await tr("Agents’ lists show “{label}”", { label: "DeepSeek Chat · Relay A · Remote fogway" }));
       await sfx.locator(".opt", { hasText: await tr("Off") }).click();
       await page.locator(".mnames:not([hidden]) .msuffix .opt.on", { hasText: await tr("Off") }).waitFor();
       await says(sfx.locator(".hint"), await tr("Agents’ lists show “{label}”", { label: "DeepSeek Chat" }));

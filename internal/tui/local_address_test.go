@@ -3,7 +3,7 @@ package tui
 import (
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A local server's preset (Ollama, LM Studio) is asked

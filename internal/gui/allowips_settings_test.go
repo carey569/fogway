@@ -9,13 +9,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // The allow list (lc on Discord) is saved cleaned; an entry that isn't an
 // address, a list that would shut out the page saving it, and any list
-// while MAGPIE_ALLOW_IPS sets it are refused with the list left as it
+// while FOGWAY_ALLOW_IPS sets it are refused with the list left as it
 // was; a save of the rest of the Settings page leaves it alone; the page
 // is told what the variable sets.
 func TestAllowIPsSetting(t *testing.T) {
@@ -42,7 +42,7 @@ func TestAllowIPsSetting(t *testing.T) {
 	if rec := post("/api/settings/allowips", `{"ips":["my-laptop"]}`, here); rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "is not an IP address") || !slices.Equal(settings.Load().AllowIPs, want) {
 		t.Errorf("not an address: %d %s, saved %v", rec.Code, rec.Body, settings.Load().AllowIPs)
 	}
-	// magpie web opened from 203.0.113.7: a list without it would shut it out
+	// fogway web opened from 203.0.113.7: a list without it would shut it out
 	if rec := post("/api/settings/allowips", `{"ips":["10.0.0.0/8"]}`, "203.0.113.7:50000"); rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "shut out 203.0.113.7") || !slices.Equal(settings.Load().AllowIPs, want) {
 		t.Errorf("shut out: %d %s, saved %v", rec.Code, rec.Body, settings.Load().AllowIPs)
 	}
@@ -51,7 +51,7 @@ func TestAllowIPsSetting(t *testing.T) {
 	}
 
 	t.Setenv(gateway.AllowIPsEnv, "1.2.3.4, 10.0.0.0/8")
-	if rec := post("/api/settings/allowips", `{"ips":[]}`, here); rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "MAGPIE_ALLOW_IPS") || !slices.Equal(settings.Load().AllowIPs, want) {
+	if rec := post("/api/settings/allowips", `{"ips":[]}`, here); rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "FOGWAY_ALLOW_IPS") || !slices.Equal(settings.Load().AllowIPs, want) {
 		t.Errorf("under the variable: %d %s, saved %v", rec.Code, rec.Body, settings.Load().AllowIPs)
 	}
 	st := settingsState()

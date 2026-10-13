@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/agentenv"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // sandbox is a home with Claude Code and Codex in it and nothing on PATH.

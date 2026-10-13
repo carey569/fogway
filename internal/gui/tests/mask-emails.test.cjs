@@ -41,8 +41,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", serve());
     t.after(() => browser.close());
-    await page.goto("http://magpie.test/?view=routing");
-    await page.evaluate(() => { try { localStorage.removeItem("magpie.maskEmails"); } catch {} });
+    await page.goto("http://fogway.test/?view=routing");
+    await page.evaluate(() => { try { localStorage.removeItem("fogway.maskEmails"); } catch {} });
     await page.evaluate((text) => {
       const d = document.createElement("div");
       d.id = "sample";

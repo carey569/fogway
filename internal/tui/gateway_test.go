@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
 func freeAddr(t *testing.T) string {
@@ -30,11 +30,11 @@ func waitFor(t *testing.T, what string, ok func() bool) {
 	t.Fatal(what)
 }
 
-// With no magpie serving, the terminal serves the gateway while it is open
+// With no fogway serving, the terminal serves the gateway while it is open
 // and lets go as it quits (gnayiab on X: ECONNREFUSED in WSL with only
-// magpie tui).
+// fogway tui).
 func TestTUIServesTheGatewayWhenNoneDoes(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", freeAddr(t))
+	t.Setenv("FOGWAY_ADDR", freeAddr(t))
 	if gateway.Running() {
 		t.Fatal("a gateway answers before the terminal started")
 	}
@@ -44,7 +44,7 @@ func TestTUIServesTheGatewayWhenNoneDoes(t *testing.T) {
 	if !gw.here.Load() {
 		t.Fatal("not marked as served here")
 	}
-	if s := gatewayStatus(); !strings.Contains(s, gateway.URL()) || !strings.Contains(s, "served while magpie tui is open") {
+	if s := gatewayStatus(); !strings.Contains(s, gateway.URL()) || !strings.Contains(s, "served while fogway tui is open") {
 		t.Fatalf("status %q", s)
 	}
 	stop()
@@ -55,10 +55,10 @@ func TestTUIServesTheGatewayWhenNoneDoes(t *testing.T) {
 	}
 }
 
-// A magpie that has the gateway keeps it; the terminal takes it up once
+// A fogway that has the gateway keeps it; the terminal takes it up once
 // that one is gone.
 func TestTUILeavesTheGatewayToAnotherAndTakesItUp(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", freeAddr(t))
+	t.Setenv("FOGWAY_ADDR", freeAddr(t))
 	old := gatewayWatch
 	gatewayWatch = 100 * time.Millisecond
 	defer func() { gatewayWatch = old }()
@@ -69,14 +69,14 @@ func TestTUILeavesTheGatewayToAnotherAndTakesItUp(t *testing.T) {
 		defer close(otherDone)
 		gateway.New().ListenAndServe(other)
 	}()
-	waitFor(t, "the other magpie's gateway never answered", gateway.Running)
+	waitFor(t, "the other fogway's gateway never answered", gateway.Running)
 
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 	wait := serveGateway(ctx)
 	time.Sleep(300 * time.Millisecond)
 	if gw.here.Load() || gatewayStatus() != "" {
-		t.Fatalf("took the gateway another magpie serves: %q", gatewayStatus())
+		t.Fatalf("took the gateway another fogway serves: %q", gatewayStatus())
 	}
 
 	endOther()

@@ -93,13 +93,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     for (const lang of ["en", "zh"]) for (const [width, height] of [[420, 620], [700, 620], [1100, 620]]) {
       await t.test(`${lang}, ${width}x${height}`, async () => {
         const ctx = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("magpie.usageTab", "context"); sessionStorage.setItem("set", "1"); } } catch {} });
+        await ctx.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("fogway.usageTab", "context"); sessionStorage.setItem("set", "1"); } } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         let reads = 0;
         await page.route("**/*", serve(lang, () => reads++));
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         await page.locator(".ctx-sess-row").first().waitFor();
         // the session opened draws its card
         await page.locator(".ctx-sess-row").first().evaluate((b) => b.click());

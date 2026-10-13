@@ -3,8 +3,8 @@
 package gui
 
 import (
+	"github.com/fogway/fogway/internal/settings"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 func (h *host) fontsChanged() {

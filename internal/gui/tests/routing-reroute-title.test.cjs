@@ -81,14 +81,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       };
 
       // the window's Requests list
-      const win = await open("http://magpie.test/?view=routing", { width: 1100, height: 760 });
+      const win = await open("http://fogway.test/?view=routing", { width: 1100, height: 760 });
       await win.locator(".rt-req").nth(routes.length - 1).waitFor();
       const rows = await win.locator(".rt-req").evaluateAll((rs) => rs.map((r) => ({ title: r.title, to: r.querySelector(".to").textContent })));
       assert.deepEqual(rows.map((r) => r.title), want[lang]);
       assert.match(rows[0].to, /Relay · gpt-6-sol/, "the row itself names the one that took it");
 
       // the tray panel's Routing tab
-      const panel = await open("http://magpie.test/?mode=panel", { width: 440, height: 600 });
+      const panel = await open("http://fogway.test/?mode=panel", { width: 440, height: 600 });
       await panel.locator('[data-ptab="routing"]').click();
       await panel.locator(".pr-req").nth(routes.length - 1).waitFor();
       const prows = await panel.locator(".pr-req").evaluateAll((rs) => rs.map((r) => ({ title: r.title, where: r.querySelector(".pr-where").textContent })));

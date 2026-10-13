@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 	"golang.org/x/sys/unix"
 )
 
@@ -50,7 +50,7 @@ func TestUserPath(t *testing.T) {
 // A desktop app started from the Finder doesn't have the variables a shell
 // profile exports either; the agents' folders among them come from the login
 // shell by the time UserPath returns (atie on Discord: PI_CODING_AGENT_DIR in
-// the shell, Pi's models.json still written to ~/.pi/agent). One magpie was
+// the shell, Pi's models.json still written to ~/.pi/agent). One fogway was
 // started with is kept, and one the profile leaves empty isn't set.
 func TestUserPathTakesAgentVars(t *testing.T) {
 	home := t.TempDir()
@@ -77,7 +77,7 @@ func TestUserPathTakesAgentVars(t *testing.T) {
 		t.Fatalf("PI_CODING_AGENT_DIR = %q, want the profile's %q", got, pi)
 	}
 	if got := os.Getenv("CODEX_HOME"); got != "/started/with" {
-		t.Fatalf("CODEX_HOME = %q: the one magpie was started with was replaced", got)
+		t.Fatalf("CODEX_HOME = %q: the one fogway was started with was replaced", got)
 	}
 	for _, v := range []string{"GROK_HOME", "CLAUDE_CONFIG_DIR"} {
 		if _, set := os.LookupEnv(v); set {
@@ -90,9 +90,9 @@ func TestUserPathTakesAgentVars(t *testing.T) {
 }
 
 // liu_dyj on X: a NO_PROXY=127.0.0.1 in .zshrc keeps the Codex a terminal
-// or the ChatGPT app runs off the proxy, while magpie, opened from the Dock
+// or the ChatGPT app runs off the proxy, while fogway, opened from the Dock
 // without it, warned that Codex went through the proxy. The login shell's
-// proxy variables are read (LoginEnv) but never set in magpie's own
+// proxy variables are read (LoginEnv) but never set in fogway's own
 // environment, whose requests take their proxy from netproxy.
 func TestLoginEnvProxyVarsNotSet(t *testing.T) {
 	home := t.TempDir()
@@ -120,7 +120,7 @@ func TestLoginEnvProxyVarsNotSet(t *testing.T) {
 	UserPath()
 	for _, v := range ProxyVars {
 		if _, set := os.LookupEnv(v); set {
-			t.Fatalf("%s set in magpie's own environment", v)
+			t.Fatalf("%s set in fogway's own environment", v)
 		}
 	}
 	if got := LoginEnv("HTTP_PROXY"); got != "http://127.0.0.1:7890" {
@@ -136,7 +136,7 @@ func TestLoginEnvProxyVarsNotSet(t *testing.T) {
 
 // A login shell that doesn't expand "$CLAUDE_CONFIG_DIR" prints the
 // reference itself. That is no folder: the variable counts as unset,
-// rather than magpie setting CLAUDE_CONFIG_DIR to "$CLAUDE_CONFIG_DIR" and
+// rather than fogway setting CLAUDE_CONFIG_DIR to "$CLAUDE_CONFIG_DIR" and
 // then looking for Claude Code's sign-in under it (#738).
 func TestParseShellEnvUnexpanded(t *testing.T) {
 	s := shellMark + "$PATH"
@@ -191,10 +191,10 @@ func TestShellEnvNushell(t *testing.T) {
 	}
 }
 
-// The login shell is asked outside magpie's process group and session (DD
-// on Discord: magpie web → zsh: suspended (tty input)). An interactive zsh
-// in magpie's session puts itself in the terminal's foreground, which left
-// magpie's group in the background there: Ctrl-C no longer reached it, and
+// The login shell is asked outside fogway's process group and session (DD
+// on Discord: fogway web → zsh: suspended (tty input)). An interactive zsh
+// in fogway's session puts itself in the terminal's foreground, which left
+// fogway's group in the background there: Ctrl-C no longer reached it, and
 // anything in the group that touched the terminal had the kernel stop all
 // of it. The fake shell answers with its own process group and session; a
 // real zsh, where there is one, still gives its PATH when asked that way.
@@ -209,10 +209,10 @@ func TestAskShellOwnSession(t *testing.T) {
 		t.Fatalf("the fake shell's answer: %q", out)
 	}
 	if mine := strconv.Itoa(syscall.Getpgrp()); f[0] == mine {
-		t.Fatalf("the login shell ran in magpie's process group %s: a shell there takes the terminal from magpie", mine)
+		t.Fatalf("the login shell ran in fogway's process group %s: a shell there takes the terminal from fogway", mine)
 	}
 	if sid, err := unix.Getsid(0); err == nil && f[1] == strconv.Itoa(sid) && f[1] != "0" {
-		t.Fatalf("the login shell ran in magpie's session %s: it can take magpie's terminal", f[1])
+		t.Fatalf("the login shell ran in fogway's session %s: it can take fogway's terminal", f[1])
 	}
 	zsh, err := exec.LookPath("zsh")
 	if err != nil {
@@ -314,7 +314,7 @@ func TestShellEnvFishLogin(t *testing.T) {
 }
 
 // The real fish, where it is installed: a folder fish_add_path adds in
-// config.fish and a variable it sets reach magpie with zsh (here a plain
+// config.fish and a variable it sets reach fogway with zsh (here a plain
 // sh) as the login shell, and ShellPath(fish) has the folder.
 func TestShellEnvRealFish(t *testing.T) {
 	fish := FindShell("fish")
@@ -359,7 +359,7 @@ func TestShellEnvRealFish(t *testing.T) {
 // A profile that execs something else in an interactive shell (tmux's or
 // zellij's auto-start in config.fish) or is too slow to come up
 // interactively never prints the probe; the shell is asked again as a
-// login shell only, and MAGPIE_SHELL_PROBE=1 tells the profile who asks
+// login shell only, and FOGWAY_SHELL_PROBE=1 tells the profile who asks
 // (John on Discord, fish set with chsh).
 func TestAskShellProfileExecsOrHangs(t *testing.T) {
 	home := t.TempDir()
@@ -373,14 +373,14 @@ func TestAskShellProfileExecsOrHangs(t *testing.T) {
 	} {
 		sh := filepath.Join(home, name)
 		testenv.Program(t, sh, "#!/bin/sh\ncase \"$1\" in -i*) "+interactive+";; esac\n"+
-			"PATH=/from/login:$PATH\n[ \"$MAGPIE_SHELL_PROBE\" = 1 ] && PATH=/told:$PATH\neval \"$2\"\n")
+			"PATH=/from/login:$PATH\n[ \"$FOGWAY_SHELL_PROBE\" = 1 ] && PATH=/told:$PATH\neval \"$2\"\n")
 		p, vars := askShell(sh)
 		dirs := filepath.SplitList(p)
 		if !slices.Contains(dirs, "/from/login") || vars == nil {
 			t.Fatalf("%s: PATH = %q, vars %v: the login shell wasn't asked again", name, p, vars != nil)
 		}
 		if !slices.Contains(dirs, "/told") {
-			t.Fatalf("%s: MAGPIE_SHELL_PROBE didn't reach the profile: %q", name, p)
+			t.Fatalf("%s: FOGWAY_SHELL_PROBE didn't reach the profile: %q", name, p)
 		}
 	}
 }

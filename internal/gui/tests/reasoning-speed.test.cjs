@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.route("**/*", serve(lang));
 
       // the Routing page: each row, and the session's average
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-days .rt-day").nth(1).click();
       const reqs = page.locator(".rt-req");
       await reqs.nth(timing.length - 1).waitFor();
@@ -123,7 +123,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.match(await group.locator(".speed").getAttribute("title"), w.rule);
 
       // the Usage page's requests: each row, its tooltip, and the period's
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('[data-view="usage"]').first().click();
       await page.locator(":is(#usageTab .opt, .nav-s):visible").nth(1).click();
       await page.locator("#ledWrap .led tbody tr").first().waitFor();

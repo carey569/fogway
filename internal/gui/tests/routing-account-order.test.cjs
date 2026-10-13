@@ -96,7 +96,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", f.route);
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       // the relay's keys start folded (the accounts' folds, fewer than six, start open)
       await page.locator(".rt-accts > li.rt-fold:not(.open)").click();
       await page.locator(".rt-accts > li[title]:not(.rt-fold)").nth(8).waitFor();

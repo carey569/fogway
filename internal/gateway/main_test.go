@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agentenv"
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // standInsEnv names the folder of a test binary's stand-in CLIs, for a
 // test binary it starts again.
-const standInsEnv = "MAGPIE_GATEWAY_TEST_STAND_INS"
+const standInsEnv = "FOGWAY_GATEWAY_TEST_STAND_INS"
 
 func TestMain(m *testing.M) {
 	code, err := isolatedTests(m)
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 // alone does not isolate the macOS Keychain, and account caches eventually
 // expire: discovery must keep finding only the test's sign-ins and CLIs.
 func isolatedTests(m *testing.M) (int, error) {
-	home, err := os.MkdirTemp("", "magpie-gateway-test-")
+	home, err := os.MkdirTemp("", "fogway-gateway-test-")
 	if err != nil {
 		return 1, err
 	}

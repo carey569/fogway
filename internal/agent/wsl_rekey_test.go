@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/access"
+	"github.com/fogway/fogway/internal/access"
 )
 
 // Rekey leaves an agent on this machine's loopback as it is: its key
 // doesn't follow sharing.
 func TestRekeyLeavesLoopback(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	_, read := codexHome(t, "", "model = \"gpt-5.5\"\n")
 	var as []*Agent
 	for _, a := range All() {
@@ -27,7 +27,7 @@ func TestRekeyLeavesLoopback(t *testing.T) {
 	if moved, err := Rekey(as); err != nil || len(moved) != 0 {
 		t.Fatalf("moved %v, %v", moved, err)
 	}
-	if cfg := read(); strings.Contains(cfg, "magpie") {
+	if cfg := read(); strings.Contains(cfg, "fogway") {
 		t.Fatalf("written:\n%s", cfg)
 	}
 }

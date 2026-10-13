@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // reseatHome is a sandbox HOME with two providers, one of them "cop" in the
@@ -43,7 +43,7 @@ func TestSameModelTakesTheOneMMarkOffAGroupRef(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	opts := []Option{{Value: "magpie/group/auto-gpt-5", Ref: "group/auto-gpt-5"}, {Value: "other/gpt-5", Ref: "other/gpt-5"}}
+	opts := []Option{{Value: "fogway/group/auto-gpt-5", Ref: "group/auto-gpt-5"}, {Value: "other/gpt-5", Ref: "other/gpt-5"}}
 	if got := sameModel(opts, "group/auto-gpt-5[1m]"); got.Ref != "other/gpt-5" {
 		t.Errorf("[1m] on the group: %+v", got)
 	}
@@ -51,7 +51,7 @@ func TestSameModelTakesTheOneMMarkOffAGroupRef(t *testing.T) {
 		t.Errorf("the bare group: %+v", got)
 	}
 	// a group that is nobody else's still gives nothing (nothing to move to)
-	none := []Option{{Value: "magpie/group/mine", Ref: "group/mine"}, {Value: "other/gpt-5", Ref: "other/gpt-5"}}
+	none := []Option{{Value: "fogway/group/mine", Ref: "group/mine"}, {Value: "other/gpt-5", Ref: "other/gpt-5"}}
 	if got := sameModel(none, "group/mine[1m]"); got.Ref != "" {
 		t.Errorf("a group of the user's own: %+v", got)
 	}
@@ -87,7 +87,7 @@ func TestReseatOff(t *testing.T) {
 	mustApply(t, c, "opus", "cop/claude-sonnet-4.5")
 	mustApply(t, c, "haiku", "cop/only-here")
 	mustApply(t, c, "sonnet", "ds/gpt-5")
-	mustApply(t, h, "model", "magpie/cop/only-here")
+	mustApply(t, h, "model", "fogway/cop/only-here")
 
 	moves, err := Reseat(func() error { return provider.SetOff("cop", true) })
 	if err != nil {
@@ -171,7 +171,7 @@ func TestReseatUnmovable(t *testing.T) {
 	home := reseatHome(t)
 	c, h := mustFind(t, "claude"), mustFind(t, "opencode")
 	mustApply(t, c, "model", "cop/only-here")
-	mustApply(t, h, "model", "magpie/cop/only-here")
+	mustApply(t, h, "model", "fogway/cop/only-here")
 	dir := filepath.Join(home, ".config", "opencode")
 	if err := os.Chmod(dir, 0o555); err != nil {
 		t.Fatal(err)
@@ -215,7 +215,7 @@ func TestReseatFoundGroupsOff(t *testing.T) {
 	c, h := mustFind(t, "claude"), mustFind(t, "opencode")
 	mustApply(t, c, "model", "group/auto-gpt-5")
 	mustApply(t, c, "opus", "group/auto-claude-sonnet-4-5")
-	mustApply(t, h, "model", "magpie/group/auto-gpt-5")
+	mustApply(t, h, "model", "fogway/group/auto-gpt-5")
 	moves, err := Reseat(func() error { return provider.SetAutoGroups(false) })
 	if err != nil {
 		t.Fatal(err)
@@ -225,7 +225,7 @@ func TestReseatFoundGroupsOff(t *testing.T) {
 			t.Errorf("claude %s: %q, want %q", k, got, w)
 		}
 	}
-	if got := h.Field("model").Get(); got != "magpie/cop/gpt-5" {
+	if got := h.Field("model").Get(); got != "fogway/cop/gpt-5" {
 		t.Errorf("opencode: %q", got)
 	}
 	if len(moves) != 3 || moves[0].From != "group/auto-gpt-5" || moves[0].To != "cop/gpt-5" {

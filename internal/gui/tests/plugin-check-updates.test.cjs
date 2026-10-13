@@ -56,7 +56,7 @@ function server(lang, calls) {
       return json(state());
     }
     if (url.pathname.startsWith("/api/")) return json({});
-    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -94,7 +94,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const srv = server(lang, calls);
         await page.route("**/*", srv);
 
-        await page.goto("http://magpie.test/?view=plugins");
+        await page.goto("http://fogway.test/?view=plugins");
         const view = page.locator("#view-plugins");
         await view.page().locator(":is(.lib-tabs .opt, .nav-s):visible", { hasText: w.installed }).click();
         const row = (spec) => view.locator(".pm-row").filter({ has: page.locator(".name span", { hasText: new RegExp("^" + spec.replace(/[/@-]/g, "\\$&") + "$") }) });

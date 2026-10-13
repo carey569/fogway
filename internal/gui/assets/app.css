@@ -1,4 +1,4 @@
-/* magpie — one quiet surface, real logos, controls that read as pop-up buttons. */
+/* fogway — one quiet surface, real logos, controls that read as pop-up buttons. */
 :root {
   --bg: #f4f4f6;
   --card: #ffffff;
@@ -29,7 +29,7 @@
   --red-soft: #fbe9e9;
   --amber: #b45309;
   --amber-soft: #fbf0df;
-  /* an agent magpie set up that no longer goes through it */
+  /* an agent fogway set up that no longer goes through it */
   --drift: #ce2c31;
   --drift-soft: #feebec;
   --pop-bg: rgba(255, 255, 255, .94);
@@ -176,34 +176,17 @@ body:not(.window.linux) #winclose { display: none; }
    as GNOME draws its close button, and set a little apart from the icons */
 .icon.winclose { align-self: center; width: 22px; height: 22px; margin-left: 8px; border-radius: 50%; background: var(--pill); color: var(--fg-2); }
 .icon.winclose:hover { background: color-mix(in srgb, var(--fg) 12%, transparent); }
-/* the magpie flaps, flicks its tail and bobs when the window opens and on
+/* the fogway flaps, flicks its tail and bobs when the window opens and on
    hover. It moves in pieces cut from the logo, and is drawn whole at rest, so
    the cuts never show. */
 .logo svg { display: block; overflow: visible; }
 .logo .parts, .logo.wag .whole { display: none; }
 .logo.wag .parts { display: inline; }
-.logo .tail { transform-box: view-box; transform-origin: 14px 22px; }
-.logo .wing { transform-box: view-box; transform-origin: 30px 19.8px; }
-.logo .bird { transform-box: view-box; transform-origin: 26px 38px; }
-.logo.wag .tail { animation: tail-flick .9s cubic-bezier(.3, 0, .3, 1); }
-.logo.wag .wing { animation: wing-flap .9s cubic-bezier(.3, 0, .3, 1); }
+.logo .tail { transform-box: view-box; }
+.logo .bird { transform-box: view-box; transform-origin: 22px 35px; }
+.logo.wag .tail { animation: fog-drift .9s cubic-bezier(.3, 0, .3, 1); }
 .logo.wag .bird { animation: bird-bob .9s cubic-bezier(.3, 0, .3, 1); }
-@keyframes wing-flap {
-  0%, 100% { transform: none; }
-  12% { transform: rotate(10deg); }
-  26% { transform: rotate(-3deg); }
-  40% { transform: rotate(8deg); }
-  56% { transform: rotate(-2deg); }
-  72% { transform: rotate(3deg); }
-}
-@keyframes tail-flick {
-  0%, 100% { transform: none; }
-  18% { transform: rotate(16deg); }
-  36% { transform: rotate(-7deg); }
-  54% { transform: rotate(9deg); }
-  72% { transform: rotate(-3deg); }
-  86% { transform: rotate(2deg); }
-}
+@keyframes fog-drift { 0% { transform: translateX(0); } 30% { transform: translateX(2.5px); } 65% { transform: translateX(-1.5px); } 100% { transform: translateX(0); } }
 @keyframes bird-bob {
   0%, 100% { transform: none; }
   18% { transform: rotate(-4deg); }
@@ -238,7 +221,7 @@ body.panel .seg { display: none; }
    WebKit turns a whole svg on a layer snapped to the pixel grid, so off a
    whole pixel its ring circles about a point a pixel or so off its centre */
 .icon.spin svg > * { transform-box: view-box; transform-origin: 50% 50%; animation: spin .9s linear infinite; }
-/* a newer magpie is ready: a quiet pill before the header's icons */
+/* a newer fogway is ready: a quiet pill before the header's icons */
 .update {
   align-self: center; display: inline-flex; align-items: center; gap: 4px;
   height: 22px; margin-right: 6px; padding: 0 9px 0 7px; border-radius: 999px;
@@ -265,7 +248,7 @@ body.panel .seg { display: none; }
 .update-hide:focus-visible { opacity: 1; pointer-events: auto; } /* its own rule: Safari before 15.4 drops a list holding it */
 .update-hide:hover { color: var(--fg); }
 .update[hidden] + .update-hide, .update.busy + .update-hide { display: none; }
-/* a narrow header (fitTop): the magpie without its name, Update as its arrow,
+/* a narrow header (fitTop): the fogway without its name, Update as its arrow,
    the tabs closer together, still in the middle of the window, and only when
    they don't fit there, in the row rather than over it: halfway between what
    is either side of them, not a third of the room their left and two thirds
@@ -281,7 +264,7 @@ body.window .top.inrow .actions { margin-left: 0; }
 /* and when even that doesn't fit, the tabs scroll sideways rather than push the page wider */
 .top.packed .seg { min-width: 0; flex: 0 1 auto; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .top.packed .seg::-webkit-scrollbar { display: none; }
-/* magpie web on a phone, or a browser as narrow (phoneWeb): the magpie and
+/* fogway web on a phone, or a browser as narrow (phoneWeb): the fogway and
    the icons in a row, the tabs at their size in a row of their own under
    them, sliding sideways when they don't fit (they were squeezed into the
    room between, too small to read or tap) */
@@ -321,14 +304,14 @@ body.side-nav { --side-w: 212px; padding-left: var(--side-w); }
    (app.js sideDrag): the reach a little either side of the line, the line
    itself unchanged */
 .side-edge { position: absolute; top: 0; bottom: 0; right: -4px; width: 8px; z-index: 1; cursor: col-resize; touch-action: none; }
-/* a finger needs more than a pointer's reach: an iPad's in magpie web */
+/* a finger needs more than a pointer's reach: an iPad's in fogway web */
 @media (pointer: coarse) { .side-edge { right: -12px; width: 24px; } }
 .side-edge:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
 body.side-drag, body.side-drag * { cursor: col-resize !important; user-select: none; }
 .side-top { flex: none; display: flex; align-items: center; height: 46px; padding: 0 18px; }
 .side-top .brand { font-size: 13.5px; }
 /* the traffic lights are the sidebar's top left, as in a Mac app's sidebar;
-   the magpie beside them, level with them (see .top above) */
+   the fogway beside them, level with them (see .top above) */
 body.window.mac .side-top { height: calc(50px / var(--zoom, 1)); padding: calc(2px / var(--zoom, 1)) 0 0 calc(84px / var(--zoom, 1)); }
 /* Windows' title bar above already shows the icon and the name */
 body.window:not(.mac):not(.linux):not(.web) .side-top { height: 10px; }
@@ -556,7 +539,7 @@ body.panel #agents > .row .ag-handle::before { left: -8px; }
    hidden by hand, and has to be seen to be found (#479) */
 .ag-show:focus-visible { outline: 1.5px solid var(--fg-2); outline-offset: 1px; }
 .ag-show svg { color: var(--muted); }
-/* an agent whose config was rewritten since magpie set it: a line under
+/* an agent whose config was rewritten since fogway set it: a line under
    its name saying so, and the button that sets it again */
 /* a drifted agent: a coral pill on its name's line — the row keeps its
    height and the pickers their columns */
@@ -567,12 +550,12 @@ body.panel #agents > .row .ag-handle::before { left: -8px; }
 .ag-fix:active { transform: scale(.96); }
 .ag-fix:focus-visible { outline: 1.5px solid var(--drift); outline-offset: 1px; }
 .ag-fix.busy { pointer-events: none; opacity: .7; }
-/* the accounts that keep an agent going through magpie for failover (#1385) */
+/* the accounts that keep an agent going through fogway for failover (#1385) */
 .ag-acc { display: inline-flex; align-items: center; flex: none; height: 20px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--fg-2); font: inherit; font-size: 11.5px; line-height: 1; cursor: pointer; transition: background-color .15s, color .15s; }
 .ag-acc:hover { background: var(--pill); color: var(--fg); }
 .ag-acc:focus-visible { outline: 1.5px solid var(--fg-2); outline-offset: 1px; }
 .ag-fix.busy svg > * { transform-box: view-box; transform-origin: 50% 50%; animation: spin .8s linear infinite; }
-/* what has to listen at an address no agent reaches magpie by (#1013): long addresses wrap, and it can be copied */
+/* what has to listen at an address no agent reaches fogway by (#1013): long addresses wrap, and it can be copied */
 .drift-why { overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
 /* the agent's CLI on its name's line (#202): its version faint, and a quiet
    pill that updates it when a newer one is out — the row keeps its height */
@@ -871,10 +854,10 @@ body.window .field.solo { grid-column: auto; }
 .quota-resets { display: flex; align-items: center; gap: 8px; margin-top: 9px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
 .quota-resets .text { margin-left: auto; flex: none; font-size: 11px; padding: 2px 7px; }
 .subscription-card.several .quota-resets:not([hidden]) + .subscription-account { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
-/* a remote magpie's gateway key (#1547): its cycle, calls, used up */
+/* a remote fogway's gateway key (#1547): its cycle, calls, used up */
 .quota-keyline { margin-top: 7px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .quota-keyline.spent { color: var(--red); }
-/* magpie's own requests, apart from the agents' (#1839) */
+/* fogway's own requests, apart from the agents' (#1839) */
 .own-badge { display: inline-flex; align-items: center; flex: none; margin-left: 6px; font-size: 9.5px; font-weight: 550; line-height: 16px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent); border-radius: 5px; color: var(--muted); background: color-mix(in srgb, var(--muted) 8%, var(--card)); white-space: nowrap; vertical-align: 1px; }
 .led .who .own-badge { margin-left: 0; }
 .quota-own { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 7px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -1971,7 +1954,7 @@ body.window .foot { padding-left: 18px; }
 .pop li.reset .ic { opacity: .75; }
 .pop li.custom .v { color: var(--fg); }
 .pop li.custom .n { color: var(--muted); }
-/* the models on the agent's own account through magpie, folded into one
+/* the models on the agent's own account through fogway, folded into one
    row (#496): a chevron says it opens, turned down while open */
 .pop li.fold .v { color: var(--muted); }
 .pop li.fold .chev { display: inline-flex; margin-left: auto; flex: none; color: var(--faint); transition: transform .18s cubic-bezier(.22, 1, .36, 1); }
@@ -2213,7 +2196,7 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .badge.off { background: var(--pill); color: var(--muted); }
 .badge.free { background: var(--green-soft); color: var(--green); }
 /* a model's context, when it is a large one: grey, as it is a fact, not a warning */
-/* which way a model goes (#726): through magpie, or straight to its vendor */
+/* which way a model goes (#726): through fogway, or straight to its vendor */
 .badge.path { letter-spacing: .02em; text-transform: none; white-space: nowrap; }
 .badge.path.via { background: var(--accent-soft); color: var(--accent); }
 .badge.path.direct { background: var(--pill); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
@@ -2371,7 +2354,7 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .acc .alane:hover, .acc .alane.open { color: var(--fg); background: var(--pill-hover); }
 .acc .alane-in { width: 64px; }
 .acc .acap-held { color: var(--fg); }
-/* held for magpie's requests, not the agent signed in to it: a warning */
+/* held for fogway's requests, not the agent signed in to it: a warning */
 .acc .acap-held.acap-direct { color: var(--amber); }
 .accts .acc.with-am { flex-wrap: wrap; row-gap: 3px; }
 .acc .acct-models { flex-basis: 100%; display: grid; gap: 7px; padding: 6px 0 2px 25px; cursor: auto; }
@@ -2724,9 +2707,9 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .segs { position: relative; display: inline-flex; padding: 2px; border-radius: 7px; background: var(--pill); align-self: flex-start; }
 .opt { position: relative; z-index: 1; white-space: nowrap; height: 22px; padding: 0 10px; border-radius: 5px; font-size: 12px; color: var(--muted); transition: color .18s var(--ease), transform .14s var(--ease); }
 .opt.on { color: var(--fg); }
-/* how often magpie checks for updates, while it doesn't by itself */
+/* how often fogway checks for updates, while it doesn't by itself */
 .update-every-row.off .segs { opacity: .55; }
-/* Command line: each shell's `magpie`, a dot for whether it runs this app */
+/* Command line: each shell's `fogway`, a dot for whether it runs this app */
 .cli-row .sub { overflow-wrap: anywhere; }
 .cli-shells { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
 .cli-shell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); min-height: 22px; }
@@ -3597,7 +3580,7 @@ body.window .row.agent .who.with-models { flex-wrap: wrap; row-gap: 0; }
 .am-only .lib-switch { flex: none; }
 .am-only > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .am-foot .am-reset { flex: none; }
-/* the agent's own models, beside magpie's in its picker or not (#1642) */
+/* the agent's own models, beside fogway's in its picker or not (#1642) */
 .am-own { display: flex; align-items: center; gap: 6px; min-width: 0; margin-top: 8px; font-size: 12px; color: var(--fg-2); cursor: pointer; }
 .am-own .lib-switch { flex: none; }
 .am-own > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3616,7 +3599,7 @@ body.window .row.agent .who.with-models { flex-wrap: wrap; row-gap: 0; }
 .am-order.sorting .am-or { transition: transform .22s cubic-bezier(.22, 1, .36, 1); cursor: grabbing; }
 .am-order .am-or.dragging { position: relative; z-index: 2; transition: none; background: var(--pop-bg); box-shadow: 0 6px 18px rgba(20, 22, 30, .12), 0 0 0 1px var(--line); }
 
-/* ---- an agent's switch onto magpie ---------------------------------------- */
+/* ---- an agent's switch onto fogway ---------------------------------------- */
 /* the rows drawn again under the line said beneath each name had WebKit's
    scroll anchoring move the list a few px before the page was held back
    (claude-direct.test.cjs); the page holds the reader itself */
@@ -3626,7 +3609,7 @@ body.window .row.agent > .ag-conn { margin-left: 12px; align-self: center; curso
 .ag-conn-row .ag-conn-said { flex: 1; min-width: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ag-conn-row .lib-switch { cursor: pointer; }
 
-/* 「接入」 in the window: a row says whether the agent goes through magpie —
+/* 「接入」 in the window: a row says whether the agent goes through fogway —
    a line under its name, a link that opens it, its switch */
 .ag-lead { margin: 0 2px 12px; font-size: 12.5px; color: var(--fg-2); }
 .ag-lead b { font-weight: 600; color: var(--fg); }

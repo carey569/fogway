@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
-// OpenCode Zen's free models are listed: magpie asks them as OpenCode does
+// OpenCode Zen's free models are listed: fogway asks them as OpenCode does
 // (gateway/zenfree.go), so they answer.
 func TestOpenCodeZenListsFreeModels(t *testing.T) {
 	p, err := FromPreset("opencode-zen")

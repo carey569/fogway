@@ -31,9 +31,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/steady"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/steady"
 )
 
 const (
@@ -86,7 +86,7 @@ var sticks = struct {
 	// conversations spreads rather than all going to the one holding the
 	// fewest a moment before (#1342)
 	opening map[string]stick
-	// the file as last read or written: another magpie's writes (the one
+	// the file as last read or written: another fogway's writes (the one
 	// handing over to this one) are read again when a conversation is missed
 	from string
 	mod  time.Time
@@ -110,7 +110,7 @@ func sticksPath() string { return filepath.Join(filepath.Dir(provider.Path()), "
 
 // stickOf is who answered key last, read from the file again when it isn't
 // known here and the file changed since: after a restart, or written by
-// the magpie that handed over. Called with sticks held.
+// the fogway that handed over. Called with sticks held.
 func stickOf(key string) (stick, bool) {
 	if st, ok := sticks.m[key]; ok {
 		return st, true
@@ -178,7 +178,7 @@ func saveSticks() {
 	if err != nil {
 		return
 	}
-	tmp := path + ".magpie-tmp"
+	tmp := path + ".fogway-tmp"
 	if os.WriteFile(tmp, b, 0o600) != nil {
 		return
 	}
@@ -188,7 +188,7 @@ func saveSticks() {
 	}
 	if fi, err := os.Stat(path); err == nil {
 		sticks.Lock()
-		// what this magpie wrote isn't read back as another's
+		// what this fogway wrote isn't read back as another's
 		sticks.from, sticks.mod = sticksPath(), fi.ModTime()
 		sticks.Unlock()
 	}
@@ -590,7 +590,7 @@ type sealedItem struct {
 
 // sealedKinds are the input items a vendor seals for itself: its
 // reasoning, and the compaction a conversation's earlier turns were
-// folded into (OpenAI's, when Codex compacts on its own models; magpie's
+// folded into (OpenAI's, when Codex compacts on its own models; fogway's
 // own is text by the time a request is sent).
 var sealedKinds = map[string]bool{"reasoning": true, "compaction": true, "compaction_summary": true}
 

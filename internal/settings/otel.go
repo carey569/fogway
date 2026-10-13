@@ -54,14 +54,14 @@ func (o OTel) Check() error {
 	return nil
 }
 
-// OTelExport applies explicit MAGPIE_OTEL_* overrides without changing the
+// OTelExport applies explicit FOGWAY_OTEL_* overrides without changing the
 // saved preferences. Merely setting an endpoint never enables export.
 func OTelExport() (OTel, error) {
 	o := Load().OTel
 	for _, x := range []struct {
 		name string
 		dst  *bool
-	}{{"MAGPIE_OTEL_ENABLED", &o.Enabled}, {"MAGPIE_OTEL_METRICS", &o.Metrics}, {"MAGPIE_OTEL_BODIES", &o.Bodies}, {"MAGPIE_OTEL_BODIES_WHOLE", &o.BodiesWhole}, {"MAGPIE_OTEL_SESSIONS", &o.Sessions}} {
+	}{{"FOGWAY_OTEL_ENABLED", &o.Enabled}, {"FOGWAY_OTEL_METRICS", &o.Metrics}, {"FOGWAY_OTEL_BODIES", &o.Bodies}, {"FOGWAY_OTEL_BODIES_WHOLE", &o.BodiesWhole}, {"FOGWAY_OTEL_SESSIONS", &o.Sessions}} {
 		if v, ok := os.LookupEnv(x.name); ok {
 			b, err := strconv.ParseBool(v)
 			if err != nil {
@@ -70,17 +70,17 @@ func OTelExport() (OTel, error) {
 			*x.dst = b
 		}
 	}
-	if v, ok := os.LookupEnv("MAGPIE_OTEL_ENDPOINT"); ok {
+	if v, ok := os.LookupEnv("FOGWAY_OTEL_ENDPOINT"); ok {
 		o.Endpoint = strings.TrimRight(strings.TrimSpace(v), "/")
 	}
-	if v, ok := os.LookupEnv("MAGPIE_OTEL_HEADERS"); ok {
+	if v, ok := os.LookupEnv("FOGWAY_OTEL_HEADERS"); ok {
 		o.Headers = map[string]string{}
 		if v != "" {
 			for _, h := range strings.Split(v, ",") {
 				k, value, ok := strings.Cut(h, "=")
 				value, err := url.PathUnescape(strings.TrimSpace(value))
 				if !ok || err != nil {
-					return OTel{}, fmt.Errorf("MAGPIE_OTEL_HEADERS must be comma-separated name=value pairs")
+					return OTel{}, fmt.Errorf("FOGWAY_OTEL_HEADERS must be comma-separated name=value pairs")
 				}
 				o.Headers[strings.TrimSpace(k)] = value
 			}

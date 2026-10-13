@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // WorkBuddy's calls, read from the same lines its session summary is
@@ -24,7 +24,7 @@ import (
 // As with dsh and ZCode, the Sessions page read these all along and the
 // usage ledger did not, so WorkBuddy's tokens never reached the Usage page.
 //
-// A call WorkBuddy made to magpie's own gateway is not read here: the
+// A call WorkBuddy made to fogway's own gateway is not read here: the
 // gateway logs it itself, with the provider and account that really
 // answered, and this file has neither to pair it with (workbuddyGateway).
 
@@ -65,7 +65,7 @@ func buddyDir(agent string) string {
 	return WorkBuddyDir()
 }
 
-// wbGateway are the ids each agent's models.json names as magpie's gateway,
+// wbGateway are the ids each agent's models.json names as fogway's gateway,
 // by the file's path, kept while it is as it was, as zcodeCallFiles keeps
 // its listing.
 var wbGateway struct {
@@ -79,7 +79,7 @@ type wbIDs struct {
 }
 
 // buddyGateway is workbuddyGateway for the models.json in dir: WorkBuddy's,
-// or CodeBuddy Code's, which names magpie's models the same way.
+// or CodeBuddy Code's, which names fogway's models the same way.
 func buddyGateway(dir, id string) bool {
 	const local = "custom-local:"
 	if !strings.HasPrefix(id, local) {
@@ -96,7 +96,7 @@ type wbEntry struct {
 }
 
 // buddyGatewayIDs are the ids of the models the models.json in dir names
-// as magpie's, an empty set when it names none (or cannot be read).
+// as fogway's, an empty set when it names none (or cannot be read).
 func buddyGatewayIDs(dir string) map[string]bool {
 	path := filepath.Join(dir, "models.json")
 	stamp := ocStamp(path)
@@ -115,13 +115,13 @@ func buddyGatewayIDs(dir string) map[string]bool {
 		var doc struct{ Models []wbEntry }
 		if json.Unmarshal(b, &list) == nil {
 			for _, e := range list {
-				if e.Vendor == "magpie" && e.ID != "" {
+				if e.Vendor == "fogway" && e.ID != "" {
 					ids[e.ID] = true
 				}
 			}
 		} else if json.Unmarshal(b, &doc) == nil {
 			for _, e := range doc.Models {
-				if e.Vendor == "magpie" && e.ID != "" {
+				if e.Vendor == "fogway" && e.ID != "" {
 					ids[e.ID] = true
 				}
 			}
@@ -187,7 +187,7 @@ func readWorkBuddyCalls(f file) (*callFile, bool) {
 // its tokens (input with the cache read and written taken out of it, as its
 // summary counts them) and the time it was written.
 func workbuddyCall(st *callFile, dir string, l wbLine, b []byte) (Call, bool) {
-	// a call made to magpie's gateway is the gateway's record to keep, not
+	// a call made to fogway's gateway is the gateway's record to keep, not
 	// this one's: see workbuddyGateway
 	if buddyGateway(dir, l.ProviderData.RequestModel) {
 		return Call{}, false

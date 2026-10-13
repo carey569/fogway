@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Vendors spell the same model differently; a group magpie finds joins
+// Vendors spell the same model differently; a group fogway finds joins
 // them all.
 func TestAutoGroupsSameModel(t *testing.T) {
 	for in, want := range map[string]string{

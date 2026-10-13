@@ -1,9 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// A request sent to a remote magpie for one of its routing groups is
+// A request sent to a remote fogway for one of its routing groups is
 // answered with the member the group routed to (莫 on Discord: group/auto-…
 // answered by deepseek/deepseek-v4.1-flash, shown amber as a swap). The
 // gateway marks it routed, not swapped: the Routing page's Requests list
-// shows the member plain, not amber, with a title saying the remote magpie's
+// shows the member plain, not amber, with a title saying the remote fogway's
 // group routed it there, and so does its story; the Usage page's Requests
 // show it muted with the same title. A real swap beside it is still amber.
 // Chromium and WebKit, English and Chinese; no backend, the API is faked.
@@ -33,7 +33,7 @@ const routes = tries.map(([key, model, s, mark], i) => ({
   done: true, status: 200, ms: 900, tokens: 1200, ...(s ? { served: s } : {}), ...mark,
 }));
 const rows = [
-  { t: at(0), agent: "codex", agentName: "Codex", icon: "codex-color", provider: "office", providerName: "Office", host: "192.168.1.5:3425", req: "office/" + GROUP, model: GROUP, served: MEMBER, routed: true, in: 900, out: 120, ms: 1320, status: 200, cost: 0, priced: false },
+  { t: at(0), agent: "codex", agentName: "Codex", icon: "codex-color", provider: "office", providerName: "Office", host: "192.168.1.5:3725", req: "office/" + GROUP, model: GROUP, served: MEMBER, routed: true, in: 900, out: 120, ms: 1320, status: 200, cost: 0, priced: false },
   { t: at(1), agent: "codex", agentName: "Codex", icon: "codex-color", provider: "relay", providerName: "Relay", host: "team", req: "sol", model: "gpt-6-sol", served: "gpt-6-luna", swapped: true, in: 1000, out: 100, ms: 900, status: 200, cost: 0.001, priced: true },
 ];
 
@@ -72,13 +72,13 @@ function serve(lang) {
 }
 
 const want = {
-  en: { tag: "served " + MEMBER, swap: "served gpt-6-luna", why: new RegExp(`^${GROUP} is a routing group of the remote magpie, and it routed the request to ${MEMBER}: the group picking one of its models, not the vendor swapping the model\\.$`) },
-  zh: { tag: "实际 " + MEMBER, swap: "实际 gpt-6-luna", why: new RegExp(`^${GROUP} 是远程 magpie 的路由组，请求被路由给 ${MEMBER}：这是路由组选择了组内模型，并非服务商替换了模型。$`) },
+  en: { tag: "served " + MEMBER, swap: "served gpt-6-luna", why: new RegExp(`^${GROUP} is a routing group of the remote fogway, and it routed the request to ${MEMBER}: the group picking one of its models, not the vendor swapping the model\\.$`) },
+  zh: { tag: "实际 " + MEMBER, swap: "实际 gpt-6-luna", why: new RegExp(`^${GROUP} 是远程 fogway 的路由组，请求被路由给 ${MEMBER}：这是路由组选择了组内模型，并非服务商替换了模型。$`) },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh"]) {
-    test(`${engine} ${lang}: a remote magpie's group routing to a member is not a swap`, async (t) => {
+    test(`${engine} ${lang}: a remote fogway's group routing to a member is not a swap`, async (t) => {
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       const context = await browser.newContext({ viewport: { width: 1180, height: 760 }, reducedMotion: "reduce" });
       const page = await context.newPage();
@@ -95,7 +95,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       });
 
       // the Routing page's Requests: the member plain, the swap amber
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       // the date bar's day (the By request / By session buttons are rt-day too)
       await page.locator(".rt-days .rt-day").nth(1).click();
       await page.locator(".rt-req").nth(routes.length - 1).waitFor();
@@ -140,7 +140,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(await page.locator(".rt-steps li.swap").count(), 1);
 
       // the Usage page's Requests: muted, with the same title; the swap amber
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('nav [data-view="usage"], [data-view="usage"]').first().click();
       await page.locator(":is(#usageTab .opt, .nav-s):visible").nth(1).click();
       await page.locator("#ledWrap .led tbody tr").nth(1).waitFor();

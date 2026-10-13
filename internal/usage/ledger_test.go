@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // The ledger lists a period's calls newest first, each with the model

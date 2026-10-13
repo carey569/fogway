@@ -38,7 +38,7 @@ function server(lang, asked, npmHeld) {
     }
     if (url.pathname === "/api/plugins/updates") return json({ waiting: [], updated: [] });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -66,7 +66,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, asked, npmHeld));
 
-        await page.goto("http://magpie.test/?view=plugins");
+        await page.goto("http://fogway.test/?view=plugins");
         const view = page.locator("#view-plugins");
         await view.waitFor({ state: "visible" });
 

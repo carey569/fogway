@@ -25,19 +25,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/agentenv"
+	"github.com/fogway/fogway/internal/agentenv"
 )
 
 const (
 	// prefix starts the temporary home's name; Run removes only a folder
 	// so named.
-	prefix = "magpie-test-home-"
+	prefix = "fogway-test-home-"
 	// Marker holds the temporary home in the environment. A test binary
 	// started again by one of its own tests inherits it, and keeps the
 	// environment that test gave it (its fixtures) instead of isolating
 	// again; a test that hands such a child an environment of its own
 	// passes Marker along.
-	Marker = "MAGPIE_TEST_SANDBOX"
+	Marker = "FOGWAY_TEST_SANDBOX"
 )
 
 // folderVars are the variables Isolate points into the temporary home.

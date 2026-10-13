@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 func TestBootScript(t *testing.T) {
 	home := t.TempDir()
 	testenv.SetHome(t, home)
 	// Spaces, quotes and shell expansions must stay part of the file name.
-	exe := filepath.Join(home, "magpie ' $not_a_variable")
+	exe := filepath.Join(home, "fogway ' $not_a_variable")
 	out := filepath.Join(home, "args")
 	if err := os.WriteFile(exe, []byte("#!/system/bin/sh\nprintf '%s' \"$1\" > \"$HOME/args\"\n"), 0o700); err != nil {
 		t.Fatal(err)

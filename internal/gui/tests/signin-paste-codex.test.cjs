@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// A ChatGPT sign-in finished from its address (Jorben on Discord: magpie in
+// A ChatGPT sign-in finished from its address (Jorben on Discord: fogway in
 // Docker on a cloud server, its web UI in his browser; ChatGPT sent the
 // browser back to http://localhost:1455/auth/callback?code=…, his own
 // machine, and the sign-in never finished). While the sign-in waits, the box
@@ -44,11 +44,11 @@ function server(lang, posted) {
 
 const W = {
   en: {
-    say: "If the page the browser ends on won't load (magpie runs on a server or in Docker), copy its whole address and paste it here.",
+    say: "If the page the browser ends on won't load (fogway runs on a server or in Docker), copy its whole address and paste it here.",
     field: "Callback URL", finish: "Finish sign-in",
   },
   zh: {
-    say: "若浏览器最终停在打不开的页面（magpie 运行在服务器或 Docker 中），请复制其完整地址粘贴到这里。",
+    say: "若浏览器最终停在打不开的页面（fogway 运行在服务器或 Docker 中），请复制其完整地址粘贴到这里。",
     field: "回调 URL", finish: "完成登录",
   },
 };
@@ -73,8 +73,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // the vendor's sign-in page, opened in a new window, gets an empty page:
       // the real one is a page the test can't control (ChatGPT's Cloudflare
       // challenge hung clicks on this page in Chromium, #1307)
-      await page.context().route((url) => url.hostname !== "magpie.test", (route) => route.fulfill({ contentType: "text/html", body: "" }));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.context().route((url) => url.hostname !== "fogway.test", (route) => route.fulfill({ contentType: "text/html", body: "" }));
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator("#addProvider").click();
       const sheet = page.locator("#addSheet");
       await sheet.locator('.tile[data-pick="ChatGPT"]').click();

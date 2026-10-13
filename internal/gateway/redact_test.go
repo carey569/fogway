@@ -14,15 +14,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/redact"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/redact"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Each mode needs a fresh process: the redaction key is cached after its
 // first use, so another test's masking would hide initialization races.
 func TestConcurrentRedactedCountTokens(t *testing.T) {
-	const modeEnv = "MAGPIE_TEST_REDACT_CONCURRENCY"
+	const modeEnv = "FOGWAY_TEST_REDACT_CONCURRENCY"
 	mode := os.Getenv(modeEnv)
 	if mode == "" {
 		exe, err := os.Executable()

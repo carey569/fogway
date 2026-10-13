@@ -13,13 +13,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A model that can't see images is given what a model that can says of
 // them: each image in the request is described once by the vision model
-// (the Settings' Vision, or one magpie picks) and the description goes in
+// (the Settings' Vision, or one fogway picks) and the description goes in
 // the image's place, in the current turn, older turns and tool results
 // alike. With Vision off, or no model that sees, such an image is turned
 // away as before (textOnlyBody).
@@ -33,8 +33,8 @@ func init() {
 	}
 }
 
-// VisionAgent is the User-Agent of the descriptions magpie asks for.
-const VisionAgent = "magpie-vision/1"
+// VisionAgent is the User-Agent of the descriptions fogway asks for.
+const VisionAgent = "fogway-vision/1"
 
 const visionTimeout = 2 * time.Minute
 
@@ -53,7 +53,7 @@ const visionSystem = `You describe images for an AI model that cannot see them. 
 - For a photo or drawing: what it shows, with the details that matter.
 Describe only what is there. Don't guess at what can't be read, say it can't be read. Don't answer questions or give advice. No preamble.`
 
-// describingKey marks a description magpie asks for, which must not have
+// describingKey marks a description fogway asks for, which must not have
 // its image described again.
 type describingKey struct{}
 
@@ -81,7 +81,7 @@ func describedFor(ctx context.Context) *CallFor {
 }
 
 // blindTo is whether a describer is to describe images for pid/model: its
-// list says it takes none (in), or says nothing and magpie counts it
+// list says it takes none (in), or says nothing and fogway counts it
 // text-only — as agents were told before Vision had them told every model
 // takes images (provider.Described): models.dev doesn't say it sees either.
 func blindTo(pid, model string, in *bool) bool {
@@ -113,12 +113,12 @@ func seer() (string, bool) {
 }
 
 // VisionMissing is the model Settings › Models › Image recognition names
-// when magpie can't find it any more, so that AutoVision's describes in its
+// when fogway can't find it any more, so that AutoVision's describes in its
 // place. "" when none is named, Vision is off, or it resolves.
 func VisionMissing() string { return pickedMissing(provider.HeldSettings().Vision) }
 
 // pickedMissing is a model the user picked in Settings (v) that doesn't
-// resolve: "" for none picked, off, or one magpie finds.
+// resolve: "" for none picked, off, or one fogway finds.
 func pickedMissing(v string) string {
 	if v == "" || v == "off" {
 		return ""
@@ -133,7 +133,7 @@ func pickedMissing(v string) string {
 // described, says of a picked Image recognition model that is missing.
 func missingSeerNote() string {
 	if v := VisionMissing(); v != "" {
-		return fmt.Sprintf("; the Image recognition model picked in magpie's Settings, %q, isn't set up any more: pick another in Settings → Models → Image recognition", v)
+		return fmt.Sprintf("; the Image recognition model picked in fogway's Settings, %q, isn't set up any more: pick another in Settings → Models → Image recognition", v)
 	}
 	return ""
 }
@@ -146,24 +146,24 @@ func noSeerNote() string {
 		return n
 	}
 	if provider.HeldSettings().Vision == "off" {
-		return "; Image recognition is off in magpie's Settings → Models"
+		return "; Image recognition is off in fogway's Settings → Models"
 	}
 	if _, ok := seer(); !ok {
-		return "; none of the models enabled in magpie can see images to describe it: enable one that can, or pick one in Settings → Models → Image recognition"
+		return "; none of the models enabled in fogway can see images to describe it: enable one that can, or pick one in Settings → Models → Image recognition"
 	}
 	return ""
 }
 
 // autoSeerNote is what a request whose image wasn't described says of a
-// describer magpie picked itself, which the user may not know of.
+// describer fogway picked itself, which the user may not know of.
 func autoSeerNote(see string) string {
 	if provider.HeldSettings().Vision != "" {
 		return ""
 	}
-	return fmt.Sprintf("; magpie picked %s of the models you enabled: pick another in Settings → Models → Image recognition", see)
+	return fmt.Sprintf("; fogway picked %s of the models you enabled: pick another in Settings → Models → Image recognition", see)
 }
 
-// AutoVision is the model magpie picks to describe images when the
+// AutoVision is the model fogway picks to describe images when the
 // Settings name none: a small model that sees, of the models the user
 // enabled on the providers switched on (smallModel) — a
 // Claude account's, a Codex account's, the cheapest of an API key's,
@@ -233,7 +233,7 @@ func autoSpent(model string) error {
 	if !back.IsZero() {
 		when = " until " + back.Local().Format("Jan 2 15:04")
 	}
-	return fmt.Errorf("%s is out of its allowance%s, as is every other model magpie could describe it with, and none is asked until one is back", model, when)
+	return fmt.Errorf("%s is out of its allowance%s, as is every other model fogway could describe it with, and none is asked until one is back", model, when)
 }
 
 // autoDescribes is whether the model that describes images is
@@ -330,7 +330,7 @@ func (s *Server) askVisionWith(ctx context.Context, model, src, system, text str
 		}
 	}
 	body, _ := json.Marshal(req)
-	r, err := http.NewRequestWithContext(magpieChose(ctx), http.MethodPost, "http://magpie/v1/chat/completions", nil)
+	r, err := http.NewRequestWithContext(fogwayChose(ctx), http.MethodPost, "http://fogway/v1/chat/completions", nil)
 	if err != nil {
 		return "", err
 	}

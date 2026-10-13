@@ -26,7 +26,7 @@ async function serve(route) {
   if (url.pathname === "/api/state") return json({
     agents: [{
       id: "codex", name: "Codex", path: "/test/config.toml", icon: "codex-color", wired: true,
-      fields: [{ key: "model", label: "model", value: "magpie/openai/gpt-6", options: [{ value: "magpie/openai/gpt-6", label: "GPT-6", ref: "openai/gpt-6" }] }],
+      fields: [{ key: "model", label: "model", value: "fogway/openai/gpt-6", options: [{ value: "fogway/openai/gpt-6", label: "GPT-6", ref: "openai/gpt-6" }] }],
       models: { shown: models.length, listed: models.length },
     }],
     profiles: [], settings: { lang: "en", theme: "light" },
@@ -55,7 +55,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       }
       await browser.close();
     });
-    await page.goto("http://magpie.test/");
+    await page.goto("http://fogway.test/");
     await page.locator('.row.agent[data-id="codex"] .ag-link').click();
     await page.locator('.row.agent[data-id="codex"] .ag-exp .ag-chips .ag-quiet').click();
     const pop = page.locator(".am-pop:not(.leaving)");

@@ -15,7 +15,7 @@ const { chromium, webkit } = require("playwright");
 const { watchSettingsReads, settingsDrawn } = require("./reader.cjs");
 
 const assets = path.resolve(__dirname, "../assets");
-const PAGE = "https://github.com/yetone/magpie-releases/releases/tag/v0.1.737";
+const PAGE = "https://github.com/fogway/fogway/releases/tag/v0.1.737";
 
 function settingsPayload(lang) {
   return {
@@ -23,7 +23,7 @@ function settingsPayload(lang) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.737", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.737", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -80,7 +80,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("dialog", (d) => { errors.push("dialog: " + d.message()); d.dismiss(); });
       await page.route("**/*", serve(lang, ctl));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=about");
+      await page.goto("http://fogway.test/?view=settings&tab=about");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const dialog = page.locator("#modal .editor.whatsnew");
       const view = page.locator("#view-settings");
@@ -118,7 +118,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await link.click();
       for (let i = 0; i < 40 && !ctl.opened.length; i++) await page.waitForTimeout(25);
       assert.deepEqual(ctl.opened, [PAGE]);
-      assert.equal(page.url(), "http://magpie.test/?view=settings&tab=about", "the page didn't navigate");
+      assert.equal(page.url(), "http://fogway.test/?view=settings&tab=about", "the page didn't navigate");
       // Try again while the site still fails: the same, asked again
       await retry.click();
       for (let i = 0; i < 40 && ctl.asked < 2; i++) await page.waitForTimeout(25);

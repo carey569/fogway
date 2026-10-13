@@ -84,7 +84,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         await browser.close();
       });
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator(codex).waitFor();
       await page.locator(`${codex} .ag-link`).click();
       await page.locator(`${codex} .ag-exp`).waitFor();

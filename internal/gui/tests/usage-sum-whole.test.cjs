@@ -12,7 +12,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
-const assets = path.resolve(process.env.MAGPIE_ASSETS || path.resolve(__dirname, "../assets"));
+const assets = path.resolve(process.env.FOGWAY_ASSETS || path.resolve(__dirname, "../assets"));
 
 function serve(lang) {
   const settings = { theme: "light", lang, quotaLeft: false, currency: "usd" };
@@ -62,7 +62,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.waitForFunction(() => document.querySelector("#usageCost b")?.textContent.includes("0.001"));
       const cut = [];
       for (let w = 380; w <= 1240; w += 10) {

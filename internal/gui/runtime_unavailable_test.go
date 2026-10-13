@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agent"
+	"github.com/fogway/fogway/internal/agent"
 )
 
 func TestRuntimeUnavailableJSONKeepsMessageAndAction(t *testing.T) {

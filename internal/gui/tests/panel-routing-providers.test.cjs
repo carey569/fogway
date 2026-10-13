@@ -90,7 +90,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, feed));
-        await page.goto("http://magpie.test/?mode=panel");
+        await page.goto("http://fogway.test/?mode=panel");
         await page.locator('[data-ptab="routing"]').click();
         await page.locator(".pr-req").nth(first.length - 1).waitFor();
         await page.locator(".pr-stage .ps-dst").first().waitFor();

@@ -1,11 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// The resets magpie used (foobra12 on Discord: "magpie会自动使用codex重置卡吗
+// The resets fogway used (foobra12 on Discord: "fogway会自动使用codex重置卡吗
 // 我发现刚才好像不小心自动给我使用了一张"): a reset gone from a Codex
-// account's card read the same whether magpie used it by itself, the user
-// did, or it ran out. The card's auto-use row now says the last one magpie
+// account's card read the same whether fogway used it by itself, the user
+// did, or it ran out. The card's auto-use row now says the last one fogway
 // used, when and why, on a line of its own, with every kept one in its
 // title; the menu bar panel's card the same, and an account in brief in its
-// switch's title. An account magpie used none of has no such line. Each
+// switch's title. An account fogway used none of has no such line. Each
 // language, Chromium and WebKit, at 1100 and 420; no backend, the API is
 // faked here.
 const assert = require("node:assert/strict");
@@ -57,7 +57,7 @@ const words = {
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const [lang, w] of Object.entries(words)) {
-    test(`${engine} ${lang}: a Codex account's card says the last reset magpie used, when and why`, async (t) => {
+    test(`${engine} ${lang}: a Codex account's card says the last reset fogway used, when and why`, async (t) => {
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       const pages = [];
       t.after(async () => {
@@ -93,7 +93,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       };
 
       for (const width of [1100, 420]) {
-        const page = await open("http://magpie.test/?view=usage", { width, height: 800 });
+        const page = await open("http://fogway.test/?view=usage", { width, height: 800 });
         const me = '.quota-autoreset[data-user="Me@example.com"]';
         await page.locator(me).waitFor();
         const line = page.locator(me + " .ar-used");
@@ -104,7 +104,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(title.length, 2);
         assert.match(title[1], new RegExp(" · " + w.hand + "$"));
         assert(await fits(page, me + " .ar-used", ".subscription-card"), `${width}: the line fits the card`);
-        // the account magpie used none of: no line, in full or in brief
+        // the account fogway used none of: no line, in full or in brief
         const two = '.subscription-account[data-card="codex|two@example.com"]';
         assert.equal(await page.locator(two + " .ar-used").count(), 0);
         const briefTitle = await page.locator(two + " .acct-auto").getAttribute("title");
@@ -119,7 +119,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       }
 
       // the menu bar panel's card
-      const panel = await open("http://magpie.test/?mode=panel", { width: 440, height: 600 });
+      const panel = await open("http://fogway.test/?mode=panel", { width: 440, height: 600 });
       const psel = '.pq-autoreset[data-user="Me@example.com"]';
       await panel.locator('#ptabs [data-ptab="usage"]').click();
       await panel.locator(psel).waitFor();

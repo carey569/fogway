@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // ruleClock is the time a turn's rules look at (a rule's hours), and its
@@ -29,7 +29,7 @@ type RuleHit struct {
 	Use  string   `json:"use,omitempty"` // the member it puts first
 	When []string `json:"when,omitempty"`
 	Held bool     `json:"held,omitempty"` // decided when the turn began
-	// Waits: the turn began before magpie saw it (or its rule was changed
+	// Waits: the turn began before fogway saw it (or its rule was changed
 	// since), so no rule moves it; the next turn is looked at afresh
 	Waits bool `json:"waits,omitempty"`
 	// Grown: within the turn the conversation grew past what the model it
@@ -106,7 +106,7 @@ type turnRule struct {
 	// answered is when the vendor last answered the conversation: its
 	// cache of it is read from then (ruleAnswered)
 	answered time.Time
-	size     int // how long magpie took the conversation's last request to be (estimate)
+	size     int // how long fogway took the conversation's last request to be (estimate)
 	// hybrid is the edge-cloud route's decision for the turn
 	hybrid *HybridHit
 }
@@ -690,5 +690,5 @@ func pausedError(asked string, paused []provider.Paused) string {
 		}
 		bits = append(bits, fmt.Sprintf("%s (%s: %s)", p.Member, by, strings.Join(p.When, " · ")))
 	}
-	return fmt.Sprintf("every model of %s is paused now by its rules: %s; change the rules on Magpie's Routing page, or ask again when they end", asked, strings.Join(bits, ", "))
+	return fmt.Sprintf("every model of %s is paused now by its rules: %s; change the rules on Fogway's Routing page, or ask again when they end", asked, strings.Join(bits, ", "))
 }

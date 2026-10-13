@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/yetone/magpie/internal/pluginrt"
+	"github.com/fogway/fogway/internal/pluginrt"
 )
 
-// builtinCmd: `magpie plugin builtin [on|off <id>]` — magpie's built-in
+// builtinCmd: `fogway plugin builtin [on|off <id>]` — fogway's built-in
 // plugins (internal/pluginrt, plugins/), as Plugins › Built-in shows them.
 // One in use is refused off, as the window refuses it.
 func builtinCmd(rest []string) error {
@@ -54,10 +54,10 @@ func builtinCmd(rest []string) error {
 	return nil
 }
 
-const pluginUsage = `usage: magpie plugin [builtin] [on|off <id>]
-       list magpie's built-in plugins (Sessions, routing groups…), or turn one on or off`
+const pluginUsage = `usage: fogway plugin [builtin] [on|off <id>]
+       list fogway's built-in plugins (Sessions, routing groups…), or turn one on or off`
 
-// pluginCmd: `magpie plugin …` is the built-in plugins, with or without
+// pluginCmd: `fogway plugin …` is the built-in plugins, with or without
 // the word builtin.
 func pluginCmd(args []string) error {
 	rest := args[1:]

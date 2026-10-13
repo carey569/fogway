@@ -49,14 +49,14 @@ function server(lang, list, counted) {
 }
 
 const L = {
-  en: { head: ["Partners", "magpie's sponsors"], subs: "Subscriptions", rows: ["Acme AI", "Taken"], note: "Fast relay" },
-  zh: { head: ["合作伙伴", "赞助 magpie 的服务"], subs: "订阅", rows: ["Acme AI", "China Only", "Taken"], note: "快速中转" },
-  ja: { head: ["パートナー", "magpie のスポンサー"], subs: null, rows: ["Acme AI", "Taken"], note: "高速な中継" },
-  de: { head: ["Partner", "Sponsoren von magpie"], subs: null, rows: ["Acme AI", "Taken"], note: "Fast relay" },
+  en: { head: ["Partners", "fogway's sponsors"], subs: "Subscriptions", rows: ["Acme AI", "Taken"], note: "Fast relay" },
+  zh: { head: ["合作伙伴", "赞助 fogway 的服务"], subs: "订阅", rows: ["Acme AI", "China Only", "Taken"], note: "快速中转" },
+  ja: { head: ["パートナー", "fogway のスポンサー"], subs: null, rows: ["Acme AI", "Taken"], note: "高速な中継" },
+  de: { head: ["Partner", "Sponsoren von fogway"], subs: null, rows: ["Acme AI", "Taken"], note: "Fast relay" },
 };
 
 async function openSheet(page) {
-  await page.goto("http://magpie.test/?view=providers");
+  await page.goto("http://fogway.test/?view=providers");
   await page.locator("#addProvider").click();
   const sheet = page.locator("#addSheet");
   await sheet.locator(".tile").first().waitFor();
@@ -149,7 +149,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const counted = [];
         const list = partners.map((p) => ({ ...p, new: true }));
         await page.route("**/*", server(lang, list, counted));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const add = page.locator("#addProvider");
         await add.waitFor();
         await page.waitForFunction(() => document.querySelector("#addProvider").classList.contains("has-new"));

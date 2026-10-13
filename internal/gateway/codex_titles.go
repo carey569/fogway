@@ -9,23 +9,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // codexTitlesTo is where a request Codex makes for a thread's title goes
 // (#705): a hidden turn of its own (thread_title,
 // thread_title_reconsideration), which Codex sends on its own model —
 // gpt-5.6-luna when signed in to ChatGPT, the conversation's model when
-// magpie is its provider. "" for a request that isn't one, or one left to
+// fogway is its provider. "" for a request that isn't one, or one left to
 // go as Codex sent it; "off", or the model that writes the title:
 // settings.CodexTitles, else the model Codex asked for when it is one of
-// magpie's (ours: the request came to magpie's own API, where every model
+// fogway's (ours: the request came to fogway's own API, where every model
 // is). Codex reads a title only as the {"title": …} its text.format asks
 // for, which a model behind the Chat or Anthropic API is never shown, so
-// a title on one of magpie's models goes through codexTitle whoever picked
-// it (#743: Codex as magpie's provider had none at all, the model's plain
+// a title on one of fogway's models goes through codexTitle whoever picked
+// it (#743: Codex as fogway's provider had none at all, the model's plain
 // answer turned down).
 func codexTitlesTo(h http.Header, body []byte, ours bool) string {
 	if !isTitleKind(requestCallKind(h, requestSessionMetadata(h, body))) {
@@ -51,7 +51,7 @@ func codexDescriptionsTo(h http.Header, body []byte, ours bool) string {
 	if to := settings.Load().CodexDescriptions; to != "" {
 		return to
 	}
-	// Codex on a magpie model gets no schema upstream (#743), so an empty
+	// Codex on a fogway model gets no schema upstream (#743), so an empty
 	// setting still wraps the model it asked for, as titles do.
 	if m := modelOf(body); m != "" && (ours || strings.Contains(m, "/")) {
 		return m
@@ -65,7 +65,7 @@ func codexDescriptionsTo(h http.Header, body []byte, ours bool) string {
 // thread's own model, so a long thread on an expensive model pays for
 // every prediction. "" leaves the request as Codex sent it; "off", or a
 // model's id that writes it: settings.CodexPredictions, else the model
-// Codex asked for when it is one of magpie's, whose plain answer is
+// Codex asked for when it is one of fogway's, whose plain answer is
 // wrapped as titles' and descriptions' are.
 func codexPredictionsTo(h http.Header, body []byte, ours bool) string {
 	if !isPredictionKind(requestCallKind(h, requestSessionMetadata(h, body))) {
@@ -122,9 +122,9 @@ func (s *Server) codexTitle(w http.ResponseWriter, r *http.Request, body []byte,
 	ctx := context.WithValue(r.Context(), titleCheckKey{}, check)
 	ctx = context.WithValue(ctx, titleShapeKey{}, &shape)
 	if to == settings.Load().CodexTitles {
-		// the model picked for titles in magpie's settings, not by the
+		// the model picked for titles in fogway's settings, not by the
 		// caller's key (#882)
-		ctx = magpieChose(ctx)
+		ctx = fogwayChose(ctx)
 	}
 	s.serve(rec, r.WithContext(ctx), provider.Responses, withModel(body, to))
 	if rec.status >= 400 {
@@ -142,7 +142,7 @@ func (s *Server) codexTitle(w http.ResponseWriter, r *http.Request, body []byte,
 	}
 	id := res.ID
 	if id == "" {
-		id = fmt.Sprintf("resp_magpie_%d", time.Now().UnixNano())
+		id = fmt.Sprintf("resp_fogway_%d", time.Now().UnixNano())
 	}
 	var out []any
 	if t := titleJSON(messageText(res), shape); t != "" {
@@ -150,7 +150,7 @@ func (s *Server) codexTitle(w http.ResponseWriter, r *http.Request, body []byte,
 			"content": []any{map[string]any{"type": "output_text", "text": t, "annotations": []any{}}}})
 	} else if res.Status == "incomplete" {
 		// cut short before any title (max_output_tokens): Codex is told so,
-		// as the vendor told magpie, not that the model finished with
+		// as the vendor told fogway, not that the model finished with
 		// nothing to say (#1466). Codex takes it as a stream error and asks
 		// again, as it does when its own backend answers so.
 		writeTitleEnd(w, id, nil, res.Usage, "incomplete", res.IncompleteDetails)
@@ -173,7 +173,7 @@ func (s *Server) codexDescription(w http.ResponseWriter, r *http.Request, body [
 		return ""
 	}
 	ctx := context.WithValue(r.Context(), titleCheckKey{}, check)
-	ctx = magpieChose(ctx)
+	ctx = fogwayChose(ctx)
 	s.serve(rec, r.WithContext(ctx), provider.Responses, withModel(body, to))
 	if rec.status >= 400 {
 		for k, vs := range rec.header {
@@ -190,7 +190,7 @@ func (s *Server) codexDescription(w http.ResponseWriter, r *http.Request, body [
 	}
 	id := res.ID
 	if id == "" {
-		id = fmt.Sprintf("resp_magpie_%d", time.Now().UnixNano())
+		id = fmt.Sprintf("resp_fogway_%d", time.Now().UnixNano())
 	}
 	var out []any
 	if d := descriptionJSON(messageText(res)); d != "" {
@@ -210,7 +210,7 @@ func (s *Server) codexDescription(w http.ResponseWriter, r *http.Request, body [
 func (s *Server) codexPrediction(w http.ResponseWriter, r *http.Request, body []byte, to string) {
 	if to == "off" {
 		s.sentNowhere(w, r, body, "Predictions off",
-			"Codex composer predictions are off in magpie's Settings: answered with no prediction, sent nowhere", []any{predictionItem(fmt.Sprintf("resp_magpie_%d", time.Now().UnixNano()), noSuggestion)})
+			"Codex composer predictions are off in fogway's Settings: answered with no prediction, sent nowhere", []any{predictionItem(fmt.Sprintf("resp_fogway_%d", time.Now().UnixNano()), noSuggestion)})
 		return
 	}
 	body, _ = codexInput(body, true)
@@ -225,7 +225,7 @@ func (s *Server) codexPrediction(w http.ResponseWriter, r *http.Request, body []
 	}
 	ctx := context.WithValue(r.Context(), titleCheckKey{}, check)
 	if to == settings.Load().CodexPredictions {
-		ctx = magpieChose(ctx)
+		ctx = fogwayChose(ctx)
 	}
 	s.serve(rec, r.WithContext(ctx), provider.Responses, withModel(body, to))
 	if rec.status >= 400 {
@@ -243,7 +243,7 @@ func (s *Server) codexPrediction(w http.ResponseWriter, r *http.Request, body []
 	}
 	id := res.ID
 	if id == "" {
-		id = fmt.Sprintf("resp_magpie_%d", time.Now().UnixNano())
+		id = fmt.Sprintf("resp_fogway_%d", time.Now().UnixNano())
 	}
 	p, _ := predictionJSON(messageText(res))
 	writeTitleReply(w, id, []any{predictionItem(id, p)}, res.Usage)
@@ -384,33 +384,33 @@ func noTitle(said string) string {
 // a finished reply with nothing in it, which Codex takes as no title and
 // leaves the thread named as it was (its thread_title.rs: no message, or
 // no {"title": …} in it, sets none). The Routing and Usage views have it
-// as the title request it was, answered by magpie and sent to no one.
+// as the title request it was, answered by fogway and sent to no one.
 func (s *Server) codexTitleOff(w http.ResponseWriter, r *http.Request, body []byte) {
-	s.sentNowhere(w, r, body, "Titles off", "Codex titles are off in magpie's Settings: answered with no title, sent nowhere", nil)
+	s.sentNowhere(w, r, body, "Titles off", "Codex titles are off in fogway's Settings: answered with no title, sent nowhere", nil)
 }
 
 // sentNowhere answers a hidden turn of Codex's that a setting turned off
 // with these output items, sending it nowhere: who and why are what the
 // Routing and Usage views say of it, the request kept there as what it
-// was, answered by magpie.
+// was, answered by fogway.
 func (s *Server) sentNowhere(w http.ResponseWriter, r *http.Request, body []byte, who, why string, out []any) {
 	start := time.Now()
 	usage.Saw(agentOf(r))
 	metadata := requestSessionMetadata(r.Header, body)
 	kind := requestCallKind(r.Header, metadata)
 	model := modelOf(body)
-	seat := Weighed{ID: "magpie", Provider: "magpie", Name: "magpie", Who: who, Kind: "provider", Model: model}
+	seat := Weighed{ID: "fogway", Provider: "fogway", Name: "fogway", Who: who, Kind: "provider", Model: model}
 	tr := s.trace.beginFor(r, Route{Time: start, Agent: agentOf(r), Session: sessionOf(r.Header), ParentSession: titleParentSession(r.Header, metadata, kind),
-		Kind: kind, Model: model, Provider: "magpie", Order: []Weighed{seat}, Tries: []Try{{ID: seat.ID, Model: model, Start: start}}})
-	writeTitleReply(w, fmt.Sprintf("resp_magpie_%d", start.UnixNano()), out, nil)
+		Kind: kind, Model: model, Provider: "fogway", Order: []Weighed{seat}, Tries: []Try{{ID: seat.ID, Model: model, Start: start}}})
+	writeTitleReply(w, fmt.Sprintf("resp_fogway_%d", start.UnixNano()), out, nil)
 	ms := time.Since(start).Milliseconds()
 	s.trace.update(tr, func(t *Route) {
 		t.Tries[0].Done, t.Tries[0].Status, t.Tries[0].Millis, t.Tries[0].Error = true, 200, ms, why
 		t.Done, t.Status, t.Error, t.Millis = true, 200, why, ms
 	})
-	s.record(Call{Time: start, From: provider.Responses, To: provider.Responses, Model: model, Provider: "magpie",
+	s.record(Call{Time: start, From: provider.Responses, To: provider.Responses, Model: model, Provider: "fogway",
 		Agent: agentOf(r), Kind: kind, Status: 200, Millis: ms, Error: why})
-	appendUsage(r, usage.Record{RouteID: tr.ID, Time: start, Agent: agentOf(r), Provider: "magpie", Model: model, Requested: model,
+	appendUsage(r, usage.Record{RouteID: tr.ID, Time: start, Agent: agentOf(r), Provider: "fogway", Model: model, Requested: model,
 		Millis: ms, Status: 200, Rejected: true, Error: why, Session: sessionOf(r.Header), NativeSession: nativeSessionOf(r.Header),
 		Kind: kind, Endpoint: r.URL.Path})
 }
@@ -460,7 +460,7 @@ func writeTitleEnd(w http.ResponseWriter, id string, out []any, used json.RawMes
 // titleShape is the object a title request's text.format asks for: its
 // string properties' bounds and which are required. Codex 0.160's TUI asks
 // for {"title"} alone; another of its builds for a description beside the
-// title, both required and nothing else allowed (#743: magpie gave it the
+// title, both required and nothing else allowed (#743: fogway gave it the
 // title alone, so it kept the first message as the thread's name).
 type titleShape struct {
 	Properties map[string]struct {

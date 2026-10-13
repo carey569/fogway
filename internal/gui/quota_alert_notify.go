@@ -11,11 +11,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/services/notifications"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 // notifier is the system's notifications, started the first time an alert
@@ -45,7 +45,7 @@ func (n *notifier) start() error {
 			return
 		}
 		// a click on an alert opens the Usage page; on a turn's end, where
-		// the user goes is their agent, not magpie
+		// the user goes is their agent, not fogway
 		ns.OnNotificationResponse(func(r notifications.NotificationResult) {
 			if strings.HasPrefix(r.Response.ID, turnNotice) {
 				return
@@ -91,10 +91,10 @@ func (n *notifier) problem() string {
 }
 
 // turnNotice is the id a turn's end is notified under, an alert's
-// "magpie-alert-"
-const turnNotice = "magpie-turn-"
+// "fogway-alert-"
+const turnNotice = "fogway-turn-"
 
-func (n *notifier) send(title, body string) { n.sendAs("magpie-alert-", title, body) }
+func (n *notifier) send(title, body string) { n.sendAs("fogway-alert-", title, body) }
 
 func (n *notifier) sendAs(kind, title, body string) {
 	if !n.allowed() {

@@ -74,7 +74,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", f.route);
-        await page.goto(`http://magpie.test/?view=agents&mode=${mode}`);
+        await page.goto(`http://fogway.test/?view=agents&mode=${mode}`);
         await page.locator("#agents > .row.agent").nth(2).waitFor();
         await page.mouse.move(1, 1);
 

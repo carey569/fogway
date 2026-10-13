@@ -5,7 +5,7 @@ package fonts
 /*
 #cgo LDFLAGS: -framework AppKit -framework CoreText
 #include <stdlib.h>
-char *magpieInstalledFonts(void);
+char *fogwayInstalledFonts(void);
 */
 import "C"
 
@@ -18,7 +18,7 @@ import (
 const Available = true
 
 func installed() ([]Face, error) {
-	raw := C.magpieInstalledFonts()
+	raw := C.fogwayInstalledFonts()
 	if raw == nil {
 		return nil, errors.New("CoreText could not list installed fonts")
 	}

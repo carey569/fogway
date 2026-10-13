@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Claude Desktop's own model menu lists magpie's /v1/models, which it reads
+// Claude Desktop's own model menu lists fogway's /v1/models, which it reads
 // as it starts, and the user switches among them there (蓝猫 on Discord):
 // its row picks which models that menu lists, several at once, where
 // another agent's row picks the one it starts on. In the window the button
@@ -40,7 +40,7 @@ function fixture(lang) {
     agents: [{
       id: "claude-desktop", name: "Claude Desktop", path: "/test/claude_desktop_config.json", icon: "claude-color", wired: true,
       fields: [
-        { key: "provider", label: "provider", value: "magpie", options: [{ value: "magpie", label: "magpie", icon: "magpie" }] },
+        { key: "provider", label: "provider", value: "fogway", options: [{ value: "fogway", label: "fogway", icon: "fogway" }] },
         ...tiers.map((tier) => ({ key: tier, label: tier, value: "", options })),
       ],
       models: count(),
@@ -94,7 +94,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const fx = fixture(lang);
         await page.route("**/*", fx.serve);
         t.after(() => browser.close());
-        await page.goto("http://magpie.test/" + (where === "panel" ? "?mode=panel" : ""));
+        await page.goto("http://fogway.test/" + (where === "panel" ? "?mode=panel" : ""));
         await page.locator(cd).waitFor();
 
         let menu;

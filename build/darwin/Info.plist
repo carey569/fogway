@@ -2,12 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleName</key><string>magpie</string>
-	<key>CFBundleDisplayName</key><string>magpie</string>
-	<key>CFBundleIdentifier</key><string>com.yetone.magpie</string>
-	<key>CFBundleExecutable</key><string>magpie</string>
-	<key>CFBundleIconFile</key><string>magpie</string>
-	<key>CFBundleIconName</key><string>AppIcon</string>
+	<key>CFBundleName</key><string>fogway</string>
+	<key>CFBundleDisplayName</key><string>Fogway</string>
+	<key>CFBundleIdentifier</key><string>dev.fogway.app</string>
+	<key>CFBundleExecutable</key><string>fogway</string>
+	<key>CFBundleIconFile</key><string>fogway</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
 	<key>CFBundleShortVersionString</key><string>@VERSION@</string>
 	<key>CFBundleVersion</key><string>@VERSION@</string>
@@ -17,10 +16,10 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleURLName</key><string>com.yetone.magpie.import</string>
-			<key>CFBundleURLSchemes</key><array><string>magpie</string></array>
+			<key>CFBundleURLName</key><string>dev.fogway.app.import</string>
+			<key>CFBundleURLSchemes</key><array><string>fogway</string></array>
 		</dict>
 	</array>
-	<key>NSHumanReadableCopyright</key><string>yetone</string>
+	<key>NSHumanReadableCopyright</key><string>Fogway contributors; based on magpie by yetone (MIT)</string>
 </dict>
 </plist>

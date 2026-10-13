@@ -71,7 +71,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const card = page.locator(".rt-group", { hasText: "Free" });
       await card.waitFor();
       const pats = (await card.locator(".mem.pat").allTextContents()).map((x) => x.trim());
@@ -118,10 +118,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const missing = await page.evaluate(() => [
         "Patterns", "Add pattern", "by pattern", "matches nothing now", "e.g. openrouter/*:free or re:…",
         "Every model this pattern matches is in the group, as providers list them",
-        "No model magpie serves matches this pattern now",
+        "No model fogway serves matches this pattern now",
         "In the group by a pattern: switch it off to send it nothing",
         "A pattern has a * in it, or starts with re:",
-        "{pattern} is not a regular expression magpie can read",
+        "{pattern} is not a regular expression fogway can read",
         "Every model a pattern matches is in the group, now and as providers list new ones, after the models above: * is any run of characters in provider/model, re: starts a regular expression.",
       ].filter((k) => !I18N.zh[k]));
       assert.deepEqual(missing, [], "every string has its Chinese");

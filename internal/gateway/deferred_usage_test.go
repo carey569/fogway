@@ -9,16 +9,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // The Cursor plugin's step that collected an earlier step's late usage
-// event (yetone/magpie#1053) tells it apart, as magpie_deferred: the
+// event (yetone/magpie#1053) tells it apart, as fogway_deferred: the
 // step's prompt_tokens stay its own, which a client reads as how full its
 // context is (pi read 366940 = 181270 + 185670 of a 300k window, where
-// 185670 was used), and magpie bills both.
-const deferredJSON = `{"id":"c","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":185670,"completion_tokens":2240,"total_tokens":187910,"prompt_tokens_details":{"cached_tokens":181266,"cache_write_tokens":4400},"magpie_deferred":{"prompt_tokens":181270,"completion_tokens":1913,"cached_tokens":177533,"cache_write_tokens":3735}}}`
+// 185670 was used), and fogway bills both.
+const deferredJSON = `{"id":"c","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":185670,"completion_tokens":2240,"total_tokens":187910,"prompt_tokens_details":{"cached_tokens":181266,"cache_write_tokens":4400},"fogway_deferred":{"prompt_tokens":181270,"completion_tokens":1913,"cached_tokens":177533,"cache_write_tokens":3735}}}`
 
 var deferredStream = "data: " + deferredJSON + "\n\ndata: [DONE]\n\n"
 
@@ -96,10 +96,10 @@ func TestNoDeferredUsageAsBefore(t *testing.T) {
 
 // a real step of the Cursor plugin, its tool steps' events collected late
 // (STEP_WAIT shortened): its own prompt 1371, and 2619 of earlier steps
-const realDeferredChunk = `{"id":"chatcmpl-71dd4976e7f654f774cd7619","object":"chat.completion.chunk","created":1791866687,"model":"composer-2.5","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1371,"completion_tokens":48,"total_tokens":1419,"prompt_tokens_details":{"cached_tokens":1328,"cache_write_tokens":0},"magpie_deferred":{"prompt_tokens":2619,"completion_tokens":106,"cached_tokens":2533,"cache_write_tokens":0}}}`
+const realDeferredChunk = `{"id":"chatcmpl-71dd4976e7f654f774cd7619","object":"chat.completion.chunk","created":1791866687,"model":"composer-2.5","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1371,"completion_tokens":48,"total_tokens":1419,"prompt_tokens_details":{"cached_tokens":1328,"cache_write_tokens":0},"fogway_deferred":{"prompt_tokens":2619,"completion_tokens":106,"cached_tokens":2533,"cache_write_tokens":0}}}`
 
 // Claude Code on Cursor: the chat reply is translated, and Claude Code is
-// told the step's own prompt, while magpie bills the earlier steps' too
+// told the step's own prompt, while fogway bills the earlier steps' too
 func TestTranslatedReplyTellsOwnUsageBillsDeferred(t *testing.T) {
 	d := &chatDecoder{}
 	var c collector
@@ -120,10 +120,10 @@ func TestTranslatedReplyTellsOwnUsageBillsDeferred(t *testing.T) {
 }
 
 // Through the whole gateway: a client is told the request's own usage and
-// never magpie_deferred's, while the ledger and the OTel span carry both.
+// never fogway_deferred's, while the ledger and the OTel span carry both.
 // own 0 is a step whose event showed late: only its deferred is in the reply.
 func TestDeferredUsageThroughTheGateway(t *testing.T) {
-	const deferred = `"magpie_deferred":{"prompt_tokens":181270,"completion_tokens":1913,"cached_tokens":177533,"cache_write_tokens":3735}`
+	const deferred = `"fogway_deferred":{"prompt_tokens":181270,"completion_tokens":1913,"cached_tokens":177533,"cache_write_tokens":3735}`
 	own := `"usage":{"prompt_tokens":185670,"completion_tokens":2240,"prompt_tokens_details":{"cached_tokens":181266,"cache_write_tokens":4400},` + deferred + `}`
 	none := `"usage":{"prompt_tokens":0,"completion_tokens":0,` + deferred + `}`
 	chat := func(usage string) string {
@@ -152,10 +152,10 @@ func TestDeferredUsageThroughTheGateway(t *testing.T) {
 				io.WriteString(w, `{}`)
 			}))
 			defer collector.Close()
-			t.Setenv("MAGPIE_OTEL_ENABLED", "true")
-			t.Setenv("MAGPIE_OTEL_ENDPOINT", collector.URL)
-			t.Setenv("MAGPIE_OTEL_HEADERS", "")
-			t.Setenv("MAGPIE_OTEL_METRICS", "false")
+			t.Setenv("FOGWAY_OTEL_ENABLED", "true")
+			t.Setenv("FOGWAY_OTEL_ENDPOINT", collector.URL)
+			t.Setenv("FOGWAY_OTEL_HEADERS", "")
+			t.Setenv("FOGWAY_OTEL_METRICS", "false")
 			fastOTel(t)
 			stop := usage.StartOTel()
 			t.Cleanup(stop)
@@ -164,8 +164,8 @@ func TestDeferredUsageThroughTheGateway(t *testing.T) {
 				t.Fatalf("gateway: %d %s", code, body)
 			}
 			stop()
-			if c.path == "/v1/messages" && strings.Contains(body, "magpie_deferred") {
-				t.Errorf("Claude Code was told magpie_deferred: %s", body)
+			if c.path == "/v1/messages" && strings.Contains(body, "fogway_deferred") {
+				t.Errorf("Claude Code was told fogway_deferred: %s", body)
 			}
 			if r := lastUsage(t); r.Input != c.in || r.Output != c.out || r.CacheRead != c.read || r.CacheWrite != c.write {
 				t.Errorf("ledger %+v", r)
@@ -188,7 +188,7 @@ func TestDeferredUsageThroughTheGateway(t *testing.T) {
 func TestChatDecoderKeepsDeferredUsageWithNoOwn(t *testing.T) {
 	d := &chatDecoder{}
 	var got []Usage
-	line := `{"id":"c","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":0,"completion_tokens":0,"magpie_deferred":{"prompt_tokens":1148,"completion_tokens":50,"cached_tokens":1100,"cache_write_tokens":0}}}`
+	line := `{"id":"c","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":0,"completion_tokens":0,"fogway_deferred":{"prompt_tokens":1148,"completion_tokens":50,"cached_tokens":1100,"cache_write_tokens":0}}}`
 	if err := d.decode(line, func(ev Event) {
 		if ev.Kind == KUsage {
 			got = append(got, ev.Usage)

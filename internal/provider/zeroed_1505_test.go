@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/steady"
+	"github.com/fogway/fogway/internal/steady"
 )
 
 // writePrivate, which writes logins.json, migrations.json and

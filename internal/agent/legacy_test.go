@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func TestRenameLegacy(t *testing.T) {
@@ -32,17 +32,17 @@ func TestRenameLegacy(t *testing.T) {
 	write(".config/opencode/opencode.jsonc", `{
   // keep me
   "provider": {
-    "dial": {"npm": "@ai-sdk/openai-compatible", "name": "dial", "options": {"apiKey": "dial", "baseURL": "http://127.0.0.1:3425/v1"}, "models": {}},
+    "dial": {"npm": "@ai-sdk/openai-compatible", "name": "dial", "options": {"apiKey": "dial", "baseURL": "http://127.0.0.1:3725/v1"}, "models": {}},
     "mine": {"name": "mine"}
   },
   "model": "dial/deepseek/deepseek-flash",
   "theme": "dark"
 }
 `)
-	write(".codex/config.toml", "model_reasoning_effort = \"high\"\nmodel = \"deepseek/deepseek-flash\"\nmodel_provider = \"dial\"\nmodel_catalog_json = '"+filepath.Join(home, ".codex", "dial-models.json")+"'\n\n[projects.\"/x\"]\ntrust_level = \"trusted\"\n\n[model_providers.dial]\nname = \"dial\"\nbase_url = \"http://127.0.0.1:3425/v1\"\nwire_api = \"responses\"\nexperimental_bearer_token = \"dial\"\n")
+	write(".codex/config.toml", "model_reasoning_effort = \"high\"\nmodel = \"deepseek/deepseek-flash\"\nmodel_provider = \"dial\"\nmodel_catalog_json = '"+filepath.Join(home, ".codex", "dial-models.json")+"'\n\n[projects.\"/x\"]\ntrust_level = \"trusted\"\n\n[model_providers.dial]\nname = \"dial\"\nbase_url = \"http://127.0.0.1:3725/v1\"\nwire_api = \"responses\"\nexperimental_bearer_token = \"dial\"\n")
 	write(".codex/dial-models.json", "{}")
 	write(".pi/agent/settings.json", `{"defaultProvider": "dial", "defaultModel": "deepseek/deepseek-flash", "theme": "dark"}`)
-	write(".pi/agent/models.json", `{"providers": {"dial": {"api": "openai-completions", "apiKey": "dial", "baseUrl": "http://127.0.0.1:3425/v1", "models": []}}}`)
+	write(".pi/agent/models.json", `{"providers": {"dial": {"api": "openai-completions", "apiKey": "dial", "baseUrl": "http://127.0.0.1:3725/v1", "models": []}}}`)
 	write(".claude/settings.json", `{"env": {"ANTHROPIC_BASE_URL": "`+gateway.URL()+`", "ANTHROPIC_AUTH_TOKEN": "dial", "ANTHROPIC_MODEL": "deepseek/deepseek-flash"}, "theme": "dark"}`)
 
 	RenameLegacy()
@@ -55,34 +55,34 @@ func TestRenameLegacy(t *testing.T) {
 		return string(b)
 	}
 	oc := read(".config/opencode/opencode.jsonc")
-	if v, _ := edit.GetJSON(filepath.Join(home, ".config/opencode/opencode.jsonc"), "model"); v != "magpie/deepseek/deepseek-flash" {
+	if v, _ := edit.GetJSON(filepath.Join(home, ".config/opencode/opencode.jsonc"), "model"); v != "fogway/deepseek/deepseek-flash" {
 		t.Fatalf("opencode model: %q", v)
 	}
-	if !strings.Contains(oc, `"magpie": {`) || strings.Contains(oc, `"dial"`) || !strings.Contains(oc, "// keep me") || !strings.Contains(oc, `"mine"`) {
+	if !strings.Contains(oc, `"fogway": {`) || strings.Contains(oc, `"dial"`) || !strings.Contains(oc, "// keep me") || !strings.Contains(oc, `"mine"`) {
 		t.Fatalf("opencode:\n%s", oc)
 	}
 	cx := read(".codex/config.toml")
-	if strings.Contains(cx, "dial") || !strings.Contains(cx, "[model_providers.magpie]") || !strings.Contains(cx, `model_provider = "magpie"`) || !strings.Contains(cx, `[projects."/x"]`) {
+	if strings.Contains(cx, "dial") || !strings.Contains(cx, "[model_providers.fogway]") || !strings.Contains(cx, `model_provider = "fogway"`) || !strings.Contains(cx, `[projects."/x"]`) {
 		t.Fatalf("codex:\n%s", cx)
 	}
 	if _, err := os.Stat(filepath.Join(home, ".codex", "dial-models.json")); err == nil {
 		t.Fatal("dial-models.json still there")
 	}
-	if _, err := os.Stat(filepath.Join(home, ".codex", "magpie-models.json")); err != nil {
-		t.Fatal("magpie-models.json missing")
+	if _, err := os.Stat(filepath.Join(home, ".codex", "fogway-models.json")); err != nil {
+		t.Fatal("fogway-models.json missing")
 	}
 	if b := stashLoad(); b["codex.provider"] == "dial" {
 		t.Fatal("dial stashed as the provider to go back to")
 	}
-	if v, _ := edit.GetJSON(filepath.Join(home, ".pi/agent/settings.json"), "defaultProvider"); v != "magpie" {
+	if v, _ := edit.GetJSON(filepath.Join(home, ".pi/agent/settings.json"), "defaultProvider"); v != "fogway" {
 		t.Fatalf("pi provider: %q", v)
 	}
 	pm := read(".pi/agent/models.json")
-	if strings.Contains(pm, `"dial"`) || !strings.Contains(pm, `"magpie"`) {
+	if strings.Contains(pm, `"dial"`) || !strings.Contains(pm, `"fogway"`) {
 		t.Fatalf("pi models:\n%s", pm)
 	}
 	cl := read(".claude/settings.json")
-	if strings.Contains(cl, `"dial"`) || !strings.Contains(cl, `"ANTHROPIC_AUTH_TOKEN": "magpie"`) || !strings.Contains(cl, `"theme": "dark"`) {
+	if strings.Contains(cl, `"dial"`) || !strings.Contains(cl, `"ANTHROPIC_AUTH_TOKEN": "fogway"`) || !strings.Contains(cl, `"theme": "dark"`) {
 		t.Fatalf("claude:\n%s", cl)
 	}
 

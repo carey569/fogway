@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // predictionSchema is the schema ChatGPT.app's composer predictions ask
@@ -53,10 +53,10 @@ func saveCodexPredictions(t *testing.T, v string) {
 	}
 }
 
-// Codex on a magpie model (an "OpenAI" provider table pointed at magpie,
+// Codex on a fogway model (an "OpenAI" provider table pointed at fogway,
 // #1301), with nothing set: the model asked for writes the prediction,
 // its answer wrapped as Codex reads it.
-func TestCodexPredictionOnMagpie(t *testing.T) {
+func TestCodexPredictionOnFogway(t *testing.T) {
 	for _, path := range []string{"/v1/responses", "/backend-api/codex/responses"} {
 		t.Run(path, func(t *testing.T) {
 			f := &fake{t: t, reply: predictionReply("```json\n{\"suggestion\": \"  Commit it  \"}\n```")}
@@ -64,7 +64,7 @@ func TestCodexPredictionOnMagpie(t *testing.T) {
 			s := New()
 			rec := codexPredictionRequest(t, s, path, "fake/m1")
 			if text, _ := outputText(t, rec.Body.String()); rec.Code != 200 || text != `{"suggestion":"Commit it"}` || f.calls != 1 {
-				t.Fatalf("on magpie: %d %q, calls %d", rec.Code, rec.Body.String(), f.calls)
+				t.Fatalf("on fogway: %d %q, calls %d", rec.Code, rec.Body.String(), f.calls)
 			}
 		})
 	}

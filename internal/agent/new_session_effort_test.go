@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // effortModels is a provider whose models take the levels models.dev gives
@@ -39,7 +39,7 @@ func TestCodexNewSessionEffortLastsModelSwitch(t *testing.T) {
 	cx := codex(home)
 	defaults := func() map[string]string {
 		t.Helper()
-		b, _ := os.ReadFile(filepath.Join(home, ".codex", "magpie-models.json"))
+		b, _ := os.ReadFile(filepath.Join(home, ".codex", "fogway-models.json"))
 		var cat struct {
 			Models []struct {
 				Slug    string  `json:"slug"`
@@ -88,7 +88,7 @@ func TestCodexNewSessionEffortLastsModelSwitch(t *testing.T) {
 	if d := defaults(); d["volc/all-five"] != "medium" || d["volc/lo-hi-max"] != "high" {
 		t.Fatalf("catalog defaults for Default: %v", d)
 	}
-	// picked in magpie, a model without the level settles on the nearest
+	// picked in fogway, a model without the level settles on the nearest
 	if err := cx.Fields[1].Set("xhigh"); err != nil {
 		t.Fatal(err)
 	}

@@ -29,12 +29,12 @@ function fixture() {
     agents: [
       {
         id: "codex", name: "Codex", path: "/test/config.toml", icon: "codex-color", wired: true,
-        fields: [{ key: "model", label: "model", value: "magpie/openai/gpt-5.5", options: [{ value: "magpie/openai/gpt-5.5", label: "GPT-5.5", ref: "openai/gpt-5.5" }] }],
+        fields: [{ key: "model", label: "model", value: "fogway/openai/gpt-5.5", options: [{ value: "fogway/openai/gpt-5.5", label: "GPT-5.5", ref: "openai/gpt-5.5" }] }],
         models: count(),
       },
       {
         id: "claude-desktop", name: "Claude Desktop", path: "/test/claude_desktop_config.json", icon: "claude-color", wired: true,
-        fields: [{ key: "provider", label: "provider", value: "magpie", options: [{ value: "magpie", label: "magpie", icon: "magpie" }] }],
+        fields: [{ key: "provider", label: "provider", value: "fogway", options: [{ value: "fogway", label: "fogway", icon: "fogway" }] }],
         models: count(),
       },
       // nothing to connect: its models counted on the line under its name
@@ -92,7 +92,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const fx = fixture();
       await page.route("**/*", fx.serve);
       t.after(() => browser.close());
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('.row.agent[data-id="codex"] .ag-link').click();
       // Plain, with nothing set, is folded under the two connected ones
       await page.locator("#agents .agent-more").click();

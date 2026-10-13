@@ -6,12 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A model asked for at an effort of its own, "<model>:<level>" — a Claude
-// Code tier magpie set one on (#536) — is that model, asked for that effort
+// Code tier fogway set one on (#536) — is that model, asked for that effort
 // at its nearest level whatever the agent asked, as a group's member fixed
 // at one is (#189); the trace says it was fixed. A member's own effort wins
 // over it, and a model whose own id ends in a level is taken whole.

@@ -101,9 +101,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       // the Sessions tab, over all ranges, as it was left
-      await page.addInitScript(() => { localStorage.setItem("magpie.usageTab", "sessions"); localStorage.setItem("magpie.sessRange", "all"); });
+      await page.addInitScript(() => { localStorage.setItem("fogway.usageTab", "sessions"); localStorage.setItem("fogway.sessRange", "all"); });
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator("#sessGrid:not([hidden])").waitFor();
       const rows = page.locator("#sessList .row.sess");
       const more = page.locator("#sessList .sess-page-more");

@@ -1,5 +1,5 @@
 // Package codexcat renders models the way Codex describes them: the entries
-// of its models.json, for `model_catalog_json` and for the model list magpie
+// of its models.json, for `model_catalog_json` and for the model list fogway
 // hands Codex in place of the ChatGPT backend's.
 package codexcat
 
@@ -18,10 +18,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Prompt is Codex's generic system prompt (Apache-2.0, openai/codex,
@@ -44,7 +44,7 @@ func DefaultEffort(e []string) string {
 
 // NewSessionEffort is the effort a new Codex session starts at, as the
 // top of this machine's Codex config.toml says it (model_reasoning_effort,
-// magpie's "New sessions" effort, or the one Codex's own picker last
+// fogway's "New sessions" effort, or the one Codex's own picker last
 // saved); "" when it is unset or the config can't be read.
 func NewSessionEffort() string {
 	v, _ := edit.GetTOMLTop(filepath.Join(catalog.CodexHome(), "config.toml"), "model_reasoning_effort")
@@ -74,7 +74,7 @@ func ModelDefault(levels []string, chosen string) string {
 // the default_reasoning_level of the entry it reads for it. Codex's own
 // model and a ChatGPT account's (codex/) keep their entry from Codex's
 // models_cache.json, so it is that entry's (gpt-6.1-sol: low); one of
-// magpie's other models takes the one Entries writes. "" when the model
+// fogway's other models takes the one Entries writes. "" when the model
 // has no levels, or Codex's entry names none.
 func TakesEffort(ms []catalog.Model, id string) string {
 	e := catalog.Efforts(ms, id)
@@ -143,7 +143,7 @@ type model struct {
 	// ChatGPT sign-in's apps' among them) in every request, 190K
 	// tokens before the first word (#258); with it, they are named in
 	// tool_search's description and handed over when searched for,
-	// as Codex does for its own models. Magpie serves the search to
+	// as Codex does for its own models. Fogway serves the search to
 	// any model as a function (gateway/toolsearch.go). Code mode and
 	// Responses Lite stay off: the one has the model write JavaScript
 	// against Codex's tools, the other moves the tools and
@@ -168,7 +168,7 @@ type model struct {
 	// entry (see V1); "v2" on a model offering Ultra that no ChatGPT
 	// account answers for (catalog.Model.AgentsV2), as Codex's own
 	// entry for it says: Ultra hands work to Codex's agents in V2
-	// alone, and a magpie-served lead writes their tasks as text.
+	// alone, and a fogway-served lead writes their tasks as text.
 	MultiAgent string `json:"multi_agent_version,omitempty"`
 	// the effort Codex's Ultra sends the model, as Codex's own entry
 	// for the same model says it (see agentsEffort); without it Codex
@@ -195,9 +195,9 @@ func entriesAt(ms []catalog.Model, after int, effort string) []any {
 	for i, m := range ms {
 		if raw, ok := own[strings.TrimPrefix(m.ID, "codex/")]; ok && strings.HasPrefix(m.ID, "codex/") {
 			e := ownEntry(raw, m.ID, m.Name, after+i+1)
-			// the window as magpie resolves it — the one the user set,
+			// the window as fogway resolves it — the one the user set,
 			// else the account's list's — not the cache's, which is what
-			// magpie last handed Codex (#674)
+			// fogway last handed Codex (#674)
 			Window(e, m.Context, 0)
 			if v1 {
 				Stamp(e)
@@ -207,7 +207,7 @@ func entriesAt(ms []catalog.Model, after int, effort string) []any {
 			continue
 		}
 		e := model{
-			Slug: m.ID, DisplayName: m.Name, Description: m.Name + " via magpie",
+			Slug: m.ID, DisplayName: m.Name, Description: m.Name + " via fogway",
 			Instructions: Prompt, Efforts: []level{},
 			Shell: "unified_exec", Visibility: "list", InAPI: true, Priority: after + i + 1,
 			ApplyPatch: "freeform", Tools: []string{}, Modalities: []string{"text"},
@@ -222,7 +222,7 @@ func entriesAt(ms []catalog.Model, after int, effort string) []any {
 		} else if m.OwnTier {
 			e.Tiers = ownTiers(own, m)
 		} else if len(m.Tiers) > 0 {
-			// another magpie's model: the tiers it offers its own Codex
+			// another fogway's model: the tiers it offers its own Codex
 			// (#1234)
 			e.Tiers = namedTiers(own, m.Tiers)
 		}
@@ -263,10 +263,10 @@ func entriesAt(ms []catalog.Model, after int, effort string) []any {
 	return entries
 }
 
-// owned are the keys of an entry magpie writes, or leaves out on purpose:
+// owned are the keys of an entry fogway writes, or leaves out on purpose:
 // every field of model, and the two ownEntry takes out of Codex's own.
 // keepTrue are those of them where a true the user set by hand stays over
-// magpie's false (keep:"true").
+// fogway's false (keep:"true").
 var owned, keepTrue = func() (own, yes map[string]bool) {
 	own = map[string]bool{"availability_nux": true, "upgrade": true}
 	yes = map[string]bool{}
@@ -286,12 +286,12 @@ var owned, keepTrue = func() (own, yes map[string]bool) {
 }()
 
 // Keep is the catalog b, as Catalog renders it, with what the user added by
-// hand to the entries of cur, the catalog on disk magpie is about to write
-// over: a key of an entry of the same slug that magpie doesn't own, and a
-// true where magpie says false of a keepTrue key — supports_reasoning_
+// hand to the entries of cur, the catalog on disk fogway is about to write
+// over: a key of an entry of the same slug that fogway doesn't own, and a
+// true where fogway says false of a keepTrue key — supports_reasoning_
 // summaries, put in for Codex to send a model's effort and show its
-// thinking (#1450). Another key magpie writes takes magpie's value; the
-// entry of a model magpie no longer serves goes. b as it is when there is
+// thinking (#1450). Another key fogway writes takes fogway's value; the
+// entry of a model fogway no longer serves goes. b as it is when there is
 // nothing to keep, or cur isn't a catalog.
 func Keep(cur, b []byte) []byte {
 	type list struct {
@@ -354,7 +354,7 @@ var datedSuffix = regexp.MustCompile(`-(\d{4}-\d{2}-\d{2}|\d{8})$`)
 // agentsEffort is the multi_agent_reasoning_effort of Codex's own entry for
 // the model a third-party one serves (s2a/gpt-6-astra, openai/gpt-6-astra on
 // a relay, a dated snapshot): Codex's Ultra sends that effort, and max when
-// an entry has none, so the same model under magpie's id would otherwise
+// an entry has none, so the same model under fogway's id would otherwise
 // run at max where OpenAI's runs at xhigh (#1108). Only a model offering
 // Ultra and the effort itself gets it; "" otherwise.
 func agentsEffort(own map[string]map[string]any, m catalog.Model) string {
@@ -439,7 +439,7 @@ func namedTiers(own map[string]map[string]any, ids []string) []tier {
 }
 
 // ServiceTiers are the service tiers Entries offers Codex on each of ms,
-// by id, where it offers any: what this magpie's list tells another magpie
+// by id, where it offers any: what this fogway's list tells another fogway
 // that has it as its provider, so that one's Codex is offered them too
 // (#1234).
 func ServiceTiers(ms []catalog.Model) map[string][]tier {
@@ -489,12 +489,12 @@ func CacheEntries() map[string]map[string]any {
 	out := map[string]map[string]any{}
 	for _, m := range cache.Models {
 		desc, _ := m["description"].(string)
-		if slug, _ := m["slug"].(string); slug != "" && !catalog.MagpieAdded(cache.ETag, slug, desc) {
+		if slug, _ := m["slug"].(string); slug != "" && !catalog.FogwayAdded(cache.ETag, slug, desc) {
 			out[slug] = m
 		}
 	}
 	if MarkedV1(cache.ETag) {
-		// the versions in it are magpie's, written over the backend's: the
+		// the versions in it are fogway's, written over the backend's: the
 		// backend's go back, so a list made from this cache after the
 		// setting is turned off says what the backend did
 		was := originals()
@@ -519,18 +519,18 @@ func CacheEntries() map[string]map[string]any {
 // Codex picks a thread's multi-agent tools by its model's entry: its
 // multi_agent_version ("v1", "v2") unless features.multi_agent_v2 is on,
 // which makes it V2 whatever the entry says. In V2 OpenAI's server seals a
-// subagent's task, so a GPT lead can't hand one to a magpie-served
+// subagent's task, so a GPT lead can't hand one to a fogway-served
 // subagent; in V1 the task goes as text (#141). With settings.CodexAgentsV1
-// the OpenAI entries magpie hands Codex say "v1"; nothing else in them
+// the OpenAI entries fogway hands Codex say "v1"; nothing else in them
 // changes. Codex's own features.multi_agent_v2 still wins over the entry, so
-// where it is on in the config magpie routes the setting can't reach Codex:
-// magpie says so (internal/agent/codex.go, and the Settings row) and leaves
+// where it is on in the config fogway routes the setting can't reach Codex:
+// fogway says so (internal/agent/codex.go, and the Settings row) and leaves
 // the config alone — turning the key off there is the user's. Codex keeps
 // what it was handed in models_cache.json, versions and all, so what the
 // backend itself said is kept aside (originals) and put back when the cache
 // is read again (CacheEntries).
 
-// V1 reports whether the OpenAI models magpie hands Codex say "v1".
+// V1 reports whether the OpenAI models fogway hands Codex say "v1".
 func V1() bool { return settings.Load().CodexAgentsV1 }
 
 // Stamp has an entry say multi-agent V1.
@@ -549,10 +549,10 @@ func unstamp(e map[string]any, was string) {
 // place) runs on the auto_review_model_override of the conversation's
 // model's entry, else on codex-auto-review when the list has it, else on the
 // conversation's model at low effort (#938). With settings.CodexAutoReview
-// every entry magpie hands Codex names that model.
+// every entry fogway hands Codex names that model.
 
 // AutoReview has one of Codex's own entries name the auto-review model the
-// user picked. With none picked, one magpie put there before — a magpie id,
+// user picked. With none picked, one fogway put there before — a fogway id,
 // which has a "/" where OpenAI's slugs have none, kept in Codex's cache — is
 // taken out, and one OpenAI gave it is left.
 func AutoReview(e map[string]any) {
@@ -575,7 +575,7 @@ func PolicyTag(tag string) string {
 	return tag
 }
 
-// MarkedV1 reports whether an ETag is of a list magpie stamped V1.
+// MarkedV1 reports whether an ETag is of a list fogway stamped V1.
 func MarkedV1(etag string) bool { return strings.Contains(etag, tagMark+v1Mark) }
 
 // versionsPath keeps the multi_agent_version the backend gave each of the
@@ -614,9 +614,9 @@ func Remember(entries []any) {
 	}
 }
 
-// ownEntry is one of Codex's own models, reached through magpie with the
+// ownEntry is one of Codex's own models, reached through fogway with the
 // ChatGPT sign-in: its entry as Codex has it (images, context window, tools,
-// instructions), under magpie's id. The start-up notice and the upgrade
+// instructions), under fogway's id. The start-up notice and the upgrade
 // prompt are left out; they name slugs the catalog does not have.
 func ownEntry(raw map[string]any, id, name string, priority int) map[string]any {
 	e := make(map[string]any, len(raw))
@@ -657,22 +657,22 @@ func Window(e map[string]any, n, most int) {
 // list's ETag, and asks again only once the cache has aged (minutes) — or
 // when a reply's X-Models-Etag differs from it; the same one only makes the
 // cache young again. Passed on as the ChatGPT backend gave it, the ETag
-// said nothing of magpie's models, so a provider added since stayed out of
-// Codex's /model for as long as Codex kept getting replies. The ETag magpie
+// said nothing of fogway's models, so a provider added since stayed out of
+// Codex's /model for as long as Codex kept getting replies. The ETag fogway
 // hands on carries a tag of its models too.
 
-// Tag names a list of magpie's models: another list, another tag.
+// Tag names a list of fogway's models: another list, another tag.
 func Tag(ms []catalog.Model) string {
 	b, _ := json.Marshal(ms)
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:6])
 }
 
-// tagMark is where a tag starts in an ETag magpie made.
-const tagMark = "+magpie-"
+// tagMark is where a tag starts in an ETag fogway made.
+const tagMark = "+fogway-"
 
-// WithTag is an ETag of the backend's (or none) with magpie's tag in it:
-// W/"abc" becomes W/"abc+magpie-<tag>".
+// WithTag is an ETag of the backend's (or none) with fogway's tag in it:
+// W/"abc" becomes W/"abc+fogway-<tag>".
 func WithTag(etag, tag string) string {
 	if strings.HasSuffix(etag, `"`) && len(etag) > 1 {
 		return strings.TrimSuffix(etag, `"`) + tagMark + tag + `"`

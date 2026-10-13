@@ -67,7 +67,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-req").nth(routes.length - 1).waitFor();
       const w = words[lang];
       const why = () => page.locator(".rt-steps li.why").first().textContent();

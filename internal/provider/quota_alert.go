@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // QuotaAlert is one thing to tell the user: a window used past the share
@@ -219,7 +219,7 @@ func BalanceNumber(s string) (float64, bool) {
 
 func quotaAlertPath() string { return filepath.Join(filepath.Dir(Path()), "usage-alerts.json") }
 
-// quotaAlertMu keeps the file to one writer in this magpie.
+// quotaAlertMu keeps the file to one writer in this fogway.
 var quotaAlertMu sync.Mutex
 
 func readAlertMarks(path string) map[string]alertMark {

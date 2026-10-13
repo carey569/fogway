@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // groupsJSON is what the Routing view manages: the routing groups, the
@@ -23,7 +23,7 @@ type groupsJSON struct {
 	// Deciders: the decision providers' models (Jev), which may only be a
 	// group's classifier
 	Deciders []modelRef `json:"deciders"`
-	// Found: magpie finds groups on its own (provider.AutoGroupsOn)
+	// Found: fogway finds groups on its own (provider.AutoGroupsOn)
 	Found bool `json:"found"`
 	// Moved: the agents turning found groups off moved off one of them,
 	// to its model from one provider (agent.Reseat)
@@ -32,10 +32,10 @@ type groupsJSON struct {
 	// which the page adds in a click (provider.Templates)
 	Templates []provider.Template `json:"templates"`
 	// Shared: share's answer, the group as text to paste into another
-	// magpie (provider.ShareGroup)
+	// fogway (provider.ShareGroup)
 	Shared string `json:"shared,omitempty"`
 	// Imported: import's answer, the group added and what of the text
-	// this magpie has none of (provider.ImportGroup)
+	// this fogway has none of (provider.ImportGroup)
 	Imported *provider.Imported `json:"imported,omitempty"`
 }
 
@@ -105,7 +105,7 @@ type memberJSON struct {
 	Images  bool `json:"images,omitempty"`
 	// ImagesUnknown: nothing was read of its images either way, so it counts
 	// text-only for a describer (gateway.blindTo) without its list having
-	// said it takes none. Sent only when true: a model magpie has an answer
+	// said it takes none. Sent only when true: a model fogway has an answer
 	// for carries no such key, which is what the page reads as known (its
 	// own `images` decides then). Named apart from the Gateway page's
 	// `imageSet`, which means the user answered for the model themselves
@@ -168,7 +168,7 @@ type poolJSON struct {
 func seesImages(e provider.Entry) bool { return e.Images && (e.ImageInput == nil || *e.ImageInput) }
 
 // imagesUnknown is whether nothing was read of the model's images either way:
-// no list said so, and what magpie reads of it doesn't say it sees. Such a
+// no list said so, and what fogway reads of it doesn't say it sees. Such a
 // model counts text-only for a describer (gateway.blindTo), which is not its
 // list saying it takes none, and the page says unknown rather than text-only.
 func imagesUnknown(e provider.Entry) bool { return e.ImageInput == nil && !e.Images }
@@ -341,7 +341,7 @@ func groupRoutes(mux *http.ServeMux) {
 		var body struct {
 			provider.Group
 			From string `json:"from"` // the id the group had: another is a rename
-			On   bool   `json:"on"`   // found: magpie finds groups on its own
+			On   bool   `json:"on"`   // found: fogway finds groups on its own
 			// arrange: the groups by id, in the order the Routing page
 			// lists them (#779), which /v1/models follows too
 			Order []string `json:"order"`
@@ -394,7 +394,7 @@ func groupRoutes(mux *http.ServeMux) {
 			// a group as it is, under name (provider.CopyGroup)
 			_, err = provider.CopyGroup(in.ID, in.Name)
 		case "share":
-			// the group as text for another magpie: no key goes with it
+			// the group as text for another fogway: no key goes with it
 			shared, err = provider.ShareGroup(in.ID)
 		case "import":
 			var res provider.Imported

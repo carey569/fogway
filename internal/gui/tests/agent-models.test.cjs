@@ -32,7 +32,7 @@ function fixture(lang) {
   const state = () => ({
     agents: [{
       id: "codex", name: "Codex", path: "/test/config.toml", icon: "codex-color", wired: true,
-      fields: [{ key: "model", label: "model", value: "magpie/openai/gpt-5.5", options: [{ value: "magpie/openai/gpt-5.5", label: "GPT-5.5", ref: "openai/gpt-5.5" }] }],
+      fields: [{ key: "model", label: "model", value: "fogway/openai/gpt-5.5", options: [{ value: "fogway/openai/gpt-5.5", label: "GPT-5.5", ref: "openai/gpt-5.5" }] }],
       models: count(),
     }],
     profiles: [], settings: { lang, theme: "light" },
@@ -86,7 +86,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         await browser.close();
       });
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       const row = page.locator('.row.agent[data-id="codex"]');
       await row.locator(".ag-link").click();
       const entry = row.locator(".ag-exp .ag-chips .ag-quiet");

@@ -158,7 +158,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const view = p.locator("#view-" + page.view);
           const top = () => view.evaluate((v) => v.scrollTop);
 
-          await p.goto(`http://magpie.test/?view=${page.view}`);
+          await p.goto(`http://fogway.test/?view=${page.view}`);
           await p.locator(page.click).first().waitFor();
           let shape = await settled(p, view);
           assert(shape.over > 40, `${page.view} must overflow by more than a drag: ${JSON.stringify(shape)}`);

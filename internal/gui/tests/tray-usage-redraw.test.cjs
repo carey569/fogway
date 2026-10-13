@@ -19,7 +19,7 @@ function server(posts) {
   let cur = {
     theme: "light", lang: "en", tray: "panel", quotaLeft: false, currency: "usd",
     trayUsage: "", trayUsages: [], trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxy: "", proxyNow: "none", proxySource: "none", login: false, redactWords: [],
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -61,7 +61,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(posts));
       // from Agents: the Usage page would have read the allowances already
-      await page.goto("http://magpie.test/?view=agents");
+      await page.goto("http://fogway.test/?view=agents");
       await page.locator("#prefs").click();
       await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").click();
       const pill = page.locator("#trayUsagePick button");

@@ -118,9 +118,9 @@ func TestCurrent(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "colors.toml"), []byte(tokyoColors), 0o644)
 	os.WriteFile(filepath.Join(dir, "shell.toml"), []byte(tokyoShell), 0o644)
 	os.WriteFile(filepath.Join(filepath.Dir(dir), "theme.name"), []byte("tokyo-night\n"), 0o644)
-	t.Setenv("MAGPIE_OMARCHY", "1")
-	t.Setenv("MAGPIE_OMARCHY_THEME", dir)
-	t.Setenv("MAGPIE_OMARCHY_FONT", "Iosevka")
+	t.Setenv("FOGWAY_OMARCHY", "1")
+	t.Setenv("FOGWAY_OMARCHY_THEME", dir)
+	t.Setenv("FOGWAY_OMARCHY_FONT", "Iosevka")
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	if !Detect() {
 		t.Fatal("not detected")
@@ -149,7 +149,7 @@ func TestCurrent(t *testing.T) {
 	if th2.Vars["--font"] != th.Vars["--font"] || th.Vars["--font"] == "" {
 		t.Fatalf("font %q then %q", th.Vars["--font"], th2.Vars["--font"])
 	}
-	t.Setenv("MAGPIE_OMARCHY_FONT", "JetBrains Mono")
+	t.Setenv("FOGWAY_OMARCHY_FONT", "JetBrains Mono")
 	os.WriteFile(filepath.Join(dir, "colors.toml"), []byte(tokyoColors), 0o644)
 	mu.Lock()
 	asked = asked.Add(-2e9)
@@ -167,8 +167,8 @@ func TestCurrent(t *testing.T) {
 	if th4, _ := Current(); th4.Vars["--font"] == th.Vars["--font"] {
 		t.Fatalf("a new font not asked: %q", th4.Vars["--font"])
 	}
-	t.Setenv("MAGPIE_OMARCHY", "0")
+	t.Setenv("FOGWAY_OMARCHY", "0")
 	if Detect() {
-		t.Error("MAGPIE_OMARCHY=0 detected")
+		t.Error("FOGWAY_OMARCHY=0 detected")
 	}
 }

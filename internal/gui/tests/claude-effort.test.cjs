@@ -75,7 +75,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, sets));
-        await page.goto("http://magpie.test/" + (mode ? "?mode=" + mode : ""));
+        await page.goto("http://fogway.test/" + (mode ? "?mode=" + mode : ""));
         await page.locator(row("o55")).waitFor();
         return page;
       };

@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/sessions"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/sessions"
 )
 
 func pageHome(t *testing.T) {

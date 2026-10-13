@@ -7,7 +7,7 @@ const { chromium, webkit } = require("playwright");
 const { watchSettingsReads, settingsDrawn } = require("./reader.cjs");
 const assets = path.resolve(__dirname, "../assets");
 const settings = { theme: "light", lang: "en", tray: "panel", textSize: 100, currency: "usd",
-  dir: "/config/magpie", gateway: "http://127.0.0.1:3999", version: "0.1.900",
+  dir: "/config/fogway", gateway: "http://127.0.0.1:3999", version: "0.1.900",
   proxy: "", proxyNow: "none", proxySource: "none", redactWords: [], otel: {},
   visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
   fx: { rate: 7.2, at: new Date().toISOString(), stale: false } };
@@ -79,7 +79,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
 
     await t.test("connection instructions and editor help are readable in both themes", async () => {
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=gateway");
+      await page.goto("http://fogway.test/?view=gateway");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       await page.locator("#gwModels .name").first().waitFor();
       for (const theme of ["light", "dark"]) {
@@ -99,7 +99,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
         }
       }
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings");
+      await page.goto("http://fogway.test/?view=settings");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const description = page.locator(".row.pref .sub:visible").filter({ hasText: /\S/ }).first(); // a shown one: Appearance has none now (1ooogle on X)
       await description.waitFor();
@@ -111,7 +111,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
 
     await t.test("selecting a model ID does not activate or redraw its row", async () => {
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=gateway");
+      await page.goto("http://fogway.test/?view=gateway");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const name = page.locator("#gwModels .name").nth(1);
       await name.waitFor();
@@ -137,7 +137,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
       // buttons, and the page keeps the reader's place against a script's scroll
       const setup = async () => {
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings");
+        await page.goto("http://fogway.test/?view=settings");
         await settingsDrawn(page); // rows found are the ones that stay (#1659)
         await page.locator(":is(#setTab-general, .nav-s[data-of=setTab-general]):visible").waitFor();
         await page.locator("#view-settings").evaluate((v) => {

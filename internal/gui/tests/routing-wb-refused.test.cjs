@@ -81,7 +81,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         await browser.close();
       });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-days .rt-day").nth(1).click();
       await page.locator(".rt-req").nth(errs.length - 1).waitFor();
 
@@ -104,7 +104,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.waitForTimeout(400);
       assert(Math.abs((await row.evaluate((e) => e.getBoundingClientRect().top)) - was) <= 1, "picking the request moved the page");
       let got = await steps();
-      // the vendor's words as they were, without magpie's hint in them
+      // the vendor's words as they were, without fogway's hint in them
       assert.deepEqual(got.filter(([c]) => c === "aside said").map(([, s]) => s), [want[lang].said]);
       // and the hint on its own line, in the page's language
       assert.deepEqual(got.filter(([, s]) => s === want[lang].hint).map(([c]) => c), ["aside"]);

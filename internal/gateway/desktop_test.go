@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Claude Desktop asks for anthropic/<id>: served by the model with that id
@@ -55,7 +55,7 @@ func TestAnthropicPrefixedModel(t *testing.T) {
 
 // Claude Desktop turns away any id naming another vendor's model, prefix
 // or not (#148): deepseek, kimi, gpt, codex… get an alias it keeps, which
-// magpie serves again, and it is known by its User-Agent without the key
+// fogway serves again, and it is known by its User-Agent without the key
 func TestClaudeDesktopAliases(t *testing.T) {
 	for id, want := range map[string]bool{
 		"claude-sonnet-4-5": true, "anthropic/claude-x": true, "opus": true, "sonnet-4.5": true,
@@ -118,7 +118,7 @@ func TestClaudeDesktopAliases(t *testing.T) {
 	}
 }
 
-// Claude Desktop set up by magpie sends the key magpie gave it, from its
+// Claude Desktop set up by fogway sends the key fogway gave it, from its
 // own client and from the Claude Code its Code tab runs alike; without it,
 // its Electron User-Agent still says who it is.
 func TestClaudeDesktopKnown(t *testing.T) {

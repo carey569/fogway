@@ -25,25 +25,25 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/source"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/source"
+	"github.com/fogway/fogway/internal/update"
 )
 
-// CLI is what magpie knows of an agent's command-line program.
+// CLI is what fogway knows of an agent's command-line program.
 type CLI struct {
 	Version string `json:"version,omitempty"`
 	// Latest is the newest there is, from where it would be updated:
 	// Homebrew's for one Homebrew installed, npm's otherwise
 	Latest string `json:"latest,omitempty"`
 	// Via is what updates it: npm, bun, pnpm, brew, or self (its own
-	// updater); "" when magpie can't tell how it was installed
+	// updater); "" when fogway can't tell how it was installed
 	Via string `json:"via,omitempty"`
 	// Command is the update as a person would type it
 	Command string `json:"command,omitempty"`
-	// Update: Latest is after Version, and magpie knows how to get it
+	// Update: Latest is after Version, and fogway knows how to get it
 	Update bool `json:"update,omitempty"`
 	// App is the version of the agent's desktop app installed beside it
 	// (the Codex app, AppVersion); shown even with no CLI on PATH
@@ -51,15 +51,15 @@ type CLI struct {
 	// Admin: the update needs an administrator, which Windows asks for
 	// first (npm's global folder under Program Files)
 	Admin bool `json:"admin,omitempty"`
-	// Path is where the CLI was found: the file magpie runs, as PATH
+	// Path is where the CLI was found: the file fogway runs, as PATH
 	// reached it
 	Path string `json:"path,omitempty"`
-	// OffPath says the CLI was found in a folder magpie adds to its own
+	// OffPath says the CLI was found in a folder fogway adds to its own
 	// PATH (proc.UserPath: ~/.local/bin, npm's prefixes, nvm's default
 	// Node, bun, Homebrew, ...) that a terminal opened now doesn't have,
 	// so that `which` there doesn't find it. A row of an agent the user
 	// believed uninstalled, with a version and nothing to say where it
-	// came from, read as magpie making it up (悠悠哥 on Discord: Codex
+	// came from, read as fogway making it up (悠悠哥 on Discord: Codex
 	// 0.162.1 listed with no codex on PATH and no ~/.codex). False when
 	// the terminal's PATH can't be told.
 	OffPath bool `json:"offPath,omitempty"`
@@ -306,7 +306,7 @@ func fromNodeModules(pkg, bin, real string) *updater {
 		}
 		return &updater{via: "pnpm", pkg: pkg, cmd: []string{pnpm, "add", "-g", pkg + "@latest"}}
 	case strings.Contains(lower, "/.volta/") || strings.Contains(lower, "/yarn/") || strings.Contains(lower, "/.yarn/"):
-		return nil // installed by a manager of its own, which magpie leaves to it
+		return nil // installed by a manager of its own, which fogway leaves to it
 	}
 	if modules == "" {
 		return nil
@@ -540,7 +540,7 @@ var npmRegistry = "https://registry.npmjs.org/"
 func npmLatest(pkg string) (string, error) {
 	c := &http.Client{Timeout: 8 * time.Second}
 	req, _ := http.NewRequest("GET", npmRegistry+pkg+"/latest", nil)
-	req.Header.Set("User-Agent", "magpie")
+	req.Header.Set("User-Agent", "fogway")
 	req.Header.Set("Accept", "application/json")
 	resp, err := source.Do(c, req)
 	if err != nil {
@@ -593,7 +593,7 @@ func grokLatest() string {
 func channelVersion(url string) (string, error) {
 	c := &http.Client{Timeout: 8 * time.Second}
 	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("User-Agent", "magpie")
+	req.Header.Set("User-Agent", "fogway")
 	resp, err := source.Do(c, req)
 	if err != nil {
 		return "", err
@@ -676,7 +676,7 @@ func offPath(bin string, dirs []string) bool {
 	return true
 }
 
-// cliBin is where the agent's CLI is, "" when it has none magpie knows or
+// cliBin is where the agent's CLI is, "" when it has none fogway knows or
 // it isn't on PATH.
 func (a *Agent) cliBin() (string, cliSpec) {
 	spec, ok := cliSpecs[a.ID]
@@ -708,9 +708,9 @@ func (a *Agent) cliBin() (string, cliSpec) {
 	return bin, spec
 }
 
-// CLI is the agent's CLI: its version, the newest, and whether magpie can
+// CLI is the agent's CLI: its version, the newest, and whether fogway can
 // update it, with its desktop app's version. ok is false for an agent with
-// neither a CLI magpie knows nor its app.
+// neither a CLI fogway knows nor its app.
 func (a *Agent) CLI() (c CLI, ok bool) {
 	c.App = a.AppVersion()
 	bin, spec := a.cliBin()
@@ -731,7 +731,7 @@ func (a *Agent) CLI() (c CLI, ok bool) {
 }
 
 // InstalledVersion is what the agent's CLI on PATH says its version is: ""
-// for an agent without a CLI magpie knows, one not on PATH, or one that
+// for an agent without a CLI fogway knows, one not on PATH, or one that
 // didn't say. Asked once per binary, like CLI's; nothing is fetched.
 func (a *Agent) InstalledVersion() string {
 	bin, _ := a.cliBin()
@@ -810,7 +810,7 @@ type AdminError struct {
 func (e *AdminError) Error() string {
 	why := "Windows' administrator prompt was declined"
 	if !e.Canceled {
-		why = "magpie couldn't ask Windows for one (" + e.Err.Error() + ")"
+		why = "fogway couldn't ask Windows for one (" + e.Err.Error() + ")"
 	}
 	where := fmt.Sprintf("%s is installed in %s, which only an administrator can change", e.Agent, e.Prefix)
 	if e.Prefix == "" {
@@ -835,7 +835,7 @@ var runUpdate = func(ctx context.Context, u *updater) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
-// updateEnv is the environment an update runs in: the proxy magpie's own
+// updateEnv is the environment an update runs in: the proxy fogway's own
 // requests take (a SOCKS5 one bridged for bun, which can't use it: #1409),
 // and u's PATH first.
 func updateEnv(u *updater) []string {
@@ -861,11 +861,11 @@ var updateTimeout = 10 * time.Minute
 func (a *Agent) UpdateCLI() (CLI, error) {
 	bin, spec := a.cliBin()
 	if bin == "" {
-		return CLI{}, fmt.Errorf("magpie can't find %s's CLI", a.Name)
+		return CLI{}, fmt.Errorf("fogway can't find %s's CLI", a.Name)
 	}
 	real, u := installedAt(spec, bin)
 	if u == nil {
-		return CLI{}, fmt.Errorf("magpie can't tell how %s was installed at %s — update it the way you installed it", a.Name, bin)
+		return CLI{}, fmt.Errorf("fogway can't tell how %s was installed at %s — update it the way you installed it", a.Name, bin)
 	}
 	if _, busy := updating.LoadOrStore(a.ID, true); busy {
 		return CLI{}, fmt.Errorf("%s is already being updated", a.Name)

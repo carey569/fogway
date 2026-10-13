@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// The stash remembers what an agent's config said before magpie pointed it
+// The stash remembers what an agent's config said before fogway pointed it
 // at the gateway, so switching back restores it instead of guessing.
 //
 // stash.json holds every agent's originals, so a change to it is read,
@@ -22,7 +22,7 @@ import (
 // two changes at once, or one cut short, never leave it half there, which
 // the next change read as no stash and wrote back over every agent's. A
 // file that doesn't parse (edited by hand, or half written by an older
-// magpie) is copied aside before it is written over, so what it held can
+// fogway) is copied aside before it is written over, so what it held can
 // still be got back.
 var stashMu sync.Mutex
 

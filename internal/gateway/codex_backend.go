@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/codexcat"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/codexcat"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // codexAPIBase is where a Codex signed in with an API key sends its requests;
@@ -36,14 +36,14 @@ var codexModelsWait = 3 * time.Second
 
 // codexBackend answers CodexPath, where Codex reaches the gateway as its
 // openai_base_url, and as the base URL of the [model_providers] table the
-// gateway is when Codex isn't signed in to ChatGPT. A magpie model
+// gateway is when Codex isn't signed in to ChatGPT. A fogway model
 // (provider/model, group/…) is served like any other request; one of
 // Codex's own models goes on as it came, with Codex's own sign-in
-// (codexUpstream); the model list is Codex's own with magpie's after it.
+// (codexUpstream); the model list is Codex's own with fogway's after it.
 func (s *Server) codexBackend(w http.ResponseWriter, r *http.Request) {
 	// Responses over a WebSocket: 426 sends Codex to plain HTTP at once
 	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
-		http.Error(w, "magpie speaks HTTP", http.StatusUpgradeRequired)
+		http.Error(w, "fogway speaks HTTP", http.StatusUpgradeRequired)
 		return
 	}
 	rest := strings.TrimPrefix(r.URL.Path, CodexPath)
@@ -92,7 +92,7 @@ func (s *Server) codexBackend(w http.ResponseWriter, r *http.Request) {
 			body = spawnAgentModels(r, body, model, true)
 		}
 		// one of Codex's own models the user disabled (#1867) is refused
-		// here, never relayed; a magpie model is refused by serve
+		// here, never relayed; a fogway model is refused by serve
 		if !strings.Contains(model, "/") {
 			if msg, off := codexNativeOff(model); off {
 				writeError(w, provider.Responses, http.StatusForbidden, msg)
@@ -103,7 +103,7 @@ func (s *Server) codexBackend(w http.ResponseWriter, r *http.Request) {
 		// Unknown providers/groups must fail locally, never fall through to OpenAI.
 		if strings.Contains(model, "/") {
 			if rest == "/responses/compact" {
-				writeError(w, provider.Responses, 400, "/responses/compact is not supported for Magpie models; use a compaction_trigger on /responses")
+				writeError(w, provider.Responses, 400, "/responses/compact is not supported for Fogway models; use a compaction_trigger on /responses")
 				return
 			}
 			body, compact := codexInput(body, true)
@@ -130,7 +130,7 @@ func (s *Server) codexBackend(w http.ResponseWriter, r *http.Request) {
 }
 
 // codexModels is Codex's own model list for its sign-in, from the ChatGPT
-// backend, with magpie's models after it. Should the backend not answer, or
+// backend, with fogway's models after it. Should the backend not answer, or
 // not in time, Codex's last list of its own stands in.
 func (s *Server) codexModels(w http.ResponseWriter, r *http.Request) {
 	var own []any
@@ -190,14 +190,14 @@ func (s *Server) codexModels(w http.ResponseWriter, r *http.Request) {
 			codexcat.AutoReview(o)
 		}
 	}
-	// the list is Codex's and magpie's, and so is its ETag
+	// the list is Codex's and fogway's, and so is its ETag
 	w.Header().Set("ETag", codexcat.WithTag(etag, provider.CodexListTag()))
 	all := append(own, codexcat.Entries(provider.CodexListed(), len(own)+100)...)
 	writeJSON(w, 200, map[string]any{"models": all})
 }
 
 // modelsEtag is the X-Models-Etag of a backend reply as Codex should read
-// it: with magpie's models in it, as the list's own ETag has them, so a
+// it: with fogway's models in it, as the list's own ETag has them, so a
 // change to either has Codex ask for the list again.
 func modelsEtag(h http.Header) {
 	if v := h.Get("X-Models-Etag"); v != "" {
@@ -295,7 +295,7 @@ func (s *Server) codexUpstream(w http.ResponseWriter, r *http.Request, rest stri
 		}
 		copyHeaders(req.Header, r.Header)
 		// left to the transport, the reply comes back plain for the usage
-		// in it; the body goes plain too, as magpie read it
+		// in it; the body goes plain too, as fogway read it
 		req.Header.Del("Accept-Encoding")
 		req.Header.Del("Content-Encoding")
 		if res, err = s.client.Do(req); err != nil {
@@ -429,9 +429,9 @@ func (s *Server) codexUpstream(w http.ResponseWriter, r *http.Request, rest stri
 	appendUsage(r, rec)
 }
 
-// codexCompact compacts a conversation held by a magpie model: the model
+// codexCompact compacts a conversation held by a fogway model: the model
 // summarises it, and the summary goes back to Codex as the compaction item
-// the backend would have made, marked as magpie's so magpie reads it back
+// the backend would have made, marked as fogway's so fogway reads it back
 // in later requests.
 //
 // A provider that answers the summary 404 — a relay that serves the
@@ -439,7 +439,7 @@ func (s *Server) codexUpstream(w http.ResponseWriter, r *http.Request, rest stri
 // failed" (#866) — or 400 for an item of it it doesn't have (#1008) is
 // asked once more with the conversation as plain text, none of its items'
 // ids or sealed reasoning in it; when that fails too the summary is
-// magpie's own, the conversation's user messages and last reply,
+// fogway's own, the conversation's user messages and last reply,
 // so the compaction still completes and Codex goes on. So is one the
 // ChatGPT backend answers 502 "response protection is unavailable" (vs on
 // Discord): the same long history failed so on every account and model,
@@ -509,10 +509,10 @@ func (s *Server) codexCompact(w http.ResponseWriter, r *http.Request, body []byt
 	}
 	id := res.ID
 	if id == "" {
-		id = fmt.Sprintf("resp_magpie_%d", time.Now().UnixNano())
+		id = fmt.Sprintf("resp_fogway_%d", time.Now().UnixNano())
 	}
 	item := map[string]any{"type": "compaction", "id": "cmp_" + strings.TrimPrefix(id, "resp_"),
-		"encrypted_content": magpieCompaction + base64.StdEncoding.EncodeToString([]byte(sum.String()))}
+		"encrypted_content": fogwayCompaction + base64.StdEncoding.EncodeToString([]byte(sum.String()))}
 	done := map[string]any{"id": id, "object": "response", "status": "completed", "output": []any{item}}
 	if len(res.Usage) > 0 {
 		done["usage"] = res.Usage
@@ -717,7 +717,7 @@ func localSummary(body []byte, why string) string {
 		n += len(asked[from])
 	}
 	var b strings.Builder
-	b.WriteString("magpie compacted this conversation without a model (" + why + "), so this is no summary: it is what the user asked")
+	b.WriteString("fogway compacted this conversation without a model (" + why + "), so this is no summary: it is what the user asked")
 	if from > 0 {
 		fmt.Fprintf(&b, " (the latest %d of %d messages)", len(asked)-from, len(asked))
 	}
@@ -797,7 +797,7 @@ func codexKeyRefused(msg []byte) string {
 	}
 	return "OpenAI refused the API key Codex is signed in with (" + said + "). " +
 		"This is one of Codex's own models, which goes to OpenAI with Codex's own sign-in: " +
-		"pick one of magpie's models in Codex (provider/model, or set it in magpie's Agents view), " +
+		"pick one of fogway's models in Codex (provider/model, or set it in fogway's Agents view), " +
 		"or sign Codex in with ChatGPT, or with an OpenAI API key"
 }
 
@@ -807,18 +807,18 @@ func codexKeyRefused(msg []byte) string {
 // lists (#322) — and what to do about it.
 func codexUnreached(model string, err error) string {
 	return "OpenAI can't be reached (" + err.Error() + "). " + model + " is one of Codex's own models, " +
-		"which goes to OpenAI with Codex's own sign-in: pick one of magpie's models in Codex " +
-		"(provider/model, or set it in magpie's Agents view), or let Codex reach OpenAI"
+		"which goes to OpenAI with Codex's own sign-in: pick one of fogway's models in Codex " +
+		"(provider/model, or set it in fogway's Agents view), or let Codex reach OpenAI"
 }
 
 // codexFailedEmpty says why a model of Codex's own failed when OpenAI gave
 // an error status and nothing else: where it went, and what to do — a
-// Codex left on its own model while magpie's Agents view picked another
+// Codex left on its own model while fogway's Agents view picked another
 // for it sends the turn to OpenAI, not to that one (#409).
 func codexFailedEmpty(model, status string) string {
 	return "OpenAI answered " + status + " and said nothing more. " + model + " is one of Codex's own models, " +
-		"which goes to OpenAI with Codex's own sign-in, not to a provider in magpie: pick one of magpie's models in Codex " +
-		"(provider/model, or set it in magpie's Agents view), or try again later"
+		"which goes to OpenAI with Codex's own sign-in, not to a provider in fogway: pick one of fogway's models in Codex " +
+		"(provider/model, or set it in fogway's Agents view), or try again later"
 }
 
 // apiKey reports whether Codex signed in with an API key rather than a

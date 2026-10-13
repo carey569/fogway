@@ -16,9 +16,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // traceKeep is how many requests the trace keeps.
@@ -90,7 +90,7 @@ type Route struct {
 	Flow int64 `json:"flow,omitempty"`
 	// Served: the model the reply says answered, as the last try has it;
 	// Swapped: another than the one that try asked for; Routed: that try
-	// asked another magpie's routing group, and Served is its member
+	// asked another fogway's routing group, and Served is its member
 	Served  string `json:"served,omitempty"`
 	Swapped bool   `json:"swapped,omitempty"`
 	Routed  bool   `json:"routed,omitempty"`
@@ -286,7 +286,7 @@ type Try struct {
 	Flow int64 `json:"flow,omitempty"`
 	// Served: the model its reply said answered, when it named one;
 	// Swapped: another model than Model, not just its dated name; Routed:
-	// Model is another magpie's routing group, and Served the member it
+	// Model is another fogway's routing group, and Served the member it
 	// routed to (usage.GroupRouted)
 	Served  string `json:"served,omitempty"`
 	Swapped bool   `json:"swapped,omitempty"`
@@ -324,7 +324,7 @@ type Try struct {
 
 // AutoReset is a Codex reset spent by itself, on Who's account. (Claude's
 // resets were taken out in 9bf6d4352 and aren't coming back: reading or
-// spending one means magpie calling Anthropic with the account's token,
+// spending one means fogway calling Anthropic with the account's token,
 // #1972.)
 type AutoReset struct {
 	Who   string `json:"who"`

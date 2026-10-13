@@ -1,5 +1,5 @@
 // Settings' WebDAV/S3 row against a setup changed behind the window (#305):
-// the terminal's magpie webdav / magpie s3 writes sync.json under a page
+// the terminal's fogway webdav / fogway s3 writes sync.json under a page
 // that has already read it, and the page kept the first view it ever read,
 // so its row, its status and the form's ticks showed what the process had
 // started with until a restart. Coming back to the settings page or the
@@ -17,8 +17,8 @@ const assets = path.resolve(__dirname, "../assets");
 
 function serve(lang, syncRef) {
   const settings = {
-    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/magpie",
-    gateway: "http://127.0.0.1:3425", visionModels: [], imageGenModels: [],
+    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/fogway",
+    gateway: "http://127.0.0.1:3725", visionModels: [], imageGenModels: [],
     fx: { rate: 7.2, stale: false },
   };
   return async (route) => {
@@ -61,7 +61,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await browser.close();
       });
 
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator("#prefs").click();
       await page.locator(":is(#setTab-sync, .nav-s[data-of=setTab-sync]):visible").click();
       const list = page.locator("#syncList");

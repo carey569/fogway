@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // fastUp is every vendor at once: the gateway's calls to api.openai.com,
@@ -198,7 +198,7 @@ func TestFastMemberAnthropic(t *testing.T) {
 	}
 }
 
-// A member not sent fast, and one whose vendor has no fast mode magpie can
+// A member not sent fast, and one whose vendor has no fast mode fogway can
 // ask for (a relay; Claude Sonnet), goes as the agent asked: no tier, no
 // speed, no beta.
 func TestFastMemberLeftAlone(t *testing.T) {

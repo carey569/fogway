@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Claude Desktop, pointed at a third-party gateway, keeps a model only when
@@ -51,12 +51,12 @@ func desktopAccepts(id string) bool {
 }
 
 // desktopAlias is the prefix of the id a model is listed by to Claude
-// Desktop when its own id names no Claude model: anthropic/magpie-<number>,
-// the number a hash of magpie's id, so it stays the model's while the
+// Desktop when its own id names no Claude model: anthropic/fogway-<number>,
+// the number a hash of fogway's id, so it stays the model's while the
 // catalog changes around it. Desktop's list of other vendors' names grows
 // from release to release, so no part of such a model's id is shown to it;
-// its display_name and description carry the model's name and magpie id.
-const desktopAlias = "anthropic/magpie-"
+// its display_name and description carry the model's name and fogway id.
+const desktopAlias = "anthropic/fogway-"
 
 // Claude Desktop offers a thinking-effort picker only for a model it knows:
 // in a gateway's mode it reads no effort from /v1/models (IIt keeps id,
@@ -70,14 +70,14 @@ const desktopAlias = "anthropic/magpie-"
 // UFt /^(?:claude-)?(?:fable|mythos)(?:-|$)/ with VFt low, medium, high,
 // xhigh and max (high recommended, thinking always on), and IC the id
 // lowercased with a Bedrock-style "<profile>.anthropic." prefix and a date
-// taken off. No provider/model id is either, so no model magpie served had
+// taken off. No provider/model id is either, so no model fogway served had
 // the picker (ARNO). A model with reasoning levels is listed by one of
 // these instead:
 //
 //   - a Claude model (claude-opus-4-8 at any provider):
-//     magpie-<number>.anthropic.claude-opus-4-8, which IC reads as
+//     fogway-<number>.anthropic.claude-opus-4-8, which IC reads as
 //     claude-opus-4-8 and Claude Code as Claude Opus 4.8, as before;
-//   - any other: mythos-magpie-<number>, which UFt matches. Nothing in it
+//   - any other: mythos-fogway-<number>, which UFt matches. Nothing in it
 //     says haiku, sonnet or opus, so Desktop's small_fast pick is as it
 //     was, and Claude Code (which knows claude-mythos-… only) takes it for
 //     a model it doesn't know and sends its effort as output_config.effort.
@@ -85,7 +85,7 @@ const desktopAlias = "anthropic/magpie-"
 // The effort chosen reaches the gateway as thinking plus
 // output_config.effort and is fitted to the model's own levels there.
 const (
-	desktopEffortAlias = "mythos-magpie-"
+	desktopEffortAlias = "mythos-fogway-"
 	desktopClaudeInfix = ".anthropic."
 )
 
@@ -129,12 +129,12 @@ func claudeModel(e provider.Entry) string {
 // is: Desktop names an id it finds in its own model catalog by the
 // catalog's name, so two groups led by claude-opus-5-5 read "Opus 5.5"
 // there like the model itself, and the group's id would change each time
-// its members are reordered. Its mythos-magpie-<n> keeps the picker and
+// its members are reordered. Its mythos-fogway-<n> keeps the picker and
 // the group's own name.
 func claudeLooking(e provider.Entry) string {
 	if len(e.Efforts) > 0 {
 		if m := claudeModel(e); m != "" && e.Group == "" {
-			return "magpie-" + aliasNumber(e.ID) + desktopClaudeInfix + m
+			return "fogway-" + aliasNumber(e.ID) + desktopClaudeInfix + m
 		}
 		return desktopEffortAlias + aliasNumber(e.ID)
 	}
@@ -196,13 +196,13 @@ func desktopModels(entries []provider.Entry) []map[string]any {
 // entry beside a gateway model whose id has no "[1m]" (the discovery in its
 // app.asar, 2.7032: supports_1m when given, else max_input_tokens >= 1e6;
 // one whose id has "[1m]" gets none). Under settings.DesktopLongest such a
-// model is listed by that 1M id alone (#1272), which magpie serves as the
+// model is listed by that 1M id alone (#1272), which fogway serves as the
 // plain one (aliased, provider.Resolve take "[1m]" off), so a session
 // saved on the plain id still runs.
 //
 // Desktop says which entry is the 1M one only on the entry it adds: its
 // description is "1M context window" (WLt in JLt, 2.7032). A row of
-// magpie's whose id has "[1m]" gets nothing of that (PIt gives supports1m
+// fogway's whose id has "[1m]" gets nothing of that (PIt gives supports1m
 // to a bare id alone, and OIt folds a "[1m]" row only into a bare one
 // beside it), so it was shown as the plain model, by name alone, and the
 // switch read as doing the reverse of what it says (杰多夫 on Discord).
@@ -232,7 +232,7 @@ const desktop1MSaid = "1M context window"
 // a subagent on "sonnet" or "haiku" asked for Claude Code's own
 // claude-sonnet-… and that, unserved, went to the chat's model: every
 // subagent ran on it, whatever its tier (WilianWeng on Discord). The user
-// picks a model per tier in magpie; a Claude model magpie serves stands in
+// picks a model per tier in fogway; a Claude model fogway serves stands in
 // for its own tier while its tier has none picked.
 var DesktopTierNames = []string{"opus", "sonnet", "haiku", "fable"}
 
@@ -267,7 +267,7 @@ func claudeTier(id string) string {
 }
 
 // desktopTierTurn is the model picked for the tier of a Claude model
-// Desktop's Claude Code asked for by Claude Code's own id, which magpie
+// Desktop's Claude Code asked for by Claude Code's own id, which fogway
 // doesn't serve: a subagent on a tier no model is tagged for, or on one a
 // model picked for two tiers isn't tagged with. "" when there is none.
 func desktopTierTurn(asked string) string {
@@ -303,8 +303,8 @@ func desktopNames(entries []provider.Entry) []string {
 }
 
 // aliased is the catalog id an alias Claude Desktop was given stands for:
-// anthropic/magpie-<number> (as it was listed before too),
-// mythos-magpie-<number> or magpie-<number>.anthropic.<claude model>, with
+// anthropic/fogway-<number> (as it was listed before too),
+// mythos-fogway-<number> or fogway-<number>.anthropic.<claude model>, with
 // or without Claude Code's "[1m]".
 func aliased(id string) (string, bool) {
 	id = strings.TrimSuffix(id, "[1m]")
@@ -313,7 +313,7 @@ func aliased(id string) (string, bool) {
 		number = n
 	} else if n, ok := strings.CutPrefix(id, desktopEffortAlias); ok {
 		number = n
-	} else if rest, ok := strings.CutPrefix(id, "magpie-"); ok {
+	} else if rest, ok := strings.CutPrefix(id, "fogway-"); ok {
 		if i := strings.Index(rest, desktopClaudeInfix); i > 0 {
 			number = rest[:i]
 		}
@@ -350,7 +350,7 @@ func isClaudeDesktop(r *http.Request) bool {
 // A session's turns carry tools; the model the latest one is for is the one
 // the user picked. A small tool-less request (a title's max_tokens is 200,
 // a turn's tens of thousands) for a model whose id reads as Claude's, and
-// any request for a model magpie doesn't serve, goes to that model instead,
+// any request for a model fogway doesn't serve, goes to that model instead,
 // so a chat the user started on a Claude model of their own stays on it. It is
 // kept on disk, so a title asked for before the first turn after a restart
 // goes there too; before any turn at all it goes to desktopDefault.
@@ -373,7 +373,7 @@ func desktopPickedPath() string { return filepath.Join(settings.Dir(), "claude-d
 // session's model only when it is Desktop's title, which Desktop asks
 // Claude Code for when its own request fails (`claude -p --model <its
 // pick> --system-prompt "You write short session titles…" --tools ""`,
-// sent with max_tokens 64000); one for a model magpie doesn't serve still
+// sent with max_tokens 64000); one for a model fogway doesn't serve still
 // goes there whoever sent it.
 func desktopTurn(asked string, body []byte, byClaudeCode bool) string {
 	if asked == "" {
@@ -421,8 +421,8 @@ func desktopTurn(asked string, body []byte, byClaudeCode bool) string {
 // the model the agent is set to stand in for asked if there is one, else
 // the model a new Desktop session starts on — the first row of /v1/models
 // (resolveDefaultSessionModel in its app.asar takes the first model it
-// doesn't restrict), which is magpie's first model shown to it. "" when
-// that is asked itself or magpie shows Desktop no model.
+// doesn't restrict), which is fogway's first model shown to it. "" when
+// that is asked itself or fogway shows Desktop no model.
 func desktopDefault(asked string) string {
 	if StandIn != nil {
 		if m := StandIn("claude-desktop", asked); m != "" && m != asked {

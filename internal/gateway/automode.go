@@ -7,7 +7,7 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Claude Code's auto mode checks each action with a classifier (#250).
@@ -20,8 +20,8 @@ import (
 // (anthropicWholeEvents). Any other model neither sees them nor answers
 // them (serverReview), and Claude Code, finding no result, classifies
 // locally for the rest of the session, naming the gateway in a notice.
-// magpie says nothing on the API's behalf. Where no model Claude Code can
-// reach through magpie is reviewed (AutoModeReviewed), the agent's wiring
+// fogway says nothing on the API's behalf. Where no model Claude Code can
+// reach through fogway is reviewed (AutoModeReviewed), the agent's wiring
 // turns the review off in Claude Code's settings instead
 // (CLAUDE_CODE_AUTO_MODE_SERVER=0, as Anthropic's page on the notice says to
 // for a gateway that can't run the checks), so it classifies locally from
@@ -72,7 +72,7 @@ func (s *Server) serverReview(p provider.Provider, asked []string, body []byte) 
 // subscription (the bridge hands the review to Claude Code's own binary),
 // a Claude model (Anthropic's API, a relay in front of it, Bedrock's or
 // Vertex's names for it), or anything on Anthropic's own API. No other
-// vendor runs Anthropic's classifier, and magpie answers none on its
+// vendor runs Anthropic's classifier, and fogway answers none on its
 // behalf.
 func AutoModeReviewed(p provider.Provider, model string) bool {
 	return anthropicModel.MatchString(model) || provider.HostOf(p.Base(provider.Anthropic)) == "api.anthropic.com"

@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Usage says, per model, how many of its replies magpie ended because the
+// Usage says, per model, how many of its replies fogway ended because the
 // model was stuck in a loop (#1858, err_type "reply_loop"): beside "{n}
 // failed" in the Overview's model rows and in the Requests ranking, the
 // ranking's "Other" adding up those it holds. A model with none says
@@ -11,7 +11,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
-const assets = path.resolve(process.env.MAGPIE_ASSETS || path.resolve(__dirname, "../assets"));
+const assets = path.resolve(process.env.FOGWAY_ASSETS || path.resolve(__dirname, "../assets"));
 const looped = { en: "{n} looped", zh: "{n} 次陷入循环", "zh-TW": "{n} 次陷入迴圈", ja: "{n} 件はループ", de: "{n} in einer Schleife" };
 
 const share = (id, calls, errors, loops) => ({ id, calls, errors, loops, input: 1000 * calls, output: 50 * calls, cache_read: 0, cache_write: 0, cost: 0, unpriced: calls });
@@ -70,8 +70,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.setDefaultTimeout(8000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang));
-          await page.addInitScript((tab) => localStorage.setItem("magpie.usageTab", tab), tab);
-          await page.goto("http://magpie.test/?view=usage");
+          await page.addInitScript((tab) => localStorage.setItem("fogway.usageTab", tab), tab);
+          await page.goto("http://fogway.test/?view=usage");
           return page;
         };
 

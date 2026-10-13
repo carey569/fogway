@@ -1,8 +1,8 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Built-in subscriptions that a community plugin can run are deprecated: their
 // rows and Add tiles carry a Deprecated badge whose tooltip says why (a
-// subscription can break its vendor's terms, so it is decoupled from magpie to
-// keep magpie itself from being banned), and a notice over the list names the
+// subscription can break its vendor's terms, so it is decoupled from fogway to
+// keep fogway itself from being banned), and a notice over the list names the
 // signed-in ones with the same reason. One already on its plugin, or a
 // subscription with no plugin, carries no badge; Not now hides the notice
 // until another deprecated subscription signs in. One with no account isn't
@@ -54,9 +54,9 @@ function serve(lang, calls) {
 }
 
 const L = {
-  en: { badge: "Deprecated", why: "So that magpie itself isn't banned over them", head: "These built-in subscriptions are deprecated: Cursor, Kiro", later: "Not now",
+  en: { badge: "Deprecated", why: "So that fogway itself isn't banned over them", head: "These built-in subscriptions are deprecated: Cursor, Kiro", later: "Not now",
     more: "More in Plugins" },
-  zh: { badge: "已弃用", why: "为免 magpie 本体因此被封禁", head: "以下内置订阅已弃用：Cursor、Kiro", later: "暂不",
+  zh: { badge: "已弃用", why: "为免 fogway 本体因此被封禁", head: "以下内置订阅已弃用：Cursor、Kiro", later: "暂不",
     more: "插件中还有更多" },
 };
 
@@ -72,7 +72,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const calls = [];
       await page.route("**/*", serve(lang, calls));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
 
       // the notice: the signed-in deprecated ones, and why
       const notice = page.locator("#movable .deprecation");
@@ -114,11 +114,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(calls, [], "a sign-in or an install started by itself");
 
       // Not now hides the notice, and it stays hidden on the next load
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await notice.waitFor();
       await notice.locator("button", { hasText: w.later }).click();
       await page.locator("#movable").waitFor({ state: "hidden" });
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator('.row.provider[data-id="cursor"] .badge.deprecated').waitFor();
       assert.equal(await page.locator("#movable").isHidden(), true, "the notice came back");
       assert.deepEqual(errors, []);

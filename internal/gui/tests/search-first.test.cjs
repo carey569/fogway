@@ -60,7 +60,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const saved = [];
       await page.route("**/*", serve(lang, saved));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=models");
+      await page.goto("http://fogway.test/?view=settings&tab=models");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const row = page.locator("#searchList #searchFirstRow");
       await row.waitFor();
@@ -101,7 +101,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       await page.route("**/*", serve(lang, [], { provider: false }));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=models");
+      await page.goto("http://fogway.test/?view=settings&tab=models");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       await page.locator("#searchList .row.search-add").waitFor();
       assert.equal(await page.locator("#searchFirstRow").count(), 0);

@@ -51,7 +51,7 @@ for (const [name, engine] of [["webkit", webkit], ["chromium", chromium]]) {
         const page = await (await browser.newContext({ locale: sys, viewport: { width: 1000, height: 760 } })).newPage();
         page.setDefaultTimeout(5000);
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.waitForFunction(() => typeof locale === "string" && document.documentElement.lang);
         const got = await page.evaluate(() => ({
           locale, lang: document.documentElement.lang,

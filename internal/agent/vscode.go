@@ -6,12 +6,12 @@ package agent
 // models in chatLanguageModels.json beside its settings.json (the default
 // profile's, in its User folder, and each other profile's in its own:
 // vscodeProfiles), a JSONC array VS Code watches and reads again when it
-// changes. magpie adds a group of its own there,
-// {"vendor": "customendpoint", "name": "magpie"}, listing the catalog: each
+// changes. fogway adds a group of its own there,
+// {"vendor": "customendpoint", "name": "fogway"}, listing the catalog: each
 // model at the gateway's /v1/chat/completions with tool calling on (agent
 // mode lists only models that call tools). A group's apiKey can't be
 // written in the file: VS Code reads it from its secret storage alone, so
-// each model sends magpie's token in requestHeaders' Authorization, which a
+// each model sends fogway's token in requestHeaders' Authorization, which a
 // Custom Endpoint model may set and which then stands in for the key; the
 // user is asked for none. The model a new chat starts on is the
 // chat.defaultModel setting (a model id: the catalog id here); picked in
@@ -22,10 +22,10 @@ package agent
 // provider but an OpenAI Compatible one, customoai (xybio, #1014: only Auto
 // showed). That one takes the same group in the same file, with each
 // model's window as maxInputTokens beside maxOutputTokens, and drops an
-// Authorization in requestHeaders, so magpie's token goes as x-api-key
+// Authorization in requestHeaders, so fogway's token goes as x-api-key
 // there (the gateway takes a key from either). It registers its providers
 // only while Copilot Chat is signed in to GitHub with a personal Copilot
-// plan; the Notice says so. Which of the two magpie writes is the one the
+// plan; the Notice says so. Which of the two fogway writes is the one the
 // installed extension's package.json declares (vscodeChatOf).
 
 import (
@@ -36,10 +36,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/proc"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/proc"
 )
 
 // vscodeDefault is chat.defaultModel, a key with a dot in it, escaped for
@@ -51,7 +51,7 @@ const vscodeDefault = `chat\.defaultModel`
 // can't change.
 const vscodeUA = "githubcopilotchat"
 
-// The providers magpie's group can be written for: VS Code's Custom
+// The providers fogway's group can be written for: VS Code's Custom
 // Endpoint, and the OpenAI Compatible one of the Copilot Chat VSCodium
 // installs.
 const (
@@ -59,19 +59,19 @@ const (
 	vscodeOAI      = "customoai"
 )
 
-// vscodeVendors are both, the one magpie writes when it can't tell first.
+// vscodeVendors are both, the one fogway writes when it can't tell first.
 var vscodeVendors = []string{vscodeEndpoint, vscodeOAI}
 
-// vscodeGroupOf is how magpie's group for a provider is found among the
+// vscodeGroupOf is how fogway's group for a provider is found among the
 // user's.
 func vscodeGroupOf(vendor string) map[string]string {
-	return map[string]string{"vendor": vendor, "name": magpieID}
+	return map[string]string{"vendor": vendor, "name": fogwayID}
 }
 
-// vscodeGroup is magpie's Custom Endpoint group.
+// vscodeGroup is fogway's Custom Endpoint group.
 var vscodeGroup = vscodeGroupOf(vscodeEndpoint)
 
-// vscodeOurs is magpie's group in a chatLanguageModels.json, whichever
+// vscodeOurs is fogway's group in a chatLanguageModels.json, whichever
 // provider it was written for, and that provider.
 func vscodeOurs(lm string) (group, vendor string, ok bool) {
 	for _, v := range vscodeVendors {
@@ -143,7 +143,7 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 	get := func() string { return getAt(path) }
 	ours := func() (string, bool) { g, _, ok := vscodeOurs(models); return g, ok }
 	joined := func() bool { _, ok := ours(); return ok }
-	// inGroup: a model id is one of those magpie's group lists
+	// inGroup: a model id is one of those fogway's group lists
 	inGroup := func(id string) bool {
 		g, ok := ours()
 		if !ok || id == "" {
@@ -159,12 +159,12 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 	model := func() string {
 		v := get()
 		if inGroup(v) {
-			return magpieID + "/" + v
+			return fogwayID + "/" + v
 		}
 		return v
 	}
 	// restore puts back the chat.defaultModel a settings.json had before
-	// magpie's
+	// fogway's
 	restore := func(p string) error {
 		if was := unstash(key(p)); was != "" {
 			return edit.SetJSON(p, edit.KV{Path: vscodeDefault, Value: was})
@@ -177,7 +177,7 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 		s, m := vscodeProfiles(dir)
 		return edit.Atomically(func() error { return fn(s, m) }, append(s, m...)...)
 	}
-	// setGroup writes magpie's group in the default's and each profile's,
+	// setGroup writes fogway's group in the default's and each profile's,
 	// for the provider the chat installed has, in place of one written
 	// for the other
 	setGroup := func(lms []string) error {
@@ -223,8 +223,8 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 			}
 			return ""
 		},
-		// magpie's group joins the user's own models: picking one of VS
-		// Code's in magpie keeps it, and only switching off takes it out
+		// fogway's group joins the user's own models: picking one of VS
+		// Code's in fogway keeps it, and only switching off takes it out
 		Joined: joined,
 		Unwire: func() error {
 			return profiles(func(settings, lms []string) error {
@@ -261,7 +261,7 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 			if c := k.chat(); c.unsupported {
 				return c.notice(k.name)
 			} else if c.vendor != vendor {
-				return k.name + "'s Copilot Chat " + c.version + " lists a group for " + c.vendor + " and magpie's is for " + vendor + "; magpie writes it again when it next starts"
+				return k.name + "'s Copilot Chat " + c.version + " lists a group for " + c.vendor + " and fogway's is for " + vendor + "; fogway writes it again when it next starts"
 			}
 			header, want := "requestHeaders.Authorization", "Bearer "+k.token()
 			if vendor == vscodeOAI {
@@ -276,7 +276,7 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 			Key: "model", Label: "model", Get: model,
 			Set: func(v string) error {
 				return profiles(func(settings, lms []string) error {
-					if ref, ok := strings.CutPrefix(v, magpieID+"/"); ok && isMagpie(ref) {
+					if ref, ok := strings.CutPrefix(v, fogwayID+"/"); ok && isFogway(ref) {
 						if err := setGroup(lms); err != nil {
 							return err
 						}
@@ -299,7 +299,7 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 							}
 						}
 					}
-					// VS Code's own: its default, where magpie's group stays
+					// VS Code's own: its default, where fogway's group stays
 					if v == "" {
 						if inGroup(get()) {
 							return restore(path)
@@ -313,10 +313,10 @@ func vscodeKindAt(k vscodeKind, dir string) *Agent {
 			Options: func(cur map[string]string) []Option {
 				// auto: Copilot's Auto, for one signed in to it
 				own := []Option{{Value: "auto", Label: "Auto"}}
-				if v := cur["model"]; v != "" && v != "auto" && !usesMagpie(v) {
+				if v := cur["model"]; v != "" && v != "auto" && !usesFogway(v) {
 					own = append(own, Option{Value: v, Icon: modelIcon("", v)})
 				}
-				return append(group(k.name, own), viaMagpie(k.id, magpieID+"/")...)
+				return append(group(k.name, own), viaFogway(k.id, fogwayID+"/")...)
 			},
 		}},
 	}, path, models, stashPath())
@@ -400,12 +400,12 @@ func vscodeProfiles(dir string) (settings, models []string) {
 // url that ends in /chat/completions is asked as it is.
 func vscodeURL() string { return gatewayV1() + "/chat/completions" }
 
-// vscodeGroupJSON is magpie's group in chatLanguageModels.json for a
+// vscodeGroupJSON is fogway's group in chatLanguageModels.json for a
 // provider (vscodeEndpoint or vscodeOAI): the catalog as the chat of the VS
 // Code k is shown it.
 func vscodeGroupJSON(k vscodeKind, vendor string) map[string]any {
 	list := []any{}
-	for _, m := range magpieModels(k.id) {
+	for _, m := range fogwayModels(k.id) {
 		context := m.Context
 		if context == 0 {
 			context = 128000 // what VS Code takes a model of unknown window for
@@ -438,15 +438,15 @@ func vscodeGroupJSON(k vscodeKind, vendor string) map[string]any {
 		list = append(list, entry)
 	}
 	if vendor == vscodeOAI {
-		return map[string]any{"name": magpieID, "vendor": vscodeOAI, "models": list}
+		return map[string]any{"name": fogwayID, "vendor": vscodeOAI, "models": list}
 	}
-	return map[string]any{"name": magpieID, "vendor": vscodeEndpoint, "apiType": "chat-completions", "models": list}
+	return map[string]any{"name": fogwayID, "vendor": vscodeEndpoint, "apiType": "chat-completions", "models": list}
 }
 
 // vscodeChatID is Copilot Chat's extension id.
 const vscodeChatID = "github.copilot-chat"
 
-// vscodeChat is the Copilot Chat a VS Code build runs, as far as magpie's
+// vscodeChat is the Copilot Chat a VS Code build runs, as far as fogway's
 // group goes: the provider the group is written for, the version found,
 // none (no Copilot Chat installed) and unsupported (one that declares
 // neither provider).
@@ -459,7 +459,7 @@ type vscodeChat struct {
 // Custom Endpoint provider; one without has the extension installed in its
 // extensions folder, whose package.json says which it registers. A folder
 // or file that can't be read is not taken as "none": the Custom Endpoint
-// group stays as magpie always wrote it.
+// group stays as fogway always wrote it.
 func (k vscodeKind) chat() vscodeChat {
 	if k.exts == "" {
 		return vscodeChat{vendor: vscodeEndpoint}
@@ -533,7 +533,7 @@ func vscodeChatInstalled(dir string) (at, version string, found bool) {
 	return at, version, at != ""
 }
 
-// notice is what a build without its own chat is told with magpie's group
+// notice is what a build without its own chat is told with fogway's group
 // written: what its Copilot Chat needs to list it.
 func (c vscodeChat) notice(name string) string {
 	setup := noticeVSCodeSetup.say("agent", name)
@@ -569,9 +569,9 @@ func vscodeNewer(a, b string) bool {
 
 // what VS Code and its forks say after a change (notice.go)
 var (
-	noticeVSCodeJoined = newNotice("magpie's models are in {agent}'s Chat model picker, under magpie, in each of its profiles (VS Code 1.122 or later). If they don't show, run Developer: Reload Window in {agent}.")
+	noticeVSCodeJoined = newNotice("fogway's models are in {agent}'s Chat model picker, under fogway, in each of its profiles (VS Code 1.122 or later). If they don't show, run Developer: Reload Window in {agent}.")
 	noticeVSCodeSetup  = newNotice("{agent}'s Chat features must be enabled (chat.disableAIFeatures=false) and its product.json must include defaultChatAgent and trustedExtensionAuthAccess for GitHub.copilot-chat. Then run Developer: Reload Window in {agent}.")
-	noticeVSCodeNoChat = newNotice("Install GitHub Copilot Chat in {agent} to see magpie's models in its Chat.")
-	noticeVSCodeOld    = newNotice("{agent}'s GitHub Copilot Chat {version} has neither a Custom Endpoint nor an OpenAI Compatible provider, so it can't list magpie's models.")
-	noticeVSCodeOAI    = newNotice("magpie's models are in {agent}'s Chat model picker under magpie, from GitHub Copilot Chat {version}'s OpenAI Compatible provider, which it offers only while it is signed in to GitHub with a personal Copilot plan.")
+	noticeVSCodeNoChat = newNotice("Install GitHub Copilot Chat in {agent} to see fogway's models in its Chat.")
+	noticeVSCodeOld    = newNotice("{agent}'s GitHub Copilot Chat {version} has neither a Custom Endpoint nor an OpenAI Compatible provider, so it can't list fogway's models.")
+	noticeVSCodeOAI    = newNotice("fogway's models are in {agent}'s Chat model picker under fogway, from GitHub Copilot Chat {version}'s OpenAI Compatible provider, which it offers only while it is signed in to GitHub with a personal Copilot plan.")
 )

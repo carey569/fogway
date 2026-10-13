@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // retrieveTimeout bounds an embeddings or rerank call: a vendor answers
@@ -40,7 +40,7 @@ func (s *Server) retrieve(path, operation string) http.HandlerFunc {
 		var asked string
 		json.Unmarshal(req["model"], &asked)
 		if asked == "" {
-			writeError(w, provider.Chat, 400, "name the model: \"model\" is a magpie model id, as /v1/models lists them")
+			writeError(w, provider.Chat, 400, "name the model: \"model\" is a fogway model id, as /v1/models lists them")
 			return
 		}
 		who := callerOf(r)
@@ -229,7 +229,7 @@ func (s *Server) retrieveFrom(ctx context.Context, p provider.Provider, url stri
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	// magpie's, or the agent's own where the provider passes it on (#1851)
+	// fogway's, or the agent's own where the provider passes it on (#1851)
 	stampUA(ctx, p, req.Header)
 
 	if err := p.Sign(ctx, req, provider.Chat, body); err != nil {

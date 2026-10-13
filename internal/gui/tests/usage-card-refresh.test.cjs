@@ -78,7 +78,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       let open;
       const state = { quotas: fixtures(Date.now()), gets: 0, refreshes: [], gate: new Promise((r) => { open = r; }) };
       await page.route("**/*", serve(lang, state));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
 
       const claude = page.locator(".subscription-card", { hasText: "Claude Code" });
       const read = claude.locator(".quota-read");

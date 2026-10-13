@@ -60,7 +60,7 @@ for (const [name, engine] of [["webkit", webkit], ["chromium", chromium]]) {
           const page = await (await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce" })).newPage();
           page.setDefaultTimeout(5000);
           await page.route("**/*", serve(lang));
-          await page.goto("http://magpie.test/?view=usage");
+          await page.goto("http://fogway.test/?view=usage");
           await page.locator(".subscription-card .quota").nth(2).waitFor();
           const got = await page.evaluate(() => [...document.querySelectorAll(".subscription-card .quota")].map((q) => {
             const card = q.closest(".subscription-card").getBoundingClientRect();

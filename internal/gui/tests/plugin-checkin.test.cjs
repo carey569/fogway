@@ -1,11 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Lemon on Discord: "provider 每日签到的方法能放到插件里面去做吗". A plugin
 // whose auth hook has checkin presses its vendor's daily check-in itself, and
-// magpie shows it as it shows its own: the account's Usage card has the row
+// fogway shows it as it shows its own: the account's Usage card has the row
 // (checkinBy "plugin:<provider>"), with Auto check-in posting
 // /api/settings/plugin-checkin {provider, on} and Check in now posting
 // /api/usage/plugin-checkin {provider}; a captcha the vendor asks for is said
-// as such, never as a failure, as magpie never solves one. Settings' check-in
+// as such, never as a failure, as fogway never solves one. Settings' check-in
 // tabs gain Plugins while such a plugin is signed in, a row a provider with
 // Off/On. English, Simplified and Traditional Chinese, Japanese and German,
 // the window and the panel's 440px; the API is faked here.
@@ -133,7 +133,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, asked));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const card = page.locator(".subscription-card", { hasText: "FakeCo" });
       await card.locator(".wb-checkin").first().waitFor();
@@ -181,7 +181,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, asked));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=usage");
+      await page.goto("http://fogway.test/?view=settings&tab=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const tab = page.locator("#warmTab-plugins");
       await tab.waitFor();

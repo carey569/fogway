@@ -1,6 +1,6 @@
-// Package update keeps magpie current. Builds are published as GitHub
-// releases of yetone/magpie-releases; usemagpie.ai/api/latest describes the
-// newest one: its version, notes, and every file with its SHA-256.
+// Package update keeps fogway current, for a build made with an update
+// feed (FeedURL): the feed describes the newest release, its version,
+// notes, and every file with its SHA-256.
 //
 // The macOS app replaces its own bundle: the new zip is downloaded, checked
 // against its hash, unpacked, and accepted only if it is signed by the same
@@ -29,22 +29,31 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/source"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/source"
 )
 
-// Site is magpie's home; its /api/latest is the update feed.
-const Site = "https://usemagpie.ai"
+// Site is fogway's home, where a release is downloaded by hand.
+const Site = "https://github.com/fogway/fogway"
 
-// Feed is where the newest release is described. MAGPIE_UPDATE_FEED points
-// it elsewhere, for testing an update against a local server.
+// FeedURL is the update feed a release is built with (-ldflags "-X
+// github.com/fogway/fogway/internal/update.FeedURL=https://…/api/latest"):
+// a JSON description of the newest release, its files and their SHA-256.
+// A build without one checks for no update.
+var FeedURL = ""
+
+// ErrNoFeed is the answer of a build with no update feed.
+var ErrNoFeed = errors.New("this build has no update feed: get a new version from " + Site + "/releases")
+
+// Feed is where the newest release is described: FOGWAY_UPDATE_FEED, for
+// testing an update against a local server, else FeedURL.
 func Feed() string {
-	if f := os.Getenv("MAGPIE_UPDATE_FEED"); f != "" {
+	if f := os.Getenv("FOGWAY_UPDATE_FEED"); f != "" {
 		return f
 	}
-	return Site + "/api/latest"
+	return FeedURL
 }
 
 // Release is one published version.
@@ -63,7 +72,7 @@ type Asset struct {
 }
 
 // client asks the feed and downloads a release through the proxy the rest
-// of magpie's requests take — Settings' Proxy, else the environment's, else
+// of fogway's requests take — Settings' Proxy, else the environment's, else
 // the system's (#294) — on a transport of its own, whatever the process has
 // done to http.DefaultTransport.
 var client = &http.Client{Timeout: 10 * time.Minute, Transport: proxied()}
@@ -80,6 +89,9 @@ func Latest(ctx context.Context) (*Release, error) { return LatestIn(ctx, "") }
 // LatestIn asks the feed for the newest release, its notes in lang (see
 // InLang): the app's language, which What's new follows.
 func LatestIn(ctx context.Context, lang string) (*Release, error) {
+	if Feed() == "" {
+		return nil, ErrNoFeed
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", withLang(Feed(), lang), nil)
 	if err != nil {
 		return nil, err
@@ -196,11 +208,11 @@ func parse(v string) *semver {
 var GUI bool
 
 // AppAsset and BinaryAsset name the files this machine would install.
-func AppAsset() string { return "magpie-darwin-" + runtime.GOARCH + ".zip" }
+func AppAsset() string { return "fogway-darwin-" + runtime.GOARCH + ".zip" }
 func BinaryAsset() string {
-	name := "magpie-cli-" + runtime.GOOS + "-" + runtime.GOARCH
+	name := "fogway-cli-" + runtime.GOOS + "-" + runtime.GOARCH
 	if GUI && runtime.GOOS != "darwin" {
-		name = "magpie-" + runtime.GOOS + "-" + runtime.GOARCH
+		name = "fogway-" + runtime.GOOS + "-" + runtime.GOARCH
 	}
 	if runtime.GOOS == "windows" {
 		name += ".exe"
@@ -218,7 +230,7 @@ func Bundle() string {
 	if err != nil {
 		return ""
 	}
-	// …/magpie.app/Contents/MacOS/magpie
+	// …/fogway.app/Contents/MacOS/fogway
 	app := filepath.Dir(filepath.Dir(filepath.Dir(exe)))
 	if filepath.Ext(app) != ".app" || filepath.Base(filepath.Dir(exe)) != "MacOS" {
 		return ""
@@ -226,11 +238,11 @@ func Bundle() string {
 	return app
 }
 
-// Homebrew is whether exe was installed by Homebrew (brew install magpie),
+// Homebrew is whether exe was installed by Homebrew (brew install fogway),
 // which keeps it in its Cellar and has to be the one to upgrade it: a
 // binary replaced under it leaves brew thinking the old version is there.
 func Homebrew(exe string) bool {
-	return strings.Contains(filepath.ToSlash(exe), "/Cellar/magpie/")
+	return strings.Contains(filepath.ToSlash(exe), "/Cellar/fogway/")
 }
 
 // Executable is the running binary, symlinks resolved.
@@ -242,9 +254,9 @@ func Executable() (string, error) {
 	return filepath.EvalSymlinks(exe)
 }
 
-// Writable reports whether magpie may replace what lives in dir.
+// Writable reports whether fogway may replace what lives in dir.
 func Writable(dir string) bool {
-	f, err := os.CreateTemp(dir, ".magpie-update-*")
+	f, err := os.CreateTemp(dir, ".fogway-update-*")
 	if err != nil {
 		return false
 	}
@@ -276,7 +288,7 @@ func Stage(ctx context.Context, rel *Release, bundle string) (string, error) {
 		return "", fmt.Errorf("unzip: %v: %s", err, b)
 	}
 	os.Remove(zip)
-	app := filepath.Join(out, "magpie.app")
+	app := filepath.Join(out, "fogway.app")
 	if err := sameSigner(ctx, bundle, app); err != nil {
 		os.RemoveAll(dir)
 		return "", err
@@ -308,7 +320,7 @@ func team(ctx context.Context, app string) string {
 }
 
 // stageDir is where an update is unpacked: beside what it replaces, so
-// installing it is a rename on one volume, or, where magpie may not write,
+// installing it is a rename on one volume, or, where fogway may not write,
 // in its cache, to be moved in with the administrator's password.
 func stageDir(dir string) string {
 	if !Writable(dir) {
@@ -316,12 +328,12 @@ func stageDir(dir string) string {
 			return filepath.Join(cache, "update")
 		}
 	}
-	return filepath.Join(dir, ".magpie-update")
+	return filepath.Join(dir, ".fogway-update")
 }
 
 // Install swaps the staged app in for bundle. The running copy keeps going
 // until it quits; the next launch is the new one. Where the folder is not
-// magpie's to change the error is a permission one (NeedsAdmin), and
+// fogway's to change the error is a permission one (NeedsAdmin), and
 // InstallAsAdmin can do it instead.
 func Install(staged, bundle string) error {
 	old := filepath.Join(filepath.Dir(staged), "old.app")
@@ -333,7 +345,7 @@ func Install(staged, bundle string) error {
 		os.Rename(old, bundle) // put it back
 		return err
 	}
-	os.RemoveAll(filepath.Dir(filepath.Dir(staged))) // .magpie-update
+	os.RemoveAll(filepath.Dir(filepath.Dir(staged))) // .fogway-update
 	return nil
 }
 
@@ -375,7 +387,7 @@ func ReplaceBinary(ctx context.Context, rel *Release) error {
 }
 
 // StageBinary downloads the release's build for this binary next to it (or
-// to the cache, where magpie may not write there), ready for InstallBinary.
+// to the cache, where fogway may not write there), ready for InstallBinary.
 func StageBinary(ctx context.Context, rel *Release) (string, error) {
 	a, ok := rel.Assets[BinaryAsset()]
 	if !ok {
@@ -424,7 +436,7 @@ func InstallBinaryAside(staged, exe string) (string, error) {
 		}
 		// A running .exe cannot be overwritten, but it can be moved aside.
 		// What the last update moved aside may still be running too (a
-		// `magpie serve` started before it), and can't be removed or
+		// `fogway serve` started before it), and can't be removed or
 		// replaced then: this one goes beside it, under a name of its own.
 		// The download is kept, for another try.
 		RemoveOld(exe)
@@ -489,9 +501,9 @@ func moveAside(exe string) (string, error) {
 	var hint string
 	switch {
 	case errors.Is(err, errSharingViolation), errors.Is(err, errLockViolation):
-		hint = "another program has it open (often an antivirus or OneDrive): let magpie through it and restart to update again, or download the new version and put it in place of this one"
+		hint = "another program has it open (often an antivirus or OneDrive): let fogway through it and restart to update again, or download the new version and put it in place of this one"
 	case errors.Is(err, fs.ErrPermission):
-		hint = "Windows doesn't let magpie change files in " + filepath.Dir(exe) + " (an antivirus' folder protection, or the folder's permissions): let magpie through, or download the new version and put it in place of this one"
+		hint = "Windows doesn't let fogway change files in " + filepath.Dir(exe) + " (an antivirus' folder protection, or the folder's permissions): let fogway through, or download the new version and put it in place of this one"
 	default:
 		hint = "download the new version and put it in place of this one"
 	}
@@ -521,7 +533,7 @@ func RemoveOld(exe string) {
 }
 
 // Replaced reports whether exe is no longer the binary that was there when
-// this process looked (started, from os.Stat): another magpie installed an
+// this process looked (started, from os.Stat): another fogway installed an
 // update over it, and this one runs from where it was moved aside.
 func Replaced(exe string, started os.FileInfo) bool {
 	now, err := os.Stat(exe)
@@ -529,7 +541,7 @@ func Replaced(exe string, started os.FileInfo) bool {
 }
 
 // RemoveStaleNew removes exe.new when it is exe over again: the update a
-// magpie left running from before it downloaded once more.
+// fogway left running from before it downloaded once more.
 func RemoveStaleNew(exe string) {
 	staged := exe + ".new"
 	a, err1 := os.Stat(exe)
@@ -573,7 +585,7 @@ func InstallBinaryAsAdmin(staged, exe string) error {
 // one then runs on rather than quitting.
 func RelaunchBinary(exe, old string, window bool, view string) error {
 	args := RelaunchArgs(window, view)
-	env := append(os.Environ(), "MAGPIE_REPLACES="+strconv.Itoa(os.Getpid()))
+	env := append(os.Environ(), "FOGWAY_REPLACES="+strconv.Itoa(os.Getpid()))
 	if old != "" {
 		return startChecked(exe, old, args, env)
 	}
@@ -581,7 +593,7 @@ func RelaunchBinary(exe, old string, window bool, view string) error {
 	return err
 }
 
-// RelaunchArgs is what RelaunchBinary starts magpie with: `gui [view]` for
+// RelaunchArgs is what RelaunchBinary starts fogway with: `gui [view]` for
 // the window, `tray` for the tray icon alone.
 func RelaunchArgs(window bool, view string) []string {
 	switch {
@@ -593,12 +605,12 @@ func RelaunchArgs(window bool, view string) []string {
 	return []string{"gui"}
 }
 
-// AwaitPredecessor blocks, for a while at most, until the magpie that
+// AwaitPredecessor blocks, for a while at most, until the fogway that
 // relaunched this one has exited.
 func AwaitPredecessor() {
 	reportStarted() // first: the one that started this waits for it
-	pid, err := strconv.Atoi(os.Getenv("MAGPIE_REPLACES"))
-	os.Unsetenv("MAGPIE_REPLACES")
+	pid, err := strconv.Atoi(os.Getenv("FOGWAY_REPLACES"))
+	os.Unsetenv("FOGWAY_REPLACES")
 	if err != nil || pid <= 0 {
 		return
 	}

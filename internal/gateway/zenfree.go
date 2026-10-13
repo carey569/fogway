@@ -6,14 +6,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // OpenCode Zen's free models (-free) are served to OpenCode alone: a
 // request must carry OpenCode's headers (provider.OpenCodeClient), be
 // streamed, and offer tools named bash and read, or Zen answers 403
 // "OpenCode's free tier can only be used from within OpenCode". The user
-// allowed magpie to ask them as OpenCode does, on this route only. So a
+// allowed fogway to ask them as OpenCode does, on this route only. So a
 // request to one is never relayed as it came: it is translated (which
 // always streams upstream, and gathers the stream into one reply for a
 // client that didn't ask for a stream), and on the way

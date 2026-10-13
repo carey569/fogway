@@ -20,7 +20,7 @@ function fixture(lang) {
   const state = () => ({
     agents: [{
       id: "claude@wsl:Ubuntu", name: "Claude Code · WSL Ubuntu", path: "/test/settings.json", icon: "claude-color", wired: true,
-      fields: [{ key: "model", label: "model", value: "relay/m1", options: list.map((m) => ({ value: m.id, label: m.name, ref: m.id, group: "Relay", note: "Relay · via magpie" })) }],
+      fields: [{ key: "model", label: "model", value: "relay/m1", options: list.map((m) => ({ value: m.id, label: m.name, ref: m.id, group: "Relay", note: "Relay · via fogway" })) }],
       models: count(),
     }],
     profiles: [], settings: { lang, theme: "light" },
@@ -67,7 +67,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const fx = fixture(lang);
       await page.route("**/*", fx.serve);
       t.after(() => browser.close());
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       const row = page.locator('.row.agent[data-id="claude@wsl:Ubuntu"]');
       const picker = row.locator('.field[data-key="model"]').first();
       const shown = async () => {

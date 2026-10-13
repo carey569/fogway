@@ -4,15 +4,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // TestClaudeOutputTokens: Claude Code asks a model it doesn't know for a
 // reply of 32000 tokens at most, so a reasoning model stopped at "Claude's
 // response exceeded the 32000 output token maximum" (H20, DeepSeek through
-// WorkBuddy). magpie tells it the longest reply the models it runs on can
+// WorkBuddy). fogway tells it the longest reply the models it runs on can
 // write (CLAUDE_CODE_MAX_OUTPUT_TOKENS): the least of theirs, none when one
 // isn't known, is no more than 32000 or the main model is Claude's own, and
 // never over a value the user set.
@@ -79,18 +79,18 @@ func TestClaudeOutputTokens(t *testing.T) {
 	// installed
 	set("model", "claude-opus-4-8")
 	if output() != "" {
-		t.Fatalf("Claude's own model kept magpie's value: %q", output())
+		t.Fatalf("Claude's own model kept fogway's value: %q", output())
 	}
 	set("model", "v/deep")
 	set("model", "")
 	if output() != "" {
-		t.Fatalf("reset kept magpie's value: %q", output())
+		t.Fatalf("reset kept fogway's value: %q", output())
 	}
 	if v, _ := edit.GetJSON(path, "theme"); v != "dark" {
 		t.Fatal("theme lost")
 	}
 
-	// the user's own value is theirs, set before magpie or over magpie's
+	// the user's own value is theirs, set before fogway or over fogway's
 	if err := edit.SetJSON(path, edit.KV{Path: "env." + claudeOutputEnv, Value: "64000"}); err != nil {
 		t.Fatal(err)
 	}
@@ -110,15 +110,15 @@ func TestClaudeOutputTokens(t *testing.T) {
 	set("model", "v/mid")
 	set("model", "")
 	if output() != "100000" {
-		t.Fatalf("a value the user changed magpie's to: %q", output())
+		t.Fatalf("a value the user changed fogway's to: %q", output())
 	}
-	// and one the same as magpie would write, but not written by it
+	// and one the same as fogway would write, but not written by it
 	if err := edit.SetJSON(path, edit.KV{Path: "env." + claudeOutputEnv, Value: "64000"}); err != nil {
 		t.Fatal(err)
 	}
 	set("model", "v/mid")
 	set("model", "")
 	if output() != "64000" {
-		t.Fatalf("the user's 64000 was taken for magpie's: %q", output())
+		t.Fatalf("the user's 64000 was taken for fogway's: %q", output())
 	}
 }

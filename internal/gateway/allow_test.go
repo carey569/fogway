@@ -9,20 +9,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/lastgood"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/lastgood"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// lc on Discord, magpie in Docker on a public host: with an allow list,
+// lc on Discord, fogway in Docker on a public host: with an allow list,
 // a request from an address outside it is refused 403 even with an
 // enabled gateway key, saying why; one inside it is judged by its key as
 // before; loopback and this computer's own addresses are always let in.
-// MAGPIE_ALLOW_IPS comes before Settings' list, and a typo in it keeps
+// FOGWAY_ALLOW_IPS comes before Settings' list, and a typo in it keeps
 // the list on. No list lets every address in.
 func TestAllowList(t *testing.T) {
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3499")
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3499")
 	t.Setenv(AllowIPsEnv, "")
 	secret, err := access.Update("add-key", access.Change{Name: "Laptop"})
 	if err != nil {
@@ -96,7 +96,7 @@ func TestAllowList(t *testing.T) {
 	if l, env := AllowIPs(); !env || len(l) != 2 {
 		t.Errorf("AllowIPs = %v %v", l, env)
 	}
-	// a typo lets nothing in, and never opens magpie to all
+	// a typo lets nothing in, and never opens fogway to all
 	t.Setenv(AllowIPsEnv, "203.0.113.0/33")
 	check("typo", []want{
 		{"203.0.113.9:5000", secret, 403},
@@ -104,7 +104,7 @@ func TestAllowList(t *testing.T) {
 		{"127.0.0.1:5000", "", 200},
 	})
 
-	// this computer's own address (MAGPIE_ADDR on one interface's) is it
+	// this computer's own address (FOGWAY_ADDR on one interface's) is it
 	if a := ownIPv4(); a != "" {
 		check("own", []want{{net.JoinHostPort(a, "5000"), secret, 200}})
 	}
@@ -115,7 +115,7 @@ func TestAllowList(t *testing.T) {
 // judged before the key: the refusal says so, not that the key is wrong.
 func TestAllowListServed(t *testing.T) {
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3499")
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3499")
 	t.Setenv(AllowIPsEnv, "192.0.2.1")
 	srv := httptest.NewServer(lanGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, "in") })))
 	t.Cleanup(srv.Close)
@@ -159,11 +159,11 @@ func TestKeepsOut(t *testing.T) {
 
 // settings.json that can't be read, or doesn't parse with no last good
 // generation, holds a list nobody knows, and is never taken for no list:
-// the list read last stays in force, and with none read since magpie
+// the list read last stays in force, and with none read since fogway
 // started, only this computer is let in, told why. No file is no list.
 func TestAllowListUnreadableSettings(t *testing.T) {
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3499")
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3499")
 	t.Setenv(AllowIPsEnv, "")
 	forgetAllow := func() {
 		lastAllow.Lock()

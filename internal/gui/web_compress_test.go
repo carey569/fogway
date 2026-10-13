@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-// `magpie web` sent its page's ~4 MB of scripts and styles, and the API's
+// `fogway web` sent its page's ~4 MB of scripts and styles, and the API's
 // JSON, as they are: over a 3 Mbps link to a server every load waited for
 // all of it (akic404 on Discord). A browser that takes gzip gets them
 // gzipped, a client that doesn't gets the bytes as they are, pictures
@@ -26,8 +26,8 @@ func TestWebCompresses(t *testing.T) {
 	t.Setenv("USERPROFILE", h)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(h, ".config"))
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
-	srv := webHandler("3430", "0123456789abcdef-key", 0, Handler(webHost{}, nil))
-	cookie := &http.Cookie{Name: "magpie_web_3430", Value: "0123456789abcdef-key"}
+	srv := webHandler("3730", "0123456789abcdef-key", 0, Handler(webHost{}, nil))
+	cookie := &http.Cookie{Name: "fogway_web_3730", Value: "0123456789abcdef-key"}
 	get := func(path, enc, etag string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest("GET", path, nil)
 		r.AddCookie(cookie)

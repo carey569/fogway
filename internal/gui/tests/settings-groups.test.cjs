@@ -27,7 +27,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -100,7 +100,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const open = async (lang, posts, over, stored) => {
       const errors = [];
       const ctx = await browser.newContext({ viewport: { width: 900, height: 480 }, reducedMotion: "reduce" });
-      if (stored) await ctx.addInitScript((k) => { if (!sessionStorage.getItem("seeded")) { localStorage.setItem("magpie.warmTab", k); sessionStorage.setItem("seeded", "1"); } }, stored);
+      if (stored) await ctx.addInitScript((k) => { if (!sessionStorage.getItem("seeded")) { localStorage.setItem("fogway.warmTab", k); sessionStorage.setItem("seeded", "1"); } }, stored);
       const page = await ctx.newPage();
       pages.push(page);
       page.setDefaultTimeout(5000);
@@ -111,7 +111,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").click();
         await page.locator("#warmSegs .opt").first().waitFor({ state: "attached" });
       };
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await go();
       return { page, errors, reload: async () => { await page.reload(); await go(); } };
     };

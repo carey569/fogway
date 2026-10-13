@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/yetone/magpie/internal/agentenv"
+	"github.com/fogway/fogway/internal/agentenv"
 )
 
 // homeVar is the variable Go's os.UserHomeDir reads the home folder from.
@@ -33,13 +33,13 @@ func rooted(p string) bool {
 
 // Home is the user's home folder, or an error when its variable is unset,
 // empty or relative. os.UserHomeDir hands back "" there, which
-// filepath.Join turns into a path under the folder magpie was started in,
+// filepath.Join turns into a path under the folder fogway was started in,
 // and on Android it falls back to the shared /sdcard.
 func Home() (string, error) {
 	v := homeVar()
 	switch h := os.Getenv(v); {
 	case h == "":
-		return "", fmt.Errorf("%s is not set: magpie needs the home folder to find its own files and the agents'", v)
+		return "", fmt.Errorf("%s is not set: fogway needs the home folder to find its own files and the agents'", v)
 	case !rooted(h):
 		return "", fmt.Errorf("%s is %q, not an absolute path", v, h)
 	default:
@@ -59,14 +59,14 @@ func mustHome() string {
 }
 
 // pathVars are the variables folders and files are built from: the XDG
-// folders, Windows' application data folders, magpie's own and every
+// folders, Windows' application data folders, fogway's own and every
 // agent's.
 var pathVars = sync.OnceValue(func() map[string]bool {
 	vs := map[string]bool{}
 	for _, v := range []string{
 		"XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_RUNTIME_DIR",
 		"APPDATA", "LOCALAPPDATA",
-		"MAGPIE_BIN_DIR", "OMARCHY_PATH", "OPENCODE_CONFIG",
+		"FOGWAY_BIN_DIR", "OMARCHY_PATH", "OPENCODE_CONFIG",
 	} {
 		vs[v] = true
 	}
@@ -92,10 +92,10 @@ func usable(name, v string) bool {
 	return false
 }
 
-// LookupEnv is os.LookupEnv for what magpie itself reads: a folder variable
+// LookupEnv is os.LookupEnv for what fogway itself reads: a folder variable
 // (pathVars) holding a relative path reads as unset, as the XDG spec asks of
-// one, so no file of magpie's or an agent's is written under the working
-// folder. The environment is left as it is: the programs magpie starts get
+// one, so no file of fogway's or an agent's is written under the working
+// folder. The environment is left as it is: the programs fogway starts get
 // the variable as the user set it. The variables a login shell lends the
 // desktop app (proc.UserPath) are read through here too.
 func LookupEnv(name string) (string, bool) {

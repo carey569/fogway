@@ -3,12 +3,12 @@ package provider
 import (
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // A model's price is set from the provider editor's Names & levels, with
-// its Save, as `magpie model price` sets it (ITea312 on #819: only the
+// its Save, as `fogway model price` sets it (ITea312 on #819: only the
 // price rate was in the window); OwnPrice gives it its list price back.
 // The agents aren't told: a price isn't what they pick a model by.
 func TestSetModelPrefsPrice(t *testing.T) {

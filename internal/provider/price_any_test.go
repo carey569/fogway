@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // dottedCatalog is a models.dev cache with Anthropic's models spelled as

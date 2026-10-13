@@ -11,9 +11,9 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/budget"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/budget"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func gatewayKeys(args []string) error { return gatewayKeysTo(os.Stdout, args) }
@@ -55,7 +55,7 @@ func gatewayKeysTo(out io.Writer, args []string) error {
 		args = args[:2]
 	}
 	if (action == "list" && len(args) != 1) || (action != "list" && len(args) != 2) {
-		return fmt.Errorf("usage: magpie gateway-key list | add <name> [--key <value> | --key -] | rotate <id> | remove <id> | limit <id> [off | day|week|month [--tokens N] [--cost USD] [--cache-reads]] | models <id> [all | <provider>/<model>|<provider>/* ...] | accounts <id> [all | <provider>/<account>|<provider>/<key id> ...]")
+		return fmt.Errorf("usage: fogway gateway-key list | add <name> [--key <value> | --key -] | rotate <id> | remove <id> | limit <id> [off | day|week|month [--tokens N] [--cost USD] [--cache-reads]] | models <id> [all | <provider>/<model>|<provider>/* ...] | accounts <id> [all | <provider>/<account>|<provider>/<key id> ...]")
 	}
 	switch action {
 	case "list", "add", "rotate", "remove":
@@ -117,12 +117,12 @@ func gatewayKeysTo(out io.Writer, args []string) error {
 
 // gatewayKeyLimit shows or sets a key's limit (#585):
 //
-//	magpie gateway-key limit <id>                       what it has used of its limit
-//	magpie gateway-key limit <id> off                   no limit
-//	magpie gateway-key limit <id> day|week|month|<N>d [--tokens N] [--cost USD] [--cache-reads]
-//	magpie gateway-key limit <id> reset                 count from 0 again, a new N-day cycle from now (#1509)
+//	fogway gateway-key limit <id>                       what it has used of its limit
+//	fogway gateway-key limit <id> off                   no limit
+//	fogway gateway-key limit <id> day|week|month|<N>d [--tokens N] [--cost USD] [--cache-reads]
+//	fogway gateway-key limit <id> reset                 count from 0 again, a new N-day cycle from now (#1509)
 func gatewayKeyLimit(out io.Writer, args []string) error {
-	usage := fmt.Errorf("usage: magpie gateway-key limit <id> [off | reset | day|week|month|<N>d [--tokens N] [--cost USD] [--cache-reads]]")
+	usage := fmt.Errorf("usage: fogway gateway-key limit <id> [off | reset | day|week|month|<N>d [--tokens N] [--cost USD] [--cache-reads]]")
 	if len(args) == 0 {
 		return usage
 	}
@@ -242,12 +242,12 @@ func gatewayKeyLimit(out io.Writer, args []string) error {
 
 // gatewayKeyModels shows or sets the models a key may use (#882):
 //
-//	magpie gateway-key models <id>                          the models it may use
-//	magpie gateway-key models <id> all                      every model
-//	magpie gateway-key models <id> openai/gpt-5 anthropic/*  only these
+//	fogway gateway-key models <id>                          the models it may use
+//	fogway gateway-key models <id> all                      every model
+//	fogway gateway-key models <id> openai/gpt-5 anthropic/*  only these
 func gatewayKeyModels(out io.Writer, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: magpie gateway-key models <id> [all | <provider>/<model>|<provider>/* ...]")
+		return fmt.Errorf("usage: fogway gateway-key models <id> [all | <provider>/<model>|<provider>/* ...]")
 	}
 	id := args[0]
 	if len(args) > 1 {
@@ -306,7 +306,7 @@ func limitWords(k access.Key, now time.Time) string {
 // account by its name, a key by its KeyID — every one when none are set.
 func gatewayKeyAccounts(out io.Writer, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: magpie gateway-key accounts <id> [all | <provider>/<account>|<provider>/<key id> ...]")
+		return fmt.Errorf("usage: fogway gateway-key accounts <id> [all | <provider>/<account>|<provider>/<key id> ...]")
 	}
 	id := args[0]
 	if len(args) > 1 {

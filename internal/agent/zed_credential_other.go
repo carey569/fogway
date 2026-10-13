@@ -13,7 +13,7 @@ import (
 
 	"github.com/godbus/dbus/v5"
 
-	"github.com/yetone/magpie/internal/proc"
+	"github.com/fogway/fogway/internal/proc"
 )
 
 func saveZedCredential(url string) error {
@@ -49,7 +49,7 @@ func zedAppPath(ctx context.Context) (string, error) {
 	paths := append([]string{
 		filepath.Join(home, "Applications", "Zed.app"), filepath.Join(home, "Applications", "Zed Preview.app"),
 	}, proc.SystemDirs("/Applications/Zed.app", "/Applications/Zed Preview.app")...)
-	binName := os.Getenv("MAGPIE_ZED_BIN")
+	binName := os.Getenv("FOGWAY_ZED_BIN")
 	if binName == "" {
 		binName = "zed"
 	}

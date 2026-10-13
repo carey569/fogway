@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// agentFiles reads every file under home but magpie's own (its settings,
+// agentFiles reads every file under home but fogway's own (its settings,
 // stash and caches): what an agent reads its config from.
 func agentFiles(t *testing.T, home string) map[string]string {
 	t.Helper()
@@ -20,7 +20,7 @@ func agentFiles(t *testing.T, home string) map[string]string {
 		}
 		rel, _ := filepath.Rel(home, p)
 		if e.IsDir() {
-			if rel == filepath.Join(".config", "magpie") || rel == ".cache" {
+			if rel == filepath.Join(".config", "fogway") || rel == ".cache" {
 				return filepath.SkipDir
 			}
 			return nil

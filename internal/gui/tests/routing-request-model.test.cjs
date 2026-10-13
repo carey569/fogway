@@ -56,7 +56,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const rows = page.locator(".rt-req");
       await rows.nth(fixtures.length - 1).waitFor();
       for (const width of [1920, 1320, 1240, 1100, 900, 420]) {

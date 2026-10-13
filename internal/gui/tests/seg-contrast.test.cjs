@@ -113,7 +113,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const gate = new Promise((r) => { release = r; });
         await page.route("**/*", server(lang, theme, gate));
         // the page as first drawn, app.js held back: already in its theme
-        const loaded = page.goto("http://magpie.test/");
+        const loaded = page.goto("http://fogway.test/");
         await page.waitForSelector("#nav", { state: "attached" });
         const first = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
         release();

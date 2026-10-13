@@ -1,11 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Share on local network in a container (莫 on Discord: magpie in Docker on
-// a NAS showed the container's own 172.17.x address): the addresses magpie
+// Share on local network in a container (莫 on Discord: fogway in Docker on
+// a NAS showed the container's own 172.17.x address): the addresses fogway
 // finds for itself there are the container's, which other devices can't
-// reach. Served over the network (magpie web), the page offers the host it
+// reach. Served over the network (fogway web), the page offers the host it
 // was opened at, on the gateway's port, and says so; opened at localhost it
 // keeps the container's addresses but says they are the container's own
-// and to set MAGPIE_PUBLIC_URL. Outside a container nothing changes. The
+// and to set FOGWAY_PUBLIC_URL. Outside a container nothing changes. The
 // OpenAI/Anthropic switch keeps the host and moves nothing. English and
 // Chinese, Chromium and WebKit; no backend, the API is faked here.
 const assert = require("node:assert/strict");
@@ -23,10 +23,10 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "/config/magpie", gateway: "http://0.0.0.0:3425",
+    version: "0.1.400", dir: "/config/fogway", gateway: "http://0.0.0.0:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [],
-    lan: true, lanKey: "sk-magpie-0123456789abcdef", lanURLs: ["http://172.17.0.2:3425"],
+    lan: true, lanKey: "sk-fogway-0123456789abcdef", lanURLs: ["http://172.17.0.2:3725"],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
     ...over,
   };
@@ -54,13 +54,13 @@ function server(lang, web, over) {
 const words = {
   en: {
     container: "In a container",
-    opened: "Where this page was opened, on the gateway’s port; MAGPIE_PUBLIC_URL sets another",
-    own: "The container’s own addresses, which other devices can’t reach: set MAGPIE_PUBLIC_URL to the host’s",
+    opened: "Where this page was opened, on the gateway’s port; FOGWAY_PUBLIC_URL sets another",
+    own: "The container’s own addresses, which other devices can’t reach: set FOGWAY_PUBLIC_URL to the host’s",
   },
   zh: {
     container: "在容器中运行",
-    opened: "打开本页所用的地址，端口为网关端口；可用 MAGPIE_PUBLIC_URL 另设",
-    own: "容器自身的地址，其他设备无法访问：请将 MAGPIE_PUBLIC_URL 设为宿主机地址",
+    opened: "打开本页所用的地址，端口为网关端口；可用 FOGWAY_PUBLIC_URL 另设",
+    own: "容器自身的地址，其他设备无法访问：请将 FOGWAY_PUBLIC_URL 设为宿主机地址",
   },
 };
 
@@ -96,10 +96,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     for (const lang of ["en", "zh"]) {
       const w = words[lang];
       await t.test(lang, async () => {
-        // magpie web, opened at the NAS's address: the gateway there
+        // fogway web, opened at the NAS's address: the gateway there
         {
-          const { page, errors } = await open(lang, "http://192.168.1.20:3430", true, { lanContainer: true });
-          assert.equal(await address(page), "http://192.168.1.20:3425/v1");
+          const { page, errors } = await open(lang, "http://192.168.1.20:3730", true, { lanContainer: true });
+          assert.equal(await address(page), "http://192.168.1.20:3725/v1");
           assert.equal((await note(page).locator(".name").textContent()).trim(), w.container);
           assert.equal((await note(page).locator(".sub").textContent()).trim(), w.opened);
           const scroll = () => page.locator("#view-settings").evaluate((v) => v.scrollTop);
@@ -116,7 +116,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const before = await scroll();
           assert(before > 0, "the settings must be scrolled to the switch");
           await anthropic.click();
-          assert.equal(await address(page), "http://192.168.1.20:3425");
+          assert.equal(await address(page), "http://192.168.1.20:3725");
           assert.equal(await scroll(), before, "the switch moved the page");
           const border = await note(page).evaluate((r) => getComputedStyle(r).borderLeftWidth);
           assert(border === "0px" || border === "", "no left border accent: " + border);
@@ -125,15 +125,15 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // opened at localhost (a tunnel, or on the NAS itself): the
         // container's address stays, said to be the container's own
         {
-          const { page, errors } = await open(lang, "http://localhost:3430", true, { lanContainer: true });
-          assert.equal(await address(page), "http://172.17.0.2:3425/v1");
+          const { page, errors } = await open(lang, "http://localhost:3730", true, { lanContainer: true });
+          assert.equal(await address(page), "http://172.17.0.2:3725/v1");
           assert.equal((await note(page).locator(".sub").textContent()).trim(), w.own);
           assert.deepEqual(errors, []);
         }
-        // not in a container (or MAGPIE_PUBLIC_URL set): as it was
+        // not in a container (or FOGWAY_PUBLIC_URL set): as it was
         {
-          const { page, errors } = await open(lang, "http://192.168.1.20:3430", true, { lanURLs: ["http://192.168.1.5:3425"] });
-          assert.equal(await address(page), "http://192.168.1.5:3425/v1");
+          const { page, errors } = await open(lang, "http://192.168.1.20:3730", true, { lanURLs: ["http://192.168.1.5:3725"] });
+          assert.equal(await address(page), "http://192.168.1.5:3725/v1");
           assert.equal(await note(page).count(), 0);
           assert.deepEqual(errors, []);
         }

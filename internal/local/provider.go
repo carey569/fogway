@@ -4,7 +4,7 @@ import (
 	"log"
 	"slices"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // ProviderID is the provider the gateway serves the local model under:

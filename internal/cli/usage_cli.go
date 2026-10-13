@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/fx"
-	"github.com/yetone/magpie/internal/settings"
-	stats "github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/fx"
+	"github.com/fogway/fogway/internal/settings"
+	stats "github.com/fogway/fogway/internal/usage"
 )
 
 // costCurrency and costRate are cost's currency and, for cny, the
@@ -36,7 +36,7 @@ func loadCostCurrency() {
 	}
 }
 
-// usageCmd: `magpie usage [today|7d|30d|all]` — tokens and cost per agent,
+// usageCmd: `fogway usage [today|7d|30d|all]` — tokens and cost per agent,
 // model, subscription account and session; with --csv, every request of the
 // period as CSV, one row each, to set beside a vendor's bill, and with
 // --account <name> too, only the calls that account answered (#557)
@@ -45,7 +45,7 @@ func usageCmd(args []string) error {
 }
 
 func usageTo(out io.Writer, args []string) error {
-	const how = "usage: magpie usage [--csv [--account <name>]] [today|7d|30d|all]"
+	const how = "usage: fogway usage [--csv [--account <name>]] [today|7d|30d|all]"
 	asCSV := false
 	if i := slices.Index(args, "--csv"); i > 0 {
 		asCSV, args = true, slices.Delete(slices.Clone(args), i, i+1)
@@ -80,14 +80,14 @@ func usageTo(out io.Writer, args []string) error {
 		return stats.WriteCSV(out, rows)
 	}
 	loadCostCurrency()
-	// s is the calls through magpie, d the calls the agents made on their
+	// s is the calls through fogway, d the calls the agents made on their
 	// own, read from their session files: the window's Requests tab counts
 	// them too (Kumo31 on Discord). Asked together, both are of one day when
 	// midnight falls while they are read.
 	s, d := stats.Summaries(period)
 	title := map[stats.Period]string{stats.Today: "today", stats.Week: "last 7 days", stats.Month: "last 30 days", stats.All: "all time"}[s.Period]
 	if s.Calls == 0 && d.Calls == 0 {
-		fmt.Fprintln(out, muted.Render("no calls "+title+" ·"), "route an agent through magpie and its usage shows up here")
+		fmt.Fprintln(out, muted.Render("no calls "+title+" ·"), "route an agent through fogway and its usage shows up here")
 		fmt.Fprintln(out, faint.Render("  "+stats.Path()))
 		return nil
 	}
@@ -96,13 +96,13 @@ func usageTo(out io.Writer, args []string) error {
 		names[a.ID] = a.Name
 	}
 	if s.Calls == 0 {
-		fmt.Fprintln(out, muted.Render("no calls through magpie "+title))
+		fmt.Fprintln(out, muted.Render("no calls through fogway "+title))
 	} else {
 		printUsage(out, s, title, names)
 	}
 	if d.Calls > 0 {
 		fmt.Fprintln(out)
-		fmt.Fprintln(out, muted.Render("not through magpie · the agents' own requests, read from their session files"))
+		fmt.Fprintln(out, muted.Render("not through fogway · the agents' own requests, read from their session files"))
 		printUsage(out, d, title, names)
 	}
 	fmt.Fprintln(out, faint.Render("  "+stats.Path()))

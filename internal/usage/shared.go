@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // ThisComputer is the Filter.Computer of the calls made here.

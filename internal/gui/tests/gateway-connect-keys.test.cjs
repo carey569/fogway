@@ -24,13 +24,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       };
       const expectSecret = (secret) => page.waitForFunction((secret) => document.querySelector("#connect .snip")?.textContent.includes(secret), secret);
       const row = (id) => page.locator(`#gatewayKeys .acc[data-key="${id}"]`);
-      await page.goto("http://magpie.test/?view=gateway");
+      await page.goto("http://fogway.test/?view=gateway");
       await snippet.waitFor();
       assert.equal(await page.locator("#connectAddress").count(), 0, "no LAN addresses before sharing is on");
       assert.equal(await page.locator("#gatewayKeysBlock").isVisible(), false, "most users never share");
       assert.equal(await page.locator("#connectKey").count(), 0, "local-only users see no gateway key picker");
       assert.equal(await page.locator("#connect").getByText(locale === "zh" ? "API 密钥" : "API key", { exact: true }).count(), 1);
-      await expectSecret('OPENAI_API_KEY=magpie');
+      await expectSecret('OPENAI_API_KEY=fogway');
       if (process.env.ARTIFACT_DIR) {
         await fs.mkdir(process.env.ARTIFACT_DIR, { recursive: true });
         await page.screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${locale}-local-connect.png`) });
@@ -49,9 +49,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.locator("#nav").getByRole("button", { name: w.gateway, exact: true }).click();
       await page.locator("#gatewayKeysBlock").waitFor({ state: "visible" });
       await page.locator("#connectKey").click();
-      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^Magpie$/ }).count(), 1);
-      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^magpie$/ }).count(), 0,
-        "the arbitrary local token must not look like a second named Magpie key");
+      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^Fogway$/ }).count(), 1);
+      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^fogway$/ }).count(), 0,
+        "the arbitrary local token must not look like a second named Fogway key");
       if (process.env.ARTIFACT_DIR) {
         await page.screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${locale}-shared-key-picker.png`) });
       }
@@ -94,9 +94,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.locator('#gatewayKeys .acc.off[data-key="work"]').waitFor();
       await page.locator("#connectKey").click();
       assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^Work$/ }).count(), 0);
-      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^Magpie$/ }).count(), 1,
-        "the default key is named Magpie");
-      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^magpie$/ }).count(), 0, "arbitrary loopback tokens cannot be selected for LAN");
+      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^Fogway$/ }).count(), 1,
+        "the default key is named Fogway");
+      assert.equal(await page.locator(".proto-menu .pm-name", { hasText: /^fogway$/ }).count(), 0, "arbitrary loopback tokens cannot be selected for LAN");
       await page.keyboard.press("Escape");
       await row("server").getByRole("button", { name: w.disable, exact: true }).click();
       await expectSecret("fixture-laptop");
@@ -114,7 +114,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const code = await snippet.textContent();
           assert(code.includes(base), `${api} ${dialect} must use the selected address`);
           assert(code.includes("fixture-server"), `${api} ${dialect} must use the selected key`);
-          assert(!code.includes('"magpie"'), "named key examples never fall back to magpie");
+          assert(!code.includes('"fogway"'), "named key examples never fall back to fogway");
         }
       }
       await row("server").locator(".rename").click();

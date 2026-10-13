@@ -10,7 +10,7 @@
 // order, the arrows, Home and End move along them); a click or a key on one
 // never scrolls the page; a part's controls still post what they did. The
 // tabs fit — on a line more when they must — in the smallest window (560 x
-// 420) at 100, 110 and 125% text size and in magpie web on a phone, nothing
+// 420) at 100, 110 and 125% text size and in fogway web on a phone, nothing
 // running off to the side. English and Chinese; no backend, the API is
 // faked here. ARTIFACT_DIR gets a screenshot of each size.
 const assert = require("node:assert/strict");
@@ -27,7 +27,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -117,7 +117,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.errors = [];
       page.on("pageerror", (e) => page.errors.push(e.message));
       await page.route("**/*", server(lang, posts, { web, size }));
-      await page.goto("http://magpie.test" + url);
+      await page.goto("http://fogway.test" + url);
       return page;
     };
 

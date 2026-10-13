@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // The tray menu is in the page's language: the setting, or the system's
@@ -47,7 +47,7 @@ func TestTrayMenuLabels(t *testing.T) {
 		}
 	}
 	de := trayMenuLabels("de", "0.1.500", "0.1.501")
-	if de != (trayLabels{"magpie öffnen", "Version 0.1.500", "Zum Aktualisieren auf 0.1.501 neu starten", "magpie beenden"}) {
+	if de != (trayLabels{"fogway öffnen", "Version 0.1.500", "Zum Aktualisieren auf 0.1.501 neu starten", "fogway beenden"}) {
 		t.Errorf("de: %+v", de)
 	}
 	for lang, want := range map[string]string{"de": "en", "en": "en", "zh": "zh", "zh-TW": "zh"} {
@@ -56,20 +56,20 @@ func TestTrayMenuLabels(t *testing.T) {
 		}
 	}
 	zh := trayMenuLabels("zh", "0.1.500", "")
-	if zh != (trayLabels{"打开 magpie", "版本 0.1.500", "重启以更新", "退出 magpie"}) {
+	if zh != (trayLabels{"打开 fogway", "版本 0.1.500", "重启以更新", "退出 fogway"}) {
 		t.Errorf("zh: %+v", zh)
 	}
-	if tw := trayMenuLabels("zh-TW", "0.1.500", "0.1.501"); tw != (trayLabels{"開啟 magpie", "版本 0.1.500", "重新啟動以更新到 0.1.501", "結束 magpie"}) {
+	if tw := trayMenuLabels("zh-TW", "0.1.500", "0.1.501"); tw != (trayLabels{"開啟 fogway", "版本 0.1.500", "重新啟動以更新到 0.1.501", "結束 fogway"}) {
 		t.Errorf("zh-TW: %+v", tw)
 	}
-	if ja := trayMenuLabels("ja", "0.1.500", ""); ja != (trayLabels{"magpie を開く", "バージョン 0.1.500", "再起動してアップデート", "magpie を終了"}) {
+	if ja := trayMenuLabels("ja", "0.1.500", ""); ja != (trayLabels{"fogway を開く", "バージョン 0.1.500", "再起動してアップデート", "fogway を終了"}) {
 		t.Errorf("ja: %+v", ja)
 	}
 	if l := trayMenuLabels("zh", "0.1.500", "0.1.501"); l.restart != "重启以更新到 0.1.501" {
 		t.Errorf("zh restart: %q", l.restart)
 	}
 	en := trayMenuLabels("en", "0.1.500", "0.1.501")
-	if en != (trayLabels{"Open magpie", "Version 0.1.500", "Restart to Update to 0.1.501", "Quit magpie"}) {
+	if en != (trayLabels{"Open fogway", "Version 0.1.500", "Restart to Update to 0.1.501", "Quit fogway"}) {
 		t.Errorf("en: %+v", en)
 	}
 	env := map[string]string{"LC_ALL": "C", "LANG": "zh_CN.UTF-8"}
@@ -113,7 +113,7 @@ func TestSettingsLangRelabelsTray(t *testing.T) {
 	if calls != 1 {
 		t.Fatalf("relabelled %d times after en → zh, want 1", calls)
 	}
-	if l := trayMenuLabels(trayLang(settings.Load().Lang, systemLang), "1", ""); l.quit != "退出 magpie" {
+	if l := trayMenuLabels(trayLang(settings.Load().Lang, systemLang), "1", ""); l.quit != "退出 fogway" {
 		t.Fatalf("after the change the menu reads %+v", l)
 	}
 }

@@ -9,7 +9,7 @@
 // A click opens the window's Routing page on that request and leaves the
 // panel where it is; the window opened so has that request picked. Over the
 // list a small stage (#feedback: 这个页面有点乱…迷你版的路由动画): the agents
-// that asked lately, magpie and where their requests went, each new request
+// that asked lately, fogway and where their requests went, each new request
 // a dot flying there and back; the rows' times and totals line up on the
 // right, with one mark for how each went. No backend: the API is faked here.
 const assert = require("node:assert/strict");
@@ -97,7 +97,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // a short panel, so its page scrolls
       const opened = [];
-      const page = await open("http://magpie.test/?mode=panel", { width: 440, height: 300 }, opened);
+      const page = await open("http://fogway.test/?mode=panel", { width: 440, height: 300 }, opened);
       const tab = page.locator('[data-ptab="routing"]');
       assert.equal((await tab.textContent()).trim(), want[lang].tab);
       assert.equal((await page.locator('[data-ptab="usage"]').textContent()).trim(), want[lang].quota, "the allowances' tab says what it shows");
@@ -138,7 +138,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(marks, 1);
       }
 
-      // the stage: the agents that asked, magpie, the accounts they went to
+      // the stage: the agents that asked, fogway, the accounts they went to
       const stage = await page.locator(".pr-stage").evaluate((s) => ({
         from: [...s.querySelectorAll(".ps-ag .ps-name")].map((e) => e.textContent),
         to: [...s.querySelectorAll(".ps-dst")].map((e) => e.querySelector(".ps-name").textContent + ":" + e.className.split(" ").pop()),
@@ -183,7 +183,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the window opened so: that request picked, its story told, and the
       // address no longer asking for it
-      const win = await open("http://magpie.test/?view=routing&req=101", { width: 1100, height: 760 }, []);
+      const win = await open("http://fogway.test/?view=routing&req=101", { width: 1100, height: 760 }, []);
       await win.locator(".rt-req").nth(routes.length - 1).waitFor();
       await win.waitForFunction(() => !location.search.includes("req="));
       const picked = await win.locator('.rt-req[aria-pressed="true"]').evaluateAll((rs) => rs.map((r) => r.querySelector(".to").textContent));
@@ -197,7 +197,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         tries: [ok(claude, 0)], done: true, status: 200, ms: 900, tokens: 500 };
       let show;
       live.shown = new Promise((r) => { show = r; }); // it comes once the tab is shown
-      const lp = await open("http://magpie.test/?mode=panel", { width: 440, height: 640 }, [], live);
+      const lp = await open("http://fogway.test/?mode=panel", { width: 440, height: 640 }, [], live);
       await lp.locator('[data-ptab="routing"]').click();
       await lp.locator(".pr-stage").waitFor();
       show();

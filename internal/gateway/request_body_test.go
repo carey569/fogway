@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/klauspost/compress/zstd"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 const oldBodyLimit = 64 << 20

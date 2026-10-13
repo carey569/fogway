@@ -11,8 +11,8 @@ func TestTermuxOpenInBrowser(t *testing.T) {
 	dir := t.TempDir()
 	out := filepath.Join(dir, "url")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	t.Setenv("MAGPIE_BROWSER_TEST", out)
-	script := "#!/system/bin/sh\n[ \"$#\" = 1 ] || exit 1\nprintf '%s' \"$1\" > \"$MAGPIE_BROWSER_TEST\"\n"
+	t.Setenv("FOGWAY_BROWSER_TEST", out)
+	script := "#!/system/bin/sh\n[ \"$#\" = 1 ] || exit 1\nprintf '%s' \"$1\" > \"$FOGWAY_BROWSER_TEST\"\n"
 	if err := os.WriteFile(filepath.Join(dir, "termux-open-url"), []byte(script), 0o700); err != nil {
 		t.Fatal(err)
 	}

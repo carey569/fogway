@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 func TestZedCredentialCommand(t *testing.T) {
@@ -38,7 +38,7 @@ func TestZedCredentialCommand(t *testing.T) {
 	if err := saveZedCredential(url); err != nil {
 		t.Fatal(err)
 	}
-	want := "add-internet-password\n-U\n-T\n" + app + "\n-T\n/usr/bin/security\n-s\n" + url + "\n-a\nBearer\n-w\nmagpie-zed\n"
+	want := "add-internet-password\n-U\n-T\n" + app + "\n-T\n/usr/bin/security\n-s\n" + url + "\n-a\nBearer\n-w\nfogway-zed\n"
 	if got := readFile(args); got != want {
 		t.Fatalf("credential arguments: %q, want %q", got, want)
 	}
@@ -87,7 +87,7 @@ func TestZedAppPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("MAGPIE_ZED_BIN", customBin)
+	t.Setenv("FOGWAY_ZED_BIN", customBin)
 	if got, err := zedAppPath(context.Background()); err != nil || got != customEnv {
 		t.Fatalf("custom configured bundle: %q, %v", got, err)
 	}

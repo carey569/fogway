@@ -61,7 +61,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, left));
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         const stage = (who) => page.locator("li", { has: page.locator(".who", { hasText: who }) }).first();
         await stage("spare@example.com").locator("em").filter({ hasText: w.spare }).waitFor();
         assert.equal((await stage("spare@example.com").locator("em").textContent()).trim(), w.spare);

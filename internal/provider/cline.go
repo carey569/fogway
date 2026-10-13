@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
-// ClineVersion is the Cline desktop release magpie says it is to the Cline
+// ClineVersion is the Cline desktop release fogway says it is to the Cline
 // API.
 const ClineVersion = "3.5.54"
 
@@ -173,7 +173,7 @@ func (p Provider) clineFreeModel(model string) bool {
 // ClinePinnable reports whether p's requests reach Cline's API and can be
 // pinned to an upstream (PinUpstream): the ClinePass provider, one on
 // cline.bot, or the Cline plugin's (@magpie-community/opencode-cline-auth),
-// whose requests magpie writes before the plugin sends them on.
+// whose requests fogway writes before the plugin sends them on.
 func (p Provider) ClinePinnable() bool {
 	return p.IsCline()
 }

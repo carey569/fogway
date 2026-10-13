@@ -61,7 +61,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         return all[n - 1].body;
       };
       const addNew = async (name) => {
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#addProvider").click();
         await page.locator("#addSheet .custom-foot .custom").click();
         await baseURL.waitFor();
@@ -94,7 +94,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(body.baseAPI, "responses");
 
       // saved: a new chat URL typed, then Anthropic's typed after it
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator('#providers .row[data-id="plain"]').click();
       await baseURL.waitFor();
       await baseURL.fill(ROOT + "/v2");

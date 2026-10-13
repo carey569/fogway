@@ -6,15 +6,15 @@ import (
 )
 
 func TestJSONItemEditsPreserveInvalidFiles(t *testing.T) {
-	where := map[string]string{"name": "magpie"}
+	where := map[string]string{"name": "fogway"}
 	for _, input := range []string{
-		`[{"name":"magpie"}, {"name":]`,
-		`[{"name":"magpie"} {"name":"keep"}]`,
-		`[{"name":"magpie"}] [{"name":"keep"}]`,
+		`[{"name":"fogway"}, {"name":]`,
+		`[{"name":"fogway"} {"name":"keep"}]`,
+		`[{"name":"fogway"}] [{"name":"keep"}]`,
 	} {
 		for name, edit := range map[string]func(string) error{
 			"set": func(p string) error {
-				return SetJSONItem(p, where, map[string]string{"name": "magpie", "model": "new"})
+				return SetJSONItem(p, where, map[string]string{"name": "fogway", "model": "new"})
 			},
 			"delete": func(p string) error { return DelJSONItem(p, where) },
 		} {

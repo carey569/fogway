@@ -47,8 +47,8 @@ func TestWorkBuddyCalls(t *testing.T) {
 	// m1 (its assistant message and its last function call both carry the
 	// usage, so it must count once), m2, the reply the user's own custom
 	// provider answered, and three brought over from the older history. The
-	// one magpie's gateway answered is the gateway's to count
-	// (TestWorkBuddyCallsSkipsMagpiesGateway), not read here as well.
+	// one fogway's gateway answered is the gateway's to count
+	// (TestWorkBuddyCallsSkipsFogwaysGateway), not read here as well.
 	if len(cs) != 6 {
 		t.Fatalf("want 6 WorkBuddy calls, got %d: %+v", len(cs), cs)
 	}
@@ -83,18 +83,18 @@ func TestWorkBuddyCalls(t *testing.T) {
 	}
 }
 
-// A call WorkBuddy made to magpie's gateway is the gateway's record to keep,
+// A call WorkBuddy made to fogway's gateway is the gateway's record to keep,
 // not this one's: the gateway logs it with the provider and account that
 // really answered, and nothing here can pair the two, so reading it would
 // count the call twice — once as the gateway's and once as a nameless local
 // session's. A model the user pointed at another address in the same picker
 // ("custom-local:…" as well) is still read: only a routing group's name, or
-// magpie's own entry in models.json, says a call went to the gateway.
-func TestWorkBuddyCallsSkipsMagpiesGateway(t *testing.T) {
+// fogway's own entry in models.json, says a call went to the gateway.
+func TestWorkBuddyCallsSkipsFogwaysGateway(t *testing.T) {
 	setupAgents(t)
 	cs := workbuddyCalls(t)
 	if _, dup := cs["wm1"]; dup {
-		t.Fatalf("a call made to magpie's gateway was read from the file too: %+v", cs["wm1"])
+		t.Fatalf("a call made to fogway's gateway was read from the file too: %+v", cs["wm1"])
 	}
 	m, ok := cs["wm2"]
 	if !ok {

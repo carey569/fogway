@@ -7,7 +7,7 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Claude Code (2.1.288) asks Anthropic's API for what its newest models
@@ -23,9 +23,9 @@ import (
 //
 // Claude Code mends either after the 400, once per conversation, sending
 // the request again without it; every new conversation asks again, and a
-// relay's refusal is an error in magpie's log each time. magpie mends it
+// relay's refusal is an error in fogway's log each time. fogway mends it
 // itself instead: the provider that refused is asked again at once without
-// it, and is not sent it again while magpie runs. A provider that takes
+// it, and is not sent it again while fogway runs. A provider that takes
 // them (Anthropic's own API, a relay passing them on) is sent them as the
 // agent wrote them.
 //

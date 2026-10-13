@@ -26,7 +26,7 @@ func (b *busyThenAnswers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, chatStreamOK)
 }
 
-// What of Sent was whose: the try that failed first is not magpie's, nor
+// What of Sent was whose: the try that failed first is not fogway's, nor
 // a wait for a slot, nor connecting and sending the body.
 func TestSplitSent(t *testing.T) {
 	start := time.Unix(1000, 0)

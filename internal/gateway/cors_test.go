@@ -8,10 +8,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // A web page the user listed in Settings (#1051, SkyAerope: a preflight
@@ -35,7 +35,7 @@ func TestCORSOrigins(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := New().Handler()
-	// from this computer, as a browser on it calls 127.0.0.1:3425
+	// from this computer, as a browser on it calls 127.0.0.1:3725
 	do := func(method, path, origin, key string, hdr map[string]string) *httptest.ResponseRecorder {
 		t.Helper()
 		var body io.Reader
@@ -90,7 +90,7 @@ func TestCORSOrigins(t *testing.T) {
 	}
 	// without one, or with a key that isn't a gateway key, it is refused —
 	// readably, so the page can say why
-	for _, key := range []string{"", "magpie", "sk-magpie-not-a-key"} {
+	for _, key := range []string{"", "fogway", "sk-fogway-not-a-key"} {
 		w := do("POST", "/v1/chat/completions", "http://localhost:3000", key, nil)
 		if w.Code != http.StatusUnauthorized || w.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" || !strings.Contains(w.Body.String(), "gateway key") {
 			t.Errorf("key %q: %d %v %s", key, w.Code, w.Header(), w.Body)
@@ -121,7 +121,7 @@ func TestCORSOrigins(t *testing.T) {
 }
 
 // On the real server lanGuard sits in front of Handler and, for a gateway
-// key sent from this computer, records who called and puts magpie's own
+// key sent from this computer, records who called and puts fogway's own
 // token in the key's place; a listed page's keyed call is still answered.
 func TestCORSKeyThroughTheServer(t *testing.T) {
 	fresh(t)
@@ -149,7 +149,7 @@ func TestCORSKeyThroughTheServer(t *testing.T) {
 	for _, key := range []string{secret, ""} {
 		r := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(chatReq))
 		r.RemoteAddr = "127.0.0.1:50123"
-		r.Host = "127.0.0.1:3425"
+		r.Host = "127.0.0.1:3725"
 		r.Header.Set("Origin", "http://localhost:3000")
 		r.Header.Set("Content-Type", "application/json")
 		r.Header.Set(SessionHeader, "browser-chat")
@@ -206,7 +206,7 @@ func TestCORSExtensionOrigin(t *testing.T) {
 		}
 		r := httptest.NewRequest(method, "/v1/chat/completions", body)
 		r.RemoteAddr = "127.0.0.1:50123"
-		r.Host = "127.0.0.1:3425"
+		r.Host = "127.0.0.1:3725"
 		r.Header.Set("Origin", origin)
 		r.Header.Set("Sec-Fetch-Mode", "cors")
 		r.Header.Set("User-Agent", "Mozilla/5.0 Chrome/140.0")

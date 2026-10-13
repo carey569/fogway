@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-// ranBefore are files a magpie (or the dial before it, copied over by
+// ranBefore are files a fogway (or the dial before it, copied over by
 // Migrate) leaves in Dir once it has run: its settings, a provider, an
 // account, the version it last ran as, the library, a profile, a plugin,
 // an agent's stashed config, a request served, the id stats send.
@@ -15,7 +15,7 @@ var ranBefore = []string{
 	"usage.jsonl", "migrations.json", "install-id",
 }
 
-// RanBefore is whether a magpie has run here before: one of ranBefore's
+// RanBefore is whether a fogway has run here before: one of ranBefore's
 // files is in Dir. It is asked at start, after Migrate and before anything
 // writes into Dir. A file that can't be looked at counts as there:
 // unknown is never new.

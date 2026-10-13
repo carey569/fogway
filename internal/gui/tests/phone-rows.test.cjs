@@ -42,8 +42,8 @@ const calls = [0, 1, 2].map((i) => ({
   status: 200, ms: 6900, ttft: 6800,
 }));
 const keys = [
-  { id: "laptop", name: "MacBook Pro", masked: "sk-magpie-key-…111111" },
-  { id: "phone", name: "iPhone", masked: "sk-magpie-key-…222222" },
+  { id: "laptop", name: "MacBook Pro", masked: "sk-fogway-key-…111111" },
+  { id: "phone", name: "iPhone", masked: "sk-fogway-key-…222222" },
 ];
 const or = { id: "openrouter", provider: "openrouter", name: "OpenRouter International", kind: "provider", model: "anthropic/claude-opus-4.5" };
 const routes = [0, 1, 2].map((i) => ({
@@ -63,9 +63,9 @@ function serve(lang) {
     if (url.pathname === "/api/state") return json(state);
     if (url.pathname === "/api/providers") return json({
       providers, presets: [], excluded: [],
-      gateway: { running: true, window: true, mine: true, url: "http://magpie.example.ts.net:3425", lan: true, lanURLs: ["http://192.168.1.10:3425"], calls, groups: [] },
+      gateway: { running: true, window: true, mine: true, url: "http://fogway.example.ts.net:3725", lan: true, lanURLs: ["http://192.168.1.10:3725"], calls, groups: [] },
     });
-    if (url.pathname === "/api/settings") return json({ lang, theme: "light", lan: true, lanURLs: ["http://192.168.1.10:3425"] });
+    if (url.pathname === "/api/settings") return json({ lang, theme: "light", lan: true, lanURLs: ["http://192.168.1.10:3725"] });
     if (url.pathname === "/api/caller-keys") return json({ keys });
     if (url.pathname === "/api/gateway/trace") {
       if (url.searchParams.get("wait")) await new Promise((r) => setTimeout(r, 20e3));
@@ -135,7 +135,7 @@ for (const engine of engines) {
         const page = await context.newPage();
         page.setDefaultTimeout(6000);
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/?view=" + p.view);
+        await page.goto("http://fogway.test/?view=" + p.view);
         await page.waitForSelector(p.wait, { timeout: 15000 });
         if (p.open) { await p.open(page); await page.waitForSelector(p.then); }
         if (p.view === "gateway") await page.waitForSelector("#gwModels .row.model");

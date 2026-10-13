@@ -140,7 +140,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       };
 
       const asked = [], opened = [];
-      const p = await open("http://magpie.test/?mode=panel", { width: 440, height: 340 }, asked, opened);
+      const p = await open("http://fogway.test/?mode=panel", { width: 440, height: 340 }, asked, opened);
       assert.equal((await p.locator('[data-ptab="stats"]').textContent()).trim(), w.tab);
       assert.equal((await p.locator('[data-ptab="usage"]').textContent()).trim(), w.quota, "the allowances keep their tab");
       await p.locator('[data-ptab="usage"][hidden]').waitFor({state:"attached"});
@@ -260,9 +260,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const context = await browser.newContext({ viewport: { width: 440, height: 760 }, reducedMotion: "reduce" });
         const shot = await context.newPage();
         shot.setDefaultTimeout(5000);
-        await shot.addInitScript(() => { localStorage.setItem("magpie.panelTab", "stats"); localStorage.setItem("magpie.panelUsePeriod", "7d"); });
+        await shot.addInitScript(() => { localStorage.setItem("fogway.panelTab", "stats"); localStorage.setItem("fogway.panelUsePeriod", "7d"); });
         await shot.route("**/*", serve(lang, [], []));
-        await shot.goto("http://magpie.test/?mode=panel");
+        await shot.goto("http://fogway.test/?mode=panel");
         await shot.locator("#panelUsage .led-day").nth(4).click();
         await shot.locator('#panelUsage .led-day[aria-pressed="true"]').waitFor();
         await shot.mouse.move(2, 2);
@@ -392,9 +392,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       pages.push(q);
       q.setDefaultTimeout(5000);
       q.on("pageerror", (e) => again.push(e.message));
-      await q.addInitScript(() => { try { localStorage.setItem("magpie.panelTab", "stats"); } catch {} });
+      await q.addInitScript(() => { try { localStorage.setItem("fogway.panelTab", "stats"); } catch {} });
       await q.route("**/*", serve(lang, [], []));
-      await q.goto("http://magpie.test/?mode=panel");
+      await q.goto("http://fogway.test/?mode=panel");
       await q.locator("#panelUsage .pu-tot").waitFor();
       assert.equal(await q.locator('#ptabs [data-ptab="stats"]').getAttribute("aria-selected"), "true");
       assert.deepEqual(again, [], "the panel failed to load on the Usage tab");
@@ -407,9 +407,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const x = await (await browser.newContext({ viewport: { width: 440, height: 500 }, reducedMotion: "reduce" })).newPage();
         pages.push(x);
         x.on("pageerror", (e) => failed.push(e.message));
-        await x.addInitScript((t) => { try { localStorage.setItem("magpie.panelTab", t); } catch {} }, tab);
+        await x.addInitScript((t) => { try { localStorage.setItem("fogway.panelTab", t); } catch {} }, tab);
         await x.route("**/*", serve(lang, [], []));
-        await x.goto("http://magpie.test/?mode=panel");
+        await x.goto("http://fogway.test/?mode=panel");
         // the Allowances tab stays until the allowances are read and none
         // are there (an answer not come yet isn't none)
         await x.locator('#ptabs [data-ptab="usage"][hidden]').waitFor({ state: "attached" });
@@ -419,7 +419,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       }
 
       // the window opened from the panel: the Requests tab, on that provider and agent
-      const w2 = await open("http://magpie.test/?view=usage&tab=requests&provider=relay&agent=codex", { width: 1100, height: 700 }, (asked.length = 0, asked), opened);
+      const w2 = await open("http://fogway.test/?view=usage&tab=requests&provider=relay&agent=codex", { width: 1100, height: 700 }, (asked.length = 0, asked), opened);
       await w2.locator("#ledWrap, #ledDash").first().waitFor({ state: "attached" });
       await settled(asked, (q) => q.get("provider") === "relay" && q.get("agent") === "codex");
       assert.equal(await w2.locator("#usageTab .opt.on").textContent(), lang === "zh" ? "请求" : "Requests");

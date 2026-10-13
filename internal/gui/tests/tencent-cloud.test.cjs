@@ -6,7 +6,7 @@
 // The add sheet has one Tencent Cloud tile and no TokenHub; its editor picks
 // the region with the segmented control, never a <select>, and a region
 // picked takes its endpoints, its Get a key page and its docs link. A
-// provider an older magpie saved under an old preset's id (tencent-tokenhub-cn)
+// provider an older fogway saved under an old preset's id (tencent-tokenhub-cn)
 // opens at its region and is saved under its own id. English and Chinese;
 // no backend, the API is faked here.
 const assert = require("node:assert/strict");
@@ -36,7 +36,7 @@ const tencent = (added) => ({
     { id: "enterprise", name: "Enterprise plan · China", ...ent }, { id: "enterprise-intl", name: "Enterprise plan · Global", ...entIntl }],
 });
 const deepseek = { id: "deepseek", name: "DeepSeek", icon: "deepseek", kind: "vendor", chat: "https://api.deepseek.com/v1", added: false };
-// saved by an older magpie as TokenHub China, its preset id since rewritten
+// saved by an older fogway as TokenHub China, its preset id since rewritten
 const old = {
   id: "tencent-tokenhub-cn", name: "Tencent Cloud TokenHub", icon: "tencentcloud-color", preset: "tencent-cloud",
   chat: cn.chat, responses: cn.responses, anthropic: cn.anthropic, catalog: cn.catalog, website: cn.website, keysUrl: cn.keysUrl,
@@ -88,7 +88,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const posts = [];
       await page.route("**/*", serve(lang, list, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       return { page, errors, posts };
     };
     const ed = (page) => page.locator("#modal .editor");

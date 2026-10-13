@@ -56,13 +56,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       let refusing = true;
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts, () => refusing));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const zh = lang === "zh";
       const L = {
         custom: zh ? "自定义供应商" : "Custom provider", fetch: zh ? "获取模型" : "Fetch models", all: zh ? "全选" : "Pick all",
         shown: zh ? "选中筛选结果" : "Pick those shown", none: zh ? "全不选" : "Pick none", add: zh ? "添加" : "Add",
         picked: (n, all) => zh ? `已选 ${n} / ${all}` : `${n} of ${all} picked`,
-        hint: zh ? "可选：用「获取模型」从供应商列表中勾选，或直接填写模型 ID；不选则保存后自动获取模型列表。" : "Optional: Fetch models to pick from the vendor's list, or type ids; none picked, magpie asks for the list after saving.",
+        hint: zh ? "可选：用「获取模型」从供应商列表中勾选，或直接填写模型 ID；不选则保存后自动获取模型列表。" : "Optional: Fetch models to pick from the vendor's list, or type ids; none picked, fogway asks for the list after saving.",
       };
       await page.locator("#addProvider").click();
       await page.locator("#addSheet .custom-foot .custom").click();

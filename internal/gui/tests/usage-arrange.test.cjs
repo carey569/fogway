@@ -70,12 +70,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.goto(url);
         return page;
       };
-      const page = await open("usage", "http://magpie.test/?view=usage", { width: 1100, height: 760 });
+      const page = await open("usage", "http://fogway.test/?view=usage", { width: 1100, height: 760 });
       const cards = page.locator("#subscriptionUsage > .subscription-card");
       const order = () => cards.evaluateAll((cs) => cs.map((c) => c.dataset.key));
       const handle = (key) => page.locator(`#subscriptionUsage > [data-key="${key}"] .us-handle`);
       await handle("kimi").waitFor();
-      assert.deepEqual(await order(), ["codex", "claude", "kimi", "zai"], "magpie's own order first");
+      assert.deepEqual(await order(), ["codex", "claude", "kimi", "zai"], "fogway's own order first");
 
       // the grip only while the pointer is on the card
       const grip = (key) => handle(key).evaluate((h) => getComputedStyle(h, "::before").opacity);
@@ -121,7 +121,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.reload();
       await handle("kimi").waitFor();
       assert.deepEqual(await order(), ["kimi", "codex", "claude", "zai"]);
-      const panel = await open("panel", "http://magpie.test/?mode=panel", { width: 400, height: 680 });
+      const panel = await open("panel", "http://fogway.test/?mode=panel", { width: 400, height: 680 });
       await panel.locator('#ptabs [data-ptab="usage"]').click();
       await panel.locator("#panelQuota .pq-gn").first().waitFor();
       assert.deepEqual(await panel.locator("#panelQuota .pq-gn").allTextContents(), ["Kimi", "Codex", "Claude", "Z.ai"]);

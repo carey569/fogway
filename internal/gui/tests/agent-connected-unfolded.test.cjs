@@ -7,7 +7,7 @@
 // not connected fold under Not set up whatever their own files say; one
 // with no switch (Cursor) still goes by what is set on it. While none is
 // connected nothing folds: Cursor on its own auto doesn't fold the rest
-// away on a fresh magpie. Chromium and WebKit, English and Chinese.
+// away on a fresh fogway. Chromium and WebKit, English and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -18,7 +18,7 @@ const assets = path.resolve(__dirname, "../assets");
 
 const ref = (v) => ({ value: v, label: v, ref: v });
 const own = (v) => ({ value: v, label: v });
-// an agent 「接入」 can connect: its model picker lists magpie's models
+// an agent 「接入」 can connect: its model picker lists fogway's models
 const agent = (id, name, { wired = false, value = "" } = {}) => ({
   id, name, path: "/test/" + id, wired,
   fields: [{ key: "model", label: "model", value, options: [ref("sub/gpt-6.1-sol"), ref("sub/opus-5.5")] }],
@@ -65,7 +65,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('.row.agent[data-id="claude"]').waitFor();
         const rows = () => page.evaluate(() => {
           const ids = (sel) => [...document.querySelectorAll(sel)].map((r) => r.dataset.id);
@@ -99,7 +99,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", serve("en", AGENTS.map((a) => ({ ...a, wired: false }))));
-    await page.goto("http://magpie.test/");
+    await page.goto("http://fogway.test/");
     await page.locator('.row.agent[data-id="claude"]').waitFor();
     const r = await page.evaluate(() => ({
       rows: [...document.querySelectorAll("#agents .row.agent[data-id]")].map((x) => x.dataset.id),

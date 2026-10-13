@@ -50,8 +50,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
-      await page.addInitScript(() => { localStorage.setItem("magpie.usageTab", "sessions"); localStorage.setItem("magpie.sessRange", "all"); });
-      await page.goto("http://magpie.test/?view=usage");
+      await page.addInitScript(() => { localStorage.setItem("fogway.usageTab", "sessions"); localStorage.setItem("fogway.sessRange", "all"); });
+      await page.goto("http://fogway.test/?view=usage");
       const strip = page.locator("#sessAgent");
       await page.waitForFunction((n) => document.querySelectorAll("#sessAgent .opt").length === n, names.length + 1);
       const settle = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));

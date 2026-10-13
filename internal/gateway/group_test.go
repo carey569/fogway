@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // keyed is a vendor that says which key each request came with, and
@@ -144,7 +144,7 @@ func TestOpenRouterSharedPoolDirectReplyHidesRoutingHeader(t *testing.T) {
 	if rec.Code != http.StatusTooManyRequests {
 		t.Fatalf("direct reply: %d %s", rec.Code, rec.Body.String())
 	}
-	if got := rec.Header().Get("X-Magpie-OpenRouter-Limit-Source"); got != "" {
+	if got := rec.Header().Get("X-Fogway-OpenRouter-Limit-Source"); got != "" {
 		t.Fatalf("internal routing header leaked: %q", got)
 	}
 }
@@ -177,7 +177,7 @@ func TestOpenRouterFreeAccountRateLimitKeepsProviderRest(t *testing.T) {
 	}
 }
 
-// A model two providers serve is a group magpie finds; a group the user
+// A model two providers serve is a group fogway finds; a group the user
 // makes routes over its members in the order it names them, the next one
 // taking a request the one before can't.
 func TestRoutingGroups(t *testing.T) {
@@ -212,7 +212,7 @@ func TestRoutingGroups(t *testing.T) {
 		t.Fatalf("trace: %+v", r)
 	}
 
-	// removing one magpie found hides it; showing it brings it back
+	// removing one fogway found hides it; showing it brings it back
 	if err := provider.DeleteGroup("auto-m"); err != nil {
 		t.Fatal(err)
 	}

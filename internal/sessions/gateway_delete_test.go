@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// A session magpie recorded nothing of is trashed with an empty list of
+// A session fogway recorded nothing of is trashed with an empty list of
 // items, not null: the Trash page reads the list (found in a real try, where
 // null broke the page).
 func TestGatewayDeleteNothingRecorded(t *testing.T) {

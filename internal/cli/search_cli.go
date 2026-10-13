@@ -5,18 +5,18 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// The web search APIs, from the terminal: magpie search (#419).
+// The web search APIs, from the terminal: fogway search (#419).
 
 const searchUsage = `usage:
-  magpie search                              the search APIs a model's web search goes to
-  magpie search add <api> <key> [url=<address>]   add one, or give one a new key
+  fogway search                              the search APIs a model's web search goes to
+  fogway search add <api> <key> [url=<address>]   add one, or give one a new key
                                              (several keys as k1,k2: the next is tried when one is refused)
-  magpie search add searxng url=<address> [<key>]
-  magpie search add you [<key>]              You.com: free with no key (100 searches a day)
-  magpie search rm <api>                     take one away
+  fogway search add searxng url=<address> [<key>]
+  fogway search add you [<key>]              You.com: free with no key (100 searches a day)
+  fogway search rm <api>                     take one away
 
   apis: tavily, brave, exa, firecrawl, you, searxng
 
@@ -31,15 +31,15 @@ const searchUsage = `usage:
   added: what they find goes to the model as it is, and no model is asked to read it.
   Without any of them, the client's search is left out.
 
-  e.g. magpie search add tavily tvly-…
-       magpie search add searxng url=https://searx.example.com
-       magpie search add you`
+  e.g. fogway search add tavily tvly-…
+       fogway search add searxng url=https://searx.example.com
+       fogway search add you`
 
 func searchCmd(args []string) error {
 	if len(args) == 0 {
 		as := provider.StoredSearchAPIs()
 		if len(as) == 0 {
-			fmt.Println(muted.Render("  no search API · magpie search add <tavily|brave|exa|firecrawl|you|searxng> <key>"))
+			fmt.Println(muted.Render("  no search API · fogway search add <tavily|brave|exa|firecrawl|you|searxng> <key>"))
 			return nil
 		}
 		for i, a := range as {
@@ -64,7 +64,7 @@ func searchCmd(args []string) error {
 		return nil
 	case "add", "set":
 		if len(args) < 2 {
-			return fmt.Errorf("magpie search add <api> <key> [url=<address>]")
+			return fmt.Errorf("fogway search add <api> <key> [url=<address>]")
 		}
 		a := provider.SearchAPI{Vendor: strings.ToLower(args[1])}
 		// a new key alone keeps the address set before (#1580); url= with
@@ -76,7 +76,7 @@ func searchCmd(args []string) error {
 			} else if a.Key == "" {
 				a.Key = v
 			} else {
-				return fmt.Errorf("magpie search add <api> <key> [url=<address>]")
+				return fmt.Errorf("fogway search add <api> <key> [url=<address>]")
 			}
 		}
 		if i := slices.IndexFunc(provider.StoredSearchAPIs(), func(x provider.SearchAPI) bool { return x.Vendor == a.Vendor }); i >= 0 && !urlGiven {
@@ -91,7 +91,7 @@ func searchCmd(args []string) error {
 		return nil
 	case "rm", "remove":
 		if len(args) != 2 {
-			return fmt.Errorf("magpie search rm <api>")
+			return fmt.Errorf("fogway search rm <api>")
 		}
 		if err := provider.RemoveSearchAPI(strings.ToLower(args[1])); err != nil {
 			return err
@@ -99,5 +99,5 @@ func searchCmd(args []string) error {
 		fmt.Println(green.Render("✓"), "removed")
 		return nil
 	}
-	return fmt.Errorf("magpie search [add|rm] (magpie search help)")
+	return fmt.Errorf("fogway search [add|rm] (fogway search help)")
 }

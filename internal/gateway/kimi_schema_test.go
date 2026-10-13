@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // A tool schema with an enum and no type goes to Kimi with the type its

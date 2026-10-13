@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // effortTurns are a thread's requests as an agent sends them: the
@@ -61,7 +61,7 @@ var effortReply = sse(
 // #617: a Responses provider not OpenAI's gets a thread's effort change as
 // the agent sent it.
 func TestEffortChangeOtherVendor(t *testing.T) {
-	t.Setenv("MAGPIE_EFFORT_UPDATES", "on")
+	t.Setenv("FOGWAY_EFFORT_UPDATES", "on")
 	effortThreads.Lock()
 	effortThreads.m, effortThreads.no = map[string]*effortThread{}, map[string]time.Time{}
 	effortThreads.Unlock()

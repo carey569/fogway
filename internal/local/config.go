@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/edit"
 )
 
 // Model is a GGUF file on Hugging Face: the repository and the file in it.
@@ -58,7 +58,7 @@ func Recommend(h Hardware) Model {
 	return best
 }
 
-// Config is the local model's setup, kept in local.json beside magpie's
+// Config is the local model's setup, kept in local.json beside fogway's
 // other settings.
 type Config struct {
 	// On runs the local model while the gateway does.
@@ -69,7 +69,7 @@ type Config struct {
 	Context int `json:"context,omitempty"`
 	// GPULayers is how many layers go on the GPU: all when 0, none when -1.
 	GPULayers int `json:"gpuLayers,omitempty"`
-	// Port is where llama-server listens on 127.0.0.1: one free from 3431
+	// Port is where llama-server listens on 127.0.0.1: one free from 3731
 	// up when 0.
 	Port int `json:"port,omitempty"`
 	// Backend picks the llama.cpp build: metal, cuda, vulkan or cpu; the
@@ -82,8 +82,11 @@ type Config struct {
 	// in the environment is taken when this is "".
 	HFEndpoint string `json:"hfEndpoint,omitempty"`
 	// GitHubMirror is put before github.com download addresses, for a
-	// network that can't reach GitHub (as magpie update's --mirror).
+	// network that can't reach GitHub (as fogway update's --mirror).
 	GitHubMirror string `json:"githubMirror,omitempty"`
+	// Think lets a model that reasons do so before it answers: steadier,
+	// and slower. Off, it answers at once.
+	Think bool `json:"think,omitempty"`
 }
 
 // ContextOr is the context window to run at.

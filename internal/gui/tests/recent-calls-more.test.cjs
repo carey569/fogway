@@ -46,7 +46,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     await page.route("**/*", serve);
     t.after(() => browser.close());
 
-    await page.goto("http://magpie.test/?view=gateway");
+    await page.goto("http://fogway.test/?view=gateway");
     const rows = page.locator("#activity .call-item");
     await rows.first().waitFor();
     assert.equal(await rows.count(), 20, "the first page");

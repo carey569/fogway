@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// JasonLeeForOnly on Discord: WebDAV sync said "not a magpie backup" for
+// JasonLeeForOnly on Discord: WebDAV sync said "not a fogway backup" for
 // versions, and nothing on the page got past it. When the server holds an
 // empty, cut-short or other app's file where the backup should be, the
 // status says so in the reader's language and an Upload row offers this
@@ -14,12 +14,12 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const EN = "the file magpie/magpie.magpie-backup on the WebDAV server is empty (0 bytes): a write to it didn't finish.";
+const EN = "the file fogway/fogway.fogway-backup on the WebDAV server is empty (0 bytes): a write to it didn't finish.";
 
 function serve(lang, state) {
   const settings = {
-    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/magpie",
-    gateway: "http://127.0.0.1:3425", visionModels: [], imageGenModels: [],
+    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/fogway",
+    gateway: "http://127.0.0.1:3725", visionModels: [], imageGenModels: [],
     fx: { rate: 7.2, stale: false },
   };
   return async (route) => {
@@ -48,10 +48,10 @@ function serve(lang, state) {
 
 const words = {
   en: { empty: "the file on the server is empty (0 bytes)", cut: "cut short (5.4 KB)", upload: "Upload…", go: "Upload this computer's setup", page: "web page (“Nextcloud”)", synced: "Synced" },
-  zh: { empty: "服务器上的文件是空的（0 字节）", cut: "不完整的 magpie 备份（5.4 KB）", upload: "上传…", go: "上传本机的配置", page: "网页（“Nextcloud”）", synced: "已同步" },
-  "zh-TW": { empty: "伺服器上的檔案是空的（0 位元組）", cut: "不完整的 magpie 備份（5.4 KB）", upload: "上傳…", go: "上傳本機的設定", page: "網頁（「Nextcloud」）", synced: null },
-  ja: { empty: "サーバー上のファイルが空です（0 バイト）", cut: "途中で切れた magpie バックアップです（5.4 KB）", upload: "アップロード…", go: "このコンピューターの設定をアップロード", page: "Web ページ（「Nextcloud」）", synced: null },
-  de: { empty: "die Datei auf dem Server ist leer (0 Byte)", cut: "abgeschnittenes magpie-Backup (5.4 KB)", upload: "Hochladen…", go: "Einrichtung dieses Computers hochladen", page: "Webseite („Nextcloud“)", synced: null },
+  zh: { empty: "服务器上的文件是空的（0 字节）", cut: "不完整的 fogway 备份（5.4 KB）", upload: "上传…", go: "上传本机的配置", page: "网页（“Nextcloud”）", synced: "已同步" },
+  "zh-TW": { empty: "伺服器上的檔案是空的（0 位元組）", cut: "不完整的 fogway 備份（5.4 KB）", upload: "上傳…", go: "上傳本機的設定", page: "網頁（「Nextcloud」）", synced: null },
+  ja: { empty: "サーバー上のファイルが空です（0 バイト）", cut: "途中で切れた fogway バックアップです（5.4 KB）", upload: "アップロード…", go: "このコンピューターの設定をアップロード", page: "Web ページ（「Nextcloud」）", synced: null },
+  de: { empty: "die Datei auf dem Server ist leer (0 Byte)", cut: "abgeschnittenes fogway-Backup (5.4 KB)", upload: "Hochladen…", go: "Einrichtung dieses Computers hochladen", page: "Webseite („Nextcloud“)", synced: null },
 };
 
 const base = { on: true, kind: "webdav", url: "https://dav.jianguoyun.com/dav/", user: "me", passwordSet: true, passphraseSet: true, keys: true, agents: true, library: true, auto: 3 };
@@ -75,7 +75,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang, state));
           page.setDefaultTimeout(5000);
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator("#prefs").click();
           await page.locator(":is(#setTab-sync, .nav-s[data-of=setTab-sync]):visible").click();
           const first = page.locator("#syncList .row.pref").first();
@@ -84,7 +84,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           for (const s of c.said) assert.ok(said.includes(s), `${c.name}: ${JSON.stringify(s)} in ${said}`);
           const whole = await first.locator(".who > .sub").first().evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth, right: e.getBoundingClientRect().right }));
           assert.ok(whole.sw <= whole.cw + 1 && whole.right <= width, `${c.name}: the reason is shown whole: ${JSON.stringify(whole)}`);
-          if (c.sync.serverFile && lang !== "en") assert.ok(!said.includes("magpie.magpie-backup on the WebDAV"), `${c.name}: said in ${lang}, not the English error: ${said}`);
+          if (c.sync.serverFile && lang !== "en") assert.ok(!said.includes("fogway.fogway-backup on the WebDAV"), `${c.name}: said in ${lang}, not the English error: ${said}`);
           const up = page.locator("#syncList button", { hasText: w.upload });
           assert.equal(await up.count(), c.upload ? 1 : 0, `${c.name}: upload offered`);
           if (c.upload) {

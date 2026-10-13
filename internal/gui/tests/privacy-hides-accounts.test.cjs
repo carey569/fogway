@@ -51,9 +51,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       t.after(() => browser.close());
       const errors = [];
-      const open = async (settings, stored, url = "http://magpie.test/?view=usage", saved = []) => {
+      const open = async (settings, stored, url = "http://fogway.test/?view=usage", saved = []) => {
         const context = await browser.newContext({ viewport: { width: 900, height: 760 }, reducedMotion: "reduce" });
-        await context.addInitScript((v) => { try { if (v === null) localStorage.removeItem("magpie.maskEmails"); else localStorage.setItem("magpie.maskEmails", v); } catch {} }, stored);
+        await context.addInitScript((v) => { try { if (v === null) localStorage.removeItem("fogway.maskEmails"); else localStorage.setItem("fogway.maskEmails", v); } catch {} }, stored);
         const page = await context.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
@@ -93,13 +93,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // Privacy: the Hide accounts switch is there, and turning Mask
       // personal data on turns it on
       const settings = { ...base(), redactPersonal: false }, saved = [];
-      page = await open(settings, null, "http://magpie.test/?view=settings&tab=privacy", saved);
+      page = await open(settings, null, "http://fogway.test/?view=settings&tab=privacy", saved);
       const row = (name) => page.locator("#redactList .row", { has: page.locator(".name", { hasText: new RegExp("^" + name + "$") }) });
       await row(w.hide).waitFor();
       const top = () => page.evaluate(() => document.querySelector("#view-settings").scrollTop);
       const y0 = await top();
       await row(w.personal).getByRole("button", { name: w.on, exact: true }).click();
-      await page.waitForFunction(() => localStorage.getItem("magpie.maskEmails") === "1");
+      await page.waitForFunction(() => localStorage.getItem("fogway.maskEmails") === "1");
       await page.waitForFunction(() => document.querySelector("#usageMask")?.getAttribute("aria-pressed") === "true");
       assert.ok(saved.some((b) => b.redactPersonal === true), JSON.stringify(saved));
       // the switch here says so, and turns it off again
@@ -125,7 +125,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       }));
       const y1 = await top();
       await off.click();
-      await page.waitForFunction(() => localStorage.getItem("magpie.maskEmails") === "0");
+      await page.waitForFunction(() => localStorage.getItem("fogway.maskEmails") === "0");
       assert.equal(await top(), y1, "a click never scrolls");
       // no coloured left border on the new row
       assert.equal(await row(w.hide).evaluate((r) => getComputedStyle(r).borderLeftWidth), "0px");

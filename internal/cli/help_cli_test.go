@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
+	"github.com/fogway/fogway/internal/agent"
 )
 
 // helpHome points the home and every config, cache and data folder into
@@ -60,7 +60,7 @@ func tree(t *testing.T, root string) map[string]string {
 	return out
 }
 
-// runOut runs magpie with args and gives what it printed; a run that
+// runOut runs fogway with args and gives what it printed; a run that
 // doesn't come back in time (a gateway started, a window waited on) fails
 // the test.
 func runOut(t *testing.T, args ...string) (string, error) {
@@ -84,7 +84,7 @@ func runOut(t *testing.T, args ...string) (string, error) {
 	case err = <-done:
 	case <-time.After(20 * time.Second):
 		os.Stdout = old
-		t.Fatalf("magpie %s didn't come back: it ran", strings.Join(args, " "))
+		t.Fatalf("fogway %s didn't come back: it ran", strings.Join(args, " "))
 	}
 	w.Close()
 	os.Stdout = old
@@ -143,8 +143,8 @@ func types(ix *ast.IndexExpr) string {
 
 // --help, -h or help after any command, and every agent, in any place,
 // prints its usage and does nothing else: no file under the home is
-// written and nothing is started. `magpie snow --help` set Snow's model to
-// "--help" and took magpie out of it (#1457), and `magpie serve --help`
+// written and nothing is started. `fogway snow --help` set Snow's model to
+// "--help" and took fogway out of it (#1457), and `fogway serve --help`
 // ran a gateway.
 func TestHelpOnEveryCommandDoesNothing(t *testing.T) {
 	root := helpHome(t)
@@ -161,13 +161,13 @@ func TestHelpOnEveryCommandDoesNothing(t *testing.T) {
 			} {
 				out, err := runOut(t, args...)
 				if err != nil {
-					t.Errorf("magpie %s: %v", strings.Join(args, " "), err)
+					t.Errorf("fogway %s: %v", strings.Join(args, " "), err)
 				}
-				if !strings.Contains(out, "magpie") && !strings.Contains(out, "usage") {
-					t.Errorf("magpie %s printed no usage: %q", strings.Join(args, " "), out)
+				if !strings.Contains(out, "fogway") && !strings.Contains(out, "usage") {
+					t.Errorf("fogway %s printed no usage: %q", strings.Join(args, " "), out)
 				}
 				if got := tree(t, root); !reflect.DeepEqual(got, before) {
-					t.Fatalf("magpie %s wrote under the home:\nbefore %v\nafter  %v", strings.Join(args, " "), before, got)
+					t.Fatalf("fogway %s wrote under the home:\nbefore %v\nafter  %v", strings.Join(args, " "), before, got)
 				}
 			}
 		})

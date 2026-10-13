@@ -4,7 +4,7 @@
 // puts one in on a click: Claude Code's auto-compact window for a model and
 // its two cache lifetimes, Codex's compact limit. A setting already the
 // leanest says so and has no button; one a variable comes before is told
-// of and has none either; one magpie put in has Undo. Drawn before the
+// of and has none either; one fogway put in has Undo. Drawn before the
 // gateway has read anything, in Chromium and WebKit, at a phone's width and
 // a desk's, in every language, none of it wider than the page. Each row
 // draws what every setting would have spent past the advice. The advice is
@@ -99,13 +99,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     for (const lang of Object.keys(heading)) for (const [width, height] of [[360, 760], [1100, 760]]) {
       await t.test(`${lang}, ${width}x${height}`, async () => {
         const ctx = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.usageTab", "context"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.usageTab", "context"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         const posts = [];
         await page.route("**/*", serve(lang, posts));
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         const rows = page.locator(".ctx-tune-row");
         await rows.first().waitFor();
         assert.equal(await page.getByText(heading[lang], { exact: true }).count(), 1, "the heading in " + lang);
@@ -176,7 +176,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     t.after(() => browser.close());
     const ctx = await browser.newContext({ viewport: { width: 1100, height: 900 } });
     await ctx.addInitScript(() => {
-      try { localStorage.setItem("magpie.usageTab", "context"); } catch {}
+      try { localStorage.setItem("fogway.usageTab", "context"); } catch {}
       window.drawn = 0;
       document.addEventListener("animationstart", (e) => { if (e.animationName === "ctx-draw") window.drawn++; }, true);
     });
@@ -195,7 +195,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await base(r);
       if (p === "/api/tune") tuned();
     });
-    await page.goto("http://magpie.test/?view=usage");
+    await page.goto("http://fogway.test/?view=usage");
     await page.locator(".ctx-tune-chart svg").first().waitFor();
     const charts = await page.locator(".ctx-tune-chart svg").count();
     assert.ok(charts > 0);
@@ -227,13 +227,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     for (const lang of Object.keys(heading)) for (const [width, height] of [[360, 760], [1100, 760]]) {
       await t.test(`${lang}, ${width}x${height}`, async () => {
         const ctx = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.usageTab", "context"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.usageTab", "context"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         const posts = [];
         await page.route("**/*", serve(lang, posts));
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         const row = page.locator(".ctx-tune-row").nth(0);
         await row.locator(".ctx-tune-pick").waitFor();
         await page.locator(".ctx-none").waitFor(); // the history has answered: the pane is its full length
@@ -302,14 +302,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     // German's "Sparsamste" is the widest "Leanest"
     for (const lang of ["en", "de"]) for (const [width, height] of [[360, 760], [1100, 760]]) {
       const ctx = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.usageTab", "context"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.usageTab", "context"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       const base = serve(lang, []);
       await page.route("**/*", (r) => new URL(r.request().url()).pathname === "/api/tune" ? r.fulfill({ json: close }) : base(r));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator(".ctx-tune-chart").nth(2).waitFor();
       const axes = await page.locator(".ctx-tc-x").evaluateAll((all) => all.map((a) => [...a.children].map((s) => {
         const r = s.getBoundingClientRect();

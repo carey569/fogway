@@ -1,6 +1,6 @@
 package gui
 
-// Run with MAGPIE_USAGE_SCALE=1 go test -tags nogui ./internal/gui
+// Run with FOGWAY_USAGE_SCALE=1 go test -tags nogui ./internal/gui
 // -run TestUsageScale -count=1 -v. The fixture is entirely synthetic.
 
 import (
@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/sessions"
+	"github.com/fogway/fogway/internal/sessions"
 )
 
 func scaleShardBytes(t *testing.T) int64 {

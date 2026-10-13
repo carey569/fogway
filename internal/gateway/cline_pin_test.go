@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // ClinePass's DeepSeek models are served by DeepSeek's own API alone when

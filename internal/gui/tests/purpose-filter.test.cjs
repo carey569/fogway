@@ -116,7 +116,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         if (routing && await page.locator(id).getAttribute("aria-expanded") === "true") await page.keyboard.press("Escape");
       };
       const waitRows = async (n) => page.waitForFunction((n) => document.querySelectorAll("#ledWrap tbody tr.led-row").length === n, n);
-      await page.goto("http://magpie.test/?view=usage&tab=requests");
+      await page.goto("http://fogway.test/?view=usage&tab=requests");
       await waitRows(100);
       await choose("#ledPurpose", "kind:thread_title");
       await page.waitForFunction(() => document.querySelector("#ledSum").textContent.startsWith("104"));
@@ -155,7 +155,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${lang}-usage-purpose.png`) });
       }
       // The same aliases and unknown names in both live and historical Routing.
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-req").nth(7).waitFor();
       assert.equal(await page.locator("#rtPurpose span").textContent(), lang === "zh" ? "用途" : "Purpose filter");
       await click(page, page.locator("#rtPurpose"));
@@ -216,7 +216,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => { if (!/^ResizeObserver loop completed with undelivered notifications/.test(e.message)) errors.push(e.message); });
       await page.route("**/*", server(lang, []));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-req").nth(7).waitFor();
       const names = await page.evaluate(() => Object.fromEntries(purposeOptions(["kind:thread_title", "unmarked", "kind:review"]).map((o) => [o.v, o.name])));
       const menu = page.locator(".rt-purpose-menu");

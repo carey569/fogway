@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A provider of the user's own, at its address on the API it speaks, is
-// added from the TUI as the app's custom provider editor and magpie provider
+// added from the TUI as the app's custom provider editor and fogway provider
 // add <name> url=… add it (hezz1891 on Discord: on a server, the TUI had
-// vendors magpie knows alone).
+// vendors fogway knows alone).
 func TestTUIAddsACustomProvider(t *testing.T) {
 	home(t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -78,7 +78,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.setDefaultTimeout(5000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang, feed));
-          await page.goto("http://magpie.test/?view=routing");
+          await page.goto("http://fogway.test/?view=routing");
           const head = page.locator(".rt-log-head");
           const models = () => page.locator(".rt-accts code.mdl").allTextContents();
           await page.locator(".rt-req").nth(4).waitFor();

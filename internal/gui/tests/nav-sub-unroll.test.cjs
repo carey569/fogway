@@ -23,14 +23,14 @@ function serve(lang, held) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:false};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
-    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3425", running: true, window: true }, plugins: [] });
+    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3725", running: true, window: true }, plugins: [] });
     if (url.pathname === "/api/groups") return json({ groups: [], pools: [] });
     if (url.pathname === "/api/plugins") { await held; return json({ bun: true, bunVersion: "1.3.0", plugins: installed, movable: [] }); }
     if (url.pathname === "/api/plugins/listings") return json({ listings: [] });
     if (url.pathname === "/api/plugins/npm") return json({ npm: {} });
     if (url.pathname === "/api/plugins/github") return json({ repos: [] });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -48,13 +48,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const held = new Promise((r) => { open = r; });
       const context = await browser.newContext({ viewport: { width, height: 760 } });
       // the reader left Plugins on Installed
-      await context.addInitScript(() => { try { localStorage.setItem("magpie.pluginTab", "installed"); } catch {} });
+      await context.addInitScript(() => { try { localStorage.setItem("fogway.pluginTab", "installed"); } catch {} });
       const page = await context.newPage();
       page.setDefaultTimeout(5000);
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, held));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       assert.ok(await page.evaluate(() => document.body.classList.contains("side-nav")), "a sidebar at " + width);
 

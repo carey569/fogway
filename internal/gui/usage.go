@@ -11,16 +11,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/usage"
-	"github.com/yetone/magpie/internal/usageapi"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/usage"
+	"github.com/fogway/fogway/internal/usageapi"
 )
 
 // The Usage page's JSON is built in usageapi, which the gateway's
-// /v1/magpie/usage answers from too.
+// /v1/fogway/usage answers from too.
 type (
 	usageGroup = usageapi.Group
 	usageJSON  = usageapi.Usage
@@ -49,18 +49,18 @@ func init() {
 // and the day of now, the moment its rows were read at.
 func csvStamp(p usage.Period, day string, now time.Time) string {
 	if _, err := time.Parse(time.DateOnly, day); err == nil {
-		return "magpie-requests-day-" + day
+		return "fogway-requests-day-" + day
 	}
 	if p.IsRange() { // the days picked, which already say when
-		return "magpie-requests-" + strings.Replace(string(p), "..", "-to-", 1)
+		return "fogway-requests-" + strings.Replace(string(p), "..", "-to-", 1)
 	}
-	return "magpie-requests-" + string(p) + "-" + now.Format(time.DateOnly)
+	return "fogway-requests-" + string(p) + "-" + now.Format(time.DateOnly)
 }
 
 // contentJSON is what was said in a request, or why it can't be told.
 type contentJSON struct {
 	Found bool `json:"found"`
-	// Why not: "session" (the request named none), "agent" (magpie reads the session
+	// Why not: "session" (the request named none), "agent" (fogway reads the session
 	// files of Claude Code, Claude Desktop and Codex only), "missing" (the files have no
 	// such call: deleted, moved, or not written yet) or "read" (the file wouldn't read)
 	Why   string `json:"why,omitempty"`
@@ -110,7 +110,7 @@ func usageRoutes(mux *http.ServeMux, w Windows) {
 	})
 	// what was said in one request, read from the agent's session file when the
 	// row is opened, between two times (the call's own, or a gateway request's
-	// span): magpie keeps no copy
+	// span): fogway keeps no copy
 	mux.HandleFunc("GET /api/usage/requests/content", func(rw http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		from, err1 := time.Parse(time.RFC3339Nano, q.Get("from"))
@@ -127,7 +127,7 @@ func usageRoutes(mux *http.ServeMux, w Windows) {
 		}
 		writeJSON(rw, requestContent(q.Get("agent"), q.Get("session"), from, to, at))
 	})
-	// the same CSV to a browser (magpie web), which saves it itself
+	// the same CSV to a browser (fogway web), which saves it itself
 	mux.HandleFunc("GET /api/usage/requests.csv", func(rw http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		p := periodOf(q.Get("period"))

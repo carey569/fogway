@@ -1,9 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Another computer's quotas (莫 on Discord): a computer whose provider is
-// another's magpie (remote-magpie) shows that magpie's cards, each named
+// another's fogway (remote-fogway) shows that fogway's cards, each named
 // with the computer ("Codex · Office"), without the buttons that would act
 // on this computer's accounts. The remote's own card says why it has none
-// (nothing read there yet, or a magpie too old to share) in the reader's
+// (nothing read there yet, or a fogway too old to share) in the reader's
 // language, and its refresh asks for it by its id (?provider=office), the
 // remote's card by its own (?provider=office/codex). English, Chinese,
 // Japanese and German; no backend, the API is faked here.
@@ -23,17 +23,17 @@ function fixtures(now) {
       windows: [{ name: "5 hours", used: 50, resetsAt: iso(now + 2 * H) }], resets: { count: 1 } },
     { provider: "office/codex", name: "Codex · Office", icon: "openai", plan: "Pro", user: "a@x.com", from: "Office", kind: "subscription", readAt: iso(now - 40 * M),
       windows: [{ name: "5 hours", used: 30, resetsAt: iso(now + 2 * H) }] },
-    { provider: "home", name: "Home", icon: "magpie", from: "Home", kind: "subscription", windows: [],
-      error: "nothing read on that magpie yet; refresh to have it read" },
-    { provider: "attic", name: "Attic", icon: "magpie", from: "Attic", kind: "subscription", windows: [],
-      error: "remote magpie doesn't share its quotas; update magpie on that computer" },
+    { provider: "home", name: "Home", icon: "fogway", from: "Home", kind: "subscription", windows: [],
+      error: "nothing read on that fogway yet; refresh to have it read" },
+    { provider: "attic", name: "Attic", icon: "fogway", from: "Attic", kind: "subscription", windows: [],
+      error: "remote fogway doesn't share its quotas; update fogway on that computer" },
     // Fim980 on X: these said only "Allowance unavailable"
-    { provider: "kestrel", name: "Kestrel", icon: "magpie", from: "Kestrel", kind: "subscription", windows: [],
-      error: "remote magpie isn't shared; turn on Share on local network on that computer" },
-    { provider: "osprey", name: "Osprey", icon: "magpie", from: "Osprey", kind: "subscription", windows: [],
-      error: "remote magpie didn't take this key; use one of its enabled gateway keys" },
-    { provider: "heron", name: "Heron", icon: "magpie", from: "Heron", kind: "subscription", windows: [],
-      error: "couldn't reach the remote magpie Heron: dial tcp 10.0.0.9:3425: connect: connection refused" },
+    { provider: "kestrel", name: "Kestrel", icon: "fogway", from: "Kestrel", kind: "subscription", windows: [],
+      error: "remote fogway isn't shared; turn on Share on local network on that computer" },
+    { provider: "osprey", name: "Osprey", icon: "fogway", from: "Osprey", kind: "subscription", windows: [],
+      error: "remote fogway didn't take this key; use one of its enabled gateway keys" },
+    { provider: "heron", name: "Heron", icon: "fogway", from: "Heron", kind: "subscription", windows: [],
+      error: "couldn't reach the remote fogway Heron: dial tcp 10.0.0.9:3725: connect: connection refused" },
   ];
 }
 
@@ -69,10 +69,10 @@ function serve(lang, state) {
 }
 
 const words = {
-  en: { none: "Nothing read on that computer yet — refresh this card to have it read", old: "That computer's magpie doesn't share its quotas yet — update magpie there", shed: "That computer's magpie isn't shared — turn on Settings → Share on local network there", den: "That computer's magpie didn't take this key — use one of its gateway keys in this provider", barn: "Couldn't reach that computer's magpie — check that it is running and its address" },
-  zh: { none: "那台电脑还没有读过额度 — 刷新这张卡片让它读取", old: "那台电脑的 magpie 还不能共享额度 — 请在那台电脑上更新 magpie", shed: "那台电脑的 magpie 没有共享 — 请在那台电脑上打开 设置 → 局域网共享", den: "那台电脑的 magpie 不认这个密钥 — 请在这个服务商里填它的一个网关密钥", barn: "连不上那台电脑的 magpie — 请确认它在运行、地址正确" },
-  ja: { none: "そのコンピューターではまだ読み取っていません — このカードを更新すると読み取ります", old: "そのコンピューターの magpie はまだ利用枠を共有できません — そちらの magpie を更新してください", shed: "そのコンピューターの magpie は共有されていません — そちらで 設定 → ローカルネットワークで共有 をオンにしてください", den: "そのコンピューターの magpie はこのキーを受け付けませんでした — このプロバイダーにそちらのゲートウェイキーを入れてください", barn: "そのコンピューターの magpie に接続できません — 起動しているか、アドレスが正しいか確認してください" },
-  de: { none: "Auf diesem Computer wurde noch nichts gelesen — diese Karte aktualisieren, um es lesen zu lassen", old: "Das magpie dieses Computers teilt seine Kontingente noch nicht — aktualisiere magpie dort", shed: "Das magpie dieses Computers ist nicht freigegeben — schalte dort Einstellungen → Im lokalen Netzwerk freigeben ein", den: "Das magpie dieses Computers hat diesen Schlüssel nicht angenommen — trage bei diesem Anbieter einen seiner Zugangsschlüssel ein", barn: "Das magpie dieses Computers ist nicht erreichbar — prüfe, ob es läuft und die Adresse stimmt" },
+  en: { none: "Nothing read on that computer yet — refresh this card to have it read", old: "That computer's fogway doesn't share its quotas yet — update fogway there", shed: "That computer's fogway isn't shared — turn on Settings → Share on local network there", den: "That computer's fogway didn't take this key — use one of its gateway keys in this provider", barn: "Couldn't reach that computer's fogway — check that it is running and its address" },
+  zh: { none: "那台电脑还没有读过额度 — 刷新这张卡片让它读取", old: "那台电脑的 fogway 还不能共享额度 — 请在那台电脑上更新 fogway", shed: "那台电脑的 fogway 没有共享 — 请在那台电脑上打开 设置 → 局域网共享", den: "那台电脑的 fogway 不认这个密钥 — 请在这个服务商里填它的一个网关密钥", barn: "连不上那台电脑的 fogway — 请确认它在运行、地址正确" },
+  ja: { none: "そのコンピューターではまだ読み取っていません — このカードを更新すると読み取ります", old: "そのコンピューターの fogway はまだ利用枠を共有できません — そちらの fogway を更新してください", shed: "そのコンピューターの fogway は共有されていません — そちらで 設定 → ローカルネットワークで共有 をオンにしてください", den: "そのコンピューターの fogway はこのキーを受け付けませんでした — このプロバイダーにそちらのゲートウェイキーを入れてください", barn: "そのコンピューターの fogway に接続できません — 起動しているか、アドレスが正しいか確認してください" },
+  de: { none: "Auf diesem Computer wurde noch nichts gelesen — diese Karte aktualisieren, um es lesen zu lassen", old: "Das fogway dieses Computers teilt seine Kontingente noch nicht — aktualisiere fogway dort", shed: "Das fogway dieses Computers ist nicht freigegeben — schalte dort Einstellungen → Im lokalen Netzwerk freigeben ein", den: "Das fogway dieses Computers hat diesen Schlüssel nicht angenommen — trage bei diesem Anbieter einen seiner Zugangsschlüssel ein", barn: "Das fogway dieses Computers ist nicht erreichbar — prüfe, ob es läuft und die Adresse stimmt" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -87,7 +87,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const state = { quotas: fixtures(Date.now()), gets: 0, refreshes: [], gate: Promise.resolve() };
       await page.route("**/*", serve(lang, state));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
 
       const office = page.locator(".subscription-card", { hasText: "Codex · Office" });
       await office.waitFor();

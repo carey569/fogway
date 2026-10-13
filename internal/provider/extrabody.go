@@ -1,22 +1,22 @@
 package provider
 
 // A provider's extraBody (Luc-xz, #1604): JSON fields the user adds to the
-// body of every request magpie sends the provider — a relay that turns a
+// body of every request fogway sends the provider — a relay that turns a
 // Responses request away without a prompt_cache_key, say — as Headers adds
 // headers. They are merged at the top level of the body as it goes out,
 // whichever API it is on (Chat, Responses, Messages, Gemini) and whether it
 // was relayed or translated (gateway.forwardOnce):
 //
-//   - A field the body has already — the client's own, or what magpie put
+//   - A field the body has already — the client's own, or what fogway put
 //     there for it — is kept: the user's value fills in what is missing.
 //   - A name written with a "!" before it ("!prompt_cache_key") is forced:
 //     it replaces the body's own.
 //   - ${sessionId} in a string value, at any depth, is the conversation's
 //     id: the session the agent names (its session header), else one
-//     magpie derives from the conversation's first user message — the same
+//     fogway derives from the conversation's first user message — the same
 //     for every turn of it. A fixed string would put every session on one
 //     cache key.
-//   - The fields that carry the conversation, or that magpie must decide
+//   - The fields that carry the conversation, or that fogway must decide
 //     for routing and streaming to work (ExtraBodyReserved), can't be set:
 //     a save naming one is refused, and one written into the file by hand
 //     is left out.
@@ -55,7 +55,7 @@ func (e *ExtraBody) UnmarshalJSON(b []byte) error {
 }
 
 // ExtraBodyReserved are the fields extraBody can't set: the model and
-// whether to stream, which magpie decides for routing and reads the reply
+// whether to stream, which fogway decides for routing and reads the reply
 // by, and the conversation itself — its messages, input or contents, its
 // system prompt and instructions, its tools.
 var ExtraBodyReserved = []string{"model", "stream", "messages", "input", "contents", "system", "systemInstruction", "system_instruction", "instructions", "tools"}
@@ -79,7 +79,7 @@ func ExtraBodyOK(e ExtraBody) string {
 		case n == "":
 			return "an extra body field needs a name"
 		case slices.Contains(ExtraBodyReserved, n):
-			return fmt.Sprintf("extra body can't set %q: magpie sets the model, stream and the conversation itself", n)
+			return fmt.Sprintf("extra body can't set %q: fogway sets the model, stream and the conversation itself", n)
 		case seen[n]:
 			return fmt.Sprintf("extra body names %q twice", n)
 		case !json.Valid(e[k]):
@@ -178,5 +178,5 @@ func withSession(v any, session string) any {
 // out: the extra fields, on a session of the test's own, then what the
 // backend adjusts.
 func (p Provider) tested(body string) []byte {
-	return p.WithExtraBody([]byte(body), "magpie-test-"+strings.ToLower(rand.Text()[:12]))
+	return p.WithExtraBody([]byte(body), "fogway-test-"+strings.ToLower(rand.Text()[:12]))
 }

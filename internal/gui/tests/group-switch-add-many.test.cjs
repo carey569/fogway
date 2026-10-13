@@ -5,7 +5,7 @@
 // - A group of the user's has a switch on its card: off, it posts
 //   groups/switch with on false, the card is dimmed but for the switch and
 //   says "switched off", and the keyboard stays on the switch; on again
-//   posts on true. A group magpie found has no switch (it is removed).
+//   posts on true. A group fogway found has no switch (it is removed).
 // - The editor's Add a model picker stays open: each model clicked is added
 //   and ticked, clicked again it is taken out; each says the other groups
 //   it is in. Saved, the members are the ones picked, in the order picked.
@@ -77,7 +77,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const card = (id) => page.locator(`.rt-group[data-id="${id}"]`);
       await card("g").waitFor();
       await page.locator(".rt-gsec").evaluate((x) => x.scrollIntoView({ block: "center" })); // as the reader would

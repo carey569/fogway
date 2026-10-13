@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // An agent whose settings are left but whose CLI is gone (#843: dsh
@@ -22,14 +22,14 @@ func TestCLIMissing(t *testing.T) {
 	was := appFolders
 	appFolders = func() []string { return nil }
 	t.Cleanup(func() { appFolders = was })
-	bin := "magpie-test-gone-dsh"
+	bin := "fogway-test-gone-dsh"
 	dir := filepath.Join(home, ".dsh")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	dsh := &Agent{ID: "dsh", Name: "DeepSeek Harness", Icon: "deepseek-color", Bin: bin, Dir: dir, Path: filepath.Join(dir, "config.yaml")}
-	codex := &Agent{ID: "codex", Name: "Codex", Bin: "magpie-test-gone-codex", Dir: dir, Path: filepath.Join(dir, "config.toml")}
-	never := &Agent{ID: "crush", Name: "Crush", Bin: "magpie-test-gone-crush", Dir: filepath.Join(home, "nope"), Path: filepath.Join(home, "nope", "crush.json")}
+	codex := &Agent{ID: "codex", Name: "Codex", Bin: "fogway-test-gone-codex", Dir: dir, Path: filepath.Join(dir, "config.toml")}
+	never := &Agent{ID: "crush", Name: "Crush", Bin: "fogway-test-gone-crush", Dir: filepath.Join(home, "nope"), Path: filepath.Join(home, "nope", "crush.json")}
 	wsl := &Agent{ID: "dsh@wsl:Ubuntu", Name: "DeepSeek Harness", Bin: bin, WSL: "Ubuntu", Dir: dir, Path: filepath.Join(dir, "config.yaml")}
 	if !dsh.Detected() || !dsh.CLIMissing() {
 		t.Fatalf("dsh with ~/.dsh and no dsh: detected %v, missing %v", dsh.Detected(), dsh.CLIMissing())
@@ -52,7 +52,7 @@ func TestCLIMissing(t *testing.T) {
 		t.Fatal("codex, its folder here, offered")
 	}
 
-	// installed in ~/.local/bin, which magpie's PATH hasn't: found
+	// installed in ~/.local/bin, which fogway's PATH hasn't: found
 	local := filepath.Join(home, ".local", "bin")
 	if err := os.MkdirAll(local, 0o755); err != nil {
 		t.Fatal(err)

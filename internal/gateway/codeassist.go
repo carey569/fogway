@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // ---- Google Code Assist (provider side) --------------------------------------
@@ -36,7 +36,7 @@ func accountAgent(p provider.Provider) string { return "" }
 // the one Claude Code and its Agent SDK (Claude Desktop's chats) send: its
 // billing line or the SDK's identity line anywhere in the system
 // instruction turns the request away, on every model, while the same words
-// in a message go through (#666). magpie doesn't hide them from Google; it
+// in a message go through (#666). fogway doesn't hide them from Google; it
 // says why, so no one chases a quota that isn't spent.
 func antigravityTurnsAway(system string) bool {
 	return strings.Contains(system, "x-anthropic-billing-header:") ||
@@ -61,7 +61,7 @@ func antigravityTurnedAway(p provider.Provider, system, said string) bool {
 	return accountAgent(p) == "antigravity" && antigravityTurnsAway(system) && antigravityRefuses(said)
 }
 
-// antigravityTurnedAwayHint is what magpie adds to Antigravity's words, after
+// antigravityTurnedAwayHint is what fogway adds to Antigravity's words, after
 // " — ", for the agent and the Routing page, which says it apart from them in
 // its own language (routing.js AG_TURNED_AWAY).
 const antigravityTurnedAwayHint = "Antigravity answers this 429 to the system prompt of Claude Code and the Claude Agent SDK (Claude Desktop's chats) whatever quota is left, so it is not a quota and waiting won't help; use another provider for these chats, or put one after Antigravity in a routing group"
@@ -1070,4 +1070,3 @@ func hasResponse(parts []map[string]any) bool {
 func buildCodeAssist(r *Request, model, agent string) []byte {
 	return buildCodeAssistSent(r, model, agent)
 }
-

@@ -15,7 +15,7 @@ function req(id, kind, status = 200, error = "") {
     done: true, status, error, ms: 20, tokens: 12, cost: 0.01, priced: true };
 }
 function serve(lang, feed) {
-  const initial = [req(100, "review"), req(99, "title", 200, "Codex titles are off in magpie's Settings, so magpie answered it itself"),
+  const initial = [req(100, "review"), req(99, "title", 200, "Codex titles are off in fogway's Settings, so fogway answered it itself"),
     req(98, "thread_title", 200, "Title reply broke off"),
     req(97, "title_generation", 0, "Title connection closed"), req(96, "guardian", 503, "Guardian failed")];
   initial[2].tries[0].fail = "other";
@@ -93,7 +93,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         for (let i = 0; i < 100 && !feed.next; i++) await page.waitForTimeout(20);
         assert(feed.next, "trace update was applied");
       };
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await story(100);
       assert.deepEqual(await counts(), ["20", "5", "7"], "unfiltered counters retain the gateway's lifetime totals");
       await choose("kind:thread_title");

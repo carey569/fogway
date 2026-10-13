@@ -14,9 +14,9 @@ import (
 // group found by its members, set, replaced and taken out with the rest of
 // the file as it was
 func TestJSONItem(t *testing.T) {
-	where := map[string]string{"vendor": "customendpoint", "name": "magpie"}
-	mine := map[string]any{"name": "magpie", "vendor": "customendpoint", "models": []any{map[string]any{"id": "a/b"}}}
-	mine2 := map[string]any{"name": "magpie", "vendor": "customendpoint", "models": []any{map[string]any{"id": "c/d"}}}
+	where := map[string]string{"vendor": "customendpoint", "name": "fogway"}
+	mine := map[string]any{"name": "fogway", "vendor": "customendpoint", "models": []any{map[string]any{"id": "a/b"}}}
+	mine2 := map[string]any{"name": "fogway", "vendor": "customendpoint", "models": []any{map[string]any{"id": "c/d"}}}
 	other := "{\n\t\t\"name\": \"Ollama, local\", // mine\n\t\t\"vendor\": \"ollama\"\n\t}"
 	cases := []struct{ name, in string }{
 		{"missing", ""},
@@ -53,7 +53,7 @@ func TestJSONItem(t *testing.T) {
 				t.Fatal(err)
 			}
 			got := valid("set")
-			if len(got) != before+1 || got[len(got)-1]["name"] != "magpie" {
+			if len(got) != before+1 || got[len(got)-1]["name"] != "fogway" {
 				t.Fatalf("set: %v", got)
 			}
 			if v, ok := GetJSONItem(path, where); !ok || !strings.Contains(v, `"a/b"`) {
@@ -92,12 +92,12 @@ func TestJSONItem(t *testing.T) {
 
 // taken out from between others, and from the front, the commas stay right
 func TestDelJSONItemAmongOthers(t *testing.T) {
-	where := map[string]string{"name": "magpie"}
+	where := map[string]string{"name": "fogway"}
 	for _, in := range []string{
-		"[\n  {\"name\": \"a\"},\n  {\"name\": \"magpie\"},\n  {\"name\": \"b\"}\n]\n",
-		"[\n  {\"name\": \"magpie\"},\n  {\"name\": \"a\"},\n  {\"name\": \"b\"}\n]\n",
-		"[\n  {\"name\": \"a\"},\n  {\"name\": \"b\"},\n  {\"name\": \"magpie\"}\n]\n",
-		`[{"name":"a"},{"name":"magpie"},{"name":"b"}]`,
+		"[\n  {\"name\": \"a\"},\n  {\"name\": \"fogway\"},\n  {\"name\": \"b\"}\n]\n",
+		"[\n  {\"name\": \"fogway\"},\n  {\"name\": \"a\"},\n  {\"name\": \"b\"}\n]\n",
+		"[\n  {\"name\": \"a\"},\n  {\"name\": \"b\"},\n  {\"name\": \"fogway\"}\n]\n",
+		`[{"name":"a"},{"name":"fogway"},{"name":"b"}]`,
 	} {
 		path := filepath.Join(t.TempDir(), "x.json")
 		os.WriteFile(path, []byte(in), 0o644)

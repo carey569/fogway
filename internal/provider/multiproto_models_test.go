@@ -1,7 +1,7 @@
 package provider
 
 import (
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
 // idsOf are the ids of a list, in its order.

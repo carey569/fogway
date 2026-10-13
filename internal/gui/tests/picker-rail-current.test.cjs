@@ -2,7 +2,7 @@
 // An agent's current model is listed first in its picker, out of its
 // provider's rows. With that provider picked in the rail it is still there,
 // ticked: under OpenAI, Codex on gpt-6.1-sol showed every OpenAI model but
-// gpt-6.1-sol, as if magpie had dropped it (#1229). A provider whose only
+// gpt-6.1-sol, as if fogway had dropped it (#1229). A provider whose only
 // model is the current one keeps its rail icon, in catalog order. Codex
 // connected or not, in Chromium and WebKit, at a narrow window too.
 const assert = require("node:assert/strict");
@@ -55,9 +55,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const errors = [];
           page.on("pageerror", (e) => errors.push(e.message));
           const open = async (value) => {
-            await page.unroute("http://magpie.test/**").catch(() => {});
-            await page.route("http://magpie.test/**", serve(state(wired, value)));
-            await page.goto("http://magpie.test/");
+            await page.unroute("http://fogway.test/**").catch(() => {});
+            await page.route("http://fogway.test/**", serve(state(wired, value)));
+            await page.goto("http://fogway.test/");
             await page.locator('#nav [data-view="agents"]').click();
             if (wired) await page.locator("#agents .ag-link").first().click();
             await page.locator('#agents [data-key="model"]').first().click();

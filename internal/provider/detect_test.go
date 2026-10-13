@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agentenv"
+	"github.com/fogway/fogway/internal/agentenv"
 )
 
 func detectHome(t *testing.T) {
@@ -67,7 +67,7 @@ func relay(t *testing.T) (*httptest.Server, func() []asked) {
 	}
 }
 
-// One URL typed, one click: each API magpie speaks upstream is sent the
+// One URL typed, one click: each API fogway speaks upstream is sent the
 // smallest request at that URL as it takes it, and what answered says
 // which the relay serves (01huadalang on Discord). A model is picked from
 // the vendor's list for each, which is asked for first, and kept nowhere.

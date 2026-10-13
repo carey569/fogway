@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // love1sbug on X (v0.1.1220): Names in agents' lists (Agent 列表里的名称)
 // changed nothing in the agent's model list. Claude Code's and Qwen Code's
-// lists follow it now; an agent whose list magpie hands the models' ids
+// lists follow it now; an agent whose list fogway hands the models' ids
 // alone, or that reads the gateway's names itself (agent.NoNames), can't,
 // so each place the setting is offered names the connected ones it changes
 // nothing in: under Settings › Provider in model names, under Routing's
@@ -16,11 +16,11 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 const said = {
-  en: "Changes nothing in Goose, Hermes Agent: magpie’s names don’t reach their model lists",
-  zh: "对 Goose, Hermes Agent 不起作用：它们的模型列表里没有 magpie 给的名称",
-  "zh-TW": "對 Goose, Hermes Agent 不起作用：它們的模型列表裡沒有 magpie 給的名稱",
-  ja: "Goose, Hermes Agent には効きません：そのモデル一覧には magpie の名前が出ません",
-  de: "Wirkt nicht in Goose, Hermes Agent: deren Modelllisten zeigen magpies Namen nicht",
+  en: "Changes nothing in Goose, Hermes Agent: fogway’s names don’t reach their model lists",
+  zh: "对 Goose, Hermes Agent 不起作用：它们的模型列表里没有 fogway 给的名称",
+  "zh-TW": "對 Goose, Hermes Agent 不起作用：它們的模型列表裡沒有 fogway 給的名稱",
+  ja: "Goose, Hermes Agent には効きません：そのモデル一覧には fogway の名前が出ません",
+  de: "Wirkt nicht in Goose, Hermes Agent: deren Modelllisten zeigen fogways Namen nicht",
 };
 const names = { en: "Names & levels", zh: "名称与推理档位" };
 
@@ -86,12 +86,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     for (const width of [900, 390]) {
       test(`${engine} ${lang} ${width}px: Settings and Routing name the connected agents the setting changes nothing in`, async (t) => {
         const { page, errors } = await launch(t, engine, lang, agents, width);
-        await page.goto("http://magpie.test/?view=settings");
+        await page.goto("http://fogway.test/?view=settings");
         const sub = page.locator(".row.pref", { has: page.locator("#plainNamesSegs") }).locator(".sub.no-names");
         await sub.waitFor();
         assert.equal(await sub.textContent(), said[lang]);
         assert.equal(await overflows(page), false, "the page scrolls sideways");
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         const note = page.locator(".rt-gnames .no-names");
         await note.waitFor();
         assert.equal(await note.textContent(), said[lang]);
@@ -104,7 +104,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
   for (const lang of ["en", "zh"]) {
     test(`${engine} ${lang}: a provider's Names & levels says it too`, async (t) => {
       const { page, errors } = await launch(t, engine, lang, agents);
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider").click();
       if (!(await page.locator(".mnames:not([hidden])").count())) await page.getByRole("button", { name: names[lang], exact: true }).click();
       const note = page.locator(".mnames:not([hidden]) .msuffix .no-names");
@@ -116,14 +116,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
   // drawn before the agents are read, each place says it once they are
   test(`${engine}: read after the page is drawn, the agents are named all the same`, async (t) => {
     const { page, errors } = await launch(t, engine, "en", agents, 900, 1500);
-    await page.goto("http://magpie.test/?view=providers");
+    await page.goto("http://fogway.test/?view=providers");
     await page.locator(".row.provider").click();
     if (!(await page.locator(".mnames:not([hidden])").count())) await page.getByRole("button", { name: names.en, exact: true }).click();
     const note = page.locator(".mnames:not([hidden]) .msuffix .no-names");
     await note.waitFor();
     assert.equal(await note.textContent(), said.en);
     for (const [view, sel] of [["routing", ".rt-gnames .no-names"], ["settings", ".row.pref .sub.no-names"]]) {
-      await page.goto(`http://magpie.test/?view=${view}`);
+      await page.goto(`http://fogway.test/?view=${view}`);
       await page.locator(sel).waitFor();
       assert.equal(await page.locator(sel).textContent(), said.en);
     }
@@ -131,10 +131,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
   });
   test(`${engine}: with every connected agent following it, nothing is said`, async (t) => {
     const { page, errors } = await launch(t, engine, "en", agents.filter((a) => a.id === "claude" || a.id === "jcode"));
-    await page.goto("http://magpie.test/?view=settings");
+    await page.goto("http://fogway.test/?view=settings");
     await page.locator("#plainNamesSegs .opt").first().waitFor();
     assert.equal(await page.locator(".row.pref", { has: page.locator("#plainNamesSegs") }).locator(".sub").count(), 0);
-    await page.goto("http://magpie.test/?view=routing");
+    await page.goto("http://fogway.test/?view=routing");
     await page.locator(".rt-gnames .segs").waitFor();
     assert.equal(await page.locator(".rt-gnames .no-names:visible").count(), 0);
     assert.deepEqual(errors, []);

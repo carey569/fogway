@@ -3,13 +3,13 @@
 The Sessions API combines file-backed native sessions with a read-only
 projection of gateway usage records. A gateway session identity is exactly
 `AgentOf(record.Agent) + record.Session`, where the session is the one the
-client sent (`X-Magpie-Session`, or its own session header), whatever it starts
-with. The response returns that id in `X-Magpie-Session`; listed browser
-origins can read this header through CORS. magpie never makes up an id for a
+client sent (`X-Fogway-Session`, or its own session header), whatever it starts
+with. The response returns that id in `X-Fogway-Session`; listed browser
+origins can read this header through CORS. fogway never makes up an id for a
 request without one, so such a request has no session and its text is not
 recorded: text kept under an id nothing lists couldn't be opened. Prompt text,
 caller keys and network addresses are never used to guess conversation ownership.
-So the configs magpie writes have each agent name its session: Pi's provider
+So the configs fogway writes have each agent name its session: Pi's provider
 block sets `compat.sendSessionAffinityHeaders` (`x-session-affinity` on Chat and
 Messages; Responses sends `session_id` anyway), and omp 16.0.6 and later gets
 `compat.promptCacheSessionHeader: x-session-affinity`. A user's own
@@ -26,7 +26,7 @@ and the gateway projection is omitted. Gateway projections have no path,
 resume command or terminal action: the agent's own files of them are not on
 this computer. Their rows carry `gateway: true`; the Sessions page groups them
 under "Seen through the gateway" rather than "No folder", and their size is the
-text magpie recorded of them (`sessions.GatewaySizes`), shown only when there
+text fogway recorded of them (`sessions.GatewaySizes`), shown only when there
 is some. Their
 models, token totals, start/last timestamps and effective prices come from the
 same usage records used by Usage and stats endpoints.
@@ -59,7 +59,7 @@ capabilities to a gateway row. Verification: `TestDesktopSessionTitles`,
 
 A gateway projection can be deleted (lc on Discord). `sessions.DeleteGateway`
 moves its recorded text folders (`gateway-conversations/<date>/<identity hash>`)
-into magpie's session trash under `trash/sessions/gateway/`, with a note
+into fogway's session trash under `trash/sessions/gateway/`, with a note
 marked `gateway`, and adds `{agent, id, last}` to
 `gateway-sessions-hidden.json` in the config directory. `/api/sessions` and
 `/api/sessions/manage` leave out a hidden session up to that last request; a
@@ -95,7 +95,7 @@ applies: on an agent whose list has gateway sessions (`gateway` on a
 is kept. Its "Delete saved conversations…" shows while
 `/api/sessions/manage`'s `recorded` says some text is kept
 (`sessions.HasGatewayConversations`, true when the folder can't be read), and
-asks in magpie's own dialog first. `Settings.GatewayConversations` is machine-local consent:
+asks in fogway's own dialog first. `Settings.GatewayConversations` is machine-local consent:
 `settings.SetGatewayConversations` updates it under the settings file lock.
 Other Settings saves retain the latest stored consent under that lock, so an
 older snapshot cannot re-enable recording after it is stopped. `KeepOwn`
@@ -125,7 +125,7 @@ session synchronization, and existing S3 archives are not imported.
 [`SaveGatewayTurn`](../../internal/sessions/gateway.go) stores normalized,
 scrubbed exchanges in one append-only `turns.jsonl` per
 `gateway-conversations/<UTC date>/<identity hash>/` under
-the Magpie config directory, using 0700 directories and 0600 files. Each line is
+the Fogway config directory, using 0700 directories and 0600 files. Each line is
 one bounded turn; legacy per-turn JSON files remain readable until they expire.
 An incomplete final append is omitted from reads (marked truncated) and removed
 before the next append; complete earlier lines remain available. No headers are
@@ -163,9 +163,9 @@ cannot replace content fetched after clearing the store.
 `GET /api/sessions/markdown` and `POST /api/sessions/export` take the same
 choice: a native session is written from its file (`sessions.WriteMarkdown`),
 and otherwise a known gateway session from what its transcript reads
-(`sessions.WriteGatewayMarkdown`, "Recorded by: magpie's gateway", with a note
-when turns or a part's end weren't kept). A magpie that others reach as a
-remote magpie has no file of their agents' sessions, so this is the only way
+(`sessions.WriteGatewayMarkdown`, "Recorded by: fogway's gateway", with a note
+when turns or a part's end weren't kept). A fogway that others reach as a
+remote fogway has no file of their agents' sessions, so this is the only way
 it can export them. Verification: `TestGatewaySessionExportsMarkdown`.
 
 A gateway session without a saved Desktop name is titled by what it was
@@ -223,12 +223,12 @@ and `TestGatewayConversationClientRequestPrefixedSession` for the two rules abov
 
 ## Usage over the gateway, and subagents
 
-`GET /v1/magpie/usage` and `GET /v1/magpie/usage/requests`
+`GET /v1/fogway/usage` and `GET /v1/fogway/usage/requests`
 ([`internal/gateway/usage_api.go`](../../internal/gateway/usage_api.go)) serve
 the Usage page's summary and request ledger from the same builders as the
 window's `/api/usage` and `/api/usage/requests`
 ([`internal/usageapi`](../../internal/usageapi/usageapi.go)), read-only and
-without conversation text. They follow `/v1/magpie/quotas`' guard: this
+without conversation text. They follow `/v1/fogway/quotas`' guard: this
 machine, or another with an enabled gateway key, behind the same Host check.
 A key that is held (`heldKey`: a budget, models or accounts) is refused the
 summary and gets the ledger filtered to its own `CallerKey`, with its filter
@@ -236,8 +236,8 @@ lists cut to its own rows (`usageapi.OwnPage`): the ledger's facets are drawn
 from every call in the period, so without the cut they would name other keys.
 `TestUsageOverGateway` covers both, and a red when either cut is removed.
 A held key is refused (`refuseHeld`, 403 `provider.KeyHeldCode`) the
-quotas, their history, kept cards and refresh, and `/v1/magpie/concurrency`
-(#1981); `/v1/magpie/route` tells it only routes whose `callerKey` is its
+quotas, their history, kept cards and refresh, and `/v1/fogway/concurrency`
+(#1981); `/v1/fogway/route` tells it only routes whose `callerKey` is its
 own. `Route.callerKey` is set by `trace.beginFor` from the request's
 caller, so a route begun without it is told to no held key.
 `TestHeldKeyToldNoAccounts` covers every one of these from loopback and
@@ -245,7 +245,7 @@ the LAN, for a key held each of the three ways and one held to nothing.
 
 ### Calls read from the agents' own files
 
-A call an agent made without magpie reaches Usage only when its own files
+A call an agent made without fogway reaches Usage only when its own files
 are read (`sessions.Calls`, from `callSources` in
 [`calls.go`](../../internal/sessions/calls.go)). The readers are Claude
 Code's, Claude Desktop's and Cowork's, Codex's (and both in WSL), and,
@@ -256,9 +256,9 @@ Code's (#1779), MiniMax Code's (#1605), Kimi Code's (#1607,
 [`calls_kimi.go`](../../internal/sessions/calls_kimi.go)) and Pi's and
 omp's, here and in WSL (#1951,
 [`calls_pi.go`](../../internal/sessions/calls_pi.go)). Each skips the
-calls the agent made through magpie's own entry, which the gateway logged
+calls the agent made through fogway's own entry, which the gateway logged
 with the account that answered: Kimi Code's are the ones whose
-`usage.record` model begins `magpie/`. Kimi Code's calls are its
+`usage.record` model begins `fogway/`. Kimi Code's calls are its
 `usage.record`s in every agent's `wire.jsonl` under
 `$KIMI_CODE_HOME/sessions` (else `~/.kimi-code`), protocols 1.4 and 1.5;
 a fork repeats its parent's records, so each is keyed by agent, time,
@@ -266,7 +266,7 @@ model and usage and counted once. Pi's and omp's calls are the session
 files' assistant messages, and the calls beside them that Sessions counts
 too ("usage" and omp's "model_usage" entries, a compaction's, a branch
 summary's and a tool result's usage, on the model and provider in use);
-the provider `magpie` (or `dial`) is magpie's entry, a failed call has no
+the provider `fogway` (or `dial`) is fogway's entry, a failed call has no
 usage, and a fork's copy of its parent's entries (written before its
 header) is the parent's. The other agents the Sessions page reads (Cline,
 Qoder, Grok, Droid, Cursor, Hermes, Alma) have no reader yet (#1607). The
@@ -278,9 +278,9 @@ reporter's real wire files), `TestCodeBuddyCalls`, `TestWorkBuddyCalls*`,
 
 ### Calls an app reports itself
 
-`POST /v1/magpie/usage/requests`
+`POST /v1/fogway/usage/requests`
 ([`internal/gateway/usage_ingest.go`](../../internal/gateway/usage_ingest.go),
-#1874) takes calls that never went through magpie, from an app that sends
+#1874) takes calls that never went through fogway, from an app that sends
 them straight to its vendor, so the Usage page covers them too. The body is
 one record or an array of up to 5000 (32 MiB at most), in `usage.jsonl`'s
 shape: `t`, `agent`, `provider`, `model` and `rid` are required; `in`,
@@ -309,7 +309,7 @@ however old, so a client's history can be backfilled.
   each record's `index`, `rid` and `status`, so a re-run of a batch is
   safe.
 - **Pricing:** a record with `cost` keeps it (`Record.OwnCost`, the
-  `rowOwnCost` flag on a packed row). Without one it is priced at magpie's
+  `rowOwnCost` flag on a packed row). Without one it is priced at fogway's
   own prices, like a gateway row.
 - **Showing:** reported rows count in every total. They also have a source
   of their own (`SourceReported`): `RequestPage.Reported`, `?via=reported`,

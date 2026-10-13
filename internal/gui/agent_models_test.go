@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // The Agents page's model list for an agent: every model it may be shown,
@@ -26,7 +26,7 @@ func TestAgentModelsAPI(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
 	t.Setenv("CODEX_HOME", filepath.Join(home, ".codex"))
 	os.MkdirAll(filepath.Join(home, ".codex"), 0o755)
-	os.WriteFile(filepath.Join(home, ".codex", "config.toml"), []byte("model = \"magpie/relay/m1\"\n"), 0o600)
+	os.WriteFile(filepath.Join(home, ".codex", "config.toml"), []byte("model = \"fogway/relay/m1\"\n"), 0o600)
 	if err := provider.Save(provider.Provider{ID: "relay", Name: "Relay", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"m1", "m2", "m3"}}); err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestAgentModelsOnlyPicked(t *testing.T) {
 	setModel := func(m string) {
 		os.WriteFile(filepath.Join(home, ".codex", "config.toml"), []byte("model = \""+m+"\"\n"), 0o600)
 	}
-	setModel("magpie/relay/a1")
+	setModel("fogway/relay/a1")
 	if err := provider.Save(provider.Provider{ID: "relay", Name: "Relay", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"a1", "a2", "a3"}}); err != nil {
 		t.Fatal(err)
 	}

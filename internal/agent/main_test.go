@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // TestMain gives the package a home of its own (testenv). A home an agent is
@@ -41,9 +41,9 @@ func TestMain(m *testing.M) {
 	codexProxyEnv = func(string) string { return "" }
 	codexSystemProxy = func() netproxy.Proxy { return netproxy.Proxy{} }
 	proxyProbe = func(string, string) bool { return true }
-	// nor an address of the agent's own asked whether magpie answers
-	// there (a reverse proxy, #1985): known, and not magpie, as for a
+	// nor an address of the agent's own asked whether fogway answers
+	// there (a reverse proxy, #1985): known, and not fogway, as for a
 	// relay; the proxy-kept tests answer it
-	magpieAt = func(string) (bool, bool) { return false, true }
+	fogwayAt = func(string) (bool, bool) { return false, true }
 	os.Exit(testenv.Run(m))
 }

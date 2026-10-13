@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Tests don't ask vendors how much of an allowance is used: the gateway

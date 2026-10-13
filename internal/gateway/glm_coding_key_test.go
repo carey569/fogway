@@ -8,8 +8,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // zhipuNoBalance is Zhipu's answer to a key whose account has no balance

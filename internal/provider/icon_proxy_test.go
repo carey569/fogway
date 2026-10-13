@@ -25,7 +25,7 @@ func TestFetchIconGoesThroughTheProxy(t *testing.T) {
 		rw.Write(png)
 	}))
 	defer proxy.Close()
-	t.Setenv("MAGPIE_ICON_PROXY", proxy.URL+"/api/icon")
+	t.Setenv("FOGWAY_ICON_PROXY", proxy.URL+"/api/icon")
 	client := iconClient
 	iconClient = proxy.Client
 	t.Cleanup(func() { iconClient = client })

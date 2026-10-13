@@ -87,7 +87,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const errors = [];
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang, saves, asks));
-          await page.goto("http://magpie.test/?view=providers");
+          await page.goto("http://fogway.test/?view=providers");
           const shot = async (name) => {
             if (!process.env.ARTIFACT_DIR) return;
             await fs.mkdir(process.env.ARTIFACT_DIR, { recursive: true });

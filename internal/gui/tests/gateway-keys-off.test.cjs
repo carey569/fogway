@@ -3,7 +3,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 const { fixture } = require("./fixtures/caller-keys.cjs");
 
-// Gateway keys are left out of Gateway while magpie isn't shared, and a
+// Gateway keys are left out of Gateway while fogway isn't shared, and a
 // tunnel to loopback (Cloudflare Tunnel) is refused until it is. DD on
 // Discord looked for the keys to put a tunnel behind one and found none:
 // the page says where they come from, and its button opens Settings ›
@@ -19,7 +19,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", fixture(locale, "dark", []));
-        await page.goto("http://magpie.test/?view=gateway");
+        await page.goto("http://fogway.test/?view=gateway");
         await page.locator("#connect .snip").waitFor();
 
         const hint = page.locator("#gatewayKeysOff");
@@ -49,7 +49,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.mouse.wheel(0, bounds.y - 250);
         await on.click();
         await page.locator("#lanList .lan-address-row").waitFor();
-        await page.goto("http://magpie.test/?view=gateway");
+        await page.goto("http://fogway.test/?view=gateway");
         await page.locator("#gatewayKeysBlock").waitFor({ state: "visible" });
         assert.equal(await hint.isVisible(), false);
         assert.equal(y, 0);

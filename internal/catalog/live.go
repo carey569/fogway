@@ -16,11 +16,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/filememo"
+	"github.com/fogway/fogway/internal/filememo"
 )
 
 // A vendor's own /models endpoint is the truth about what it serves today;
-// models.dev lags and keeps legacy names around. magpie asks the vendor when
+// models.dev lags and keeps legacy names around. fogway asks the vendor when
 // it has a key, remembers the answer next to the models.dev cache, and lets
 // the catalog fill in display names and reasoning levels.
 
@@ -162,7 +162,7 @@ func SaveLiveSides(provider, base string, models []Model, sides map[string][]Mod
 	return nil
 }
 
-// Changed, when set, is told that the models magpie offers may be others
+// Changed, when set, is told that the models fogway offers may be others
 // now: a provider added, edited or removed, a vendor's list fetched anew.
 // The agent package sets it, to bring the model lists agents keep in files
 // of their own up to date.
@@ -455,7 +455,7 @@ func fetchPage(ctx context.Context, url, key string, anthropic bool, headers map
 			return nil, nil, err
 		}
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("User-Agent", "magpie")
+		req.Header.Set("User-Agent", "fogway")
 		if key != "" {
 			req.Header.Set("Authorization", "Bearer "+key)
 			req.Header.Set("x-api-key", key)
@@ -532,13 +532,13 @@ func fetchPage(ctx context.Context, url, key string, anthropic bool, headers map
 		if id == "" {
 			continue
 		}
-		// Another magpie's list is already what its user exposed. Keep
+		// Another fogway's list is already what its user exposed. Keep
 		// its retrieval models too; a vendor's general list still leaves
 		// out models agents can't chat with.
 		decision := r.Kind == "decision"
 		films := r.Kind == "video"
 		drawer := !films && !decision && (DrawsID(id) && !strings.Contains(strings.ToLower(id), "deep-research") || r.Kind == "image")
-		if !drawer && !films && !decision && headers["X-Magpie-Drawers"] == "" && !textModel(mdModel{ID: id}) {
+		if !drawer && !films && !decision && headers["X-Fogway-Drawers"] == "" && !textModel(mdModel{ID: id}) {
 			continue
 		}
 		name, plain := r.DisplayName, ""
@@ -573,7 +573,7 @@ func fetchPage(ctx context.Context, url, key string, anthropic bool, headers map
 			m.Output = int(n)
 		}
 		m.Efforts = levelsOf(r.Levels)
-		if r.WebSearch == "native" || r.WebSearch == "magpie" {
+		if r.WebSearch == "native" || r.WebSearch == "fogway" {
 			m.WebSearch = r.WebSearch
 		}
 		if input != nil {
@@ -631,7 +631,7 @@ type liveModel struct {
 	// the context window, where the list tells it (OpenRouter, Command
 	// Code); any, as a vendor's odd value mustn't lose the whole list
 	ContextLength any `json:"context_length"`
-	// what another magpie's list tells of each model: the APIs its own
+	// what another fogway's list tells of each model: the APIs its own
 	// provider serves it on, where a request goes on as it is rather
 	// than translated (native_endpoints), its longest reply and its
 	// reasoning levels. any, as a vendor's odd value mustn't lose the
@@ -639,22 +639,22 @@ type liveModel struct {
 	Native []string `json:"native_endpoints"`
 	Output any      `json:"max_output_tokens"`
 	Levels any      `json:"supported_reasoning_levels"`
-	// another magpie's name for the model with its provider there after
+	// another fogway's name for the model with its provider there after
 	// it, and "image", "video" or "decision" for its other models
-	Label string `json:"magpie_label"`
+	Label string `json:"fogway_label"`
 	Kind  string `json:"kind"`
-	// how another magpie searches the web for the model: "native" or
-	// "magpie" (Model.WebSearch)
+	// how another fogway searches the web for the model: "native" or
+	// "fogway" (Model.WebSearch)
 	WebSearch string `json:"web_search"`
-	// the service tiers another magpie offers its Codex on the model
+	// the service tiers another fogway offers its Codex on the model
 	// (Fast's "priority"), as Codex's catalog writes them ({"id":…}) or
 	// as plain ids: kept as Model.Tiers (#1234). any, as an odd value
 	// mustn't lose the whole list
 	Tiers any `json:"service_tiers"`
-	// what another magpie counts a call to the model at, asked for with
-	// its X-Magpie-Prices header: the price its user set, else its list
+	// what another fogway counts a call to the model at, asked for with
+	// its X-Fogway-Prices header: the price its user set, else its list
 	// price. Raw, as an odd value mustn't lose the whole list
-	Price json.RawMessage `json:"magpie_price"`
+	Price json.RawMessage `json:"fogway_price"`
 	// the protocol family PipeLLM routes the model by: openai, anthropic
 	// or gemini
 	TypeTarget string `json:"type_target"`
@@ -678,7 +678,7 @@ func tiersOf(v any) []string {
 }
 
 // levelsOf are the efforts of a list's supported_reasoning_levels, as
-// magpie and Codex write them ([{"effort":"high"}]) or as plain names.
+// fogway and Codex write them ([{"effort":"high"}]) or as plain names.
 func levelsOf(v any) []string {
 	xs, _ := v.([]any)
 	var out []string
@@ -695,7 +695,7 @@ func levelsOf(v any) []string {
 }
 
 // EndpointAPIs names the APIs of a model list's supported_endpoints —
-// "chat", "responses", "anthropic" — leaving out any magpie doesn't speak
+// "chat", "responses", "anthropic" — leaving out any fogway doesn't speak
 // (Copilot's websocket one); nil when it names none of them.
 func EndpointAPIs(endpoints []string) []string {
 	var out []string
@@ -777,7 +777,7 @@ func Decorate(live []Model, known []Model) []Model {
 	return out
 }
 
-// sane reports whether a price another magpie sent is one a vendor could
+// sane reports whether a price another fogway sent is one a vendor could
 // charge: no part below zero or out of range, and tiers of a size.
 func (p Price) sane() bool {
 	ok := func(vs ...float64) bool {

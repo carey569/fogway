@@ -65,7 +65,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const page = await ctx.newPage();
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.waitForSelector("#nav button.on");
         await page.waitForFunction(() => !document.querySelector("#update").hidden);
         let middle = 0, inrow = 0;

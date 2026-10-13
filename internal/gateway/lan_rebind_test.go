@@ -15,8 +15,8 @@ import (
 // the host, and a call with an enabled gateway key go through as before.
 func TestReboundPageRefused(t *testing.T) {
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "")
-	t.Setenv("MAGPIE_PUBLIC_URL", "")
+	t.Setenv("FOGWAY_ADDR", "")
+	t.Setenv("FOGWAY_PUBLIC_URL", "")
 	reached := false
 	h := lanGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { reached = true }))
 	call := func(method, host string, hdr ...string) int {
@@ -35,7 +35,7 @@ func TestReboundPageRefused(t *testing.T) {
 		return w.Code
 	}
 	chrome := []string{"User-Agent", "Mozilla/5.0 (Macintosh) Chrome/140", "Sec-Fetch-Site", "same-origin", "Sec-Fetch-Mode", "cors"}
-	evil := "rebind.attacker.example:3425"
+	evil := "rebind.attacker.example:3725"
 
 	if c := call("GET", evil, chrome...); c != http.StatusForbidden || reached {
 		t.Fatal("a rebound page's GET:", c)
@@ -47,24 +47,24 @@ func TestReboundPageRefused(t *testing.T) {
 	if c := call("GET", evil, "User-Agent", "Mozilla/5.0 (Macintosh) Safari/605"); c != http.StatusForbidden || reached {
 		t.Fatal("an older browser:", c)
 	}
-	for _, host := range []string{"127.0.0.1:3425", "localhost:3425", "[::1]:3425", "wails.localhost", "host.docker.internal:3425", "LOCALHOST.:3425"} {
+	for _, host := range []string{"127.0.0.1:3725", "localhost:3725", "[::1]:3725", "wails.localhost", "host.docker.internal:3725", "LOCALHOST.:3725"} {
 		if c := call("GET", host, chrome...); c != 200 || !reached {
 			t.Fatal("a browser at", host, c)
 		}
 	}
 	// an agent sends no browser marks, whatever name it was given
-	if c := call("POST", evil, "Authorization", "Bearer magpie", "User-Agent", "claude-cli/2.1"); c != 200 || !reached {
+	if c := call("POST", evil, "Authorization", "Bearer fogway", "User-Agent", "claude-cli/2.1"); c != 200 || !reached {
 		t.Fatal("an agent:", c)
 	}
-	t.Setenv("MAGPIE_PUBLIC_URL", "https://magpie.example.net")
-	if c := call("GET", "magpie.example.net", chrome...); c != 200 || !reached {
+	t.Setenv("FOGWAY_PUBLIC_URL", "https://fogway.example.net")
+	if c := call("GET", "fogway.example.net", chrome...); c != 200 || !reached {
 		t.Fatal("the public URL's host:", c)
 	}
 	_, secrets := newCaller(t, "Page")
 	if c := call("GET", evil, append([]string{"Authorization", "Bearer " + secrets[0]}, chrome...)...); c != 200 || !reached {
 		t.Fatal("with an enabled gateway key:", c)
 	}
-	if c := call("GET", evil, append([]string{"Authorization", "Bearer sk-magpie-wrong"}, chrome...)...); c != http.StatusForbidden || reached {
+	if c := call("GET", evil, append([]string{"Authorization", "Bearer sk-fogway-wrong"}, chrome...)...); c != http.StatusForbidden || reached {
 		t.Fatal("with a wrong key:", c)
 	}
 }

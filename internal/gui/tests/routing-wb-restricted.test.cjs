@@ -2,7 +2,7 @@
 // WorkBuddy's 403 11140 "request illegal" for an account it restricted
 // (#1849): the Routing page tells the try as the account restricted, not
 // "failed", says it rests two hours because only the vendor lifting the
-// restriction brings it back, after an appeal; gives magpie's hint apart
+// restriction brings it back, after an appeal; gives fogway's hint apart
 // from the vendor's words; and the resting account's row lifts its rest by
 // hand once the appeal went through — in every language the page speaks.
 const assert = require("node:assert/strict");
@@ -86,7 +86,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           }
           await browser.close();
         });
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         await page.locator(".rt-days .rt-day").nth(1).click();
         await page.locator(".rt-req").first().waitFor();
         await page.locator(".rt-req").first().click();
@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const told = steps.map(([, s]) => s).filter((s) => s.includes(w.label));
         assert.equal(told.length, 1, JSON.stringify(steps));
         assert(told[0].includes(w.why), told[0]);
-        // the vendor's words as they were, and magpie's hint on its own line
+        // the vendor's words as they were, and fogway's hint on its own line
         assert.equal(steps.filter(([c]) => c === "aside said").length, 1, JSON.stringify(steps));
         assert(steps.find(([c]) => c === "aside said")[1].endsWith(vendor), JSON.stringify(steps));
         assert.deepEqual(steps.filter(([, s]) => s === w.hint).map(([c]) => c), ["aside"]);

@@ -352,7 +352,7 @@ func mask(s string, o Options, put func(kind, v string) string) (string, int) {
 	}
 	all := rules
 	if o.Secrets && len(o.Rules) > 0 {
-		// the user's first: where one of theirs and one of magpie's find
+		// the user's first: where one of theirs and one of fogway's find
 		// the same value, it goes by the name they gave it
 		all = append(customRules(o.Rules), rules...)
 	}
@@ -562,7 +562,7 @@ var placeholderBody = regexp.MustCompile(`[A-Za-z][A-Za-z0-9_]*_[A-Za-z2-7]{8}`)
 // A model doesn't always write a placeholder back as it was given: it
 // writes {{ PHONE_b5puzbfv }} as a template has it, drops a brace, or the
 // braces, or changes the case. Any of those is put back too when what is
-// left names a placeholder this magpie made: its kind and the 8 of its
+// left names a placeholder this fogway made: its kind and the 8 of its
 // hash, which no other text has by chance (shensmart on Discord).
 func Restore(s string, escaped bool) string {
 	if !strings.Contains(s, "_") {
@@ -649,7 +649,7 @@ const maxPlaceholder = len("{{") + maxKind + len("_") + 8 + len("}}")
 // partialTail is how much of the end of s may be the start of a
 // placeholder the next piece of a stream finishes, in any of the ways
 // Restore takes one back: {{API_, {{ phone_b5, PHONE_b5puzbfv} — or, with
-// no brace before it, a last word that starts as a placeholder this magpie
+// no brace before it, a last word that starts as a placeholder this fogway
 // made does (PHO, PHONE_b5pu), or is one whose }} may still come.
 func partialTail(s string) int {
 	if n := braceTail(s); n > 0 {
@@ -696,7 +696,7 @@ func braceTail(s string) int {
 
 // wordTail is the last word of s, where it may be a placeholder's body as
 // a model writes one without braces: the start of one of the kinds this
-// magpie has made placeholders of, up to the 8 of its hash. A word of
+// fogway has made placeholders of, up to the 8 of its hash. A word of
 // text that only starts like a kind is held for an event and then goes
 // on, unchanged.
 func wordTail(s string) int {

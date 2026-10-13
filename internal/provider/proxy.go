@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Via is ctx for requests made on the provider's behalf: they go through

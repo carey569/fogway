@@ -16,7 +16,7 @@ const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/emo";
 const agent = (id, name, more = {}) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json`, ...more });
 const lib = (servers) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("workbuddy", "WorkBuddy"), agent("workbuddy-ai", "WorkBuddy AI")],
   instructions: { agents: [] }, servers, skills: [], foundServers: [], projects: [], foundSkills: [], problems: [],
 });
@@ -49,7 +49,7 @@ function server(lang, servers) {
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -74,12 +74,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         ]) {
           const errors = [];
           const ctx = await browser.newContext({ viewport: { width: 440, height: 1000 }, reducedMotion: "reduce" });
-          await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+          await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
           const page = await ctx.newPage();
           page.setDefaultTimeout(5000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang, servers));
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator('button[data-view="library"]').click();
           const v = page.locator("#view-library");
           await v.locator(".lib-server").first().waitFor();

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 func TestUpdateAutoKeepsCorruptSettings(t *testing.T) {
@@ -71,7 +71,7 @@ func TestUpdateAutoWithBOMSettings(t *testing.T) {
 	}
 }
 
-// magpie update auto turns the app's own update checks off and on and sets
+// fogway update auto turns the app's own update checks off and on and sets
 // how often they run, from the presets only (#472).
 func TestUpdateAutoCmd(t *testing.T) {
 	groupsHome(t)

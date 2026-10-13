@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // keyedVendor answers images and embeddings on any key, and keeps which
@@ -80,7 +80,7 @@ func postJSON(t *testing.T, s *Server, path, body string) (int, string) {
 // wangru8080); with every key set not to serve it, it is refused with why.
 func TestNonChatGoesToTheKeyThatServesIt(t *testing.T) {
 	s, v := keyedRelay(t)
-	if code, raw := postJSON(t, s, "/v1/embeddings", `{"model":"relay/text-embedding-3-small","input":"a magpie"}`); code != 200 {
+	if code, raw := postJSON(t, s, "/v1/embeddings", `{"model":"relay/text-embedding-3-small","input":"a fogway"}`); code != 200 {
 		t.Fatalf("embed: %d %s", code, raw)
 	}
 	if got := v.keys("/v1/embeddings"); len(got) != 1 || got[0] != "key-b" {
@@ -91,7 +91,7 @@ func TestNonChatGoesToTheKeyThatServesIt(t *testing.T) {
 	if err := provider.SetAccountModels("relay", provider.KeyID("key-b"), []string{"gpt-image-2"}); err != nil {
 		t.Fatal(err)
 	}
-	if code, raw := postJSON(t, s, "/v1/embeddings", `{"model":"relay/text-embedding-3-small","input":"a magpie"}`); code != 403 || !strings.Contains(raw, "text-embedding-3-small") {
+	if code, raw := postJSON(t, s, "/v1/embeddings", `{"model":"relay/text-embedding-3-small","input":"a fogway"}`); code != 403 || !strings.Contains(raw, "text-embedding-3-small") {
 		t.Fatalf("embed on no key: %d %s", code, raw)
 	}
 	if m := len(v.keys("/v1/embeddings")); m != 1 {

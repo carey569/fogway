@@ -4,11 +4,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
-// A gateway MAGPIE_ADDR puts on the network (the Docker image) asks other
+// A gateway FOGWAY_ADDR puts on the network (the Docker image) asks other
 // machines for a gateway key whether or not it is shared, so the Gateway
 // page shows its keys and offers no key-less "this computer" then.
 func TestGatewayOnNetworkInConsole(t *testing.T) {
@@ -17,8 +17,8 @@ func TestGatewayOnNetworkInConsole(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(h, ".config"))
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
 	t.Setenv("XDG_DATA_HOME", filepath.Join(h, ".local", "share"))
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3425")
-	t.Setenv("MAGPIE_PUBLIC_URL", "")
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3725")
+	t.Setenv("FOGWAY_PUBLIC_URL", "")
 	if err := settings.Save(settings.Settings{LAN: false}); err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestGatewayOnNetworkInConsole(t *testing.T) {
 	if g := providersState().Gateway; !g.OnNetwork || !g.LAN {
 		t.Errorf("gateway on the network, shared: %+v", g)
 	}
-	t.Setenv("MAGPIE_ADDR", "127.0.0.1:3425")
+	t.Setenv("FOGWAY_ADDR", "127.0.0.1:3725")
 	if err := settings.Save(settings.Settings{LAN: false}); err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestGatewayOnNetworkInConsole(t *testing.T) {
 	}
 }
 
-// #1551: MAGPIE_PUBLIC_URL is offered where other machines are let in,
+// #1551: FOGWAY_PUBLIC_URL is offered where other machines are let in,
 // and nowhere else: on loopback, not shared, nothing reaches the gateway
 // through it without a key it can't take.
 func TestPublicURLOnlyWhereOffered(t *testing.T) {
@@ -49,8 +49,8 @@ func TestPublicURLOnlyWhereOffered(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(h, ".config"))
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
 	t.Setenv("XDG_DATA_HOME", filepath.Join(h, ".local", "share"))
-	t.Setenv("MAGPIE_PUBLIC_URL", "https://magpie.example.com")
-	t.Setenv("MAGPIE_ADDR", "127.0.0.1:3425")
+	t.Setenv("FOGWAY_PUBLIC_URL", "https://fogway.example.com")
+	t.Setenv("FOGWAY_ADDR", "127.0.0.1:3725")
 	if err := settings.Save(settings.Settings{LAN: false}); err != nil {
 		t.Fatal(err)
 	}
@@ -63,14 +63,14 @@ func TestPublicURLOnlyWhereOffered(t *testing.T) {
 	if err := settings.Save(settings.Settings{LAN: true}); err != nil {
 		t.Fatal(err)
 	}
-	if g := providersState().Gateway; g.PublicURL != "https://magpie.example.com" {
+	if g := providersState().Gateway; g.PublicURL != "https://fogway.example.com" {
 		t.Errorf("shared: Gateway page's public URL %q", g.PublicURL)
 	}
-	t.Setenv("MAGPIE_PUBLIC_URL", "")
+	t.Setenv("FOGWAY_PUBLIC_URL", "")
 	if g := providersState().Gateway; g.PublicURL != "" {
-		t.Errorf("no MAGPIE_PUBLIC_URL: Gateway page's public URL %q", g.PublicURL)
+		t.Errorf("no FOGWAY_PUBLIC_URL: Gateway page's public URL %q", g.PublicURL)
 	}
 	if u := settingsState().PublicURL; u != "" {
-		t.Errorf("no MAGPIE_PUBLIC_URL: Settings shows %q", u)
+		t.Errorf("no FOGWAY_PUBLIC_URL: Settings shows %q", u)
 	}
 }

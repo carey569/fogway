@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/edit"
 )
 
 // piDistroHome is a distro's / in a temp dir with a user whose ~/.pi holds
-// settings (none when ""); magpie's own HOME is another temp dir, whose
+// settings (none when ""); fogway's own HOME is another temp dir, whose
 // ~/.pi nothing may touch.
 func piDistroHome(t *testing.T, settings string) (root, home string) {
 	t.Helper()
@@ -90,7 +90,7 @@ func TestWSLPiDiscovered(t *testing.T) {
 }
 
 // A stopped distro's Pi is never asked anything nor opened: it is listed
-// as magpie last saw it, its options come from magpie alone, and a pick
+// as fogway last saw it, its options come from fogway alone, and a pick
 // starts the distro, then writes its files.
 func TestWSLPiStopped(t *testing.T) {
 	root, home := piDistroHome(t, `{"defaultProvider": "xai", "defaultModel": "on-disk"}`)
@@ -132,7 +132,7 @@ func TestWSLPiStopped(t *testing.T) {
 		t.Fatal("a stopped distro's files were touched")
 	}
 
-	if err := a.Field("model").Set("magpie/relay/glm-4.6"); err != nil {
+	if err := a.Field("model").Set("fogway/relay/glm-4.6"); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Join(*asked, ",") != "Stopped" {
@@ -144,7 +144,7 @@ func TestWSLPiStopped(t *testing.T) {
 	if !strings.Contains(readFile(filepath.Join(home, ".pi", "agent", "models.json")), `"baseUrl"`) {
 		t.Fatal("no models.json")
 	}
-	if v := a.Field("model").Get(); v != "magpie/relay/glm-4.6" {
+	if v := a.Field("model").Get(); v != "fogway/relay/glm-4.6" {
 		t.Fatal(v)
 	}
 }

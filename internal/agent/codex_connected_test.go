@@ -5,17 +5,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/edit"
 )
 
-// Codex signed in with ChatGPT, connected on one of magpie's models beside
+// Codex signed in with ChatGPT, connected on one of fogway's models beside
 // its sign-in, stays connected when Codex writes one of its own models in
 // (its /model, or a Codex app still running on its old pick): its own
-// models are in its list beside magpie's, as when it joined (#940: Codex
-// read as not connected then, its config still on magpie's gateway).
-// Disconnect leaves it on that model. Made magpie's provider (the Codex
+// models are in its list beside fogway's, as when it joined (#940: Codex
+// read as not connected then, its config still on fogway's gateway).
+// Disconnect leaves it on that model. Made fogway's provider (the Codex
 // app blocking its account), it is not beside the sign-in.
-func TestCodexOwnPickAfterMagpieModelStaysConnected(t *testing.T) {
+func TestCodexOwnPickAfterFogwayModelStaysConnected(t *testing.T) {
 	home, read := codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, "model = \"gpt-5.5\"\n")
 	cx := codex(home)
 	if err := cx.Apply("model", "fake/m1"); err != nil {
@@ -41,8 +41,8 @@ func TestCodexOwnPickAfterMagpieModelStaysConnected(t *testing.T) {
 		t.Fatalf("disconnected:\n%s", cfg)
 	}
 
-	// out of its allowance, magpie is its provider: an own model written
-	// back is a change from outside, not a pick beside magpie's
+	// out of its allowance, fogway is its provider: an own model written
+	// back is a change from outside, not a pick beside fogway's
 	codexUsedUp = func() bool { return true }
 	if err := cx.Fields[0].Set("fake/m1"); err != nil {
 		t.Fatal(err)
@@ -55,6 +55,6 @@ func TestCodexOwnPickAfterMagpieModelStaysConnected(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cx.Wired() {
-		t.Fatalf("still beside the sign-in after magpie became its provider:\n%s", read())
+		t.Fatalf("still beside the sign-in after fogway became its provider:\n%s", read())
 	}
 }

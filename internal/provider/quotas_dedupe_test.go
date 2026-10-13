@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// magpie quota, its --json and the gateway show a pool's own windows in
+// fogway quota, its --json and the gateway show a pool's own windows in
 // place of the models' drawing on it (the shapes TestAntigravityQuotaPools
 // records): one span per pool window, the pool in its name.
 func TestQuotaReportPoolsAntigravity(t *testing.T) {

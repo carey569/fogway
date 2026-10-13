@@ -39,7 +39,7 @@ function server(lang, state, posts) {
     if (url.pathname === "/api/groups") return json({ groups: [], pools: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -61,7 +61,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const w = L[lang];
         const state = {
           lib: {
-            dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+            dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
             agents: [agent("claude", "Claude Code", "claudecode-color"), agent("codex", "Codex", "openai")],
             instructions: { agents: [], sets: [] }, servers: [], foundServers: [], projects: [], foundSkills: [], problems: [],
             skills: [gh("acme/kit", "mango", ["claude", "codex"]), gh("acme/kit", "cherry", ["claude"]), gh("zed/tools", "pear", [])],
@@ -69,13 +69,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         };
         const posts = [];
         const ctx = await browser.newContext({ viewport: { width: 980, height: 760 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, state, posts));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const head = page.locator("#view-library .lib-grouphead").filter({ has: page.locator(".name", { hasText: /^acme\/kit$/ }) });
         await head.waitFor();

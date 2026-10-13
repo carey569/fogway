@@ -14,7 +14,7 @@ const { watchSettingsReads, settingsDrawn } = require("./reader.cjs");
 const assets = path.resolve(__dirname, "../assets");
 const settings = (lang) => ({ lang, theme: "light", redact: true, redactRules: [{ kind: "GATEWAY_KEY", prefix: "oc_sk_" }] });
 const words = {
-  en: { name: "Masking rules", sub: "Secrets magpie doesn't know", regex: "Regex" },
+  en: { name: "Masking rules", sub: "Secrets fogway doesn't know", regex: "Regex" },
   zh: { name: "自定义脱敏规则", sub: "", regex: "正则" },
 };
 
@@ -49,7 +49,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang));
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings&tab=privacy");
+        await page.goto("http://fogway.test/?view=settings&tab=privacy");
         const row = page.locator("#redactList .row.rule-row");
         await row.waitFor();
         await settingsDrawn(page); // the row found is the one that stays (#1653)

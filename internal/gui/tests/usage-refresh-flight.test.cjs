@@ -77,7 +77,7 @@ function windowServer(lang, log, gate, opts = {}) {
       if (!opts.holdUsage) g.go();
       await g.p;
       const cost = opts.costFor ? opts.costFor(period) : 0.01;
-      return json({ calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost }], agents: [{ name: "Codex", calls: 1, cost }], models: [{ name: "gpt-6-sol", calls: 1, cost }], path: "~/.config/magpie/usage.jsonl" });
+      return json({ calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost }], agents: [{ name: "Codex", calls: 1, cost }], models: [{ name: "gpt-6-sol", calls: 1, cost }], path: "~/.config/fogway/usage.jsonl" });
     }
     if (url.pathname === "/api/usage/quotas") { log.push({ key: "quotas", q: url.search }); return json([]); }
     if (url.pathname === "/api/sessions") return json({ sessions: [], dirs: [] });
@@ -101,7 +101,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium"]
     p.on("pageerror", (e) => errors.push(e.message));
     await p.clock.install({ time: now });
     await p.route("**/*", windowServer("en", log, gate, { holdUsage: true }));
-    await p.goto("http://magpie.test/");
+    await p.goto("http://fogway.test/");
     await p.locator('[data-view="usage"]').first().click(); // Overview
     await gate.waitFor("usage", 1); // the opening read, held
     gate.release("usage", "all"); // let it settle, so the page is drawn and the button is idle
@@ -151,11 +151,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium"]
           return route.fulfill({ status: 500, json: { error: "nope" } });
         }
         if (mine > 1) { const g = gate.hold("usage"); await g.p; }
-        return route.fulfill({ json: { calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost: 0.01, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost: 0.01 }], agents: [{ name: "Codex", calls: 1, cost: 0.01 }], models: [{ name: "gpt-6-sol", calls: 1, cost: 0.01 }], path: "~/.config/magpie/usage.jsonl" } });
+        return route.fulfill({ json: { calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost: 0.01, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost: 0.01 }], agents: [{ name: "Codex", calls: 1, cost: 0.01 }], models: [{ name: "gpt-6-sol", calls: 1, cost: 0.01 }], path: "~/.config/fogway/usage.jsonl" } });
       }
       return base(route);
     });
-    await p.goto("http://magpie.test/");
+    await p.goto("http://fogway.test/");
     await p.locator('[data-view="usage"]').first().click(); // Overview
     await p.locator("#stats .kpi:not(.loading-kpi)").first().waitFor(); // the opening read settled
     // the timer's read is held and will fail; the reader's own click (idle
@@ -196,11 +196,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium"]
         const g = gate.hold("usage");
         await g.p;
         const c = cost(period);
-        return route.fulfill({ json: { calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost: c, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost: c }], agents: [{ name: "Codex", calls: 1, cost: c }], models: [{ name: "gpt-6-sol", calls: 1, cost: c }], path: "~/.config/magpie/usage.jsonl" } });
+        return route.fulfill({ json: { calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost: c, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost: c }], agents: [{ name: "Codex", calls: 1, cost: c }], models: [{ name: "gpt-6-sol", calls: 1, cost: c }], path: "~/.config/fogway/usage.jsonl" } });
       }
       return base(route);
     });
-    await p.goto("http://magpie.test/");
+    await p.goto("http://fogway.test/");
     await p.locator('[data-view="usage"]').first().click();
     await gate.waitFor("usage", 1); // Overview's opening read, held
     gate.release("usage", "all");
@@ -246,12 +246,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium"]
         const g = gate.hold("usage");
         await g.p;
         const cost = mine === 2 ? 9.99 : 1.11; // only the pick's read differs
-        return route.fulfill({ json: { period, calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost }], agents: [{ name: "Codex", calls: 1, cost }], models: [{ name: "gpt-6-sol", calls: 1, cost }], path: "~/.config/magpie/usage.jsonl" } });
+        return route.fulfill({ json: { period, calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost, bucket: "day", series: [{ label: "Mon", input: 100, output: 10, calls: 1, cost }], agents: [{ name: "Codex", calls: 1, cost }], models: [{ name: "gpt-6-sol", calls: 1, cost }], path: "~/.config/fogway/usage.jsonl" } });
       }
       return base(route);
     });
     const loading = () => p.locator("#view-usage").evaluate((el) => el.classList.contains("loading"));
-    await p.goto("http://magpie.test/");
+    await p.goto("http://fogway.test/");
     await p.locator('[data-view="usage"]').first().click(); // Overview
     await gate.waitFor("usage", 1);
     gate.release("usage", "all"); // the opening read
@@ -312,7 +312,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium"]
       const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
       await route.fulfill({ body: await fs.readFile(file), contentType });
     });
-    await p.goto("http://magpie.test/?mode=panel");
+    await p.goto("http://fogway.test/?mode=panel");
     await p.locator('#ptabs [data-ptab="stats"]').click(); // the Usage tab
     await gate.waitFor("requests", 1); // the tab's opening read, held
     gate.release("requests", "all"); // let it settle, so the picker is built
@@ -378,7 +378,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium"]
       const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
       await route.fulfill({ body: await fs.readFile(file), contentType });
     });
-    await p.goto("http://magpie.test/?mode=panel");
+    await p.goto("http://fogway.test/?mode=panel");
     await p.locator('#ptabs [data-ptab="stats"]').click(); // the Usage tab
     await p.waitForTimeout(400);
     const n = log.filter((r) => r.key === "requests").length;

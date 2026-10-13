@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/profile"
+	"github.com/fogway/fogway/internal/profile"
 )
 
 // The state the page draws carries what each profile holds, by agent, for a

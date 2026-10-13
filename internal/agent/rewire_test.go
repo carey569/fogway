@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // setPort is Settings' gateway port set to p, as the Settings page saves it.
@@ -45,11 +45,11 @@ func containsAgent(as []*Agent, id string) bool {
 	return false
 }
 
-// Codex signed in with ChatGPT is joined to magpie beside its own models:
+// Codex signed in with ChatGPT is joined to fogway beside its own models:
 // the move writes its base URL on the new port and keeps the model it was
-// on, rather than putting it on one of magpie's.
+// on, rather than putting it on one of fogway's.
 func TestPortMovesJoinedCodex(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	home, read := codexHome(t, `{"auth_mode":"chatgpt","tokens":{"access_token":"at","refresh_token":"rt","id_token":"x.e30.x","account_id":"acc"}}`, "model = \"gpt-5.1\"\n")
 	setPort(t, 3591)
 	cx := codex(home)
@@ -74,10 +74,10 @@ func TestPortMovesJoinedCodex(t *testing.T) {
 	}
 }
 
-// An agent taken off magpie before the port moved is left as it is: it is
+// An agent taken off fogway before the port moved is left as it is: it is
 // the user's to set again, not the move's.
 func TestPortLeavesAnUnwiredAgent(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	home, read := codexHome(t, "", "")
 	setPort(t, 3591)
 	cx := codex(home)
@@ -92,16 +92,16 @@ func TestPortLeavesAnUnwiredAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 	if strings.Contains(read(), "127.0.0.1:3592") {
-		t.Fatalf("an agent taken off magpie was moved:\n%s", read())
+		t.Fatalf("an agent taken off fogway was moved:\n%s", read())
 	}
 }
 
-// A magpie MAGPIE_ADDR puts beside the installed one tells the installed
-// one's wiring by the port the installed one's Settings have, not 3425.
-func TestDriftInstalledMagpieOnItsPort(t *testing.T) {
+// A fogway FOGWAY_ADDR puts beside the installed one tells the installed
+// one's wiring by the port the installed one's Settings have, not 3725.
+func TestDriftInstalledFogwayOnItsPort(t *testing.T) {
 	home, _ := codexHome(t, "", "")
 	setPort(t, 3591)
-	t.Setenv("MAGPIE_ADDR", "127.0.0.1:3426")
+	t.Setenv("FOGWAY_ADDR", "127.0.0.1:3726")
 	cx := codex(home)
 	if err := cx.Apply("model", "fake/m1"); err != nil {
 		t.Fatal(err)
@@ -109,15 +109,15 @@ func TestDriftInstalledMagpieOnItsPort(t *testing.T) {
 	cfg := filepath.Join(home, ".codex", "config.toml")
 	os.WriteFile(cfg, []byte("openai_base_url = \"http://127.0.0.1:3591"+gateway.CodexPath+"\"\nmodel = \"fake/m1\"\n"), 0o644)
 	if d := cx.Drift(); d != nil {
-		t.Fatalf("the installed magpie's wiring taken for drift: %+v", d)
+		t.Fatalf("the installed fogway's wiring taken for drift: %+v", d)
 	}
 }
 
-// Moved, an agent still puts back what it had before magpie when switched
-// off: its own endpoint and token, not magpie's at the old port, which
+// Moved, an agent still puts back what it had before fogway when switched
+// off: its own endpoint and token, not fogway's at the old port, which
 // setting it again there would otherwise have noted as its own.
 func TestPortKeepsWhatAnAgentHadBefore(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	home, _ := codexHome(t, "", "")
 	managed := claudeManaged
 	claudeManaged = func() string { return filepath.Join(home, "managed-settings.json") }

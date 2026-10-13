@@ -8,17 +8,17 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// synced runs an agent's sync, which brings magpie's models in its files up
-// to date, not where they are reached: a file whose magpie the user pointed
-// at a magpie on another machine (a NAS's, or this one's LAN address, coeo91
+// synced runs an agent's sync, which brings fogway's models in its files up
+// to date, not where they are reached: a file whose fogway the user pointed
+// at a fogway on another machine (a NAS's, or this one's LAN address, coeo91
 // on Discord) keeps that address and its key, as ZCode's and WorkBuddy's
 // writers do on their own (zcodeAddress). Without it, every start and
-// update of magpie (SyncCatalog) put the agent back on 127.0.0.1.
+// update of fogway (SyncCatalog) put the agent back on 127.0.0.1.
 func synced(sync func() error) error {
 	return edit.Filtered(keptAway, sync)
 }
@@ -33,14 +33,14 @@ var originRE = regexp.MustCompile(`https?://[A-Za-z0-9.\-_\[\]:%]+`)
 var keyLineRE = regexp.MustCompile(`(["']?)([A-Za-z0-9_\-]+)(["']?)[ \t]*[:=][ \t]*(?:"((?:[^"\\\n]|\\.)*)"|'([^'\n]*)'|([^\s"',{}\[\]#][^\n"',}\]#]*))`)
 
 // keyName says a key of that name holds what an agent sends the gateway to
-// be let in: apiKey, api_key, MAGPIE_QWEN_API_KEY, experimental_bearer_token,
+// be let in: apiKey, api_key, FOGWAY_QWEN_API_KEY, experimental_bearer_token,
 // Authorization (not max_tokens).
 func keyName(name string) bool {
 	n := strings.ToLower(strings.NewReplacer("_", "", "-", "").Replace(name))
 	return n == "key" || strings.HasSuffix(n, "apikey") || strings.HasSuffix(n, "token") || strings.HasSuffix(n, "authorization")
 }
 
-// ourToken says v, with any "Bearer " before it, is a key magpie gives an
+// ourToken says v, with any "Bearer " before it, is a key fogway gives an
 // agent: gateway.Token, one that names the agent (gateway.TokenFor), or the
 // LAN sharing key.
 func ourToken(v string) bool {
@@ -71,20 +71,20 @@ func keyValues(b []byte) []keyValue {
 	return out
 }
 
-// keptAway is data, a sync's write of the file at path, with magpie kept
+// keptAway is data, a sync's write of the file at path, with fogway kept
 // where the file had it on another machine. That is a file without the
 // gateway's own address (gateway.URL), with an address on another machine
-// and none a WSL distro was seen at (a distro's way to Windows is magpie's
+// and none a WSL distro was seen at (a distro's way to Windows is fogway's
 // to move, wslMovedFrom). Where the write brings the gateway's address in
-// place of one on another machine, that one stays; where it brings magpie's
-// own key in place of another, in a file that had none of magpie's keys,
-// the other stays, with the path every URL there had before magpie's (a
-// reverse proxy's /magpie). An address on this machine's loopback
-// (another port, localhost) is magpie's own and follows the gateway, but
+// place of one on another machine, that one stays; where it brings fogway's
+// own key in place of another, in a file that had none of fogway's keys,
+// the other stays, with the path every URL there had before fogway's (a
+// reverse proxy's /fogway). An address on this machine's loopback
+// (another port, localhost) is fogway's own and follows the gateway, but
 // for a local proxy's route, one with a path of its own where nothing but
-// magpie has answered (#1985); with more than one
+// fogway has answered (#1985); with more than one
 // address or key gone, which went where can't be told, and the write is
-// left as it is. magpie's own files are never the user's pointing.
+// left as it is. fogway's own files are never the user's pointing.
 func keptAway(path string, data []byte) []byte {
 	if strings.HasPrefix(path, filepath.Dir(provider.Path())+string(filepath.Separator)) {
 		return data
@@ -120,13 +120,13 @@ func keptAway(path string, data []byte) []byte {
 		}
 		p := awayPath(was, data, g, away)
 		// on this machine, a local proxy's route (#1985): one with a path
-		// of its own before magpie's, where magpie answers or hasn't been
-		// asked yet; without one it is magpie's own on an older port
+		// of its own before fogway's, where fogway answers or hasn't been
+		// asked yet; without one it is fogway's own on an older port
 		if !onAnotherMachine(away) {
 			if !loopbackWithPath(away + p) {
 				return data
 			}
-			if ok, known := magpieAt(away + p); known && !ok {
+			if ok, known := fogwayAt(away + p); known && !ok {
 				return data
 			}
 		}
@@ -135,7 +135,7 @@ func keptAway(path string, data []byte) []byte {
 		return data
 	}
 
-	// the key: the one that went with the address, in place of magpie's
+	// the key: the one that went with the address, in place of fogway's
 	theirs, before, after := "", keyCounts(was), keyCounts(out)
 	for v, n := range before {
 		if ourToken(v) {
@@ -169,9 +169,9 @@ func keptAway(path string, data []byte) []byte {
 // urlRE is an http(s) URL with its path, as it is written in a file.
 var urlRE = regexp.MustCompile(`https?://[^\s"'<>,{}\[\]\\]+`)
 
-// awayPath is the path before magpie's own that the address away keeps in
+// awayPath is the path before fogway's own that the address away keeps in
 // was, the file before a sync wrote data with the gateway's address g: the
-// /magpie of https://ai.corp.example/magpie/v1, a reverse proxy's (#1985),
+// /fogway of https://ai.corp.example/fogway/v1, a reverse proxy's (#1985),
 // where data has g/v1. It is the shortest that every one of was's URLs at
 // away starts with; "" when one is at away itself, or none fits.
 func awayPath(was, data []byte, g, away string) string {
@@ -217,7 +217,7 @@ func keyCounts(b []byte) map[string]int {
 }
 
 // replaceOrigin is b with each from (an origin) that isn't part of a longer
-// one (http://127.0.0.1:3425 in http://127.0.0.1:34250) replaced by to.
+// one (http://127.0.0.1:3725 in http://127.0.0.1:34250) replaced by to.
 func replaceOrigin(b []byte, from, to string) []byte {
 	var out []byte
 	for {

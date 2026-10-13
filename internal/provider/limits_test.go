@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // limitsHome keeps a test off the machine's own settings, providers and
@@ -61,7 +61,7 @@ func TestLimitsRefuseAModelTheProviderHasNot(t *testing.T) {
 	}
 }
 
-// A model taken off a provider — magpie provider set relay models=sol —
+// A model taken off a provider — fogway provider set relay models=sol —
 // leaves a window and a reply limit keyed by an id the provider no longer
 // serves, and both have to be clearable: refusing a --reset for it is a
 // number the user can only take off by hand, with nothing to say why.
@@ -82,7 +82,7 @@ func TestLimitsComeOffAModelThatHasGone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// magpie provider set relay models=sol: the model is off its list
+	// fogway provider set relay models=sol: the model is off its list
 	p, err = Find("relay")
 	if err != nil {
 		t.Fatal(err)
@@ -132,9 +132,9 @@ func TestOutputComesOffAProviderThatIsGone(t *testing.T) {
 		t.Fatal(err)
 	}
 	// the spellings a caller has: the id itself, the provider's own
-	// every-model one, and the "magpie/" the agents put in front of the
+	// every-model one, and the "fogway/" the agents put in front of the
 	// gateway's ids. Each is a key of the one map.
-	ids := []string{"relay/mystery-x", "relay/*", "magpie/relay/sol"}
+	ids := []string{"relay/mystery-x", "relay/*", "fogway/relay/sol"}
 	for _, id := range ids {
 		if err := SetModelOutput(id, 131072); err != nil {
 			t.Fatal(err)
@@ -157,7 +157,7 @@ func TestOutputComesOffAProviderThatIsGone(t *testing.T) {
 		if !dropped {
 			t.Errorf("%s --reset: took a limit off that was not there", id)
 		}
-		if want := strings.TrimPrefix(id, "magpie/"); key != want {
+		if want := strings.TrimPrefix(id, "fogway/"); key != want {
 			t.Errorf("%s --reset: cleared %q; want %q, the key it is stored at", id, key, want)
 		}
 	}

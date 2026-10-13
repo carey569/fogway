@@ -15,11 +15,11 @@ import (
 const staleOnWindows = "Windows lists no processes for StaleCopies; see TestCodexStaleOnWindowsIsTheDaemonsLastCheck"
 
 // Codex writes config.toml itself (a project's trust, a notice seen), so a
-// copy reopened after magpie's change and then writing there was still
+// copy reopened after fogway's change and then writing there was still
 // told to reopen; an app-server daemon left running for another
-// CODEX_HOME was counted too (#729). Only magpie's own change counts, for
+// CODEX_HOME was counted too (#729). Only fogway's own change counts, for
 // copies of this home's Codex.
-func TestCodexStaleOnlyForMagpiesChange(t *testing.T) {
+func TestCodexStaleOnlyForFogwaysChange(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip(staleOnWindows)
 	}
@@ -32,11 +32,11 @@ func TestCodexStaleOnlyForMagpiesChange(t *testing.T) {
 	dir := filepath.Join(home, ".codex")
 	os.MkdirAll(dir, 0o755)
 	cfg := filepath.Join(dir, "config.toml")
-	list := filepath.Join(dir, "magpie-models.json")
-	conf := "model = \"magpie/gpt-6-luna\"\nmodel_provider = \"magpie\"\nmodel_catalog_json = \"" + tomlString(list) + "\"\n\n" +
-		"[model_providers.magpie]\nname = \"magpie\"\nbase_url = \"http://127.0.0.1:3425/v1\"\n"
+	list := filepath.Join(dir, "fogway-models.json")
+	conf := "model = \"fogway/gpt-6-luna\"\nmodel_provider = \"fogway\"\nmodel_catalog_json = \"" + tomlString(list) + "\"\n\n" +
+		"[model_providers.fogway]\nname = \"fogway\"\nbase_url = \"http://127.0.0.1:3725/v1\"\n"
 	os.WriteFile(cfg, []byte(conf), 0o600)
-	os.WriteFile(list, []byte(`{"models":[{"slug":"magpie/gpt-6-luna"}]}`), 0o644)
+	os.WriteFile(list, []byte(`{"models":[{"slug":"fogway/gpt-6-luna"}]}`), 0o644)
 	then := time.Now().Add(-2 * time.Hour)
 	os.Chtimes(cfg, then, then)
 	os.Chtimes(list, then, then)
@@ -53,10 +53,10 @@ func TestCodexStaleOnlyForMagpiesChange(t *testing.T) {
 	}
 	a := codex(home)
 	if n := a.Stale(); n != 0 {
-		t.Fatalf("reopened after magpie's change, other home's daemon: %d stale, want 0", n)
+		t.Fatalf("reopened after fogway's change, other home's daemon: %d stale, want 0", n)
 	}
 
-	// Codex trusts a project: config.toml written now, magpie's part as it was
+	// Codex trusts a project: config.toml written now, fogway's part as it was
 	f, _ := os.OpenFile(cfg, os.O_APPEND|os.O_WRONLY, 0)
 	f.WriteString("\n[projects.\"/Users/x/work\"]\ntrust_level = \"trusted\"\n")
 	f.Close()
@@ -64,12 +64,12 @@ func TestCodexStaleOnlyForMagpiesChange(t *testing.T) {
 		t.Fatalf("Codex's own write: %d stale, want 0", n)
 	}
 
-	// magpie's list changes: the copy running from before has the old one
-	os.WriteFile(list, []byte(`{"models":[{"slug":"magpie/gpt-6-luna"},{"slug":"magpie/new"}]}`), 0o644)
+	// fogway's list changes: the copy running from before has the old one
+	os.WriteFile(list, []byte(`{"models":[{"slug":"fogway/gpt-6-luna"},{"slug":"fogway/new"}]}`), 0o644)
 	if n := a.Stale(); n != 1 {
-		t.Fatalf("magpie's list changed: %d stale, want 1", n)
+		t.Fatalf("fogway's list changed: %d stale, want 1", n)
 	}
-	// and stays so while nothing else changes, magpie restarted or not
+	// and stays so while nothing else changes, fogway restarted or not
 	if n := codex(home).Stale(); n != 1 {
 		t.Fatalf("asked again: %d stale, want 1", n)
 	}
@@ -94,7 +94,7 @@ func TestCodexStaleCopiesSayWhichIsLeft(t *testing.T) {
 	dir := filepath.Join(home, ".codex")
 	os.MkdirAll(dir, 0o755)
 	cfg := filepath.Join(dir, "config.toml")
-	os.WriteFile(cfg, []byte("model = \"gpt-6.1-sol\"\nopenai_base_url = \"http://127.0.0.1:3425/backend-api/codex\"\n"), 0o600)
+	os.WriteFile(cfg, []byte("model = \"gpt-6.1-sol\"\nopenai_base_url = \"http://127.0.0.1:3725/backend-api/codex\"\n"), 0o600)
 	then := time.Now().Add(-2 * time.Hour)
 	os.Chtimes(cfg, then, then)
 
@@ -145,7 +145,7 @@ func TestCodexStaleCopiesSayWhichIsLeft(t *testing.T) {
 // (codex app-server daemon pid-update-loop) that a daemon restart doesn't
 // end and that reads no list. It matches the codex startsWith pattern and
 // no --managed-daemon, so it was counted as a "cli" copy from before
-// magpie's change: "A Codex in a terminal" that doesn't exist, forever,
+// fogway's change: "A Codex in a terminal" that doesn't exist, forever,
 // and only killing the process cleared the row. A daemon helper is no
 // copy to reopen.
 func TestCodexDaemonHelperIsNoStaleCopy(t *testing.T) {
@@ -161,7 +161,7 @@ func TestCodexDaemonHelperIsNoStaleCopy(t *testing.T) {
 	dir := filepath.Join(home, ".codex")
 	os.MkdirAll(dir, 0o755)
 	cfg := filepath.Join(dir, "config.toml")
-	os.WriteFile(cfg, []byte("model = \"gpt-6.1-sol\"\nopenai_base_url = \"http://127.0.0.1:3425/backend-api/codex\"\n"), 0o600)
+	os.WriteFile(cfg, []byte("model = \"gpt-6.1-sol\"\nopenai_base_url = \"http://127.0.0.1:3725/backend-api/codex\"\n"), 0o600)
 	then := time.Now().Add(-2 * time.Hour)
 	os.Chtimes(cfg, then, then)
 
@@ -169,7 +169,7 @@ func TestCodexDaemonHelperIsNoStaleCopy(t *testing.T) {
 	t.Cleanup(func() { running = was })
 	running = func(string) []runningProc {
 		return []runningProc{
-			// the helper, from before magpie's change
+			// the helper, from before fogway's change
 			{3 * time.Hour, "/opt/homebrew/bin/codex app-server daemon pid-update-loop"},
 		}
 	}

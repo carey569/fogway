@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // limitedUpstream is a provider whose every call uses 300 input and 50

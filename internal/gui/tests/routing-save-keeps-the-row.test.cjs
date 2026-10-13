@@ -88,10 +88,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-group[data-id=big]").waitFor();
 
-      // narrow, the row is below the window's foot; magpie moves the page
+      // narrow, the row is below the window's foot; fogway moves the page
       // only for the reader, so it is wheeled to as a reader would
       const row = page.locator(".rt-group[data-id=big]");
       const vb = await page.locator("#view-routing").boundingBox();

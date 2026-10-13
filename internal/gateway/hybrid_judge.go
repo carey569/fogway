@@ -31,7 +31,9 @@ sensitive: does the message carry what must not leave this computer?
   true for: passwords, API keys, tokens, private keys, connection strings; personal data (ID or phone numbers, addresses, names of real customers or employees with their details); internal hostnames, IPs, or confidential business data; or the user says it is confidential or internal.
   false for: ordinary code and questions, public libraries, generic examples.
 
-Answer with JSON only, no other words: {"local": true or false, "sensitive": true or false, "why": "a few words"}`
+First name the task itself in a few words, leaving out the data it carries ("fix a typo in a comment"); judge local by that task alone. A data that must not leave the computer makes a message sensitive, never too hard for the local model: a small task with a password in it is local and sensitive.
+
+Answer with JSON only, no other words: {"task": "the task in a few words", "local": true or false, "sensitive": true or false, "why": "a few words"}`
 
 // judgeBody is the Chat request asking model to judge text. prev, when
 // set, is what the turn before was judged, for a message that only carries

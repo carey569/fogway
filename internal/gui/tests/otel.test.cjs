@@ -15,7 +15,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, posts));
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings&tab=otel");
+        await page.goto("http://fogway.test/?view=settings&tab=otel");
         await settingsDrawn(page); // rows found are the ones that stay (#1659)
         await page.locator("#otelExportRow").waitFor();
         const off = lang === "zh" ? "关闭" : "Off";
@@ -73,7 +73,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.equal(await page.locator(`#${id} .opt.on`).textContent(), off);
         }
         const consent = await page.locator("#otelSessionsRow").textContent();
-        for (const phrase of (lang === "zh" ? ["全部本地会话", "未经 Magpie", "文件内容", "命令输出", "遮蔽敏感信息"] : ["all local sessions", "not routed through Magpie", "file contents", "command output", "secrets masked"])) assert(consent.includes(phrase), phrase);
+        for (const phrase of (lang === "zh" ? ["全部本地会话", "未经 Fogway", "文件内容", "命令输出", "遮蔽敏感信息"] : ["all local sessions", "not routed through Fogway", "file contents", "command output", "secrets masked"])) assert(consent.includes(phrase), phrase);
         const mode = page.locator("#otelBodiesRow .opt.on");
         assert.equal(await mode.textContent(), modes[0]);
         assert.equal(await mode.getAttribute("aria-pressed"), "true");
@@ -178,7 +178,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         if (process.env.OTEL_SCREENSHOTS) {
           await page.setViewportSize({ width: 1100, height: 1000 });
-          await page.locator("#otelList").screenshot({ path: `/tmp/magpie-otel-${engine}-${lang}.png` });
+          await page.locator("#otelList").screenshot({ path: `/tmp/fogway-otel-${engine}-${lang}.png` });
         }
         assert.deepEqual(errors, []);
         await context.close();

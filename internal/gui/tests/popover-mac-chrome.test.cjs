@@ -23,7 +23,7 @@ const models = () => [
 
 function server(lang) {
   const list = models();
-  const options = list.map((m) => ({ value: "magpie/" + m.id, label: m.name, ref: m.id }));
+  const options = list.map((m) => ({ value: "fogway/" + m.id, label: m.name, ref: m.id }));
   const state = () => ({
     agents: [{
       id: "codex", name: "Codex", path: "/test/config.toml", icon: "codex-color", wired: true,
@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang));
-      await page.goto("http://magpie.test/?mode=window");
+      await page.goto("http://fogway.test/?mode=window");
       assert.equal(await page.evaluate(() => document.body.classList.contains("mac")), mac);
       const head = await page.evaluate(() => document.querySelector("header.top").getBoundingClientRect().bottom);
       if (mac) assert(head >= 49, `a Mac window's header reaches under the traffic lights: ${head}`);

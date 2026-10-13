@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/agentenv"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // copyTree copies the fixtures somewhere the test may change them.

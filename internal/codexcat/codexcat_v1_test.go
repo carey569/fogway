@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 func v1Home(t *testing.T, cache string) string {
@@ -49,7 +49,7 @@ func versions(t *testing.T, ms []catalog.Model) map[string]any {
 // the backend did, so turning the setting off undoes it: a version the
 // backend gave comes back, one it didn't give goes.
 func TestCodexAgentsV1CacheRestores(t *testing.T) {
-	home := v1Home(t, `{"etag":"W/\"a+magpie-0011\"","models":[
+	home := v1Home(t, `{"etag":"W/\"a+fogway-0011\"","models":[
 		{"slug":"gpt-6","multi_agent_version":"v2"},
 		{"slug":"gpt-5.5"},
 		{"slug":"gpt-luna","multi_agent_version":"v1"}]}`)
@@ -58,7 +58,7 @@ func TestCodexAgentsV1CacheRestores(t *testing.T) {
 		t.Fatalf("%v", got)
 	}
 	// Codex has since cached a stamped list
-	os.WriteFile(filepath.Join(home, ".codex", "models_cache.json"), []byte(`{"etag":"W/\"b+magpie-v1.0011\"","models":[
+	os.WriteFile(filepath.Join(home, ".codex", "models_cache.json"), []byte(`{"etag":"W/\"b+fogway-v1.0011\"","models":[
 		{"slug":"gpt-6","multi_agent_version":"v1"},
 		{"slug":"gpt-5.5","multi_agent_version":"v1"},
 		{"slug":"gpt-luna","multi_agent_version":"v1"},

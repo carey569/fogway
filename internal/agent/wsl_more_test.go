@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
 // wslMore is each CLI #515 brings into WSL distros: the file under the
-// distro's home that carries magpie's provider once one of magpie's models
+// distro's home that carries fogway's provider once one of fogway's models
 // is picked, and what of the gateway's address it names (its /v1, or the
 // bare address for one spoken to as Anthropic messages).
 var wslMore = []struct {
@@ -25,7 +25,7 @@ var wslMore = []struct {
 	{"droid", ".factory/settings.json", "/v1"},
 	{"dsh", ".dsh/config.yaml", "/v1"},
 	{"cline", ".cline/data/settings/providers.json", "/v1"},
-	{"goose", ".config/goose/custom_providers/magpie.json", "/v1"},
+	{"goose", ".config/goose/custom_providers/fogway.json", "/v1"},
 }
 
 // wslFinds is what a probe of a distro with the agent of kind k prints,
@@ -126,7 +126,7 @@ func TestWSLMoreAgentsDiscovered(t *testing.T) {
 	}
 }
 
-// Picking one of magpie's models writes each one's own file in the
+// Picking one of fogway's models writes each one's own file in the
 // distro's home, as on this machine but naming the gateway as the distro
 // reaches it: Windows' address under NAT, 127.0.0.1 when mirrored. Its
 // wiring checks out against that address, a sync keeps it, and nothing of
@@ -147,7 +147,7 @@ func TestWSLMoreAgentsPick(t *testing.T) {
 			d := distro{Name: "Ubuntu", Root: root, Home: "/home/me", Has: has, Versions: versions,
 				Gateway: "172.20.0.1", Mirrored: mirrored, Running: true}
 			a := wslAgent(k, d)
-			if err := a.Field("model").Set("magpie/relay/glm-4.6"); err != nil {
+			if err := a.Field("model").Set("fogway/relay/glm-4.6"); err != nil {
 				t.Fatalf("%s: %v", c.id, err)
 			}
 			path := filepath.Join(dhome, filepath.FromSlash(c.file))
@@ -162,7 +162,7 @@ func TestWSLMoreAgentsPick(t *testing.T) {
 			if !mirrored && strings.Contains(body, "127.0.0.1") {
 				t.Fatalf("%s: this machine's address under NAT:\n%s", c.id, body)
 			}
-			if v := a.Field("model").Get(); !usesMagpie(v) {
+			if v := a.Field("model").Get(); !usesFogway(v) {
 				t.Fatalf("%s: model %q", c.id, v)
 			}
 			if a.Check != nil {
@@ -195,7 +195,7 @@ func TestWSLMoreAgentsPick(t *testing.T) {
 }
 
 // A stopped distro's agents are never asked anything nor opened: each is
-// listed as magpie last saw it, its options come from magpie alone, and a
+// listed as fogway last saw it, its options come from fogway alone, and a
 // pick starts the distro, then writes its file there.
 func TestWSLMoreAgentsStopped(t *testing.T) {
 	for _, c := range wslMore {
@@ -233,7 +233,7 @@ func TestWSLMoreAgentsStopped(t *testing.T) {
 		if es, _ := os.ReadDir(root); len(es) > 0 {
 			t.Fatalf("%s: a stopped distro was opened", c.id)
 		}
-		if err := a.Field("model").Set("magpie/relay/glm-4.6"); err != nil {
+		if err := a.Field("model").Set("fogway/relay/glm-4.6"); err != nil {
 			t.Fatalf("%s: %v", c.id, err)
 		}
 		if strings.Join(*asked, ",") != "Stopped" {
@@ -242,7 +242,7 @@ func TestWSLMoreAgentsStopped(t *testing.T) {
 		if body := readFile(filepath.Join(root, "home", "me", filepath.FromSlash(c.file))); !strings.Contains(body, "glm-4.6") {
 			t.Fatalf("%s: nothing written to %s", c.id, c.file)
 		}
-		if v := a.Field("model").Get(); !usesMagpie(v) {
+		if v := a.Field("model").Get(); !usesFogway(v) {
 			t.Fatalf("%s: last seen %q", c.id, v)
 		}
 	}
@@ -276,19 +276,19 @@ func TestWSLStoppedPickFindsItsFiles(t *testing.T) {
 	if oc == nil || ki == nil {
 		t.Fatalf("%v", byID)
 	}
-	if err := oc.Field("model").Set("magpie/relay/glm-4.6"); err != nil {
+	if err := oc.Field("model").Set("fogway/relay/glm-4.6"); err != nil {
 		t.Fatal(err)
 	}
-	if m, _ := edit.GetJSON(jsonc, "model"); m != "magpie/relay/glm-4.6" || !strings.Contains(readFile(jsonc), "// mine") {
+	if m, _ := edit.GetJSON(jsonc, "model"); m != "fogway/relay/glm-4.6" || !strings.Contains(readFile(jsonc), "// mine") {
 		t.Fatalf("opencode.jsonc:\n%s", readFile(jsonc))
 	}
 	if _, err := os.Stat(filepath.Join(dhome, ".config", "opencode", "opencode.json")); !os.IsNotExist(err) {
 		t.Fatal("a second opencode.json beside the .jsonc")
 	}
-	if err := ki.Field("model").Set("magpie/relay/glm-4.6"); err != nil {
+	if err := ki.Field("model").Set("fogway/relay/glm-4.6"); err != nil {
 		t.Fatal(err)
 	}
-	if v, _ := edit.GetTOMLTop(legacy, "default_model"); v != "magpie/relay/glm-4.6" {
+	if v, _ := edit.GetTOMLTop(legacy, "default_model"); v != "fogway/relay/glm-4.6" {
 		t.Fatalf("~/.kimi/config.toml:\n%s", readFile(legacy))
 	}
 	if _, err := os.Stat(filepath.Join(dhome, ".kimi-code")); !os.IsNotExist(err) {
@@ -296,9 +296,9 @@ func TestWSLStoppedPickFindsItsFiles(t *testing.T) {
 	}
 }
 
-// lgtm on Discord: wsl中安装的dsh，目前magpie还是扫描不到. A dsh of today's
+// lgtm on Discord: wsl中安装的dsh，目前fogway还是扫描不到. A dsh of today's
 // in a distro keeps its profiles' patch lists in the distro's ~/.dsh: a pick
-// puts magpie's route in them naming the gateway as the distro reaches it,
+// puts fogway's route in them naming the gateway as the distro reaches it,
 // and neither a sync nor this machine's 30-second round puts it back at
 // this machine's address.
 func TestWSLDshProfiles(t *testing.T) {
@@ -314,7 +314,7 @@ func TestWSLDshProfiles(t *testing.T) {
 	if a.ID != "dsh@wsl:Ubuntu" || a.Path != web {
 		t.Fatalf("%+v", a)
 	}
-	if err := a.Field("model").Set("magpie/relay/glm-4.6"); err != nil {
+	if err := a.Field("model").Set("fogway/relay/glm-4.6"); err != nil {
 		t.Fatal(err)
 	}
 	gw := "http://172.20.0.1:" + gateway.Port() + "/v1"
@@ -322,7 +322,7 @@ func TestWSLDshProfiles(t *testing.T) {
 	if !strings.Contains(body, "baseURL: "+gw) || !strings.Contains(body, `model: "relay/glm-4.6"`) || strings.Contains(body, "127.0.0.1") {
 		t.Fatalf("lacks %s:\n%s", gw, body)
 	}
-	if v := a.Field("model").Get(); v != "magpie/relay/glm-4.6" {
+	if v := a.Field("model").Get(); v != "fogway/relay/glm-4.6" {
 		t.Fatalf("model %q", v)
 	}
 	if msg := a.Check(); msg != "" {
@@ -343,7 +343,7 @@ func TestWSLDshProfiles(t *testing.T) {
 }
 
 // Gemini CLI in a distro is found by its command alone (Antigravity keeps
-// ~/.gemini too), and a magpie model points the distro's ~/.gemini/.env at
+// ~/.gemini too), and a fogway model points the distro's ~/.gemini/.env at
 // the gateway as the distro reaches it, with the key it takes from there;
 // a model of its own puts back what that replaced.
 func TestWSLGemini(t *testing.T) {
@@ -382,7 +382,7 @@ func TestWSLGemini(t *testing.T) {
 	if msg := a.Check(); msg != "" {
 		t.Fatal(msg)
 	}
-	if v := a.Field("provider").Get(); v != magpieID {
+	if v := a.Field("provider").Get(); v != fogwayID {
 		t.Fatalf("auth %q", v)
 	}
 	if err := a.Field("model").Set("gemini-2.5-pro"); err != nil {
@@ -412,7 +412,7 @@ func TestWSLMoreAgentsFollowTheAddress(t *testing.T) {
 		}
 		_, has, versions := wslFinds(k)
 		d := distro{Name: "Ubuntu", Root: root, Home: "/home/me", Has: has, Versions: versions, Gateway: "172.20.0.1", Running: true}
-		if err := wslAgent(k, d).Field("model").Set("magpie/relay/glm-4.6"); err != nil {
+		if err := wslAgent(k, d).Field("model").Set("fogway/relay/glm-4.6"); err != nil {
 			t.Fatalf("%s: %v", c.id, err)
 		}
 		d.Gateway = "172.29.0.1"
@@ -430,7 +430,7 @@ func TestWSLMoreAgentsFollowTheAddress(t *testing.T) {
 	}
 }
 
-// Gemini CLI in a distro whose address moved is on magpie still, and
+// Gemini CLI in a distro whose address moved is on fogway still, and
 // picking its model again names the new address without taking the old
 // one for the user's own: a model of its own then puts back their key.
 func TestWSLGeminiAddressMoved(t *testing.T) {
@@ -446,7 +446,7 @@ func TestWSLGeminiAddressMoved(t *testing.T) {
 	}
 	d.Gateway = "172.29.0.1"
 	a := wslAgent(k, d)
-	if v := a.Field("provider").Get(); v != magpieID {
+	if v := a.Field("provider").Get(); v != fogwayID {
 		t.Fatalf("auth %q", v)
 	}
 	if a.Check() == "" {

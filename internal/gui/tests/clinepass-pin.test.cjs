@@ -68,7 +68,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const posts = [];
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const zh = await page.evaluate(() => [
         "DeepSeek models only from DeepSeek's own API", "Upstream",
         "Cline serves a model from any host its gateway picks; pinned, a request for a DeepSeek model goes only to DeepSeek, which keeps its prompt cache, and fails when DeepSeek can't take it",

@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
-// healthcheck: magpie healthcheck — exits 0 when a magpie gateway answers
-// at its address (MAGPIE_ADDR, else Settings' Gateway port on 127.0.0.1,
-// 3425 unless set), for a container's
+// healthcheck: fogway healthcheck — exits 0 when a fogway gateway answers
+// at its address (FOGWAY_ADDR, else Settings' Gateway port on 127.0.0.1,
+// 3725 unless set), for a container's
 // HEALTHCHECK, which has no curl to ask it with.
 func healthcheck() error {
 	c := &http.Client{Timeout: 3 * time.Second}
@@ -25,8 +25,8 @@ func healthcheck() error {
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
-	if res.StatusCode != http.StatusOK || !bytes.Contains(b, []byte(`"magpie"`)) {
-		return fmt.Errorf("%s answers %s, not as a magpie gateway", gateway.URL(), res.Status)
+	if res.StatusCode != http.StatusOK || !bytes.Contains(b, []byte(`"fogway"`)) {
+		return fmt.Errorf("%s answers %s, not as a fogway gateway", gateway.URL(), res.Status)
 	}
 	return nil
 }

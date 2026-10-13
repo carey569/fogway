@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // A preset's or a subscription's model asked on the API the user picks
 // (01huadalang on Discord: OpenCode Go's DeepSeek answers on Responses
-// too, and magpie asked it on chat alone; a custom provider could pick).
+// too, and fogway asked it on chat alone; a custom provider could pick).
 // A model chip's right-click has "Asked on: Auto…" beside its test, for a
 // provider with more than one API: it opens the app's menu (never a native
 // <select>), Auto saying what the vendor's list says, and the pick is
@@ -87,7 +87,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const posts = [];
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const open = async (name) => {
         await page.locator(".row.provider", { hasText: name }).first().click();
         await page.locator(".editor .mchips .mchip").first().waitFor();

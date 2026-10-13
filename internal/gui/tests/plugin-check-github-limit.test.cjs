@@ -41,7 +41,7 @@ function server(lang, limited) {
       ] });
     }
     if (url.pathname.startsWith("/api/")) return json({});
-    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -73,7 +73,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
             const errors = [];
             page.on("pageerror", (e) => errors.push(e.message));
             await page.route("**/*", server(lang, limited));
-            await page.goto("http://magpie.test/?view=plugins");
+            await page.goto("http://fogway.test/?view=plugins");
             const view = page.locator("#view-plugins");
             // the Installed tab, by its place where its name isn't given here
             const tabs = page.locator(":is(.lib-tabs .opt, .nav-s):visible");

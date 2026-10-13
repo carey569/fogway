@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/update"
 )
 
 // #661: the site failing to give the notes (a 503 while GitHub limits it,
@@ -29,15 +29,15 @@ func TestWhatsNewTellsFailureFromNone(t *testing.T) {
 		json.NewEncoder(w).Encode(update.Release{Version: "0.1.737"})
 	}))
 	defer feed.Close()
-	t.Setenv("MAGPIE_NOTES_FEED", notes.URL)
-	t.Setenv("MAGPIE_UPDATE_FEED", feed.URL)
+	t.Setenv("FOGWAY_NOTES_FEED", notes.URL)
+	t.Setenv("FOGWAY_UPDATE_FEED", feed.URL)
 	old := Version
 	defer func() { Version = old }()
 	Version = "0.1.737"
 	n := &whatsNew{}
 
 	j := n.get(context.Background(), true, "en")
-	if j.Error == "" || len(j.Releases) != 0 || j.URL != "https://github.com/yetone/magpie-releases/releases/tag/v0.1.737" {
+	if j.Error == "" || len(j.Releases) != 0 || j.URL != "https://github.com/fogway/fogway/releases/tag/v0.1.737" {
 		t.Fatalf("site failing: %+v", j)
 	}
 	// asked again once the site answers: no notes, and no error

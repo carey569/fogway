@@ -4,8 +4,8 @@
 package groups
 
 import (
-	"github.com/yetone/magpie/internal/pluginrt"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/pluginrt"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func init() {

@@ -1,10 +1,10 @@
 # The recipes (clean's rm -rf too) name paths relative to the working
-# folder, so they run only in magpie's own, known by its go.mod: run from
+# folder, so they run only in fogway's own, known by its go.mod: run from
 # another one (make -f path/to/Makefile) they would act there. make -C
 # works. go.mod is read relative to the working folder, so a path with
 # spaces (or a symlinked Makefile) changes nothing.
-ifneq ($(shell sed -n 's/^module //p' go.mod 2>/dev/null),github.com/yetone/magpie)
-  $(error run make in magpie's folder (make -C path/to/magpie), not in $(CURDIR))
+ifneq ($(shell sed -n 's/^module //p' go.mod 2>/dev/null),github.com/fogway/fogway)
+  $(error run make in fogway's folder (make -C path/to/fogway), not in $(CURDIR))
 endif
 
 # A tag may hold $, ( or `, which the shell lines below would run: the
@@ -15,7 +15,7 @@ TAGS     = production
 TARGETS  = darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64 windows/arm64 android/arm64
 
 # The GUI links the platform webview through cgo, so it is built natively.
-# `nogui` builds the terminal-only magpie, which cross-compiles anywhere.
+# `nogui` builds the terminal-only fogway, which cross-compiles anywhere.
 # macOS 12 is the oldest Go (1.25 and later) runs on; Info.plist says so too.
 ifeq ($(shell uname -s),Darwin)
   export CGO_CFLAGS  = -mmacosx-version-min=12.0
@@ -35,10 +35,10 @@ endif
 .PHONY: build cli install test test-ui app icons release release-cli release-windows release-linux clean dev dev-once
 
 build:
-	go build -tags "$(TAGS)" -trimpath -ldflags="$(LDFLAGS)" -o magpie .
+	go build -tags "$(TAGS)" -trimpath -ldflags="$(LDFLAGS)" -o fogway .
 
 cli:
-	CGO_ENABLED=0 go build -tags nogui -trimpath -ldflags="$(LDFLAGS)" -o magpie .
+	CGO_ENABLED=0 go build -tags nogui -trimpath -ldflags="$(LDFLAGS)" -o fogway .
 
 install:
 	go install -tags "$(TAGS)" -trimpath -ldflags="$(LDFLAGS)" .
@@ -58,28 +58,29 @@ test-ui:
 
 # macOS bundle: menu bar app with no Dock icon (LSUIElement).
 app: build
-	@rm -rf magpie.app
-	@mkdir -p magpie.app/Contents/MacOS magpie.app/Contents/Resources
-	@cp magpie magpie.app/Contents/MacOS/magpie
-	@cp build/darwin/magpie.icns magpie.app/Contents/Resources/magpie.icns
-	@cp build/darwin/Assets.car magpie.app/Contents/Resources/Assets.car
-	@sed 's/@VERSION@/$(VERSION)/' build/darwin/Info.plist > magpie.app/Contents/Info.plist
-	@echo "  magpie.app"
+	@rm -rf fogway.app
+	@mkdir -p fogway.app/Contents/MacOS fogway.app/Contents/Resources
+	@cp fogway fogway.app/Contents/MacOS/fogway
+	@cp build/darwin/fogway.icns fogway.app/Contents/Resources/fogway.icns
+	@# macOS 26's Dock icon (Assets.car), when make icons could build it with Xcode's actool
+	@[ ! -f build/darwin/Assets.car ] || cp build/darwin/Assets.car fogway.app/Contents/Resources/Assets.car
+	@sed 's/@VERSION@/$(VERSION)/' build/darwin/Info.plist > fogway.app/Contents/Info.plist
+	@echo "  fogway.app"
 
 icons:
 	@go run build/icon/gen.go tray internal/gui/tray.png
 	@go run build/icon/gen.go tray-flap internal/gui/trayflap
 	@go run build/icon/gen.go app 64 internal/gui/icon.png
 	@go run build/icon/gen.go app 1024 internal/gui/icon-1024.png
-	@rm -rf build/darwin/magpie.iconset && mkdir -p build/darwin/magpie.iconset
+	@rm -rf build/darwin/fogway.iconset && mkdir -p build/darwin/fogway.iconset
 	@for s in 16 32 128 256 512; do \
-		go run build/icon/gen.go app $$s build/darwin/magpie.iconset/icon_$${s}x$${s}.png; \
-		go run build/icon/gen.go app $$((s*2)) build/darwin/magpie.iconset/icon_$${s}x$${s}@2x.png; \
+		go run build/icon/gen.go app $$s build/darwin/fogway.iconset/icon_$${s}x$${s}.png; \
+		go run build/icon/gen.go app $$((s*2)) build/darwin/fogway.iconset/icon_$${s}x$${s}@2x.png; \
 	done
-	@iconutil -c icns build/darwin/magpie.iconset -o build/darwin/magpie.icns && rm -rf build/darwin/magpie.iconset
+	@iconutil -c icns build/darwin/fogway.iconset -o build/darwin/fogway.icns && rm -rf build/darwin/fogway.iconset
 	@# macOS 26 draws the Dock icon from AppIcon.icon, light and dark (Xcode 26's actool);
 	@# the compiled Assets.car is kept in the tree so a release needn't have it
-	@go run build/icon/gen.go glyph 1024 build/darwin/AppIcon.icon/Assets/magpie.png
+	@go run build/icon/gen.go glyph 1024 build/darwin/AppIcon.icon/Assets/fogway.png
 	@rm -rf build/darwin/actool && mkdir -p build/darwin/actool
 	@xcrun actool build/darwin/AppIcon.icon --compile build/darwin/actool --platform macosx \
 		--minimum-deployment-target 11.0 --app-icon AppIcon --output-partial-info-plist build/darwin/actool/partial.plist >/dev/null
@@ -87,7 +88,7 @@ icons:
 
 release: clean build
 	@mkdir -p dist
-	@cp magpie dist/magpie-$(shell go env GOOS)-$(shell go env GOARCH)
+	@cp fogway dist/fogway-$(shell go env GOOS)-$(shell go env GOARCH)
 	@$(MAKE) --no-print-directory release-cli
 
 release-cli:
@@ -95,7 +96,7 @@ release-cli:
 	@for t in $(TARGETS); do \
 		os=$${t%/*}; arch=$${t#*/}; ext=""; [ $$os = windows ] && ext=.exe; \
 		echo "  $$os/$$arch (cli)"; \
-		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -tags nogui -trimpath -ldflags="$(LDFLAGS)" -o dist/magpie-cli-$$os-$$arch$$ext . || exit 1; \
+		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -tags nogui -trimpath -ldflags="$(LDFLAGS)" -o dist/fogway-cli-$$os-$$arch$$ext . || exit 1; \
 	done
 
 # The desktop app for Windows: the system WebView2 needs no cgo, so both
@@ -108,7 +109,7 @@ release-windows:
 		--file-version "$(or $(WINVER),0.0.0)" --product-version "$(or $(WINVER),0.0.0)"
 	@for arch in amd64 arm64; do \
 		echo "  windows/$$arch (app)"; \
-		CGO_ENABLED=0 GOOS=windows GOARCH=$$arch go build -tags production -trimpath -ldflags="$(LDFLAGS) -H windowsgui" -o dist/magpie-windows-$$arch.exe . || exit 1; \
+		CGO_ENABLED=0 GOOS=windows GOARCH=$$arch go build -tags production -trimpath -ldflags="$(LDFLAGS) -H windowsgui" -o dist/fogway-windows-$$arch.exe . || exit 1; \
 	done; rm -f rsrc_windows_*.syso
 
 # The desktop app for Linux links GTK 3 and WebKitGTK 4.1 through cgo, so it
@@ -116,25 +117,25 @@ release-windows:
 release-linux:
 	@mkdir -p dist
 	@echo "  linux/$(shell go env GOARCH) (app)"
-	@go build -tags "$(TAGS)" -trimpath -ldflags="$(LDFLAGS)" -o dist/magpie-linux-$(shell go env GOARCH) .
+	@go build -tags "$(TAGS)" -trimpath -ldflags="$(LDFLAGS)" -o dist/fogway-linux-$(shell go env GOARCH) .
 
 clean:
-	rm -rf magpie magpie.exe magpie.app dist rsrc_windows_*.syso
+	rm -rf fogway fogway.exe fogway.app dist rsrc_windows_*.syso
 
 # Development: the UI is served from internal/gui/assets and the window
 # reloads itself when a file there is saved. With fswatch installed, the
 # windows stay up and a Go change rebuilds and restarts only the backend
 # behind them (build/dev.sh); without it, dev-once runs the app as one
-# process. Uses its own ports so a running magpie keeps serving the agents.
-DEV_ADDR ?= 127.0.0.1:3426
-DEV_UI ?= 127.0.0.1:3427
-DEV_BACKEND ?= 127.0.0.1:3428
-DEV_CONTROL ?= 127.0.0.1:3429
+# process. Uses its own ports so a running fogway keeps serving the agents.
+DEV_ADDR ?= 127.0.0.1:3726
+DEV_UI ?= 127.0.0.1:3727
+DEV_BACKEND ?= 127.0.0.1:3728
+DEV_CONTROL ?= 127.0.0.1:3729
 dev:
 	@if command -v fswatch >/dev/null; then \
-	  MAGPIE_ADDR=$(DEV_ADDR) MAGPIE_DEV_UI=$(DEV_UI) MAGPIE_DEV_BACKEND=$(DEV_BACKEND) MAGPIE_DEV_CONTROL=$(DEV_CONTROL) build/dev.sh; \
+	  FOGWAY_ADDR=$(DEV_ADDR) FOGWAY_DEV_UI=$(DEV_UI) FOGWAY_DEV_BACKEND=$(DEV_BACKEND) FOGWAY_DEV_CONTROL=$(DEV_CONTROL) build/dev.sh; \
 	else $(MAKE) --no-print-directory dev-once; fi
 
 dev-once:
-	@go build -tags dev -o magpie-dev . && echo "  magpie-dev · UI from internal/gui/assets, reload on save · gateway $(DEV_ADDR)"
-	@MAGPIE_ADDR=$(DEV_ADDR) MAGPIE_DEV_UI=$(DEV_UI) ./magpie-dev app
+	@go build -tags dev -o fogway-dev . && echo "  fogway-dev · UI from internal/gui/assets, reload on save · gateway $(DEV_ADDR)"
+	@FOGWAY_ADDR=$(DEV_ADDR) FOGWAY_DEV_UI=$(DEV_UI) ./fogway-dev app

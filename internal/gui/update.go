@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/update"
 )
 
 // updater keeps the app current. It asks the feed at start-up and every six
@@ -72,7 +72,7 @@ type updateJSON struct {
 	Notes   string `json:"notes,omitempty"`
 	URL     string `json:"url,omitempty"`
 	Stuck   string `json:"stuck,omitempty"` // available: why it can't update itself
-	// available, stuck "not-writable": the folder magpie may not write to
+	// available, stuck "not-writable": the folder fogway may not write to
 	StuckDir string `json:"stuckDir,omitempty"`
 	Retry    bool   `json:"retry,omitempty"` // error: a click downloads it again
 	// error: the download failed through this mirror (Settings' UpdateMirror),
@@ -126,8 +126,8 @@ var (
 
 // place takes what an update replaces on goos: the .app the binary is in,
 // else the binary itself. On a Mac that is the terminal build too (gui
-// false: magpie-cli-darwin, or `magpie web` from it), which has no .app to
-// be in and which `magpie update` replaces the same way; before, its page
+// false: fogway-cli-darwin, or `fogway web` from it), which has no .app to
+// be in and which `fogway update` replaces the same way; before, its page
 // only ever offered the release page. The app's own binary copied out of
 // its .app isn't replaced by the terminal build.
 func (u *updater) place(goos string, gui bool) {
@@ -152,15 +152,15 @@ func (u *updater) placeExe(exe string) {
 	u.exe = exe
 	u.self, _ = os.Stat(exe)
 	update.RemoveOld(exe)      // what the last updates on Windows moved aside
-	update.RemoveStaleNew(exe) // what a magpie left running downloaded again
+	update.RemoveStaleNew(exe) // what a fogway left running downloaded again
 	u.blocked = update.ReadBlocked(Version)
 }
 
 // exeStuck says why the binary in dir can't be replaced, or "" when it
-// can: "not-writable" when magpie may not write to dir and this system
-// can't ask for the administrator's password. On Windows a magpie.exe kept
+// can: "not-writable" when fogway may not write to dir and this system
+// can't ask for the administrator's password. On Windows a fogway.exe kept
 // at C:\ updated only by opening the release page, with nothing saying why
-// (#1277). "container" is that in a container (the Docker image's /magpie,
+// (#1277). "container" is that in a container (the Docker image's /fogway,
 // run as nonroot): there the new image is pulled, and "move it to a folder
 // you can write to" was the wrong advice.
 func exeStuck(dir string) string {
@@ -269,6 +269,10 @@ func (u *updater) run() {
 		}
 		return
 	}
+	if errors.Is(err, update.ErrNoFeed) {
+		u.state = "source" // a build of no feed is updated the way it was got
+		return
+	}
 	if err != nil {
 		u.state, u.err = "error", err.Error()
 		return
@@ -290,7 +294,7 @@ func (u *updater) run() {
 		u.state = "blocked"
 		return
 	case u.replaced():
-		// another magpie put the update in already: a restart is all
+		// another fogway put the update in already: a restart is all
 		u.state = "ready"
 		if u.onReady != nil {
 			go u.onReady(rel.Version)
@@ -332,7 +336,7 @@ func (u *updater) install(ask bool) bool {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	if u.replaced() {
-		// another magpie updated the binary after this one started: it is
+		// another fogway updated the binary after this one started: it is
 		// in, and swapping this one's download in would move it aside (the
 		// download is left: it may be the other's, staged at the same name)
 		u.staged = ""
@@ -384,7 +388,7 @@ func (u *updater) wontStart(err error) {
 	u.err = err.Error()
 }
 
-// replaced is whether the binary was updated by another magpie since this
+// replaced is whether the binary was updated by another fogway since this
 // one started, which runs on from where it was moved aside.
 func (u *updater) replaced() bool {
 	return u.exe != "" && update.Replaced(u.exe, u.self)
@@ -432,7 +436,7 @@ func (u *updater) jsonIn(lang string) updateJSON {
 		}
 	}
 	if u.latest != nil {
-		// the notes without their download links: magpie downloads it itself
+		// the notes without their download links: fogway downloads it itself
 		j.Latest, j.Notes, j.URL = u.latest.Version, update.StripInstall(u.latest.Notes), u.latest.URL
 	}
 	return j
@@ -562,7 +566,7 @@ func updateRoutes(mux *http.ServeMux, w Windows) {
 var relaunchBinary = update.RelaunchBinary
 
 // restartToUpdate installs the staged version and arranges for it to open
-// once this process is gone; the caller then quits. magpie web runs on as
+// once this process is gone; the caller then quits. fogway web runs on as
 // the new version in its own place (Web.Wait) instead of opening the app.
 // Off the Mac, the new one opens its window on view when window is set, and
 // only the tray icon when not; the Mac's always opens its window.

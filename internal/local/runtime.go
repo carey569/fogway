@@ -205,7 +205,7 @@ func ensureRuntime(ctx context.Context, c Config, backend string, tell progressF
 }
 
 // mirrored is a github.com download address through the mirror set, as
-// magpie's own updates take one.
+// fogway's own updates take one.
 func mirrored(c Config, u string) string {
 	m := strings.TrimSpace(c.GitHubMirror)
 	if m == "" {

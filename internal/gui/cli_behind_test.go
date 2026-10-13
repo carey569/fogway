@@ -10,10 +10,10 @@ import (
 	"testing"
 )
 
-// The window's advice about a copied `magpie` command is a bare Lstat — no
-// version read, because `magpie version` isn't read-only: the old binary
+// The window's advice about a copied `fogway` command is a bare Lstat — no
+// version read, because `fogway version` isn't read-only: the old binary
 // runs its old migrations over the user's real settings first. Only
-// `magpie update`, which the user started, reads versions. The advice can
+// `fogway update`, which the user started, reads versions. The advice can
 // be dismissed, and the dismiss is kept per version: the next app update
 // asks once more.
 func TestCLIBehindIsLstatOnlyAndDismissible(t *testing.T) {
@@ -23,7 +23,7 @@ func TestCLIBehindIsLstatOnlyAndDismissible(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", home)
 	bin := t.TempDir()
-	t.Setenv("MAGPIE_BIN_DIR", bin)
+	t.Setenv("FOGWAY_BIN_DIR", bin)
 	wasV, wasOnce, wasVal := Version, cliBehindOnce, cliBehindVal
 	t.Cleanup(func() { Version, cliBehindOnce, cliBehindVal = wasV, wasOnce, wasVal })
 	Version = "0.1.500"
@@ -32,7 +32,7 @@ func TestCLIBehindIsLstatOnlyAndDismissible(t *testing.T) {
 
 	// a copy: the window says so without running anything (nothing here is
 	// executable — a binary would have to be run to report a version)
-	cli := filepath.Join(bin, "magpie")
+	cli := filepath.Join(bin, "fogway")
 	if err := os.WriteFile(cli, []byte("not executable"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestCLIBehindIsLstatOnlyAndDismissible(t *testing.T) {
 	if got := cliBehind(); got != "" {
 		t.Fatalf("cliBehind = %q after dismiss, want empty", got)
 	}
-	b, err := os.ReadFile(filepath.Join(home, "magpie", cliQuietFile))
+	b, err := os.ReadFile(filepath.Join(home, "fogway", cliQuietFile))
 	if err != nil || string(b) != Version+"\n" {
 		t.Fatalf("dismiss file = %q, %v; want this version, so the next one asks again", b, err)
 	}
@@ -77,7 +77,7 @@ func TestCLIBehindIsLstatOnlyAndDismissible(t *testing.T) {
 
 	// a link, not a copy: quiet even undismissed
 	os.Remove(cli)
-	if err := os.Symlink("/Applications/magpie.app/Contents/MacOS/magpie", cli); err != nil {
+	if err := os.Symlink("/Applications/fogway.app/Contents/MacOS/fogway", cli); err != nil {
 		t.Fatal(err)
 	}
 	cliBehindOnce = new(sync.Once)

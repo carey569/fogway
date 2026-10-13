@@ -5,7 +5,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
-const assets = process.env.MAGPIE_RECENT_ASSETS || path.resolve(__dirname, "../assets");
+const assets = process.env.FOGWAY_RECENT_ASSETS || path.resolve(__dirname, "../assets");
 // the three calls share their agent and model, and two their second
 const at = new Date(Date.now() - 1000).toISOString();
 const calls = [0, 1, 2].map((i) => ({ id: 30 - i, time: i ? at : new Date().toISOString(), agent: "codex", model: "fixture/m", from: "chat", to: "chat", status: i === 0 ? 400 : 200, error: i === 0 ? "vendor declined" : "", ms: 900 }));
@@ -58,7 +58,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
         return route.fulfill({ body: await fs.readFile(file), contentType: { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" }[path.extname(file)] });
       });
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator("#providers .provider").first().waitFor();
       assert.equal(seen.length, 0, "Providers never fetches bodies");
       await page.locator('[data-view="gateway"]').first().click();

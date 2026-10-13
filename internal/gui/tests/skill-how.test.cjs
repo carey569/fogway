@@ -22,7 +22,7 @@ function server(lang, posts) {
   const how = (id) => st.own[id] || (st.copy ? "copy" : "link");
   const agent = (id, name, extra = {}) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, how: how(id), howOwn: !!st.own[id], ...extra });
   const lib = () => ({
-    dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME, copySkills: st.copy,
+    dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME, copySkills: st.copy,
     agents: [agent("claude", "Claude Code"), agent("codex", "Codex"), agent("claude-desktop", "Claude Desktop", { how: "copy", mustCopy: true })],
     instructions: { agents: [] }, servers: [], foundServers: [], projects: [], foundSkills: [],
     skills: [
@@ -105,13 +105,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     });
     const open = async (lang, posts) => {
       const ctx = await browser.newContext({ viewport: { width: 900, height: 700 } });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("dialog", (d) => { errors.push("a browser dialog: " + d.message()); d.dismiss(); });
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
       return page;

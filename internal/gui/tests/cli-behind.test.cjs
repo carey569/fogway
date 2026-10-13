@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// A machine whose `magpie` command is a copied file (an older installer, a
+// A machine whose `fogway` command is a copied file (an older installer, a
 // hand cp) keeps running that build after a GUI update moves the app on —
 // the stale command that wedged a WebDAV sync before #531's check. The
 // window can't tell a stale copy from a current one without running the old
@@ -16,8 +16,8 @@ const { chromium, webkit } = require("playwright");
 const assets = path.resolve(__dirname, "../assets");
 
 const HEAD = {
-  en: "The `magpie` command is a copy",
-  zh: "终端里的 `magpie` 命令是一份拷贝",
+  en: "The `fogway` command is a copy",
+  zh: "终端里的 `fogway` 命令是一份拷贝",
 };
 
 function server(lang, behind, quiet) {
@@ -28,7 +28,7 @@ function server(lang, behind, quiet) {
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") {
       const s = { agents: [], profiles: [], settings: { lang, theme: "light" } };
-      if (behind) s.cliBehind = "~/.local/bin/magpie";
+      if (behind) s.cliBehind = "~/.local/bin/fogway";
       return json(s);
     }
     if (url.pathname === "/api/cli-behind/quiet") { quiet.calls++; return route.fulfill({ status: 204 }); }
@@ -53,11 +53,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, true, quiet));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       const dialog = page.locator("#modal:not([hidden])");
       await dialog.waitFor();
       await assert.match(await dialog.textContent(), new RegExp(HEAD[lang].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "the dialog names the copy");
-      assert.match(await dialog.textContent(), /~\/\.local\/bin\/magpie/, "the dialog names the path");
+      assert.match(await dialog.textContent(), /~\/\.local\/bin\/fogway/, "the dialog names the path");
       // Hide until the next version posts the dismiss and closes
       await dialog.getByRole("button", { name: lang === "zh" ? "隐藏，直到下一个版本" : "Hide until the next version" }).click();
       await page.waitForFunction(() => document.querySelector("#modal").hidden);
@@ -67,7 +67,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       panel.setDefaultTimeout(5000);
       panel.on("pageerror", (e) => errors.push(e.message));
       await panel.route("**/*", server(lang, true, quiet));
-      await panel.goto("http://magpie.test/?mode=panel");
+      await panel.goto("http://fogway.test/?mode=panel");
       await panel.locator("#view-agents, #nav, body").first().waitFor();
       await panel.waitForTimeout(500);
       assert.ok(await panel.locator("#modal").evaluate((m) => m.hidden), "the panel stays quiet");
@@ -76,12 +76,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       ok.setDefaultTimeout(5000);
       ok.on("pageerror", (e) => errors.push(e.message));
       await ok.route("**/*", server(lang, false, quiet));
-      await ok.goto("http://magpie.test/");
+      await ok.goto("http://fogway.test/");
       await ok.waitForTimeout(500);
       assert.ok(await ok.locator("#modal").evaluate((m) => m.hidden), "a following command is not mentioned");
       const keys = [
-        "The `magpie` command is a copy",
-        "The `magpie` command at {path} is a copied file, not the installer's link to the app: it won't follow the app's updates, and an old copy can break what a new one fixed. Re-run the installer, or link it by hand.",
+        "The `fogway` command is a copy",
+        "The `fogway` command at {path} is a copied file, not the installer's link to the app: it won't follow the app's updates, and an old copy can break what a new one fixed. Re-run the installer, or link it by hand.",
       ];
       const missing = await ok.evaluate((ks) => ks.filter((x) => !I18N.zh[x]), keys);
       assert.deepEqual(missing, [], "the advice has its Chinese");

@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A gateway key may be held to some models (#882, access.Key.Models): it
@@ -20,14 +20,14 @@ import (
 // it; else only when every model in it does. A group the key names inside
 // one it doesn't counts for its own members.
 
-// magpieChoseKey marks, in a request's context, a call magpie makes for a
+// fogwayChoseKey marks, in a request's context, a call fogway makes for a
 // model the user picked in its settings rather than the caller (a web
 // search's, an image description's, a Codex title's): the key's models
 // don't hold it.
-type magpieChoseKey struct{}
+type fogwayChoseKey struct{}
 
-func magpieChose(ctx context.Context) context.Context {
-	return context.WithValue(ctx, magpieChoseKey{}, true)
+func fogwayChose(ctx context.Context) context.Context {
+	return context.WithValue(ctx, fogwayChoseKey{}, true)
 }
 
 // keyHolds is the calling key's models, when they hold this request.
@@ -36,14 +36,14 @@ func keyHolds(r *http.Request) (access.Identity, bool) {
 	if !who.Restricted() {
 		return who, false
 	}
-	if chose, _ := r.Context().Value(magpieChoseKey{}).(bool); chose {
+	if chose, _ := r.Context().Value(fogwayChoseKey{}).(bool); chose {
 		return who, false
 	}
 	return who, true
 }
 
 // accountHolds is the calling key's accounts, when they hold this
-// request: magpie's own calls for the key — a web search, a picture
+// request: fogway's own calls for the key — a web search, a picture
 // described, a Codex title — are of the models the user picked, so the
 // models don't hold them, but their spend lands on an account or key all
 // the same, and the accounts hold them too.
@@ -286,14 +286,14 @@ func (s *Server) onKeys(r *http.Request, p provider.Provider, model, asked strin
 
 // keyModelError is what a request for a model its key may not use is told.
 func keyModelError(who access.Identity, model string) string {
-	return fmt.Sprintf("The gateway key %q may not use %s; it may use %s. Change the key's models in magpie's Gateway page, or use a model it has.",
+	return fmt.Sprintf("The gateway key %q may not use %s; it may use %s. Change the key's models in fogway's Gateway page, or use a model it has.",
 		who.KeyName, model, strings.Join(who.Models, ", "))
 }
 
 // keyAccountsError is what a request every candidate of which was an
 // account or key its key may not use is told.
 func keyAccountsError(who access.Identity, model string) string {
-	return fmt.Sprintf("The gateway key %q is not allowed to use the accounts behind %s: no account or key behind it is one the key may use; it may use %s. Change the key's accounts in magpie's Gateway page, or use an account it has.",
+	return fmt.Sprintf("The gateway key %q is not allowed to use the accounts behind %s: no account or key behind it is one the key may use; it may use %s. Change the key's accounts in fogway's Gateway page, or use an account it has.",
 		who.KeyName, model, keyAccountNames(who))
 }
 

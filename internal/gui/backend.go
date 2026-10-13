@@ -7,14 +7,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/update"
 )
 
-// served is the gateway this process serves, nil while another magpie
+// served is the gateway this process serves, nil while another fogway
 // has it.
 var served atomic.Pointer[gateway.Server]
 
@@ -32,9 +32,9 @@ func stopServing() {
 }
 
 // startBackend starts what serves the page and the agents: the gateway,
-// unless another magpie has it (then that one serves and this one only
-// shows its status, and gw is nil — until that one is gone: a magpie left
-// running from before an update, a magpie serve in a terminal), and the
+// unless another fogway has it (then that one serves and this one only
+// shows its status, and gw is nil — until that one is gone: a fogway left
+// running from before an update, a fogway serve in a terminal), and the
 // model lists kept warm.
 func startBackend() (gw *gateway.Server) {
 	gateway.Window = true // the routing this process serves is shown on its page
@@ -54,7 +54,7 @@ func startBackend() (gw *gateway.Server) {
 		// A signed-in agent's list exists only at the vendor; fill it in the
 		// first time so the picker never shows a stale snapshot.
 		provider.FetchNew(20 * time.Second)
-		// lists an older magpie wrote into agents' files, without what
+		// lists an older fogway wrote into agents' files, without what
 		// it has learnt since (context windows, providers added)
 		agent.SyncCatalog()
 		// and fetched again each day it stays open, for new models' prices
@@ -63,10 +63,10 @@ func startBackend() (gw *gateway.Server) {
 	return gw
 }
 
-// gatewayWatch is how often a magpie without the gateway looks for it gone.
+// gatewayWatch is how often a fogway without the gateway looks for it gone.
 const gatewayWatch = 15 * time.Second
 
-// watchGateway takes the gateway up once the magpie that had it is gone,
+// watchGateway takes the gateway up once the fogway that had it is gone,
 // looking every so often until ctx ends: a watch that outlived it would
 // start a gateway after this one has stopped serving.
 func watchGateway(ctx context.Context, every time.Duration) {
@@ -97,7 +97,7 @@ var servedRun struct {
 	done chan struct{}
 }
 
-// serveGateway starts the gateway here when no magpie has it: the one
+// serveGateway starts the gateway here when no fogway has it: the one
 // started, or nil.
 func serveGateway() *gateway.Server {
 	gatewayMu.Lock()
@@ -111,7 +111,7 @@ func serveGatewayLocked() *gateway.Server {
 	if !gateway.Handover {
 		if o := gateway.ServedBy(); o.Running {
 			if update.Newer(gateway.Version, o.Version) {
-				log.Printf("gateway: magpie %s serves %s, older than this one (%s); agents' requests go through it until it quits", o.Version, gateway.URL(), gateway.Version)
+				log.Printf("gateway: fogway %s serves %s, older than this one (%s); agents' requests go through it until it quits", o.Version, gateway.URL(), gateway.Version)
 			}
 			return nil
 		}

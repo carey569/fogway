@@ -73,7 +73,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], posts = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, posts));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator(".row.provider", { hasText: sub.name }).first().click();
         await page.locator(".editor .accts").first().waitFor();
         if (lang !== "en") assert.deepEqual(await page.evaluate(([keys, lang]) => keys.filter((k) => !I18N[lang][k]), [["Strict", HINT], lang]), [], "translated");
@@ -112,7 +112,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const pool = page.locator(".rt-pool", { hasText: "Codex" });
       await pool.waitFor();
       const strict = pool.locator(".segs .opt", { hasText: new RegExp(`^${await tr(page, "Strict")}$`) });

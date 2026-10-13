@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // #1775 (peterroe): a plugin that signs in to several providers gives each
 // its own picture in the auth hook, and the plugin one of its own in
-// package.json's magpie.icon. Its row on Installed, and its page, wear the
+// package.json's fogway.icon. Its row on Installed, and its page, wear the
 // plugin's picture, not its first provider's; the providers keep theirs in
 // the Add sheet. One whose package gives none still wears its first
 // provider's, as before. Every language, both engines, wide and narrow;
@@ -58,7 +58,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang));
-        await page.goto("http://magpie.test/?view=plugins");
+        await page.goto("http://fogway.test/?view=plugins");
         const view = page.locator("#view-plugins");
         const installed = await page.evaluate((l) => l === "en" ? "Installed" : I18N[l]["Installed"], lang);
         await view.page().locator(":is(.lib-tabs .opt, .nav-s):visible", { hasText: installed }).click();

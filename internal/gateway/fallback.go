@@ -29,8 +29,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 const fallbackCooldown = time.Minute
@@ -521,11 +521,11 @@ func cappedError(model string, ws []Weighed, now time.Time) (string, time.Time) 
 	}
 	switch {
 	case !noCredits:
-		return fmt.Sprintf("usage cap reached: every account that serves %q is held at the usage cap set on it in magpie — %s. magpie uses it again once that window renews; raise or lift the cap in magpie (Providers → the account's cap, or magpie provider account-cap)", model, strings.Join(held, "; ")), soonest
+		return fmt.Sprintf("usage cap reached: every account that serves %q is held at the usage cap set on it in fogway — %s. fogway uses it again once that window renews; raise or lift the cap in fogway (Providers → the account's cap, or fogway provider account-cap)", model, strings.Join(held, "; ")), soonest
 	case !capped:
-		return fmt.Sprintf("usage limit reached: every account that serves %q has used up its allowance and is set in magpie not to spend its credits — %s. magpie uses it again once that window renews; to go on now, if an account holds credits, let it spend them (Usage → the account's Use credits, or magpie quota credits <account> on)", model, strings.Join(held, "; ")), soonest
+		return fmt.Sprintf("usage limit reached: every account that serves %q has used up its allowance and is set in fogway not to spend its credits — %s. fogway uses it again once that window renews; to go on now, if an account holds credits, let it spend them (Usage → the account's Use credits, or fogway quota credits <account> on)", model, strings.Join(held, "; ")), soonest
 	}
-	return fmt.Sprintf("usage limit reached: every account that serves %q is held by magpie — %s. magpie uses it again once that window renews; to go on now, raise or lift a cap (Providers → the account's cap, or magpie provider account-cap) or, if an account holds credits, let it spend them (Usage → the account's Use credits, or magpie quota credits <account> on)", model, strings.Join(held, "; ")), soonest
+	return fmt.Sprintf("usage limit reached: every account that serves %q is held by fogway — %s. fogway uses it again once that window renews; to go on now, raise or lift a cap (Providers → the account's cap, or fogway provider account-cap) or, if an account holds credits, let it spend them (Usage → the account's Use credits, or fogway quota credits <account> on)", model, strings.Join(held, "; ")), soonest
 }
 
 // heldBy says what holds the accounts of ws held at a share: a usage cap
@@ -607,7 +607,7 @@ func barredError(model string, ws []Weighed) string {
 			names = append(names, w.Name)
 		}
 	}
-	return fmt.Sprintf("model %q is set not to be served by any account or key of %s: each one's own list of models leaves it out. Add it to an account's models in magpie (Providers → the account's Models), or pick another model", model, strings.Join(names, ", "))
+	return fmt.Sprintf("model %q is set not to be served by any account or key of %s: each one's own list of models leaves it out. Add it to an account's models in fogway (Providers → the account's Models), or pick another model", model, strings.Join(names, ", "))
 }
 
 // asideOf is how the trace tells the keys made for another protocol than
@@ -771,7 +771,7 @@ func spentAfter(cs []candidate) bool {
 // resting after the vendor said it is out of quota or credit (the
 // account's, or its model's own pool), or with a window that counts the
 // model used up. back is when the first of them is, zero when none says.
-// A model magpie picks for a call of its own (AutoVision, autoSearcher)
+// A model fogway picks for a call of its own (AutoVision, autoSearcher)
 // is one routing would still try: a turn's own model goes to the one
 // candidate it has all the same, but the describer or searcher picked in
 // its place can be another (#1801). Unknown allowance, or a rest for a
@@ -888,7 +888,7 @@ func modelRetired(status int, body []byte) bool {
 // as it answered glm-5-free and kimi-k2.5-free on 2026-10-10 once they
 // left its free list: {"type":"error","error":{"type":"ModelError",
 // "message":"Model glm-5-free is not supported"}}. Read in the vendor's
-// body, or in the message magpie put it into ("OpenCode Zen Free: Model
+// body, or in the message fogway put it into ("OpenCode Zen Free: Model
 // glm-5-free is not supported"). Not its "is not supported for format
 // anthropic", a model served on another API (wrongEndpoint), and not its
 // AuthError "Invalid API key." for a key it doesn't take.
@@ -1236,7 +1236,7 @@ type holdWriter struct {
 	// reasoning keeps the agent from its idle timeout with SSE comments
 	// meanwhile (#751)
 	alive *keptAlive
-	// notes are the headers magpie says of the try (noteMember), set
+	// notes are the headers fogway says of the try (noteMember), set
 	// under mu: all keepAlive sends of the try's before it has its status,
 	// as until then the try is still writing header, with no lock
 	notes http.Header
@@ -1303,7 +1303,7 @@ func newHoldWriter(w http.ResponseWriter, hold bool) *holdWriter {
 
 func (h *holdWriter) Header() http.Header { return h.header }
 
-// note sets a header magpie says of the try, which keepAlive may send
+// note sets a header fogway says of the try, which keepAlive may send
 // from watch's goroutine before the try has its status.
 func (h *holdWriter) note(k, v string) {
 	h.mu.Lock()
@@ -1356,7 +1356,7 @@ func (h *holdWriter) pass() {
 	}
 	dst := h.w.Header()
 	for k, v := range h.header {
-		if k != resetsHeader && k != refusedHeader { // magpie's own notes, for restAfter and settle
+		if k != resetsHeader && k != refusedHeader { // fogway's own notes, for restAfter and settle
 			dst[k] = v
 		}
 	}
@@ -1675,7 +1675,7 @@ func (h *holdWriter) keepAlive() {
 	if !a.sent {
 		// the try's header is whole once it has its status (WriteHeader,
 		// under mu); before, the vendor's are still being copied into it
-		// from the try's goroutine, and only magpie's notes are read
+		// from the try's goroutine, and only fogway's notes are read
 		src := h.header
 		if h.status == 0 {
 			src = h.notes
@@ -2020,7 +2020,7 @@ func (h *holdWriter) watch() func() {
 // vendor says nothing, every keepaliveEvery for up to keepaliveLongest
 // since it last did: a vendor that sent its 200 and response.created, then
 // nothing while it reasoned, had the stream held with none of it sent,
-// and Cloudflare in front of a remote magpie ended the request at 125s
+// and Cloudflare in front of a remote fogway ended the request at 125s
 // (524) with the agent sent nothing at all; one quiet mid-reply was reset
 // by it as well (#947). Held, the agent is sent the stream's headers and
 // comments only (keepAlive), none of the try, which another account may

@@ -6,17 +6,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/yetone/magpie/internal/daemon"
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/daemon"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
-const daemonUsage = "usage: magpie daemon [install|uninstall|start|stop|restart|status]"
+const daemonUsage = "usage: fogway daemon [install|uninstall|start|stop|restart|status]"
 
 // daemonWait is how long install, start and restart wait for the gateway
 // to answer before saying where its log is; a var for the tests.
 var daemonWait = 5 * time.Second
 
-// magpie daemon …: `magpie serve` as a service of the user's, started at
+// fogway daemon …: `fogway serve` as a service of the user's, started at
 // boot or login and again when it stops (systemd --user, launchd).
 func daemonCmd(args []string) error {
 	if len(args) > 1 {
@@ -36,7 +36,7 @@ func daemonCmd(args []string) error {
 		if err := daemon.Uninstall(); err != nil {
 			return err
 		}
-		fmt.Println(green.Render("✓"), "the magpie service is removed")
+		fmt.Println(green.Render("✓"), "the fogway service is removed")
 		return nil
 	case "start":
 		err = daemon.Start()
@@ -44,7 +44,7 @@ func daemonCmd(args []string) error {
 		if err := daemon.Stop(); err != nil {
 			return err
 		}
-		fmt.Println(green.Render("✓"), "the magpie service is stopped")
+		fmt.Println(green.Render("✓"), "the fogway service is stopped")
 		return nil
 	case "restart":
 		err = daemon.Restart()
@@ -57,16 +57,16 @@ func daemonCmd(args []string) error {
 	st, _ := daemon.Get()
 	switch cmd {
 	case "install":
-		fmt.Println(green.Render("✓"), "magpie serves the gateway as a service, from boot or login, started again when it stops")
+		fmt.Println(green.Render("✓"), "fogway serves the gateway as a service, from boot or login, started again when it stops")
 		fmt.Println(muted.Render("  file   "), st.File)
 		if a := daemon.Linger(); a != "" {
 			fmt.Println(amber.Render("!"), a)
 		}
 		if daemon.Node() == "" {
-			fmt.Println(amber.Render("!"), "no node on the service's PATH: plugins, and the MCP servers they start, need Node.js; install it, then run `magpie daemon install` again")
+			fmt.Println(amber.Render("!"), "no node on the service's PATH: plugins, and the MCP servers they start, need Node.js; install it, then run `fogway daemon install` again")
 		}
 	default:
-		fmt.Println(green.Render("✓"), "the magpie service is "+cmd+"ed")
+		fmt.Println(green.Render("✓"), "the fogway service is "+cmd+"ed")
 	}
 	deadline := time.Now().Add(daemonWait)
 	for {
@@ -90,9 +90,9 @@ func daemonStatus() error {
 	}
 	served := gateway.ServedBy()
 	if !st.Installed {
-		fmt.Println("the magpie service isn't installed ·", muted.Render("magpie daemon install"))
+		fmt.Println("the fogway service isn't installed ·", muted.Render("fogway daemon install"))
 		if served.Running {
-			fmt.Println(muted.Render("  another magpie (the app, magpie serve) answers on"), gateway.URL())
+			fmt.Println(muted.Render("  another fogway (the app, fogway serve) answers on"), gateway.URL())
 		}
 		return nil
 	}
@@ -100,7 +100,7 @@ func daemonStatus() error {
 	if st.Running {
 		mark, word = green.Render("●"), "running"
 	}
-	line := "the magpie service is " + word
+	line := "the fogway service is " + word
 	if st.PID > 0 {
 		line += " · pid " + strconv.Itoa(st.PID)
 	}

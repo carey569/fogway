@@ -16,7 +16,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const SA = "magpie@my-project-123.iam.gserviceaccount.com";
+const SA = "fogway@my-project-123.iam.gserviceaccount.com";
 const presets = (added) => [
   { id: "google", name: "Google Gemini", icon: "gemini-color", kind: "vendor", chat: "https://generativelanguage.googleapis.com/v1beta/openai", note: "Gemini Developer API", added: false },
   {
@@ -124,7 +124,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const errors = [], posts = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", serve(lang, web, provs, pres, posts));
-    await page.goto("http://magpie.test/?view=providers");
+    await page.goto("http://fogway.test/?view=providers");
     return { page, errors, posts };
   };
   const edit = async (page, id) => {

@@ -45,7 +45,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang));
-        await page.goto(`http://magpie.test/?mode=${mode}`);
+        await page.goto(`http://fogway.test/?mode=${mode}`);
         await page.waitForFunction(() => window.__runtimeReady === true);
         await page.waitForFunction(() => document.querySelector("header.top"));
         assert.deepEqual(errors, []);

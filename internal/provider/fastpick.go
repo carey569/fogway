@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // An agent's pick of a model may be sent in its vendor's fast mode (#954),
@@ -28,7 +28,7 @@ func FastPicks(agent string) []string {
 }
 
 // SetFastPick sends agent's requests for the entry id fast, or not. Only a
-// model with a fast mode magpie can ask for (CanFast) is switched on.
+// model with a fast mode fogway can ask for (CanFast) is switched on.
 func SetFastPick(agent, id string, fast bool) error {
 	agent, id = strings.ToLower(strings.TrimSpace(agent)), strings.TrimSpace(id)
 	if agent == "" {
@@ -40,13 +40,13 @@ func SetFastPick(agent, id string, fast bool) error {
 		}
 		p, model, ok := Resolve(id)
 		if !ok {
-			return fmt.Errorf("magpie knows no model %q", id)
+			return fmt.Errorf("fogway knows no model %q", id)
 		}
 		if p.ID+"/"+model != id {
 			return fmt.Errorf("%s is not a model as <provider>/<model>", id)
 		}
 		if !CanFast(p, model) {
-			return fmt.Errorf("%s has no fast mode magpie can ask for", id)
+			return fmt.Errorf("%s has no fast mode fogway can ask for", id)
 		}
 	}
 	s := settings.Load()

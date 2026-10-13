@@ -16,7 +16,7 @@ const assets = path.resolve(__dirname, "../assets");
 const soon = new Date(Date.now() + 2 * 3600e3).toISOString();
 const week = new Date(Date.now() + 3 * 86400e3).toISOString();
 
-// the reporter's (magpie quota's lines): one Command Code key with a plan
+// the reporter's (fogway quota's lines): one Command Code key with a plan
 // and credits, and other providers' balances
 const reporter = {
   quotas: [
@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         t.after(async () => { await browser.close(); });
         const errors = [];
         const context = await browser.newContext({ viewport: { width: 380, height: 640 }, reducedMotion: "reduce" });
-        await context.addInitScript(() => { try { localStorage.setItem("magpie.panelTab", "usage"); } catch {} });
+        await context.addInitScript(() => { try { localStorage.setItem("fogway.panelTab", "usage"); } catch {} });
         const balanceWord = async (p) => p.evaluate(() => t("Balance"));
 
         if (c.panel) {
@@ -106,7 +106,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.setDefaultTimeout(5000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang, c));
-          await page.goto("http://magpie.test/?mode=panel");
+          await page.goto("http://fogway.test/?mode=panel");
           await page.waitForFunction((n) => document.querySelectorAll("#panelQuota .pq-card[data-card]").length >= n, c.panel.flat().length);
           const groups = await page.evaluate(() => [...document.querySelectorAll("#panelQuota > .pq-group")]
             .map((g) => [...new Set([...g.querySelectorAll(".pq-card[data-card]")].map((x) => x.dataset.card.split("|")[0]))]));
@@ -142,7 +142,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         win.setDefaultTimeout(5000);
         win.on("pageerror", (e) => errors.push(e.message));
         await win.route("**/*", serve(lang, c));
-        await win.goto("http://magpie.test/?view=usage&tab=usage");
+        await win.goto("http://fogway.test/?view=usage&tab=usage");
         await win.waitForFunction((n) => document.querySelectorAll("#subscriptionUsage > [data-key]").length >= n, c.usage.length);
         assert.deepEqual(await win.evaluate(() => [...document.querySelectorAll("#subscriptionUsage > [data-key]")].map((x) => x.dataset.key)), c.usage, "the balance on its plan's card, not a card of its own");
         for (const [provider, want] of Object.entries(c.balances)) {

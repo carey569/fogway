@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // sessionJSON is a session with what the UI needs to draw its agent.
@@ -28,13 +28,13 @@ type sessionJSON struct {
 	Name string `json:"name"`
 	Icon string `json:"icon"`
 	// Via: the models the gateway sent its calls to, at the reasoning
-	// each was asked for, when it went through magpie
+	// each was asked for, when it went through fogway
 	Via []usage.Via `json:"via,omitempty"`
 }
 
 type sessionsJSON struct {
 	Sessions []sessionJSON `json:"sessions"`
-	// Terminal is set where magpie can open Terminal on the session: the
+	// Terminal is set where fogway can open Terminal on the session: the
 	// Mac app, not a browser tab that may be on another computer.
 	Terminal bool     `json:"terminal"`
 	Dirs     []string `json:"dirs"` // where they were read from
@@ -52,7 +52,7 @@ func gatewayExternal(g usage.GatewaySession) sessions.ExternalSession {
 }
 
 // gatewayListed is a gateway session as a list shows it: titled by what it
-// was first asked, when magpie recorded it, not by its ses_… id (YOU on
+// was first asked, when fogway recorded it, not by its ses_… id (YOU on
 // Discord)
 func gatewayListed(g usage.GatewaySession) sessions.ExternalSession {
 	e := gatewayExternal(g)
@@ -218,7 +218,7 @@ func sessionRoutes(mux *http.ServeMux, w Windows) {
 	})
 	// markdown is a session's whole conversation as a Markdown file (#1276),
 	// read from the agent's own file as transcript is: to the browser that
-	// asks (magpie web), which saves it itself, and, in the app, to
+	// asks (fogway web), which saves it itself, and, in the app, to
 	// Downloads.
 	mux.HandleFunc("GET /api/sessions/markdown", func(rw http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
@@ -285,9 +285,9 @@ func sessionRoutes(mux *http.ServeMux, w Windows) {
 // page. It is made whole before any of it is sent, so a file that can't be
 // read is an error and not half a download.
 //
-// A session only magpie's gateway recorded is written from that record, as
-// transcript reads it: the agent of one that reaches this magpie through a
-// remote magpie ran on another machine, so there is no file of it here, and
+// A session only fogway's gateway recorded is written from that record, as
+// transcript reads it: the agent of one that reaches this fogway through a
+// remote fogway ran on another machine, so there is no file of it here, and
 // its download was a 400 "no such session" (akic404 on Discord).
 func sessionMarkdown(agentID, id string) (stem string, md []byte, err error) {
 	s, ok := sessions.Find(agentID, id)
@@ -327,7 +327,7 @@ func sessionMarkdown(agentID, id string) (stem string, md []byte, err error) {
 		}
 		return '-'
 	}, s.Agent+"-"+string(short))
-	return "magpie-session-" + safe, b.Bytes(), nil
+	return "fogway-session-" + safe, b.Bytes(), nil
 }
 
 // wslName is an agent's name for a session it ran in a WSL distro, as the
@@ -427,7 +427,7 @@ func combinedSessionStats(days int) sessions.Stats {
 	return sessions.MergeExternalStats(st, daily, ext)
 }
 
-// warmSessions reads every session file once magpie is up, so the Sessions
+// warmSessions reads every session file once fogway is up, so the Sessions
 // page opens on the kept index and not on a first read of them all. Usage ›
 // Requests' whole history is read after it, not beside it on the disk: a
 // first All parsing 12k sessions kept that page a skeleton for 40 s.
@@ -453,7 +453,7 @@ func warmSessions() {
 // the system at once. Reading a long history allocates many times what it
 // keeps (a 13k-session Codex and Claude Code history: ~830 MB allocated to
 // keep ~80 MB of indexes), and Go's scavenger returns those pages only over
-// the next minutes: a magpie that had just started read ~470 MB for its
+// the next minutes: a fogway that had just started read ~470 MB for its
 // first two minutes at rest.
 func warmUp(steps ...func()) {
 	for _, step := range steps {
@@ -478,7 +478,7 @@ func openTerminal(command, choice string) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.CreateTemp("", "magpie-resume-*.command")
+	f, err := os.CreateTemp("", "fogway-resume-*.command")
 	if err != nil {
 		return err
 	}

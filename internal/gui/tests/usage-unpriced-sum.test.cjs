@@ -15,7 +15,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
-const assets = path.resolve(process.env.MAGPIE_ASSETS || path.resolve(__dirname, "../assets"));
+const assets = path.resolve(process.env.FOGWAY_ASSETS || path.resolve(__dirname, "../assets"));
 const today = new Date().toISOString().slice(0, 10);
 const at = (min) => new Date(Date.now() - min * 60e3).toISOString();
 
@@ -110,8 +110,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(8000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, some));
-        await page.addInitScript((tab) => { localStorage.setItem("magpie.usageTab", tab); localStorage.setItem("magpie.sessRange", "all"); }, tab);
-        await page.goto("http://magpie.test/?view=usage");
+        await page.addInitScript((tab) => { localStorage.setItem("fogway.usageTab", tab); localStorage.setItem("fogway.sessRange", "all"); }, tab);
+        await page.goto("http://fogway.test/?view=usage");
         await page.waitForFunction(() => document.querySelector("#usageCost span:not(.skeleton)"));
         return page;
       };

@@ -3,9 +3,9 @@ package gateway
 // The request archive: with it on (settings' RequestArchive), each call the
 // gateway serves is kept — the headers and bodies both ways, every secret
 // taken out first — in the user's own S3 bucket, the one sync keeps its
-// backup in, at <prefix>/magpie/archive/<date>/<id>.json: the call's date,
+// backup in, at <prefix>/fogway/archive/<date>/<id>.json: the call's date,
 // in UTC, and an id of its own, sent back on the response as
-// X-Magpie-Archive-Id. The call, and its rows in the usage log, carry
+// X-Fogway-Archive-Id. The call, and its rows in the usage log, carry
 // "<date>/<id>", for the Gateway and Usage pages to read it back by.
 //
 // The bodies are kept whole, not as Recent calls has them (the first 256
@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/redact"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/redact"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Putter is a bucket the archive is written to.
@@ -44,7 +44,7 @@ type Putter interface {
 var ArchiveBucket func() (Putter, bool)
 
 // ArchiveHeader carries a call's archive id on its response.
-const ArchiveHeader = "X-Magpie-Archive-Id"
+const ArchiveHeader = "X-Fogway-Archive-Id"
 
 // archiveQueue is how many calls wait for their upload at most: their
 // bodies wait in files, so only their headers are held, however fast calls

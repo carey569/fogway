@@ -47,7 +47,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/yetone/magpie/internal/appdir"
+	"github.com/fogway/fogway/internal/appdir"
 )
 
 // VertexPreset is the preset's id.
@@ -589,6 +589,7 @@ func impersonateFor(ctx context.Context, tok, account string, delegates []string
 	}
 	return out.AccessToken, out.ExpireTime, nil
 }
+
 // VertexForTest points Vertex AI at root, Google's token endpoint at token
 // and IAM Credentials at iam until the returned function runs, and forgets
 // the tokens minted. Tests outside this package use it.
@@ -608,4 +609,3 @@ func forgetVertexTokens() {
 	vertexTokens.m = map[string]*vertexToken{}
 	vertexTokens.Unlock()
 }
-

@@ -1,4 +1,4 @@
-// Package tui is magpie in the terminal: one row per agent, arrow keys to pick
+// Package tui is fogway in the terminal: one row per agent, arrow keys to pick
 // a field, enter to change it; and pages for providers and usage beside it
 // (pages.go), routing groups (routing.go) and sessions (sessions.go), 1–5 to
 // go between them.
@@ -17,13 +17,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/profile"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/profile"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // ---- styling ---------------------------------------------------------------
@@ -99,7 +99,7 @@ type model struct {
 	w, h    int
 	syncing bool
 
-	// failover: what an agent going through magpie for account failover
+	// failover: what an agent going through fogway for account failover
 	// alone, not connected, says of it (agent.FailoverSaid, #1385)
 	failover []string
 
@@ -140,7 +140,7 @@ type flashMsg struct {
 
 type syncedMsg struct{ err error }
 
-// Run starts magpie in the terminal. ready is called once the model is
+// Run starts fogway in the terminal. ready is called once the model is
 // made: making it asks agents' CLIs (claude auth status, up to seconds),
 // and a signal then is the caller's to handle, as bubbletea starts
 // listening only as the program runs.
@@ -166,7 +166,7 @@ func Run(ready func()) error {
 
 func newModel() model {
 	// in the order the app lists them, those hidden there last
-	// an app magpie has no fields in (Cindy, which takes it by a link) has
+	// an app fogway has no fields in (Cindy, which takes it by a link) has
 	// nothing to pick here
 	var set []*agent.Agent
 	for _, a := range agent.Detected() {
@@ -782,7 +782,7 @@ func (m model) View() string {
 }
 
 func (m model) header(crumbs ...string) string {
-	s := pad + sTitle.Render("◉ magpie")
+	s := pad + sTitle.Render("◉ fogway")
 	if len(crumbs) == 0 {
 		// the pages, this one marked
 		s += "  "

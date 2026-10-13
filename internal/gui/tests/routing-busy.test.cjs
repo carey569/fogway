@@ -72,7 +72,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await browser.close();
       });
       const drain = async () => { for (let i = 0; i < 100 && feed.q.length; i++) await page.waitForTimeout(50); assert.equal(feed.q.length, 0); };
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-req").nth(first.length - 1).waitFor();
       await page.waitForTimeout(2500);
       assert.equal(await page.getByText(words[lang], { exact: true }).first().isVisible(), true);

@@ -60,7 +60,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const posts = [], errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/?view=settings&tab=network");
+      await page.goto("http://fogway.test/?view=settings&tab=network");
       const box = page.locator("#proxySegs");
       const address = box.locator("input.proxy");
       const user = box.getByRole("textbox", { name: l.user, exact: true });

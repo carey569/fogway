@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/sessions"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/sessions"
 )
 
 func GatewaySessionWindowExcept(since time.Time, nativeKeys map[string]bool) ([]GatewaySession, []GatewayDayUsage) {

@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-// A host on the user's own network — another computer's magpie (a Remote
-// magpie), an Ollama on the NAS — is reached directly, whatever proxy the
-// settings, the environment or the system name (#982: a Remote magpie at
+// A host on the user's own network — another computer's fogway (a Remote
+// fogway), an Ollama on the NAS — is reached directly, whatever proxy the
+// settings, the environment or the system name (#982: a Remote fogway at
 // a LAN name was asked through the Mac's proxy, which answered 502 Bad
 // Gateway, and its model list never came). A proxy is for reaching
 // vendors; one elsewhere can't reach the user's network, and one on this

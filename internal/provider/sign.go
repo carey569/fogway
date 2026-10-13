@@ -13,7 +13,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
 // Accounts are the subscriptions an agent is signed in to. Fogway serves

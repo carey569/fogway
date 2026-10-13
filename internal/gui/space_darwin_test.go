@@ -17,25 +17,25 @@ import (
 // A click on the Dock icon with the window open on another Space goes to
 // that Space; one closed or minimised opens on the user's (#1252). A test
 // can't make or switch Spaces, so it checks what decides them: an open
-// window doesn't move to the active Space when magpie is activated, and one
+// window doesn't move to the active Space when fogway is activated, and one
 // shown from closed or minimised does, while it is shown.
 func TestDockReopenKeepsTheWindowsSpace(t *testing.T) {
-	out, err := runAppKit(t, 30*time.Second, []string{"MAGPIE_TEST_DOCK_REOPEN=1"})
+	out, err := runAppKit(t, 30*time.Second, []string{"FOGWAY_TEST_DOCK_REOPEN=1"})
 	if err != nil || !strings.Contains(string(out), "dock reopen: ok") {
 		t.Fatalf("dock reopen: %v\n%s", err, out)
 	}
 }
 
 func init() {
-	if os.Getenv("MAGPIE_TEST_DOCK_REOPEN") != "1" {
+	if os.Getenv("FOGWAY_TEST_DOCK_REOPEN") != "1" {
 		return
 	}
 	app := application.New(application.Options{
-		Name: "magpie dock reopen regression",
+		Name: "fogway dock reopen regression",
 		Mac:  application.MacOptions{ActivationPolicy: application.ActivationPolicyAccessory},
 		Assets: application.AssetOptions{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<p>magpie</p>`)
+			fmt.Fprint(w, `<p>fogway</p>`)
 		})},
 	})
 	h := &host{app: app}

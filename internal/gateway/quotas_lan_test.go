@@ -6,20 +6,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// GET /v1/magpie/quotas answers another machine with the key of the
+// GET /v1/fogway/quotas answers another machine with the key of the
 // gateway shared on the local network (#389: read over a LAN or tailscale);
 // a wrong key, none, or a gateway not shared still get nothing, and the
 // refusal says how.
 func TestQuotasOverLAN(t *testing.T) {
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	h := lanGuard(New().Handler())
 	call := func(from string, hdr ...string) (int, string) {
-		r := httptest.NewRequest("GET", "/v1/magpie/quotas", nil)
+		r := httptest.NewRequest("GET", "/v1/fogway/quotas", nil)
 		r.RemoteAddr = from
 		for i := 0; i+1 < len(hdr); i += 2 {
 			r.Header.Set(hdr[i], hdr[i+1])
@@ -60,17 +60,17 @@ func TestQuotasOverLAN(t *testing.T) {
 	if c, _ := call("192.168.1.9:5000", "Authorization", "Bearer "+key); c != http.StatusForbidden {
 		t.Fatal("not shared got", c)
 	}
-	// a gateway MAGPIE_ADDR puts on the network asks another machine for a
+	// a gateway FOGWAY_ADDR puts on the network asks another machine for a
 	// gateway key, shared or not, and answers one that has it
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3425")
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3725")
 	if c, b := call("192.168.1.9:5000"); c != http.StatusUnauthorized || !strings.Contains(b, "no API key was sent") {
-		t.Fatal("MAGPIE_ADDR, not shared, no key:", c, b)
+		t.Fatal("FOGWAY_ADDR, not shared, no key:", c, b)
 	}
 	if _, err := access.Update("on-key", access.Change{Key: keys[0].ID}); err != nil {
 		t.Fatal(err)
 	}
 	if c, b := call("192.168.1.9:5000", "Authorization", "Bearer "+key); c != 200 || !strings.Contains(b, `"object":"list"`) {
-		t.Fatal("MAGPIE_ADDR, not shared, with the key:", c, b)
+		t.Fatal("FOGWAY_ADDR, not shared, with the key:", c, b)
 	}
 	if c, _ := call("[::1]:5000"); c != 200 {
 		t.Fatal("loopback got", c)
@@ -83,7 +83,7 @@ func TestQuotasOverLAN(t *testing.T) {
 // a wrong one).
 func TestLANRefusalSaysWhichKey(t *testing.T) {
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	h := lanGuard(New().Handler())
 	newCaller(t, "Codex box")
 	call := func(hdr ...string) (int, string) {

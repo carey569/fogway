@@ -58,7 +58,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await browser.close();
     });
 
-    await page.goto("http://magpie.test/?view=gateway");
+    await page.goto("http://fogway.test/?view=gateway");
     await page.locator("#connect .val code").first().waitFor();
     const fold = page.locator("#foldConnect");
     assert.equal(await fold.getAttribute("aria-expanded"), "true", "Connect starts open");

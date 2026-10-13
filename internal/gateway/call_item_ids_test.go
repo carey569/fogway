@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A custom tool's call a translated vendor's model made (Codex's
@@ -93,13 +93,13 @@ var sentAsOpenAI = []string{`"ctc_18da5b9a10256a3e00000012"`, `"ctc_openai"`,
 var sentToChatGPT = []string{`"tsc_18da5b9a10256a3e00000011"`, `"ctc_18da5b9a10256a3e00000012"`, `"ctc_openai"`,
 	`"call_id":"s1"`, `"call_id":"p1"`, `"call_id":"p2"`, "fix it"}
 
-// The same conversation going on through a magpie model or a routing group
+// The same conversation going on through a fogway model or a routing group
 // to OpenAI's API on a key (Lullaby on Discord: "Invalid 'input[155].id':
 // 'fc_18da5b9a10256a3e00000011'. Expected an ID that begins with 'tsc'",
 // and 'ctc' after it, Codex's auto-compaction, a compaction_trigger turn
 // there, failing with them) goes with those ids. A ChatGPT account's
 // request keeps no ids at all (provider.codexInput).
-func TestMagpieModelOpenAICallIDs(t *testing.T) {
+func TestFogwayModelOpenAICallIDs(t *testing.T) {
 	fresh(t)
 	for _, k := range []string{"HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy", "NO_PROXY", "no_proxy"} {
 		t.Setenv(k, "")
@@ -183,7 +183,7 @@ func TestResponsesRelayCallIDs(t *testing.T) {
 					if string(sent["tools"]) != "[]" || !strings.Contains(last, "CONTEXT CHECKPOINT COMPACTION") {
 						t.Errorf("not a compaction request: %s", last)
 					}
-					if !strings.Contains(rec.Body.String(), `"type":"compaction"`) || !strings.Contains(rec.Body.String(), magpieCompaction) {
+					if !strings.Contains(rec.Body.String(), `"type":"compaction"`) || !strings.Contains(rec.Body.String(), fogwayCompaction) {
 						t.Errorf("not a compaction response: %s", rec.Body)
 					}
 				} else if !strings.Contains(rec.Body.String(), "on it") {

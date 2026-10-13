@@ -72,7 +72,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], asked = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, asked));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator("#addProvider").click();
       const sheet = page.locator("#addSheet");
       const cn = sheet.locator('.tile[data-pick="Qoder CN"]');

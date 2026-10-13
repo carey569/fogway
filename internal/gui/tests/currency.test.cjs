@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // The Currency setting (#212): the Usage page's cost shows in dollars by
-// default and in yuan, at magpie's cached exchange rate, once cny is
+// default and in yuan, at fogway's cached exchange rate, once cny is
 // chosen on the Settings page — a click on the segmented control never
 // scrolls the page, and the rate used sits in the row's tooltip. English
 // and Chinese; no backend, the API is faked here.
@@ -29,7 +29,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -88,7 +88,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", server(lang));
 
         // the Usage page shows $ by default
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         await page.locator("#usageCost b").waitFor();
         assert.equal((await page.locator("#usageCost b").textContent()).trim(), "≈$12.34", "usd is the default");
 
@@ -184,7 +184,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", restartedServer(lang));
 
         // no visit to Settings first: the Usage page at start is in ¥
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         await page.locator("#usageCost b").waitFor();
         assert.equal((await page.locator("#usageCost b").textContent()).trim(), "≈¥88.85", "cny at the rate state gave");
 

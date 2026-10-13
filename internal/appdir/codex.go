@@ -6,11 +6,11 @@ import (
 )
 
 // CodexHome is the folder Codex CLI keeps its files in: config.toml,
-// auth.json, the model catalog magpie writes, sessions, AGENTS.md and
+// auth.json, the model catalog fogway writes, sessions, AGENTS.md and
 // skills. It is $CODEX_HOME when that is set, as codex-rs's find_codex_home
-// reads it, else ~/.codex. Every place magpie reads or writes Codex's files
+// reads it, else ~/.codex. Every place fogway reads or writes Codex's files
 // goes through here (Wakkana on Discord: with CODEX_HOME set, a model picked
-// in magpie went to ~/.codex/config.toml, which Codex never read).
+// in fogway went to ~/.codex/config.toml, which Codex never read).
 // CODEX_HOME is read through LookupEnv, so the value a login shell lends the
 // desktop app (proc.UserPath) counts, and a relative one, which Codex would
 // take from whatever folder it runs in, reads as unset.

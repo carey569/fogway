@@ -70,7 +70,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], asked = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, asked));
-        await page.goto("http://magpie.test/?view=plugins");
+        await page.goto("http://fogway.test/?view=plugins");
         const view = page.locator("#view-plugins");
 
         // Discover: the card of the one signed in says so

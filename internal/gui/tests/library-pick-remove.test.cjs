@@ -23,7 +23,7 @@ const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skill
 const gh = (name) => ({ name, description: name + " does a thing", kind: "github", repo: "old/pack", source: `https://github.com/old/pack/tree/main/skills/${name}`, agents: ["claude"] });
 const local = (name) => ({ name, description: name + " does a thing", kind: "local", agents: ["claude", "codex"] });
 const lib = (skills) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex")],
   instructions: { agents: [] }, servers: [], skills, foundServers: [], projects: [], foundSkills: [], problems: [],
 });
@@ -70,7 +70,7 @@ function server(lang, state, posts) {
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -133,13 +133,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const state = { skills: [gh("pack-a"), gh("pack-b"), gh("pack-c"), local("keep-me"), local("notes"), local("stuck")] };
         const posts = [], errors = [];
         const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         page.on("dialog", (d) => { errors.push("a browser dialog: " + d.message()); d.dismiss(); });
         await page.route("**/*", server(lang, state, posts));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         const row = (name) => v.locator(".lib-skill").filter({ has: page.locator(".name", { hasText: new RegExp("^" + name) }) });
@@ -174,7 +174,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await settled(page);
         assert.equal((await sheet.locator(".ehead b").textContent()).trim(), w("Remove {n} skills?", { n: 3 }));
         await sheet.locator(".lib-confirm").filter({ hasText: w("They are taken out of the library and out of {agents}.", { agents: "Claude Code" }) }).waitFor();
-        await sheet.locator(".lib-confirm").filter({ hasText: w("{n} folders are moved to magpie's backups (Backups, at the top of the Library), not deleted.", { n: 3 }) }).waitFor();
+        await sheet.locator(".lib-confirm").filter({ hasText: w("{n} folders are moved to fogway's backups (Backups, at the top of the Library), not deleted.", { n: 3 }) }).waitFor();
         assert.equal((await sheet.locator(".bar button.primary").textContent()).trim(), w("Remove {n}", { n: 3 }));
         assert.deepEqual(await sideways(page), [], "sideways with the sheet");
         await sheet.locator(".bar button", { hasText: w("Cancel") }).click();

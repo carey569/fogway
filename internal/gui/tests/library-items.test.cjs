@@ -33,7 +33,7 @@ const problems = [
   { agent: `${HOME}/code/app`, what: "project:", error: "the folder is gone" },
 ];
 const base = () => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code", "claudecode-color"), agent("codex", "Codex", "codex-color"), agent("pi", "Pi", "pi"), agent("zcode", "ZCode", "zcode")],
   instructions: { agents: [], sets: [] }, servers: [], foundServers: [], projects: [], foundSkills: [], skills: structuredClone(skills),
 });
@@ -100,13 +100,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     });
     const open = async (lang, { theme = "light", width = 980, posts = [], flaky = false } = {}) => {
       const ctx = await browser.newContext({ viewport: { width, height: 700 }, colorScheme: theme });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       // only the page's own address: a blob: URL (the grey copies) is left alone
-      await page.route("http://magpie.test/**", server(lang, theme, posts, { flaky }));
-      await page.goto("http://magpie.test/");
+      await page.route("http://fogway.test/**", server(lang, theme, posts, { flaky }));
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
       return page;

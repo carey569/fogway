@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // memBucket is a bucket in memory, or one that refuses every write.
@@ -56,7 +56,7 @@ func archivePost(t *testing.T, s *Server) *httptest.ResponseRecorder {
 	t.Helper()
 	body := `{"model":"fake/m1","messages":[{"role":"user","content":"deploy with ` + archiveKey + `"}],"api_key":"named-secret"}`
 	req := httptest.NewRequest("POST", "/v1/chat/completions?key=query-secret&beta=true", strings.NewReader(body))
-	req.Header.Set("Authorization", "Bearer magpie-gateway-key")
+	req.Header.Set("Authorization", "Bearer fogway-gateway-key")
 	req.Header.Set("x-api-key", "another-secret")
 	req.Header.Set("Cookie", "sid=cookie-secret")
 	req.Header.Set("User-Agent", "claude-cli/2.1.0")

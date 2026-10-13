@@ -14,13 +14,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/update"
-	"github.com/yetone/magpie/internal/upstream"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/update"
+	"github.com/fogway/fogway/internal/upstream"
 )
 
 // The providers page: the vendors the user added, the presets they can add
@@ -30,7 +30,7 @@ type modelJSON struct {
 	ID       string   `json:"id"`
 	Name     string   `json:"name"`              // the user's name for it, if they gave one
 	Default  string   `json:"default,omitempty"` // its own name, when the user gave it another
-	Plain    string   `json:"plain,omitempty"`   // a remote magpie's model's name there alone, when Name has its provider there after it (catalog.Model's)
+	Plain    string   `json:"plain,omitempty"`   // a remote fogway's model's name there alone, when Name has its provider there after it (catalog.Model's)
 	Kept     []string `json:"kept,omitempty"`    // the reasoning levels the user keeps of Efforts, when not all
 	Efforts  []string `json:"efforts,omitempty"`
 	Given    bool     `json:"given,omitempty"`     // its levels aren't known: Efforts are those it can be given, Kept those it was
@@ -47,7 +47,7 @@ type modelJSON struct {
 	RateWas  float64  `json:"rateWas,omitempty"`   // the rate before a discount running now
 	API      string   `json:"api,omitempty"`       // the one API the user said it is asked on
 	Auto     []string `json:"auto,omitempty"`      // the APIs its vendor's list says it is served on, what Auto asks it on
-	Same     string   `json:"same,omitempty"`      // the model the user said it is the same as, for the groups magpie finds (#583)
+	Same     string   `json:"same,omitempty"`      // the model the user said it is the same as, for the groups fogway finds (#583)
 	Merge    string   `json:"merge,omitempty"`     // what those groups merge it by when the user says nothing
 	Kind     string   `json:"kind,omitempty"`      // what the user said it makes: image or video (#1399)
 	// what it costs, USD per million tokens (#819): the price the user set
@@ -55,8 +55,8 @@ type modelJSON struct {
 	// provider's price rate
 	Price *catalog.Price `json:"price,omitempty"`
 	List  *catalog.Price `json:"list,omitempty"`
-	// RemoteList says the list price is what the other magpie counts the
-	// model at, as its list told (a Remote magpie's), not models.dev's
+	// RemoteList says the list price is what the other fogway counts the
+	// model at, as its list told (a Remote fogway's), not models.dev's
 	RemoteList bool `json:"remoteList,omitempty"`
 }
 
@@ -88,7 +88,7 @@ type providerJSON struct {
 	// on this machine or the local network, set to go unmasked by
 	// Settings' redaction (provider.Unredacted)
 	Unredacted bool `json:"unredacted"`
-	// requests go with the agent's own User-Agent, not magpie's
+	// requests go with the agent's own User-Agent, not fogway's
 	// (provider.PassUserAgent, #1851); OwnClient: they go as a client of
 	// the vendor's own whatever is set (provider.OwnClient), so the
 	// editor offers no such choice
@@ -162,7 +162,7 @@ type providerJSON struct {
 	// videos (provider.MarksKinds, #1399): a chip's right-click offers it
 	MarksKinds bool `json:"marksKinds,omitempty"`
 	// Deciders explicitly identifies decision models for OpenRouter and
-	// remote magpie. An empty remote list suppresses name-based guessing.
+	// remote fogway. An empty remote list suppresses name-based guessing.
 	Deciders *[]string `json:"deciders,omitempty"`
 
 	Key struct {
@@ -182,13 +182,13 @@ type providerJSON struct {
 	// Sink: a key or account rate limited with quota left goes to the
 	// back of the order (provider.Provider.Sink)
 	Sink bool `json:"sink,omitempty"`
-	// KeepLogin: magpie keeps Codex or Claude Code signed in to the first
+	// KeepLogin: fogway keeps Codex or Claude Code signed in to the first
 	// account rather than moving it on when that runs low (#524)
 	KeepLogin bool `json:"keepLogin,omitempty"`
 	// KeepLoginAs: the account it is kept signed in to instead of the
 	// first, the gateway still trying them in their order
 	KeepLoginAs string `json:"keepLoginAs,omitempty"`
-	// SwitchOnly: magpie only moves Codex's own sign-in between its
+	// SwitchOnly: fogway only moves Codex's own sign-in between its
 	// accounts, never routing its requests for failover (#1907)
 	SwitchOnly bool `json:"switchOnly,omitempty"`
 	// how many requests each of its keys or accounts has out at once, the
@@ -332,17 +332,17 @@ type gatewayJSON struct {
 	URL     string   `json:"url"`
 	LAN     bool     `json:"lan"`
 	LANURLs []string `json:"lanURLs,omitempty"`
-	// PublicURL is MAGPIE_PUBLIC_URL when it is among LANURLs: Connect
+	// PublicURL is FOGWAY_PUBLIC_URL when it is among LANURLs: Connect
 	// starts there until the user picks an address (#1551)
 	PublicURL string `json:"publicURL,omitempty"`
-	// OnNetwork: MAGPIE_ADDR puts it beyond loopback (a server, a Docker
+	// OnNetwork: FOGWAY_ADDR puts it beyond loopback (a server, a Docker
 	// image), so every caller is shown a gateway key, and LAN is true too:
 	// callers from elsewhere, a container's host among them, need one
 	OnNetwork bool `json:"onNetwork,omitempty"`
 	Running   bool `json:"running"`
 	Mine      bool `json:"mine"`   // this process serves it
-	Window    bool `json:"window"` // the magpie serving it shows its routing
-	// Version is another magpie's, serving it, and Older says it is older
+	Window    bool `json:"window"` // the fogway serving it shows its routing
+	// Version is another fogway's, serving it, and Older says it is older
 	// than this one: agents' requests are then sent as that version sends
 	// them, without this one's fixes (#506)
 	Version string         `json:"version,omitempty"`
@@ -380,7 +380,7 @@ type excludedJSON struct {
 type providersJSON struct {
 	Providers []providerJSON `json:"providers"`
 	Presets   []presetJSON   `json:"presets"`
-	Excluded  []excludedJSON `json:"excluded"` // sign-ins magpie found but will not share
+	Excluded  []excludedJSON `json:"excluded"` // sign-ins fogway found but will not share
 	Gateway   gatewayJSON    `json:"gateway"`
 	// CodexDaemon is the account Codex's background app-server is still
 	// signed in to after Codex was switched to another; "" when none is
@@ -394,7 +394,7 @@ type providersJSON struct {
 	// which the add sheet offers as the plugin's alone
 	OnPlugins []string `json:"onPlugins,omitempty"`
 	// Movable are the built-in subscriptions a community plugin can run,
-	// deprecated in magpie itself: the add sheet marks them so
+	// deprecated in fogway itself: the add sheet marks them so
 	Movable []string `json:"movable,omitempty"`
 	// MovesTo is the plugin each of them goes to, for the add sheet's
 	// offer to install it before signing in
@@ -417,12 +417,12 @@ type providersJSON struct {
 	Fetching bool `json:"fetching,omitempty"`
 }
 
-// agentModel is the model an agent is on, as magpie's catalog names it.
+// agentModel is the model an agent is on, as fogway's catalog names it.
 func agentModel(a *agent.Agent) string {
 	if len(a.Fields) == 0 {
 		return ""
 	}
-	return strings.TrimPrefix(a.Fields[0].Get(), "magpie/")
+	return strings.TrimPrefix(a.Fields[0].Get(), "fogway/")
 }
 
 // agentUse is what an agent is on now: read once for the page, not again
@@ -454,7 +454,7 @@ func agentUses(agents []*agent.Agent, findGroup func(string) (provider.Group, []
 
 // presetOwnClient says a provider added from pr goes as a client of its
 // vendor's own (provider.OwnClient): OpenCode's, Cline's, Kilo's, another
-// magpie.
+// fogway.
 func presetOwnClient(pr provider.PresetDef) bool {
 	return provider.Provider{Preset: pr.ID, Chat: pr.Chat, Responses: pr.Responses, Anthropic: pr.Anthropic}.OwnClient()
 }
@@ -546,7 +546,7 @@ func providerInfo(p provider.Provider, agents []agentUse) providerJSON {
 	names, kept := p.ModelNames(), p.ModelEfforts()
 	held := settings.Load()
 	sames := held.ModelSameAs
-	// a list fetched before magpie kept each model's most: the one Codex
+	// a list fetched before fogway kept each model's most: the one Codex
 	// CLI keeps says it
 	var most []catalog.Model
 
@@ -640,7 +640,7 @@ var keyRestOf = gateway.RestOf
 
 func providersState() providersJSON {
 	// an account signed in since start-up is listed with its vendor's
-	// models, not magpie's own list of them (#204): asked behind the page,
+	// models, not fogway's own list of them (#204): asked behind the page,
 	// which is told so and asks again, never waited for (#541)
 	provider.FetchNewBehind(8 * time.Second)
 	agents := agent.Detected()
@@ -924,7 +924,7 @@ func providerRoutes(mux *http.ServeMux, w Windows) {
 			// one per endpoint
 			Test []string `json:"test"`
 			// As, for test: the agent the request is asked as
-			// (provider.TestAs: "codex", "claude-code"), "" as magpie
+			// (provider.TestAs: "codex", "claude-code"), "" as fogway
 			As string `json:"as"`
 			// DetectModels, for detect: models to ask on each API, each
 			// answered on its own, in place of Model
@@ -1112,12 +1112,12 @@ func providerRoutes(mux *http.ServeMux, w Windows) {
 					in.PriceRate = old.PriceRate
 				}
 				// how long its keys rest out of quota is set in
-				// providers.json or with `magpie provider quota-rest`,
+				// providers.json or with `fogway provider quota-rest`,
 				// which the form doesn't show: kept as it was (#1772)
 				if in.QuotaRest == 0 && old != nil {
 					in.QuotaRest = old.QuotaRest
 				}
-				// and Codex's requests as sent, set with `magpie provider
+				// and Codex's requests as sent, set with `fogway provider
 				// set <id> codex=as-sent` (#1758)
 				if !in.CodexAsSent && old != nil {
 					in.CodexAsSent = old.CodexAsSent
@@ -1580,7 +1580,7 @@ func providerRoutes(mux *http.ServeMux, w Windows) {
 		writeJSON(rw, st)
 	})
 	// StepFun's Step Plan windows: the session the user copied from their
-	// browser with magpie's bookmarklet
+	// browser with fogway's bookmarklet
 	mux.HandleFunc("POST /api/stepfun/{site}/session", func(rw http.ResponseWriter, r *http.Request) {
 		site := r.PathValue("site")
 		if provider.StepFunSignInURL(site) == "" {

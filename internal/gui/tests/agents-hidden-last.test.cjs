@@ -71,8 +71,8 @@ const fold = (page) => page.evaluate(() => {
 const settle = (page) => page.locator(".agent-fold").evaluate((f) => Promise.all(f.getAnimations({ subtree: true }).map((a) => a.finished)));
 
 const surfaces = [
-  ["window, narrow", "http://magpie.test/?view=agents", { width: 420, height: 900 }],
-  ["tray panel", "http://magpie.test/?mode=panel", { width: 380, height: 900 }],
+  ["window, narrow", "http://fogway.test/?view=agents", { width: 420, height: 900 }],
+  ["tray panel", "http://fogway.test/?mode=panel", { width: 380, height: 900 }],
 ];
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -141,7 +141,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         await page.route("**/*", server(lang, ["agy", "commandcode", "dsh", "zed", "alma"]));
-        await page.goto("http://magpie.test/?view=agents");
+        await page.goto("http://fogway.test/?view=agents");
         const more = page.locator(".agent-more");
         await more.waitFor();
         assert.equal((await more.textContent()).trim(), w.only.replace("2", "5"));

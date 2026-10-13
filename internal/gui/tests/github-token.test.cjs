@@ -29,7 +29,7 @@ const UNTIL = "2030-01-02T03:04:00Z";
 function serve(lang, posted, st) {
   const settings = () => ({ lang, theme: "light", searchVendors: [], searchAPIs: [], githubTokenMask: st.mask, githubTokenFrom: st.from });
   const lib = {
-    dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+    dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
     agents: [{ id: "codex", name: "Codex", icon: "", skills: `${HOME}/.codex/skills`, mcp: `${HOME}/.codex/mcp.json` }],
     instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], servers: [],
     skills: [{ name: "pdf", description: "PDFs", kind: "github", agents: ["codex"], source: "https://github.com/owner/repo/tree/main/pdf" }],
@@ -79,7 +79,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const posted = [], st = { mask: "", from: "", env: false };
       await page.route("**/*", serve(lang, posted, st));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=network");
+      await page.goto("http://fogway.test/?view=settings&tab=network");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const list = page.locator("#githubList");
       const row = list.locator(".row.github-token");
@@ -126,7 +126,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       t.after(() => browser.close());
       const ctx = await browser.newContext({ viewport: { width: 1000, height: 900 } });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       const errors = [];
@@ -135,7 +135,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.unroute("**/*");
         await page.route("**/*", serve(lang, [], st));
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=library");
+        await page.goto("http://fogway.test/?view=library");
         await settingsDrawn(page); // rows found are the ones that stay (#1659)
         const check = page.locator("#view-library button.lib-updall", { hasText: w.check });
         await check.waitFor();

@@ -39,7 +39,7 @@ test("A pasted sign-in callback retries errors and submits only once", async (t)
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     return route.fulfill({ body: await fs.readFile(file), contentType });
   });
-  await page.goto("http://magpie.test/");
+  await page.goto("http://fogway.test/");
   await page.waitForFunction(() => state.settings.lang === "zh");
   await page.evaluate(() => {
     signing = { id: "test-flow", agent: "vendor", state: "waiting", url: "http://vendor.test/oauth", pasteCallback: true };

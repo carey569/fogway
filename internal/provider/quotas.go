@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Quotas is what is left everywhere magpie can ask: the plans bought with
+// Quotas is what is left everywhere fogway can ask: the plans bought with
 // a key, and the keys' balances, as the Usage page shows them. The vendors are asked at once;
 // what doesn't answer before ctx ends comes back with an error.
 func Quotas(ctx context.Context) []SubscriptionQuota {
@@ -15,7 +15,7 @@ func Quotas(ctx context.Context) []SubscriptionQuota {
 }
 
 // Allotted is Quotas without the keys' balances: the plans whose
-// allowance runs out and starts again, which is what magpie quota wait
+// allowance runs out and starts again, which is what fogway quota wait
 // waits on; no key's balance is asked for.
 func Allotted(ctx context.Context) []SubscriptionQuota {
 	return PlanQuotas(ctx)
@@ -30,8 +30,8 @@ func quotas(ctx context.Context) (subs, plans, balances []SubscriptionQuota) {
 	return nil, plans, <-b
 }
 
-// Quota is one account's or key's allowance as magpie quota --json and
-// the gateway's GET /v1/magpie/quotas tell it, for an agent choosing
+// Quota is one account's or key's allowance as fogway quota --json and
+// the gateway's GET /v1/fogway/quotas tell it, for an agent choosing
 // where to send its work: Provider is the first part of the models'
 // ids (provider/model) for a key's plan or balance, the agent for a
 // subscription.

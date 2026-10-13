@@ -2,7 +2,7 @@
 // Hu9956, #868: once Names & levels was open (to set Provider in model
 // names), it couldn't be closed — the only way was the button under the
 // list, out of sight — and it stayed open in every editor after, until
-// magpie was restarted. Now the open list has its own quiet title and a
+// fogway was restarted. Now the open list has its own quiet title and a
 // Fold at its top, held there while the rows scroll; a click there folds it
 // and the button under the list reads as off again; and an editor opened
 // afresh has it folded. No click moves the page, nothing native, no
@@ -67,7 +67,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const relay = page.locator('.row.provider[data-id="relay"]');
       await relay.click();
       const rename = page.locator(".mfoot button", { hasText: w.names });

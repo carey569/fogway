@@ -20,7 +20,7 @@ function serve(lang) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:false};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3425", running: true, window: true } });
+    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3725", running: true, window: true } });
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname.startsWith("/api/usage/quotas")) return json([]);
     if (url.pathname.startsWith("/api/")) return json({});
@@ -53,7 +53,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.waitForSelector("#nav button.on");
         const got = {};
         for (const v of VIEWS) {

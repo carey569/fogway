@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // vertexHome gives a test a home of its own with no Google credentials in
@@ -358,7 +358,7 @@ func TestVertexSaveRefuses(t *testing.T) {
 		{v: &Vertex{Project: "acme-vertex", Location: "us-central1/"}, want: `"us-central1/" is no Vertex AI location: global, us, eu or a region such as us-central1`},
 		{v: &Vertex{Project: "acme-vertex", Credentials: "keys/acme-vertex.json"}, want: `give the credentials file's full path, not "keys/acme-vertex.json"`},
 		// another user's home, which nothing expands: it would be read
-		// under whatever folder magpie was started in
+		// under whatever folder fogway was started in
 		{v: &Vertex{Project: "acme-vertex", Credentials: "~other/acme-vertex.json"}, want: `give the credentials file's full path, not "~other/acme-vertex.json"`},
 		{v: &Vertex{Project: "acme-vertex", Impersonate: "vertex-runner"}, want: `"vertex-runner" is no service account's email`},
 		{v: &Vertex{Project: "acme-vertex", Impersonate: "vertex-runner@acme vertex.iam.gserviceaccount.com"}, want: `"vertex-runner@acme vertex.iam.gserviceaccount.com" is no service account's email`},

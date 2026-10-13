@@ -63,7 +63,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], saves = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, saves));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator('.row.provider[data-id="deepseek"]').click();
         const bar = page.locator(".editor .bar");
         const save = bar.getByRole("button", { name: w.save, exact: true });

@@ -58,8 +58,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const page = await browser.newPage({ viewport: { width: 1000, height: 700 }, colorScheme: theme });
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.route("http://magpie.test/**", serve(lang, theme));
-        await page.goto("http://magpie.test/");
+        await page.route("http://fogway.test/**", serve(lang, theme));
+        await page.goto("http://fogway.test/");
         await page.locator('#nav [data-view="agents"]').click();
         // connected, its model picked in its opened row
         await page.locator("#agents .ag-link").first().click();

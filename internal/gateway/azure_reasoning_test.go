@@ -9,7 +9,7 @@ import (
 // azureStoreless plays Azure OpenAI's Responses as it answers a request
 // with store false: an item given by id alone, with nothing sealed in it,
 // is looked up among stored items, and there are none, so the whole
-// request is turned away with a 400 (#1008's text, word for word; magpie names the provider before it).
+// request is turned away with a 400 (#1008's text, word for word; fogway names the provider before it).
 type azureStoreless struct{ inputs [][]map[string]any }
 
 func (a *azureStoreless) ServeHTTP(w http.ResponseWriter, r *http.Request) {

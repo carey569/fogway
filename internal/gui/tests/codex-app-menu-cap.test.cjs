@@ -52,7 +52,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const errors = [];
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang, shown));
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           const row = page.locator('.row.agent[data-id="codex"]');
           await row.locator(".ag-link").click();
           await row.locator(".ag-exp .ag-chips").waitFor();

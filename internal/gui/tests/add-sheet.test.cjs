@@ -77,7 +77,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         // Direct editor actions must not open an unrequested add sheet on cancel.
         for (const label of [lang === "zh" ? "复制" : "Duplicate", lang === "zh" ? "再添加一个 Anthropic" : "Add another Anthropic"]) {
           await page.locator('#providers .row[data-id="anthropic"]').click();
@@ -220,7 +220,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const hides = [];
         firstUse.on("request", r => { if (new URL(r.url()).pathname === "/api/window/hide") hides.push(r.url()); });
         await firstUse.route("**/*", server(lang, []));
-        await firstUse.goto("http://magpie.test/?mode=panel");
+        await firstUse.goto("http://fogway.test/?mode=panel");
         // The tray has no provider tab; exercise the first-use provider view
         // with the real panel key handlers still installed.
         await firstUse.evaluate(() => show("providers"));

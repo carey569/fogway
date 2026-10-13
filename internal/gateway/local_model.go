@@ -8,12 +8,12 @@ import (
 	"os"
 	"time"
 
-	lm "github.com/yetone/magpie/internal/local"
-	"github.com/yetone/magpie/internal/provider"
+	lm "github.com/fogway/fogway/internal/local"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // keepLocal runs the local model while the gateway serves, as local.json
-// says, and follows a change to it: the app's Local page, or magpie local,
+// says, and follows a change to it: the app's Local page, or fogway local,
 // writing it starts, restarts or stops llama-server within seconds.
 func keepLocal(ctx context.Context) {
 	var was []byte
@@ -51,8 +51,8 @@ func init() {
 	})
 }
 
-// localStatus answers GET /v1/magpie/local: the local model as this
-// gateway runs it, for magpie local and the app.
+// localStatus answers GET /v1/fogway/local: the local model as this
+// gateway runs it, for fogway local and the app.
 func (s *Server) localStatus(w http.ResponseWriter, r *http.Request) {
 	if !local(r) {
 		writeError(w, provider.Chat, http.StatusForbidden, "the local model's status is told to this computer only")

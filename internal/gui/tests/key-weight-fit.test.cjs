@@ -58,7 +58,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator(".row.provider", { hasText: "Relay" }).first().click();
         await page.locator(".editor .accts.weighted .acc .key-weight").first().waitFor();
 

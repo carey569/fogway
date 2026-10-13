@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // A try sent at an effort its member isn't fixed at still reaches its row
-// (#865, uiots: the magpie stopped at magpie's door and never flew on to a
+// (#865, uiots: the fogway stopped at fogway's door and never flew on to a
 // member). A Claude Code tier at high sends a member that follows the
 // group's effort with its try's fixed "high", while the member's own seat
 // has no fixed: the page looked the row up by the try's seat, found none
@@ -69,7 +69,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         await browser.close();
       });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const rowOf = () => [...document.querySelectorAll("li")].find((li) => li.querySelector("code.mdl")?.textContent === "model-1");
       await page.waitForFunction(`(${rowOf})()`);
       // the row the try went to says it is answering

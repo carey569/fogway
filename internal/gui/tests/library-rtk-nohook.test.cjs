@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Discord (lc): "rtk 没有识别 deepseek harness". RTK has no hook for
 // DeepSeek Harness (dsh's hooks can't rewrite a command, and rtk init has no
-// --agent dsh), and the RTK tab left it out, as if magpie hadn't seen it.
+// --agent dsh), and the RTK tab left it out, as if fogway hadn't seen it.
 // It is listed now, tagged No RTK hook with why, and its switch can't be
 // turned on; in English and Chinese. No backend: the API is faked here.
 const assert = require("node:assert/strict");
@@ -14,7 +14,7 @@ const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/aimer";
 const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json` });
 const lib = () => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("pi", "Pi"), agent("dsh", "DeepSeek Harness")],
   instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], skills: [], servers: [],
 });
@@ -66,12 +66,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await t.test(lang, async () => {
         const w = words[lang], calls = [];
         const ctx = await browser.newContext({ viewport: { width: 980, height: 800 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "rtk"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "rtk"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, calls));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         const row = (name) => v.locator(".lib-row").filter({ has: page.locator(".name", { hasText: name }) });

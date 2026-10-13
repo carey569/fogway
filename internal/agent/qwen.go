@@ -10,16 +10,16 @@ package agent
 // apart, and security.auth.selectedType "openai" skips the /auth prompt
 // on start.
 //
-// magpie appends one entry per catalog model to modelProviders.openai,
+// fogway appends one entry per catalog model to modelProviders.openai,
 // the wire id the gateway takes ("<provider>/<model>") and the name
-// "magpie/<provider>/<model>", every one on the same env key of its own,
-// which is how an entry of magpie's is told from the user's own, and
+// "fogway/<provider>/<model>", every one on the same env key of its own,
+// which is how an entry of fogway's is told from the user's own, and
 // points settings.model and security.auth.selectedType at a pick. The key
 // itself lives in the settings' env object — a shell-exported or
 // ~/.qwen/.env variable of the same name would win over it, which the
 // qwen-specific name makes unlikely. The user's entries stay as they were
 // and in front, so their own ids don't move, and the default, auth type
-// and any key of theirs they had are stashed and put back when magpie
+// and any key of theirs they had are stashed and put back when fogway
 // steps out.
 
 import (
@@ -30,7 +30,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/jsonc"
 
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/edit"
 )
 
 const (
@@ -39,16 +39,16 @@ const (
 	qwenModelAt = "model.baseUrl"
 	qwenAuth    = "security.auth.selectedType"
 	qwenEnv     = "env." + qwenEnvKey
-	// qwenEnvKey names the variable magpie's provider entries take their
+	// qwenEnvKey names the variable fogway's provider entries take their
 	// key from: qwen-specific so a shell or ~/.qwen/.env value of the
 	// name is unlikely to shadow the settings' (their priority over it is
-	// why "MAGPIE_API_KEY" is not used), and set in the settings' env
-	// object while magpie is wired in, which names one of magpie's
+	// why "FOGWAY_API_KEY" is not used), and set in the settings' env
+	// object while fogway is wired in, which names one of fogway's
 	// entries wherever it appears.
-	qwenEnvKey = "MAGPIE_QWEN_API_KEY"
+	qwenEnvKey = "FOGWAY_QWEN_API_KEY"
 )
 
-// qwenEntry is one modelProviders.openai member magpie writes, fields
+// qwenEntry is one modelProviders.openai member fogway writes, fields
 // ordered as Qwen Code orders its own (alphabetically).
 type qwenEntry struct {
 	BaseURL    string   `json:"baseUrl"`
@@ -63,14 +63,14 @@ type qwenGen struct {
 	ContextWindowSize int `json:"contextWindowSize,omitempty"`
 }
 
-// qwenEntriesAt are magpie's entries for a qwen reaching the gateway at
+// qwenEntriesAt are fogway's entries for a qwen reaching the gateway at
 // v1.
 func qwenEntriesAt(v1 string) []qwenEntry {
 	var out []qwenEntry
-	for _, m := range magpieModels("qwen") {
+	for _, m := range fogwayModels("qwen") {
 		// name is what /model shows, the id beside it when they differ:
 		// the model's name as every agent's list calls it, by the Provider
-		// in model names setting (magpie/<id> before, which none of the
+		// in model names setting (fogway/<id> before, which none of the
 		// setting's ways changed)
 		e := qwenEntry{ID: m.ID, Name: m.Name, BaseURL: v1, EnvKey: qwenEnvKey}
 		if m.Context > 0 {
@@ -99,7 +99,7 @@ func qwenCustoms(path string) []qwenCustom {
 	var out []qwenCustom
 	all := gjson.GetBytes(jsonc.ToJSONInPlace(raw), qwenModels)
 	if !all.IsArray() {
-		// no modelProviders (or none of openai): none of magpie's and
+		// no modelProviders (or none of openai): none of fogway's and
 		// none of the user's, rather than an error ForEach gives for null
 		return nil
 	}
@@ -127,7 +127,7 @@ func qwenModelOf(path string) (name, base string) {
 }
 
 // qwenPrune takes a parent key out once the last thing in it is gone: the
-// "env": {} or "modelProviders": {} that emptying magpie's writes would
+// "env": {} or "modelProviders": {} that emptying fogway's writes would
 // leave was never the user's.
 func qwenPrune(path, parent string) error {
 	if v, ok := edit.GetJSON(path, parent); ok && strings.TrimSpace(v) == "{}" {
@@ -163,27 +163,27 @@ func qwenIn(at place) *Agent {
 	keyBase := "qwen:" + path + ":" + qwenModelAt
 	keyAuth := "qwen:" + path + ":" + qwenAuth
 	// keyAuthSeen marks the user's own auth type already stashed (or
-	// known absent), so a later wire doesn't take magpie's own "openai"
+	// known absent), so a later wire doesn't take fogway's own "openai"
 	// for it
 	keyAuthSeen := keyAuth + ".seen"
 	keyEnv := "qwen:" + path + ":" + qwenEnv
 
-	// get spells an entry of magpie's as the catalog does
+	// get spells an entry of fogway's as the catalog does
 	get := func() string {
 		name, base := qwenModelOf(path)
 		if name == "" {
 			return ""
 		}
 		if c := qwenFind(qwenCustoms(path), name, base); c != nil && c.ours {
-			return magpieID + "/" + c.id
+			return fogwayID + "/" + c.id
 		}
 		return name
 	}
 
-	// setEnvKey writes env.MAGPIE_API_KEY as the gateway's key; with=false
+	// setEnvKey writes env.FOGWAY_API_KEY as the gateway's key; with=false
 	// puts back what was stashed, or takes the key out where it still is
-	// magpie's. A value of the user's own under that name is stashed before
-	// it is replaced and never removed: magpie only removes what it wrote.
+	// fogway's. A value of the user's own under that name is stashed before
+	// it is replaced and never removed: fogway only removes what it wrote.
 	setEnvKey := func(with bool) error {
 		if with {
 			if v, ok := edit.GetJSON(path, qwenEnv); ok && v != at.gwKey() {
@@ -203,7 +203,7 @@ func qwenIn(at place) *Agent {
 		return nil
 	}
 
-	// setAuth sets security.auth.selectedType to openai while magpie's
+	// setAuth sets security.auth.selectedType to openai while fogway's
 	// models are the pick (skipping the /auth prompt), stashing the user's
 	// own; with=false puts it back, or takes the key out where it never
 	// was, pruning the empty security.auth and security it would leave.
@@ -211,7 +211,7 @@ func qwenIn(at place) *Agent {
 		if with {
 			// the user's own value is stashed once, whatever it is —
 			// "openai" of their own too, or it can't be told from
-			// magpie's on a later wire or Sync and comes off with it
+			// fogway's on a later wire or Sync and comes off with it
 			if _, seen := stashLoad()[keyAuthSeen]; !seen {
 				kv := map[string]string{keyAuthSeen: "1"}
 				if v, ok := edit.GetJSON(path, qwenAuth); ok {
@@ -235,8 +235,8 @@ func qwenIn(at place) *Agent {
 	}
 
 	// setProviders writes modelProviders.openai with the user's own and,
-	// when with, magpie's after them; none left takes the array out. A
-	// with=false when none were magpie's changes nothing.
+	// when with, fogway's after them; none left takes the array out. A
+	// with=false when none were fogway's changes nothing.
 	setProviders := func(with bool) error {
 		var ms []any
 		var had bool
@@ -258,7 +258,7 @@ func qwenIn(at place) *Agent {
 				ms = append(ms, e)
 			}
 		} else if !had {
-			// nothing of magpie's left: a key it left behind, and the
+			// nothing of fogway's left: a key it left behind, and the
 			// auth type it set, still go
 			if err := setEnvKey(false); err != nil {
 				return err
@@ -333,7 +333,7 @@ func qwenIn(at place) *Agent {
 			return ""
 		},
 		Check: func() string {
-			// settings.model is magpie's by the entry it names, wherever
+			// settings.model is fogway's by the entry it names, wherever
 			// that entry points: another address is drift to report, not
 			// a model of the user's
 			name, _ := qwenModelOf(path)
@@ -352,10 +352,10 @@ func qwenIn(at place) *Agent {
 				return ""
 			}
 			if v, ok := edit.GetJSON(path, qwenEnv); !ok || v != at.gwKey() {
-				return "Qwen Code's " + qwenEnv + " (settings.json) no longer is magpie's key, so magpie's models have none"
+				return "Qwen Code's " + qwenEnv + " (settings.json) no longer is fogway's key, so fogway's models have none"
 			}
 			if v, ok := edit.GetJSON(path, qwenAuth); !ok || v != "openai" {
-				return "Qwen Code's security.auth.selectedType (settings.json) no longer is openai, so it asks /auth instead of using magpie"
+				return "Qwen Code's security.auth.selectedType (settings.json) no longer is openai, so it asks /auth instead of using fogway"
 			}
 			return wiringOff("Qwen Code", path, func(k string) (string, bool) {
 				g := gjson.GetBytes(c.raw, k)
@@ -369,7 +369,7 @@ func qwenIn(at place) *Agent {
 				curName, curBase := qwenModelOf(path)
 				ours := qwenFind(qwenCustoms(path), curName, curBase)
 				onOurs := ours != nil && ours.ours
-				if ref, ok := strings.CutPrefix(v, magpieID+"/"); ok && isMagpie(ref) {
+				if ref, ok := strings.CutPrefix(v, fogwayID+"/"); ok && isFogway(ref) {
 					if !onOurs {
 						kv := map[string]string{keyBase: curBase}
 						if curName != "" {
@@ -405,14 +405,14 @@ func qwenIn(at place) *Agent {
 				return setProviders(false)
 			},
 			Options: func(cur map[string]string) []Option {
-				return append(qwenOwnOptions(path, cur["model"]), viaMagpie("qwen", magpieID+"/")...)
+				return append(qwenOwnOptions(path, cur["model"]), viaFogway("qwen", fogwayID+"/")...)
 			},
 		}},
 	}, path)
 }
 
 // qwenOwnOptions are the models of the user's own the settings file has:
-// every modelProviders.openai entry that isn't magpie's, and the current
+// every modelProviders.openai entry that isn't fogway's, and the current
 // pick.
 func qwenOwnOptions(path, cur string) []Option {
 	seen := map[string]bool{}
@@ -428,7 +428,7 @@ func qwenOwnOptions(path, cur string) []Option {
 		}
 		out = append(out, Option{Value: c.id, Label: label, Icon: modelIcon("", c.id)})
 	}
-	if cur != "" && !seen[cur] && !strings.HasPrefix(cur, magpieID+"/") {
+	if cur != "" && !seen[cur] && !strings.HasPrefix(cur, fogwayID+"/") {
 		out = append([]Option{{Value: cur, Icon: modelIcon("", cur)}}, out...)
 	}
 	return group("Qwen Code", out)

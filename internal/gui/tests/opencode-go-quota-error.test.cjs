@@ -35,7 +35,7 @@ const errs = [
 const keys = [
   "No OpenCode Go on this key — use a key made by the member who subscribed, in that workspace",
   "OpenCode didn't take this key — paste a current one in the provider's settings",
-  "OpenCode Go answered in a form magpie doesn't read — hover for what it sent",
+  "OpenCode Go answered in a form fogway doesn't read — hover for what it sent",
 ];
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -48,7 +48,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.waitForFunction(() => typeof quotaError === "function");
       const said = await page.evaluate((errs) => errs.map((e) => quotaError(e)), errs);
       const want = await page.evaluate((keys) => keys.map((k) => t(k)), keys);

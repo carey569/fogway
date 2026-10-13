@@ -11,10 +11,10 @@ import (
 // 429 (the burst does not swallow ordinary mistypes).
 func TestAuthThrottleKeepsFirstRefusalHelpful(t *testing.T) {
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	h := lanGuard(New().Handler())
 	newCaller(t, "LAN client")
-	r := httptest.NewRequest("GET", "/v1/magpie/quotas", nil)
+	r := httptest.NewRequest("GET", "/v1/fogway/quotas", nil)
 	r.RemoteAddr = "10.0.0.7:5000"
 	r.Header.Set("Authorization", "Bearer mgp-typo-key-9z7q")
 	w := httptest.NewRecorder()

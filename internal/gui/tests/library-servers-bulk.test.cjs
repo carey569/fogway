@@ -26,7 +26,7 @@ const HOME = "/Users/emo";
 const agent = (id, name, more = {}) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json`, ...more });
 const sv = (name, transport, agents, more = {}) => ({ name, transport, command: transport === "stdio" ? name + "-mcp" : "", url: transport === "stdio" ? "" : "http://localhost:9/" + name, agents, ...more });
 const lib = (servers) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex", { noSSE: true }), agent("copilot", "Copilot CLI"), agent("gemini", "Gemini CLI")],
   instructions: { agents: [] }, servers, skills: [], foundServers: [], projects: [], foundSkills: [], problems: [],
 });
@@ -72,7 +72,7 @@ function server(lang, state, posts) {
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -124,13 +124,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const state = { servers: [sv("fs", "stdio", ["claude", "copilot"]), sv("web", "sse", ["claude"]), sv("docs", "http", [], { signIn: { signedIn: true } })] };
         const posts = [], errors = [];
         const ctx = await browser.newContext({ viewport: { width: 440, height: 1000 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         page.on("dialog", (d) => { errors.push("a browser dialog: " + d.message()); d.dismiss(); });
         await page.route("**/*", server(lang, state, posts));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         await v.locator(".lib-server").first().waitFor();
@@ -204,7 +204,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.deepEqual(posts.shift(), { what: "servers/agents-some", body: { names: ["fs", "web"], agents: ["codex"], on: true } });
         assert.deepEqual(agentsOf("fs"), ["codex", "copilot"]);
         assert.deepEqual(agentsOf("docs"), [], "a server not picked was given");
-        // the bar drawn again from magpie's answer: the chip's title, not
+        // the bar drawn again from fogway's answer: the chip's title, not
         // only its lit state, which a click sets before the answer
         await page.waitForFunction((tip) => document.querySelector('#view-library .lib-pickbar .lib-ag[data-agent="codex"]')?.title === tip,
           w("{agent} has all of these servers — click to take them away", { agent: "Codex" }));
@@ -245,7 +245,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.deepEqual(said, [
           // only the hidden Copilot CLI has one now, after Turn all off
           w("They are taken out of the library and out of {agents}.", { agents: "Copilot CLI" }),
-          w("magpie's sign-in to {n} of them is forgotten too.", { n: 1 }),
+          w("fogway's sign-in to {n} of them is forgotten too.", { n: 1 }),
           w("Servers your agents have that aren't in the library stay as they are."),
         ]);
         await sheet.locator(".bar button", { hasText: w("Cancel") }).click();

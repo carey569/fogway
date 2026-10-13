@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fogway/fogway/internal/sessions"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/sessions"
 )
 
 // TitleLink contains only fingerprints. Native request IDs and account affinity

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Claude's refusal with what its classifier said of it, streamed and
@@ -64,7 +64,7 @@ func keyedClaude(t *testing.T, refusing ...string) *[]string {
 
 // handedBack says body is Claude's refusal as the vendor said it, to an
 // agent on Anthropic's Messages API: what Claude Code switches to its
-// fallback model on, not magpie's 400.
+// fallback model on, not fogway's 400.
 func handedBack(code int, body string) bool {
 	return code == 200 && strings.Contains(body, `"stop_reason":"refusal"`) && strings.Contains(body, `"category":"cyber"`) &&
 		!strings.Contains(body, "refused this request")
@@ -74,7 +74,7 @@ const messagesAsk = `{"model":"a/m","max_tokens":10,"stream":true,"messages":[{"
 
 // With RefusalRetries 0, a keyed Anthropic provider's refusal goes to
 // Claude Code as Anthropic said it, streamed or whole, with its other keys
-// never asked and the key that refused not set aside (DD on Discord: magpie
+// never asked and the key that refused not set aside (DD on Discord: fogway
 // moved on through the accounts and answered 400, so Claude Code never
 // switched to its fallback model as it does on Anthropic's own API).
 func TestRefusalRetriesNoneHandsClaudeCodeTheRefusal(t *testing.T) {

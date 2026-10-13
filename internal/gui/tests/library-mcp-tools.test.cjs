@@ -17,7 +17,7 @@ const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/nf";
 const LONG = "Read the complete contents of a file from the file system as text. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file.";
 const fixture = () => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [{ id: "claude", name: "Claude Code", icon: "claudecode-color", skills: `${HOME}/.claude/skills`, mcp: `${HOME}/.claude.json`, toolsOff: true }],
   instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], skills: [],
   servers: [
@@ -32,7 +32,7 @@ const tools = [
   { name: "a_tool_with_a_very_long_name_that_has_no_spaces_in_it_at_all_anywhere" },
 ];
 const found = (fresh) => ({
-  // 4 tools, 3 of them listed: one more than magpie keeps
+  // 4 tools, 3 of them listed: one more than fogway keeps
   filesystem: fresh ? { state: "ok", tools: 1, toolList: [{ name: "only_one", description: "The one left." }] } : { state: "ok", tools: 4, toolList: tools },
   bare: { state: "ok", tools: 0 },
   ...Object.fromEntries(Array.from({ length: 6 }, (_, i) => ["more" + i, { state: "ok", tools: 0 }])),
@@ -83,12 +83,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         t.after(async () => { await browser.close(); });
         const w = words[lang], checks = [];
         const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 820 : 500 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.route("http://magpie.test/**", server(lang, checks));
-        await page.goto("http://magpie.test/");
+        await page.route("http://fogway.test/**", server(lang, checks));
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
         const status = (name) => page.locator(`#view-library .lib-health[data-server="${name}"]`);

@@ -15,100 +15,100 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 var amber = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#B45309", Dark: "#F2B544"})
 
 const providerUsage = `usage:
-  magpie providers                        list providers, keys and who uses them
-  magpie presets                          list the vendors magpie knows out of the box
-  magpie provider <id>                    show one provider and its models
-  magpie provider add <preset> <key>      add a preset vendor   e.g. magpie provider add deepseek sk-…
+  fogway providers                        list providers, keys and who uses them
+  fogway presets                          list the vendors fogway knows out of the box
+  fogway provider <id>                    show one provider and its models
+  fogway provider add <preset> <key>      add a preset vendor   e.g. fogway provider add deepseek sk-…
                                           again, it adds another (deepseek-2); k=v pairs too: id, name, header.X-Foo
-  magpie provider add <name> k=v…         add a custom vendor   k: url, anthropic, responses, gemini, decide, key, models, catalog, icon, header.X-Foo, balance, balance.path, balance.token, models.url, search, user-agent,
+  fogway provider add <name> k=v…         add a custom vendor   k: url, anthropic, responses, gemini, decide, key, models, catalog, icon, header.X-Foo, balance, balance.path, balance.token, models.url, search, user-agent,
                                           access.key, access.secret (a Volcengine access key, or a Tencent Cloud SecretId and SecretKey, for its plan's windows)
-  magpie provider set <id> k=v…           change a provider's settings, with the same k=v pairs as add;
+  fogway provider set <id> k=v…           change a provider's settings, with the same k=v pairs as add;
                                           codex=as-sent sends Codex's Responses requests as Codex sent them
                                           (a relay that checks they are Codex's own), codex=default fits them;
                                           user-agent=agent sends the User-Agent the agent gave (pi, opencode…)
-                                          in place of magpie's, for a plan that serves only agents it names;
-                                          user-agent=magpie, the default, sends magpie's
-  magpie provider key <id> <key>          change the API key
-  magpie provider icon <id> <file|name>   give a custom provider a picture (PNG, JPEG, SVG…) or a built-in icon
-  magpie provider fallback <id> <provider/model>…   where requests go when it's out of quota or down (none clears)
-  magpie provider models <id> [ids…]      fetch the vendor's model list, or choose which models to expose:
+                                          in place of fogway's, for a plan that serves only agents it names;
+                                          user-agent=fogway, the default, sends fogway's
+  fogway provider key <id> <key>          change the API key
+  fogway provider icon <id> <file|name>   give a custom provider a picture (PNG, JPEG, SVG…) or a built-in icon
+  fogway provider fallback <id> <provider/model>…   where requests go when it's out of quota or down (none clears)
+  fogway provider models <id> [ids…]      fetch the vendor's model list, or choose which models to expose:
                                           ids… replace the list, +id adds one, -id takes one out, all: the default,
                                           none: serve none of them, its balance and usage still shown
-  magpie provider refresh <id>            fetch the vendor's model list again (as the app's Fetch models)
-  magpie provider account-models <id> [account|key [ids…|all]]
+  fogway provider refresh <id>            fetch the vendor's model list again (as the app's Fetch models)
+  fogway provider account-models <id> [account|key [ids…|all]]
                                           the models one account or key alone serves; all: every model the provider has
-  magpie provider account-cap <id> [account [percent|off]]
+  fogway provider account-cap <id> [account [percent|off]]
                                           use a subscription account up to a share of each usage window (e.g. 70):
                                           at it, routing takes the account for used up until the window renews
-  magpie provider account-cap <id> <account> --window <name> [percent|none|default]
+  fogway provider account-cap <id> <account> --window <name> [percent|none|default]
                                           a share for one window alone (e.g. "5 hours" 50): none is no cap on it,
                                           default has it follow the account's cap
-  magpie provider account-concurrency <id> [account|key [n|off|default]]
+  fogway provider account-concurrency <id> [account|key [n|off|default]]
                                           how many requests one account or key has out at once, over every model,
                                           routing group and agent: its own, off for none, default for the provider's
-  magpie provider queue <id> [length [seconds]]
+  fogway provider queue <id> [length [seconds]]
                                           how many may wait for each account or key past its limit, and how long;
                                           past either a request is turned away with a 429 (0: no bound)
-  magpie provider rpm <id> [n|off]        how many requests each account or key sends the vendor in any minute;
+  fogway provider rpm <id> [n|off]        how many requests each account or key sends the vendor in any minute;
                                           one more waits for room, up to 2 minutes, then is turned away with a 429
-  magpie provider quota-rest <id> [30m|6h|7d|default]
+  fogway provider quota-rest <id> [30m|6h|7d|default]
                                           how long a key sits out once the vendor says it is out of its allowance
                                           without saying when it is back (default: 15 minutes; at most 8 days)
-  magpie provider listed <id> yes|no      no: its models serve only through routing groups, not in the list
-  magpie provider off|on <id>             switch it off (kept, but no agent or request uses it), or on again
-  magpie provider test <id> [--as codex|claude-code] [model…]
+  fogway provider listed <id> yes|no      no: its models serve only through routing groups, not in the list
+  fogway provider off|on <id>             switch it off (kept, but no agent or request uses it), or on again
+  fogway provider test <id> [--as codex|claude-code] [model…]
                                           send a tiny request through each endpoint, or to each model;
                                           --as asks it as that agent does, for a relay that serves only it
-  magpie provider rm <id>                 remove a provider
+  fogway provider rm <id>                 remove a provider
 
-  e.g. magpie provider add "My Relay" url=https://relay.example.com/v1 key=sk-…
-       magpie provider add "Own Claude" anthropic=https://gw.example.com key=sk-… catalog=anthropic
-       magpie provider add "My Relay" url=https://relay.example.com/v1 key=sk-… header.X-Org-Id=acme
-       magpie provider add bailian-token-plan sk-sp-…   (Bailian's Token Plan: its chat models, and its decision model for routing groups;
+  e.g. fogway provider add "My Relay" url=https://relay.example.com/v1 key=sk-…
+       fogway provider add "Own Claude" anthropic=https://gw.example.com key=sk-… catalog=anthropic
+       fogway provider add "My Relay" url=https://relay.example.com/v1 key=sk-… header.X-Org-Id=acme
+       fogway provider add bailian-token-plan sk-sp-…   (Bailian's Token Plan: its chat models, and its decision model for routing groups;
                                     qwen-token-plan is the Qwen AI platform's, qwen-decision its pay-as-you-go decision model)
-       magpie provider add google-vertex project=my-project impersonate=vertex@my-project.iam.gserviceaccount.com
+       fogway provider add google-vertex project=my-project impersonate=vertex@my-project.iam.gserviceaccount.com
                                    (Google Vertex AI in your Google Cloud project, with no key: signed with gcloud's
                                     Application Default Credentials (gcloud auth application-default login) unless
                                     credentials=<file> names another, a service account key too; impersonate= needs
                                     roles/iam.serviceAccountTokenCreator on that account; location= global (the
                                     default), us, eu or a region such as us-central1; set changes them, empty clears)
-       magpie provider add "My Decider" decide=https://decide.example.com/v1 key=sk-… models=my-decision-model
+       fogway provider add "My Decider" decide=https://decide.example.com/v1 key=sk-… models=my-decision-model
                                    (a System One API, POST …/systemone: it routes groups, its models are never an agent's)
-       magpie provider add anthropic sk-… id=anthropic-ws2 name="Anthropic WS2" header.anthropic-workspace-id=wrkspc_…
-       magpie provider set my-relay models.url=https://relay.example.com/api/models catalog=
-       magpie provider set my-relay search=yes
+       fogway provider add anthropic sk-… id=anthropic-ws2 name="Anthropic WS2" header.anthropic-workspace-id=wrkspc_…
+       fogway provider set my-relay models.url=https://relay.example.com/api/models catalog=
+       fogway provider set my-relay search=yes
                                    (the relay answers Claude Code's WebSearch and Codex's web_search itself:
-                                    those go to it as sent, not through magpie's own search)
-       magpie provider add ollama url=http://192.168.1.5:11434/v1 anthropic=http://192.168.1.5:11434
+                                    those go to it as sent, not through fogway's own search)
+       fogway provider add ollama url=http://192.168.1.5:11434/v1 anthropic=http://192.168.1.5:11434
                                    (Ollama, LM Studio, oMLX or MLX-Serve on another port or computer)
-       magpie provider set ollama unmasked=yes
+       fogway provider set ollama unmasked=yes
                                    (a model on this computer or the local network: Settings' redaction leaves its
                                     requests as written; not for a local relay that passes them on to a vendor)
-       magpie provider add "My Relay" url=https://relay.example.com/v1 key=sk-… balance=https://relay.example.com/api/usage/token balance.path='$data.total_available / 500000'
-       magpie provider set my-relay balance.path='(1 - credits.monthlyCredits / 70) %'
-       magpie provider set my-relay balance=https://relay.example.com/api/user/self balance.path='$data.quota / 500000' balance.token=<access token> header.New-Api-User=<user id>
+       fogway provider add "My Relay" url=https://relay.example.com/v1 key=sk-… balance=https://relay.example.com/api/usage/token balance.path='$data.total_available / 500000'
+       fogway provider set my-relay balance.path='(1 - credits.monthlyCredits / 70) %'
+       fogway provider set my-relay balance=https://relay.example.com/api/user/self balance.path='$data.quota / 500000' balance.token=<access token> header.New-Api-User=<user id>
                                    (a new-api relay's whole account: its access token and user id, from its personal settings)
                                    (balance.path: where the amount is in the reply, or a sum of those with + - * / and
                                     brackets; $ or ¥ in front adds the sign, % after it shows a percent of 1;
                                     several go apart by ; each with a label: '5h: a.used / a.cap %; $credits.left')
-       magpie provider set my-relay context=272k context.gpt-6=1m
+       fogway provider set my-relay context=272k context.gpt-6=1m
                                    (context: how long a request agents are told the models take, over what the
                                     vendor or models.dev says; context.<model> for one of them; empty clears)
-       magpie provider set opencode-go family=ocgo
-       magpie provider set my-relay id=relay   (renames it: groups and agents on my-relay/… move to relay/…)
-                                   (family: a tag for which agents are shown its models, see magpie visible)`
+       fogway provider set opencode-go family=ocgo
+       fogway provider set my-relay id=relay   (renames it: groups and agents on my-relay/… move to relay/…)
+                                   (family: a tag for which agents are shown its models, see fogway visible)`
 
-// providers: `magpie providers`
+// providers: `fogway providers`
 func providers() error {
 	all := provider.All()
 	// a providers.json that can't be read is not "no providers yet": what
@@ -118,7 +118,7 @@ func providers() error {
 		if bad != nil {
 			return bad
 		}
-		fmt.Println(muted.Render("no providers yet ·"), "magpie provider add deepseek sk-…", muted.Render("· magpie presets lists the vendors"))
+		fmt.Println(muted.Render("no providers yet ·"), "fogway provider add deepseek sk-…", muted.Render("· fogway presets lists the vendors"))
 		return nil
 	}
 	uses := usesByProvider()
@@ -185,7 +185,7 @@ func usesByProvider() map[string][]string {
 			continue
 		}
 		v := a.Fields[0].Get()
-		v = strings.TrimPrefix(v, "magpie/")
+		v = strings.TrimPrefix(v, "fogway/")
 		if strings.HasPrefix(v, provider.GroupPrefix) {
 			continue // a routing group, of no one provider
 		}
@@ -196,7 +196,7 @@ func usesByProvider() map[string][]string {
 	return out
 }
 
-// presets: `magpie presets`
+// presets: `fogway presets`
 func presets() error {
 	have := map[string]bool{}
 	for _, p := range provider.All() {
@@ -214,12 +214,12 @@ func presets() error {
 		if pr.Sponsored {
 			name += " " + faint.Render("sponsored")
 		}
-		state := muted.Render("magpie provider add " + pr.ID + " <key>")
+		state := muted.Render("fogway provider add " + pr.ID + " <key>")
 		if pr.NoKey {
-			state = muted.Render("magpie provider add " + pr.ID)
+			state = muted.Render("fogway provider add " + pr.ID)
 		}
 		if pr.ID == provider.VertexPreset {
-			state = muted.Render("magpie provider add " + pr.ID + " project=<project id>")
+			state = muted.Render("fogway provider add " + pr.ID + " project=<project id>")
 		}
 		if have[pr.ID] {
 			state = green.Render("✓ added")
@@ -229,7 +229,7 @@ func presets() error {
 	return nil
 }
 
-// models: `magpie models [<agent>]` — the catalog every agent sees, or the
+// models: `fogway models [<agent>]` — the catalog every agent sees, or the
 // one agent is shown and what is kept from it
 func models(args []string) error {
 	entries := provider.Catalog()
@@ -249,14 +249,14 @@ func models(args []string) error {
 		entries, hidden = provider.CatalogFor(agentID)
 	}
 	if _, only := provider.PickedModels(agentID); len(entries) == 0 && agentID != "" && only {
-		fmt.Println(amber.Render("!"), agentID, "is shown none of them: it is shown only the models picked for it, and none is", muted.Render("· tick some in its list on the Agents page, or magpie visible "+agentID+" --show-new"))
+		fmt.Println(amber.Render("!"), agentID, "is shown none of them: it is shown only the models picked for it, and none is", muted.Render("· tick some in its list on the Agents page, or fogway visible "+agentID+" --show-new"))
 	} else if len(entries) == 0 && agentID != "" {
 		names, _ := provider.VisibleTo(agentID)
-		fmt.Println(amber.Render("!"), agentID, "is shown none of them: nothing is in", strings.Join(names, ", "), muted.Render("· magpie visible "+agentID+" all shows it every model"))
+		fmt.Println(amber.Render("!"), agentID, "is shown none of them: nothing is in", strings.Join(names, ", "), muted.Render("· fogway visible "+agentID+" all shows it every model"))
 	} else if len(entries) == 0 && bad != nil {
 		return bad
 	} else if len(entries) == 0 {
-		fmt.Println(muted.Render("no models yet · add a provider first:"), "magpie provider add deepseek sk-…")
+		fmt.Println(muted.Render("no models yet · add a provider first:"), "fogway provider add deepseek sk-…")
 		return nil
 	}
 	w := 0
@@ -293,7 +293,7 @@ func models(args []string) error {
 		}
 		if ids, why := notExposed(p); len(ids) > 0 {
 			fmt.Println(faint.Render("  "+p.Name+": "+plural(len(ids), "more model")+" in its list, not exposed ("+why+"): ") + muted.Render(listSome(ids, 6)))
-			fmt.Println(faint.Render("    magpie provider models " + p.ID + " +<model> exposes one"))
+			fmt.Println(faint.Render("    fogway provider models " + p.ID + " +<model> exposes one"))
 		}
 	}
 	fmt.Println(faint.Render("  " + advertisedURL() + "/v1"))
@@ -301,7 +301,7 @@ func models(args []string) error {
 }
 
 // notExposed are the models p's list has that it doesn't expose, and why:
-// the user picked others, or no picks and the list is longer than magpie
+// the user picked others, or no picks and the list is longer than fogway
 // exposes by default.
 func notExposed(p provider.Provider) ([]string, string) {
 	shown := map[string]bool{}
@@ -329,7 +329,7 @@ func listSome(ids []string, n int) string {
 	return strings.Join(ids, ", ")
 }
 
-// providerCmd: `magpie provider <verb> …`
+// providerCmd: `fogway provider <verb> …`
 func providerCmd(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("%s", providerUsage)
@@ -341,7 +341,7 @@ func providerCmd(args []string) error {
 	case "set":
 		// the same k=v pairs as add, on a provider already here
 		if len(rest) < 2 {
-			return fmt.Errorf("magpie provider set <id> k=v…\n\n%s", providerUsage)
+			return fmt.Errorf("fogway provider set <id> k=v…\n\n%s", providerUsage)
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
@@ -377,14 +377,14 @@ func providerCmd(args []string) error {
 		return nil
 	case "key":
 		if len(rest) != 2 {
-			return fmt.Errorf("magpie provider key <id> <key>")
+			return fmt.Errorf("fogway provider key <id> <key>")
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
 			return err
 		}
 		if p.IsVertex() {
-			return fmt.Errorf("%s is asked with your Google credentials, not an API key · magpie provider set %s credentials=<file> impersonate=<service account> changes them", p.Name, p.ID)
+			return fmt.Errorf("%s is asked with your Google credentials, not an API key · fogway provider set %s credentials=<file> impersonate=<service account> changes them", p.Name, p.ID)
 		}
 		p.Key = rest[1]
 		if err := provider.Save(*p); err != nil {
@@ -394,7 +394,7 @@ func providerCmd(args []string) error {
 		return nil
 	case "icon":
 		if len(rest) != 2 {
-			return fmt.Errorf("magpie provider icon <id> <picture file | built-in name | \"\">")
+			return fmt.Errorf("fogway provider icon <id> <picture file | built-in name | \"\">")
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
@@ -419,7 +419,7 @@ func providerCmd(args []string) error {
 		// where requests go when this provider is out of quota, rate
 		// limited or down; "none" clears the list
 		if len(rest) < 1 {
-			return fmt.Errorf("magpie provider fallback <id> [provider/model… | none]")
+			return fmt.Errorf("fogway provider fallback <id> [provider/model… | none]")
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
@@ -430,7 +430,7 @@ func providerCmd(args []string) error {
 			if !(len(rest) == 2 && rest[1] == "none") {
 				for _, id := range rest[1:] {
 					if _, _, ok := provider.Resolve(id); !ok {
-						return fmt.Errorf("magpie knows no model %q (magpie models lists them)", id)
+						return fmt.Errorf("fogway knows no model %q (fogway models lists them)", id)
 					}
 					p.Fallback = append(p.Fallback, id)
 				}
@@ -443,7 +443,7 @@ func providerCmd(args []string) error {
 			}
 		}
 		if len(p.Fallback) == 0 {
-			fmt.Println(p.Name, muted.Render("has no fallback · magpie provider fallback "+p.ID+" <provider/model>…"))
+			fmt.Println(p.Name, muted.Render("has no fallback · fogway provider fallback "+p.ID+" <provider/model>…"))
 			return nil
 		}
 		fmt.Println(green.Render("✓"), p.Name, "falls back to", strings.Join(p.Fallback, muted.Render(" → ")),
@@ -451,7 +451,7 @@ func providerCmd(args []string) error {
 		return nil
 	case "rm", "remove", "delete":
 		if len(rest) != 1 {
-			return fmt.Errorf("magpie provider rm <id>")
+			return fmt.Errorf("fogway provider rm <id>")
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
@@ -478,7 +478,7 @@ func providerCmd(args []string) error {
 			}
 		}
 		if len(rest) < 1 {
-			return fmt.Errorf("magpie provider test <id> [--as codex|claude-code] [model…]")
+			return fmt.Errorf("fogway provider test <id> [--as codex|claude-code] [model…]")
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
@@ -524,7 +524,7 @@ func providerCmd(args []string) error {
 		// no: the provider's models leave the list agents see and serve
 		// only through the routing groups they are in
 		if len(rest) != 2 || (rest[1] != "yes" && rest[1] != "no") {
-			return fmt.Errorf("magpie provider listed <id> yes|no")
+			return fmt.Errorf("fogway provider listed <id> yes|no")
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
@@ -544,7 +544,7 @@ func providerCmd(args []string) error {
 		// off: kept with its keys, but agents are given none of its
 		// models and no request goes to it
 		if len(rest) != 1 {
-			return fmt.Errorf("magpie provider %s <id>", verb)
+			return fmt.Errorf("fogway provider %s <id>", verb)
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
@@ -563,14 +563,14 @@ func providerCmd(args []string) error {
 		return nil
 	case "models", "refresh", "fetch":
 		if len(rest) < 1 {
-			return fmt.Errorf("magpie provider %s <id> [model ids to expose…]", verb)
+			return fmt.Errorf("fogway provider %s <id> [model ids to expose…]", verb)
 		}
 		p, err := provider.Find(rest[0])
 		if err != nil {
 			return err
 		}
 		if len(rest) > 1 && verb != "models" {
-			return fmt.Errorf("magpie provider %s <id> fetches its list · magpie provider models <id> <ids…> picks from it", verb)
+			return fmt.Errorf("fogway provider %s <id> fetches its list · fogway provider models <id> <ids…> picks from it", verb)
 		}
 		if len(rest) > 1 {
 			before := *p
@@ -606,7 +606,7 @@ func providerCmd(args []string) error {
 		}
 		return showProvider(*p)
 	}
-	// `magpie provider <id>`
+	// `fogway provider <id>`
 	p, err := provider.Find(verb)
 	if err != nil {
 		return err
@@ -614,10 +614,10 @@ func providerCmd(args []string) error {
 	return showProvider(*p)
 }
 
-// addProvider: `magpie provider add <preset> [key]` or `magpie provider add <name> k=v…`
+// addProvider: `fogway provider add <preset> [key]` or `fogway provider add <name> k=v…`
 func addProvider(rest []string) error {
 	if len(rest) == 0 {
-		return fmt.Errorf("magpie provider add <preset> <key>   or   magpie provider add <name> k=v…\n\n%s", providerUsage)
+		return fmt.Errorf("fogway provider add <preset> <key>   or   fogway provider add <name> k=v…\n\n%s", providerUsage)
 	}
 
 	var p provider.Provider
@@ -625,7 +625,7 @@ func addProvider(rest []string) error {
 		p = pr
 		if len(rest) > 1 && !strings.Contains(rest[1], "=") {
 			if p.IsVertex() {
-				return fmt.Errorf("%s is asked with your Google credentials, not an API key · magpie provider add %s project=<your Google Cloud project's id>", p.Name, p.ID)
+				return fmt.Errorf("%s is asked with your Google credentials, not an API key · fogway provider add %s project=<your Google Cloud project's id>", p.Name, p.ID)
 			}
 			p.Key = rest[1]
 			rest = rest[2:]
@@ -644,7 +644,7 @@ func addProvider(rest []string) error {
 	id, err := provider.Add(p)
 	if err != nil && p.IsVertex() && (p.Vertex == nil || strings.TrimSpace(p.Vertex.Project) == "") {
 		// the pair that gives the project, which Save's words don't name
-		return fmt.Errorf("%w · magpie provider add %s project=<your Google Cloud project's id>", err, p.Preset)
+		return fmt.Errorf("%w · fogway provider add %s project=<your Google Cloud project's id>", err, p.Preset)
 	}
 	if err != nil {
 		return err
@@ -684,9 +684,9 @@ func announce(id string) error {
 	n := len(saved.Exposed())
 
 	if n == 0 {
-		fmt.Println(amber.Render("!"), "no models exposed yet ·", "magpie provider models", saved.ID, "<ids…>")
+		fmt.Println(amber.Render("!"), "no models exposed yet ·", "fogway provider models", saved.ID, "<ids…>")
 	} else {
-		fmt.Printf("  %d models in the catalog · %s\n", n, muted.Render("magpie models"))
+		fmt.Printf("  %d models in the catalog · %s\n", n, muted.Render("fogway models"))
 	}
 	return nil
 }
@@ -711,9 +711,9 @@ func showProvider(p provider.Provider) error {
 		kv("search", "by itself"+muted.Render("  a client's web search goes to it as sent"))
 	}
 	if p.PassUserAgent {
-		why := "  the User-Agent the agent gave, not magpie's"
+		why := "  the User-Agent the agent gave, not fogway's"
 		if !p.PassesUserAgent() {
-			why = "  but magpie's: it goes as a client of " + p.Name + "'s own"
+			why = "  but fogway's: it goes as a client of " + p.Name + "'s own"
 		}
 		kv("user-agent", "agent's"+muted.Render(why))
 	}
@@ -737,7 +737,7 @@ func showProvider(p provider.Provider) error {
 		}
 		project := v.Project
 		if !p.Ready() {
-			project = amber.Render(cmp.Or(project, "not set")) + muted.Render("  magpie provider set "+p.ID+" project=…")
+			project = amber.Render(cmp.Or(project, "not set")) + muted.Render("  fogway provider set "+p.ID+" project=…")
 		}
 		kv("project", project)
 		kv("location", v.Location)
@@ -752,7 +752,7 @@ func showProvider(p provider.Provider) error {
 	case p.Ready():
 		kv("key", muted.Render("none needed"))
 	default:
-		kv("key", amber.Render("not set")+muted.Render("  magpie provider key "+p.ID+" …"))
+		kv("key", amber.Render("not set")+muted.Render("  fogway provider key "+p.ID+" …"))
 	}
 	kv("catalog", p.Catalog)
 	kv("website", p.Website)
@@ -780,7 +780,7 @@ func showProvider(p provider.Provider) error {
 	}
 	kv("models", fmt.Sprintf("%d exposed of %d %s", len(ms), len(p.Available()), muted.Render("from "+src)))
 	if ids, why := notExposed(p); len(ids) > 0 {
-		kv("not shown", fmt.Sprintf("%s %s", listSome(ids, 8), muted.Render("· "+why+" · magpie provider models "+p.ID+" +<model> exposes one")))
+		kv("not shown", fmt.Sprintf("%s %s", listSome(ids, 8), muted.Render("· "+why+" · fogway provider models "+p.ID+" +<model> exposes one")))
 	}
 	names := p.ModelNames()
 	for i, m := range ms {
@@ -920,15 +920,15 @@ func applyPairs(p *provider.Provider, pairs []string) error {
 		case "user-agent", "ua":
 			// agent: a request goes with the User-Agent the agent that
 			// sent it gave, for a coding plan that serves only agents it
-			// names (#1851); magpie: magpie's own, as by default. A
+			// names (#1851); fogway: fogway's own, as by default. A
 			// header.User-Agent the user set stands over both
 			var on bool
 			switch strings.ToLower(v) {
 			case "agent", "pass", "yes", "on":
 				on = true
-			case "magpie", "default", "no", "off":
+			case "fogway", "default", "no", "off":
 			default:
-				return fmt.Errorf("user-agent=agent|magpie, not %q", v)
+				return fmt.Errorf("user-agent=agent|fogway, not %q", v)
 			}
 
 			p.PassUserAgent = on
@@ -956,7 +956,7 @@ func applyPairs(p *provider.Provider, pairs []string) error {
 		case "family", "tag":
 			p.Family = strings.TrimSpace(v)
 		case "icon":
-			// a picture on disk is kept by magpie; anything else is one of
+			// a picture on disk is kept by fogway; anything else is one of
 			// the built-in icons' names
 			if st, err := os.Stat(v); err == nil && !st.IsDir() {
 				icon, err := provider.StoreIconFile(v)
@@ -1034,7 +1034,7 @@ func ago(t time.Time) string {
 	}
 }
 
-// refreshLive re-fetches the model list of every ready provider; `magpie sync`
+// refreshLive re-fetches the model list of every ready provider; `fogway sync`
 // calls it after the catalog download.
 func refreshLive(ctx context.Context) {
 	var names []string
@@ -1056,21 +1056,21 @@ func refreshLive(ctx context.Context) {
 
 // keyNote says who the gateway takes any key from: this machine (in a
 // container, the container) alone. Shared from Settings, or put on the
-// network by MAGPIE_ADDR (a server, a Docker image), it takes others with
+// network by FOGWAY_ADDR (a server, a Docker image), it takes others with
 // an enabled gateway key.
 func keyNote() string {
 	if settings.Load().LAN || gateway.OnNetwork() {
 		if gateway.InContainer() {
-			return "(anything works inside the container; from its host and other machines, an enabled gateway key — magpie gateway-key add <name>)"
+			return "(anything works inside the container; from its host and other machines, an enabled gateway key — fogway gateway-key add <name>)"
 		}
-		return "(anything works from this machine; from others, an enabled gateway key — magpie gateway-key add <name>)"
+		return "(anything works from this machine; from others, an enabled gateway key — fogway gateway-key add <name>)"
 	}
 	return "(anything works; the gateway only listens on localhost)"
 }
 
-// containerNote follows the addresses magpie finds for itself in a
+// containerNote follows the addresses fogway finds for itself in a
 // container, which are the container's own.
-const containerNote = "these are the container's own addresses: other machines use the host's, and MAGPIE_PUBLIC_URL=http://<host>:<port> puts it here"
+const containerNote = "these are the container's own addresses: other machines use the host's, and FOGWAY_PUBLIC_URL=http://<host>:<port> puts it here"
 
 // shareLines are where other machines reach the gateway while it is shared
 // from Settings, for the banner.
@@ -1089,7 +1089,7 @@ func shareLines() []string {
 }
 
 // advertisedURL is what the CLIs print for other machines: the public
-// address when MAGPIE_PUBLIC_URL is valid, otherwise the one reached from
+// address when FOGWAY_PUBLIC_URL is valid, otherwise the one reached from
 // this machine.
 func advertisedURL() string {
 	if u := gateway.PublicURL(); u != "" {
@@ -1098,7 +1098,7 @@ func advertisedURL() string {
 	return gateway.URL()
 }
 
-// serve: `magpie serve` — the gateway alone, in the foreground.
+// serve: `fogway serve` — the gateway alone, in the foreground.
 func serve() error {
 	s := gateway.New()
 	go catalog.KeepFresh() // new models' prices, in a gateway left running
@@ -1111,7 +1111,7 @@ func serve() error {
 		}
 	}()
 	public := advertisedURL()
-	fmt.Println(green.Render("●"), "magpie gateway on", bold.Render(gateway.URL()))
+	fmt.Println(green.Render("●"), "fogway gateway on", bold.Render(gateway.URL()))
 	fmt.Println(muted.Render("  OpenAI  "), public+"/v1/chat/completions", muted.Render("·"), public+"/v1/responses")
 	fmt.Println(muted.Render("  Anthropic"), public+"/v1/messages")
 	fmt.Println(muted.Render("  key     "), gateway.Token, muted.Render(keyNote()))
@@ -1123,15 +1123,15 @@ func serve() error {
 		fmt.Println(amber.Render("!"), err) // served without it, as no providers
 	}
 	if n == 0 {
-		fmt.Println(amber.Render("!"), "no models yet ·", "magpie provider add deepseek sk-…")
+		fmt.Println(amber.Render("!"), "no models yet ·", "fogway provider add deepseek sk-…")
 	} else {
-		fmt.Printf("  %d models · %s\n", n, muted.Render("magpie models"))
+		fmt.Printf("  %d models · %s\n", n, muted.Render("fogway models"))
 	}
 	return s.ListenAndServe(context.Background())
 }
 
-// importCmd adds the provider a magpie://import link describes, after
-// showing it: magpie import [-y] <link>.
+// importCmd adds the provider a fogway://import link describes, after
+// showing it: fogway import [-y] <link>.
 func importCmd(args []string) error {
 	yes := false
 	var link string
@@ -1144,7 +1144,7 @@ func importCmd(args []string) error {
 		}
 	}
 	if link == "" {
-		return errors.New("magpie import [-y] 'magpie://import?…'")
+		return errors.New("fogway import [-y] 'fogway://import?…'")
 	}
 	p, err := provider.ParseImport(link)
 	if err != nil {
@@ -1168,7 +1168,7 @@ func importCmd(args []string) error {
 		}
 	}
 	if p.Key == "" && !p.Ready() {
-		fmt.Println(amber.Render("!"), "the link has no key · magpie provider key", p.ID, "<key>")
+		fmt.Println(amber.Render("!"), "the link has no key · fogway provider key", p.ID, "<key>")
 	}
 	return saveNew(p)
 }
@@ -1183,12 +1183,12 @@ func fetchedFrom(p provider.Provider) string {
 	return p.Name
 }
 
-// accountModelsCmd: `magpie provider account-models <id> [account|key
+// accountModelsCmd: `fogway provider account-models <id> [account|key
 // [ids…|all]]` — the models one account or key of a provider alone serves
 // (#474), each account's with none named, all for every one the provider has.
 func accountModelsCmd(rest []string) error {
 	if len(rest) < 1 {
-		return fmt.Errorf("magpie provider account-models <id> [account|key [model ids…|all]]")
+		return fmt.Errorf("fogway provider account-models <id> [account|key [model ids…|all]]")
 	}
 	p, err := provider.Find(rest[0])
 	if err != nil {
@@ -1241,10 +1241,10 @@ func accountModelsCmd(rest []string) error {
 // accountConcurrencyCmd shows, or sets, the limit on requests at once of a
 // provider's accounts or keys (#892): each one's own, else the provider's
 // Concurrency. What runs and waits now is the gateway's, at GET
-// /v1/magpie/concurrency and on the app's account rows.
+// /v1/fogway/concurrency and on the app's account rows.
 func accountConcurrencyCmd(rest []string) error {
 	if len(rest) < 1 {
-		return fmt.Errorf("magpie provider account-concurrency <id> [account|key [n|off|default]]")
+		return fmt.Errorf("fogway provider account-concurrency <id> [account|key [n|off|default]]")
 	}
 	p, err := provider.Find(rest[0])
 	if err != nil {
@@ -1308,7 +1308,7 @@ func accountConcurrencyCmd(rest []string) error {
 // (#892).
 func queueCmd(rest []string) error {
 	if len(rest) < 1 || len(rest) > 3 {
-		return fmt.Errorf("magpie provider queue <id> [length [seconds]]")
+		return fmt.Errorf("fogway provider queue <id> [length [seconds]]")
 	}
 	p, err := provider.Find(rest[0])
 	if err != nil {
@@ -1358,7 +1358,7 @@ func queueCmd(rest []string) error {
 // free models take 20).
 func rpmCmd(rest []string) error {
 	if len(rest) < 1 || len(rest) > 2 {
-		return fmt.Errorf("magpie provider rpm <id> [n|off]")
+		return fmt.Errorf("fogway provider rpm <id> [n|off]")
 	}
 	p, err := provider.Find(rest[0])
 	if err != nil {
@@ -1393,7 +1393,7 @@ func rpmCmd(rest []string) error {
 // (#1772: Ollama Cloud's weekly limit, asked again every 15 minutes).
 func quotaRestCmd(rest []string) error {
 	if len(rest) < 1 || len(rest) > 2 {
-		return fmt.Errorf("magpie provider quota-rest <id> [30m|6h|7d|default]")
+		return fmt.Errorf("fogway provider quota-rest <id> [30m|6h|7d|default]")
 	}
 	p, err := provider.Find(rest[0])
 	if err != nil {
@@ -1414,7 +1414,7 @@ func quotaRestCmd(rest []string) error {
 	if d := p.QuotaRestFor(); d > 0 {
 		fmt.Printf("%s · a key out of its allowance, with no word of when it is back, sits out %s\n", p.Name, restWords(d))
 	} else {
-		fmt.Printf("%s · a key out of its allowance, with no word of when it is back, sits out 15 minutes (magpie's own)\n", p.Name)
+		fmt.Printf("%s · a key out of its allowance, with no word of when it is back, sits out 15 minutes (fogway's own)\n", p.Name)
 	}
 	return nil
 }
@@ -1465,7 +1465,7 @@ func printMoved(moved []agent.Move) {
 	}
 }
 
-// editPicks works out a provider's picks from `magpie provider models <id>
+// editPicks works out a provider's picks from `fogway provider models <id>
 // args…`: plain ids replace them, all (or -) gives the default back, and
 // +id / -id add one to or take one out of the models exposed now, so a
 // user adding a model keeps the rest (MOMO on Discord: 35 exposed → 8).
@@ -1483,7 +1483,7 @@ func editPicks(p provider.Provider, args []string) ([]string, error) {
 		return slices.Clone(args), nil
 	}
 	if edits != len(args) {
-		return nil, fmt.Errorf("give either the whole list (magpie provider models %s a b c) or only changes (+a -b), not both", p.ID)
+		return nil, fmt.Errorf("give either the whole list (fogway provider models %s a b c) or only changes (+a -b), not both", p.ID)
 	}
 	picks := slices.Clone(p.Models)
 	if len(picks) == 0 {
@@ -1508,7 +1508,7 @@ func editPicks(p provider.Provider, args []string) ([]string, error) {
 	}
 	if len(picks) == 0 {
 		// no picks means the default list, not none
-		return nil, fmt.Errorf("that leaves no model exposed · to serve none of %s's models: magpie provider models %s none; to keep them for routing groups alone: magpie provider listed %s no", p.Name, p.ID, p.ID)
+		return nil, fmt.Errorf("that leaves no model exposed · to serve none of %s's models: fogway provider models %s none; to keep them for routing groups alone: fogway provider listed %s no", p.Name, p.ID, p.ID)
 	}
 	return picks, nil
 }
@@ -1558,7 +1558,7 @@ func printPicksChange(before, after provider.Provider, args []string) {
 		fmt.Println(" ", amber.Render("-"), list(gone))
 	}
 	if replaced && len(gone) > 0 && len(after.Models) > 0 {
-		fmt.Println(muted.Render("  the ids given are now the whole list · to add one and keep the rest: magpie provider models " + after.ID + " +<model>"))
+		fmt.Println(muted.Render("  the ids given are now the whole list · to add one and keep the rest: fogway provider models " + after.ID + " +<model>"))
 	}
 	avail := map[string]bool{}
 	for _, m := range after.Available() {

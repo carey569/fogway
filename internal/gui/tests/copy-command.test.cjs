@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Copying from a browser tab with no clipboard API (悠悠哥 on Discord: on
-// `magpie web` on a NAS, opened from another computer over http, the
-// gateway's API key copy did nothing). magpie can't copy for such a tab
+// `fogway web` on a NAS, opened from another computer over http, the
+// gateway's API key copy did nothing). fogway can't copy for such a tab
 // (/api/copy refuses) and the page, not a secure context, has no
 // navigator.clipboard; the copy command still copies there. English and
 // Chinese, Chromium and WebKit; no backend, the API is faked here.
@@ -63,7 +63,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator("#addProvider").click();
       const sheet = page.locator("#addSheet");
       await sheet.locator('.tile[data-pick="Factory"]').click();

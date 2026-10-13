@@ -1,8 +1,8 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// DeepSeek Harness's own DeepSeek models, beside magpie's in its model
-// picker, can be left out (MizuIro-H, #1642). They aren't magpie's catalog,
+// DeepSeek Harness's own DeepSeek models, beside fogway's in its model
+// picker, can be left out (MizuIro-H, #1642). They aren't fogway's catalog,
 // so its model list has a switch of their own at the top: off, the picker
-// offers magpie's alone, at once on closing the list and in the state read
+// offers fogway's alone, at once on closing the list and in the state read
 // after; on again, they are back. The one the agent is set to stays (the
 // server's agent.Picks). An agent with no models of its own has no switch,
 // and the order view hides it. In English, Chinese, German and Japanese, at a
@@ -19,20 +19,20 @@ const own = ["deepseek-flash", "deepseek-v4-pro", "deepseek-v4-flash"].map((v) =
   value: v, label: v.replace("deepseek", "DeepSeek").replace("-v4", "-V4").replace("-flash", "-Flash").replace("-pro", "-Pro"),
   icon: "deepseek-color", group: "DeepSeek Harness", direct: "DeepSeek",
 }));
-const magpie = ["pro", "flash"].map((m) => ({ value: "magpie/deepseek/" + m, label: "deepseek-" + m, ref: "deepseek/" + m, note: "DeepSeek · via magpie", group: "DeepSeek", icon: "deepseek-color" }));
-const list = magpie.map((o, i) => ({ id: o.ref, name: o.label, group: "DeepSeek", icon: "deepseek-color", inUse: i === 0 }));
+const fogway = ["pro", "flash"].map((m) => ({ value: "fogway/deepseek/" + m, label: "deepseek-" + m, ref: "deepseek/" + m, note: "DeepSeek · via fogway", group: "DeepSeek", icon: "deepseek-color" }));
+const list = fogway.map((o, i) => ({ id: o.ref, name: o.label, group: "DeepSeek", icon: "deepseek-color", inUse: i === 0 }));
 
 function fixture(lang) {
   let ownHidden = false, late = 0;
   const posts = [];
   const count = { shown: list.length, listed: list.length };
-  const options = () => [...(ownHidden ? [] : own), ...magpie];
+  const options = () => [...(ownHidden ? [] : own), ...fogway];
   const state = () => ({
     agents: [
       { id: "dsh", name: "DeepSeek Harness", icon: "deepseek-color", path: "/fixture/dsh", wired: true, models: count,
-        fields: [{ key: "model", label: "model", value: "magpie/deepseek/pro", options: options() }] },
+        fields: [{ key: "model", label: "model", value: "fogway/deepseek/pro", options: options() }] },
       { id: "codex", name: "Codex", icon: "codex-color", path: "/fixture/codex", wired: true, models: count,
-        fields: [{ key: "model", label: "model", value: "magpie/deepseek/pro", options: magpie }] },
+        fields: [{ key: "model", label: "model", value: "fogway/deepseek/pro", options: fogway }] },
     ],
     profiles: [], settings: { lang, theme: "light" },
   });
@@ -100,7 +100,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           }
           await browser.close();
         });
-        await page.goto("http://magpie.test/?view=agents");
+        await page.goto("http://fogway.test/?view=agents");
         await page.locator(row("dsh")).waitFor();
         const pop = page.locator(".am-pop:not(.leaving)");
         const open = async (id) => {
@@ -127,7 +127,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         };
         const settle = () => page.waitForTimeout(250);
 
-        // before: dsh's own beside magpie's
+        // before: dsh's own beside fogway's
         assert.match(await picked(), /DeepSeek-V4-Pro/);
 
         await open("dsh");
@@ -142,7 +142,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert(pb.x >= 0 && pb.x + pb.width <= width, JSON.stringify(pb));
         assert.equal(await box.evaluate((e) => e.querySelector("span").scrollWidth <= e.querySelector("span").clientWidth), true, "its words cut short");
 
-        // the order view is magpie's models alone: no switch there
+        // the order view is fogway's models alone: no switch there
         await pop.locator(".am-seg button", { hasText: w.order }).click();
         assert(await box.isHidden());
         await pop.locator(".am-seg button", { hasText: w.all }).click();
@@ -156,7 +156,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await close();
         let rows = await picked();
         assert.doesNotMatch(rows, /DeepSeek-V4-Pro|DeepSeek-Flash/, "dsh's own still offered");
-        assert.match(rows, /deepseek-flash/, "magpie's are offered");
+        assert.match(rows, /deepseek-flash/, "fogway's are offered");
         // and so in the state read again
         await page.waitForTimeout(1800);
         rows = await picked();

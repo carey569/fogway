@@ -4,10 +4,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// A model is switched fast for an agent only when magpie can ask its vendor
+// A model is switched fast for an agent only when fogway can ask its vendor
 // for a fast mode, never a routing group (its members say it), and is kept
 // by agent through a rename of its provider (#954).
 func TestSetFastPick(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // RenameProvider gives a provider another id (provider.Rename) and moves
@@ -46,8 +46,8 @@ func RenameProvider(from, to string) ([]string, error) {
 						}
 					}
 				}
-				if nv == "" && strings.HasPrefix(v, magpieID+"/"+from+"/") {
-					nv = magpieID + "/" + to + "/" + strings.TrimPrefix(v, magpieID+"/"+from+"/")
+				if nv == "" && strings.HasPrefix(v, fogwayID+"/"+from+"/") {
+					nv = fogwayID + "/" + to + "/" + strings.TrimPrefix(v, fogwayID+"/"+from+"/")
 				}
 				if nv != "" && nv != v {
 					moves = append(moves, move{a, f.Key, nv})
@@ -89,7 +89,7 @@ func RenameProvider(from, to string) ([]string, error) {
 // subscription's id (provider.OnAccountIDs) to a free one, the agents on it
 // with it, so the subscription is listed once signed in: a "WorkBuddy" key
 // saved as workbuddy before WorkBuddy's plan was a subscription hid it, and
-// signing in to it said "signed in, but magpie can't list it". Run at
+// signing in to it said "signed in, but fogway can't list it". Run at
 // start-up; errors are swallowed as RenameLegacy's are.
 func MoveOffAccountIDs() {
 	for _, id := range provider.OnAccountIDs() {
@@ -98,17 +98,17 @@ func MoveOffAccountIDs() {
 }
 
 // renameRef is one entry of an agent's enabledModels (StepCode's, Pi's
-// and its forks') with magpie's provider from renamed to to. A glob or a thinking level after the model stays. An entry that
+// and its forks') with fogway's provider from renamed to to. A glob or a thinking level after the model stays. An entry that
 // does not name that provider is the user's and is left as it is.
 func renameRef(s, from, to string) (string, bool) {
-	rest, ok := strings.CutPrefix(s, magpieID+"/"+from+"/")
+	rest, ok := strings.CutPrefix(s, fogwayID+"/"+from+"/")
 	if !ok {
 		return s, false
 	}
-	return magpieID + "/" + to + "/" + rest, true
+	return fogwayID + "/" + to + "/" + rest, true
 }
 
-// renameRefList renames magpie/<from>/ entries. The model just set is
+// renameRefList renames fogway/<from>/ entries. The model just set is
 // appended before the old entry is renamed onto the same text, so that
 // second copy is dropped. A list that names nothing of that provider is
 // returned unchanged, a repeated entry of the user's included.

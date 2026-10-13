@@ -1,7 +1,7 @@
-// An app magpie is added to by a link of its own (Cindy) is a row like the
+// An app fogway is added to by a link of its own (Cindy) is a row like the
 // others on the Agents page (the owner: its wide button, with no line under
 // the name, sat apart from every other): a line under its name says whether
-// magpie is added, and its button stands where the others' model picker
+// fogway is added, and its button stands where the others' model picker
 // does, as wide and lined up with it.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
@@ -11,10 +11,10 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 
-// connected when Cindy has magpie, so neither is folded under Show more
+// connected when Cindy has fogway, so neither is folded under Show more
 const crush = (wired) => ({
   id: "crush", name: "Crush", path: "/test/crush.json", icon: "crush", wired,
-  fields: [{ key: "model", label: "model", value: wired ? "magpie/deepseek-flash" : "", options: [{ value: "magpie/deepseek-flash", label: "DeepSeek Flash", ref: "deepseek/deepseek-flash" }] }],
+  fields: [{ key: "model", label: "model", value: wired ? "fogway/deepseek-flash" : "", options: [{ value: "fogway/deepseek-flash", label: "DeepSeek Flash", ref: "deepseek/deepseek-flash" }] }],
 });
 const cindy = (added) => ({ id: "cindy", name: "Cindy", path: "", icon: "cindy", import: "cindy://import?x=1", added, fields: [] });
 
@@ -35,7 +35,7 @@ async function serve(route, lang, added) {
 }
 
 const SAID = {
-  en: [/^Not added · Cindy asks to add magpie/, /^Added · magpie is a provider in Cindy/],
+  en: [/^Not added · Cindy asks to add fogway/, /^Added · fogway is a provider in Cindy/],
   zh: [/^未添加 · /, /^已添加 · /],
 };
 
@@ -54,7 +54,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         });
         page.setDefaultTimeout(5000);
         await page.route("**/*", (route) => serve(route, lang, added));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.waitForLoadState("networkidle");
 
         const row = page.locator('.row.agent[data-id="cindy"]');

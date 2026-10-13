@@ -15,10 +15,10 @@ func compactedText(t *testing.T, body string) string {
 		}
 		item := e["item"].(map[string]any)
 		enc, _ := item["encrypted_content"].(string)
-		if item["type"] != "compaction" || !strings.HasPrefix(enc, magpieCompaction) {
-			t.Fatalf("not magpie's compaction: %s", body)
+		if item["type"] != "compaction" || !strings.HasPrefix(enc, fogwayCompaction) {
+			t.Fatalf("not fogway's compaction: %s", body)
 		}
-		b, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(enc, magpieCompaction))
+		b, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(enc, fogwayCompaction))
 		return string(b)
 	}
 	t.Fatalf("no compaction: %s", body)
@@ -36,7 +36,7 @@ const compact404Request = `{"model":"fake/m1","stream":true,"store":false,"inclu
 
 const relay404 = `{"error":{"message":"Upstream request failed","type":"upstream_error"}}`
 
-// #1511 (TooPub): a relay answered a magpie model's summary request
+// #1511 (TooPub): a relay answered a fogway model's summary request
 // 400 invalid_request_error "apex: Upstream request failed", and Codex's
 // compaction stopped there, while Codex asking the same relay itself
 // compacted. The reporter's body, as it came.

@@ -1,4 +1,4 @@
-// Package pluginrt runs magpie's built-in plugins: the parts of magpie not
+// Package pluginrt runs fogway's built-in plugins: the parts of fogway not
 // everyone needs (Lxxyx on X: "功能太多了"), each one a package under
 // plugins/ that registers a Manifest. The runtime applies the ones the user
 // has on (plugins.yml, see config.go) in the order their Requires and
@@ -25,7 +25,7 @@ import (
 // minor no newer than this one's. One that doesn't match isn't applied.
 const API = "1.0"
 
-// Core are the services magpie itself provides, which a plugin may
+// Core are the services fogway itself provides, which a plugin may
 // Require without another plugin providing them.
 var Core = []string{"settings", "providers", "gateway", "window"}
 
@@ -38,7 +38,7 @@ type Manifest struct {
 	// others ("router.strategy/groups")
 	Requires, Provides []string
 	// Essential plugins are on in the Essentials preset a new install
-	// starts with; every built-in is on for a magpie that ran before
+	// starts with; every built-in is on for a fogway that ran before
 	Essential bool
 	// Name and Sub say what it is, in English; the window translates them
 	Name, Sub string
@@ -85,7 +85,7 @@ type Ctx struct {
 	provided []string
 }
 
-// OnDispose runs f when the plugin is turned off or magpie stops.
+// OnDispose runs f when the plugin is turned off or fogway stops.
 func (c *Ctx) OnDispose(f func()) { c.disposes = append(c.disposes, f) }
 
 // Contribute puts a part in the window while the plugin is active.

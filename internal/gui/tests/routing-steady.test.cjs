@@ -95,7 +95,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       feed.next?.(req(999, "codex", [1], 0));
       await browser.close();
     });
-    await page.goto("http://magpie.test/?view=routing");
+    await page.goto("http://fogway.test/?view=routing");
     await page.locator(".rt-req").nth(first.length - 1).waitFor();
     await page.locator(".rt-group").first().waitFor();
     await page.waitForTimeout(2000); // the first request's play

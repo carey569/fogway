@@ -65,7 +65,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       };
       // a new context's storage is empty: no reload to clear it, which
       // would cancel the page's first reads, each a page error in WebKit (#1350)
-      const page = await open("http://magpie.test/?view=usage");
+      const page = await open("http://fogway.test/?view=usage");
       await page.waitForSelector(".subscription-account .user");
       const btn = page.locator("#usageMask");
       assert.equal((await btn.textContent()).trim(), w.hide);
@@ -117,7 +117,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.match(await page.locator("#route").textContent(), /^\S+ answered; team key waited$/);
 
       // the tray panel follows the window's setting, as it is turned
-      const panel = await open("http://magpie.test/?mode=panel");
+      const panel = await open("http://fogway.test/?mode=panel");
       await panel.evaluate(() => setPanelTab("usage"));
       await panel.waitForFunction(() => [...document.querySelectorAll("#panelQuota .pq-user .pii")].some((e) => e.dataset.raw === "李雷"));
       const pq = await panel.evaluate(() => [...document.querySelectorAll("#panelQuota .pq-card")].map((c) => ({ text: c.querySelector(".pq-user").textContent, title: c.title })));

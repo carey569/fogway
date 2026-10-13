@@ -65,7 +65,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, feed));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-group-by button").nth(1).click();
       await page.locator(".rt-session").nth(3).waitFor();
       const group = page.locator("button.rt-session").filter({ hasText: "Codex · conversation-a" });
@@ -146,7 +146,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.route("**/*", serve(lang, feed, fixture));
       page.on("pageerror", (e) => errors.push(e.message));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-group-by button").nth(1).click();
       await page.locator(".rt-session").nth(6).waitFor();
       const group = (id) => page.locator(`button.rt-session:has(.nm[title$="${id}"])`);
@@ -223,7 +223,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.route("**/*", serve(lang, feed, fixture));
       page.on("pageerror", (e) => errors.push(e.message));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-group-by button").nth(1).click();
       await page.locator(".rt-session").nth(7).waitFor();
       const group = (id) => page.locator(`button.rt-session:has(.nm[title$="${id}"])`);
@@ -257,7 +257,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       { ...req(4, "codex", "unrelated-title", 0.1), kind: "thread_title" }];
     await page.route("**/*", serve("zh", feed, fixture));
     t.after(async () => { feed.next?.([]); await browser.close(); });
-    await page.goto("http://magpie.test/?view=routing");
+    await page.goto("http://fogway.test/?view=routing");
     await page.locator(".rt-group-by button").nth(1).click();
     const group = page.locator("button.rt-session").filter({ hasText: "Codex · main-a" });
     await group.waitFor();
@@ -302,7 +302,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const feed = {};
       await page.route("**/*", serve(lang, feed));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const buttons = page.locator(".rt-group-by button");
       await page.locator(".rt-req").nth(5).waitFor();
       assert.equal(await buttons.first().getAttribute("aria-pressed"), "true");
@@ -337,7 +337,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         req(4, "claude", "unknown", 0, false)];
       await page.route("**/*", serve(lang, feed, fixture));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-req").nth(3).waitFor();
       assert.equal(await page.locator(".rt-req").filter({ hasText: "model-a" }).locator(".cost").textContent(), "≈$0.000+", "a zero-priced attempt plus an unknown attempt retains its amount");
       await page.locator(".rt-group-by button").nth(1).click();
@@ -373,7 +373,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const fixture = data.before, [main, title] = fixture;
       await page.route("**/*", serve(lang, feed, fixture));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-req").nth(2).waitFor();
       await page.locator(".rt-group-by button").nth(1).click();
       const group = (id) => page.locator(`button.rt-session:has(.nm[title$="${id}"])`);
@@ -450,7 +450,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, feed, fixture));
         t.after(async () => { feed.next?.([]); await browser.close(); });
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         await page.locator(".rt-req").nth(59).waitFor(); // live trace retains only 60 rows
         await page.locator(".rt-group-by button").nth(1).click();
         // openRoute loads the full day, then appends a row outside its 2,000-row page.
@@ -485,18 +485,18 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       const uuid = "578bd3d1-834b-43fb-b40c-ed9d17ad7731", errors = [], titleRequests = [];
       const feed = { titleRequests, names: (input) => input.sessions ? { titles: { ["claude:" + uuid]: "路由会话名" } } : {} };
-      const fixture = [req(1, "claude", uuid, 0.01), { ...req(2, "claude", "magpie-set", 0.01), native_session: "unnamed-session" }, req(3, "codex", "chat", 0.01)];
+      const fixture = [req(1, "claude", uuid, 0.01), { ...req(2, "claude", "fogway-set", 0.01), native_session: "unnamed-session" }, req(3, "codex", "chat", 0.01)];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, feed, fixture));
       t.after(async () => { feed.next?.([]); await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-group-by button").nth(1).click();
       const named = page.locator("button.rt-session").filter({ hasText: "Claude Code · 路由会话名" });
       await named.waitFor();
       assert.match(await named.locator(".nm").getAttribute("title"), new RegExp(uuid));
       const asked = titleRequests.find((x) => x.sessions);
       assert.deepEqual([...asked.sessions].sort(), ["claude:" + uuid, "claude:unnamed-session"], "asks by the agent's own id, never Codex's");
-      assert.equal(await page.locator("button.rt-session").filter({ hasText: "Claude Code · magpie-set" }).count(), 1, "an unknown name keeps the id");
+      assert.equal(await page.locator("button.rt-session").filter({ hasText: "Claude Code · fogway-set" }).count(), 1, "an unknown name keeps the id");
       for (let i = 0; i < 50 && !feed.next; i++) await page.waitForTimeout(20);
       assert(feed.next, "long poll started");
       feed.next([...fixture, req(4, "claude", uuid, 0.02)]);

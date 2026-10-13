@@ -1,7 +1,7 @@
 <!-- reviewed-through: c98160c0 (2026-10-10 13:51 +0800) -->
 # Lessons from merged work
 
-magpie's code is written, reviewed, merged and released by agents. Each night
+fogway's code is written, reviewed, merged and released by agents. Each night
 the day's commits are reviewed for what had to be fixed again, what shouldn't
 have merged and what was verified too thinly. What we learned is kept here.
 Read this before changing code. Each lesson is a rule, then why, then the
@@ -71,7 +71,7 @@ made up.**
   Truncated and empty bodies go in the tests.
 - Seen 1× (2026-10-05).
 
-**When the vendor refuses magpie but serves its own client on the same
+**When the vendor refuses fogway but serves its own client on the same
 account, diff every header of the failing request against the official
 client's. Do that before adding retries or fallbacks.**
 - #256 Copilot Auto took four releases (719a6820, 026158b0, 251ef218, then
@@ -94,14 +94,14 @@ content before you rest an account.**
 **Fix what the error is about, not only how it is worded.**
 - e63fbb0e (kkgg on Discord, "GLM 直接429了"): Zhipu answered a GLM Coding
   Plan key sent to its pay-as-you-go endpoint with 429 1113 "余额不足". The
-  commit relabelled the 429 as out of credit, and nothing in magpie tells the
+  commit relabelled the 429 as out of credit, and nothing in fogway tells the
   user the key belongs on the Coding Plan endpoint, which is what would make
   their requests work.
 - When a report shows a wrong label, also ask why the request failed. Fix
   that, or point the user to the fix in the message itself.
 - 10-10: 1134c7a8 reworded the "restart codex" advice. luci hit the same
   stale app-server daemon on the next release, and e611fc65 then restarted
-  it from magpie.
+  it from fogway.
 - Seen 2× (2026-10-06, 2026-10-10).
 
 ## Fix the class, not the sample
@@ -121,7 +121,7 @@ content before you rest an account.**
 - Done right on 10-07: 6b6113aa let a gateway key take the user's own value.
   It found that a local request with such a value would skip key limits, and
   moved managedKey onto access.Named, with a test that fails on the old
-  check. c83c0d5f (#1112) kept a pinned MAGPIE_ADDR host while sharing, and
+  check. c83c0d5f (#1112) kept a pinned FOGWAY_ADDR host while sharing, and
   checked that requests behind Tailscale Serve still count as remote.
 - Seen 1× (2026-10-05).
 
@@ -141,7 +141,7 @@ protocol, never by a key's name.**
 - docs/subsystems/gateway-routing.md said "There is no `Host` check, so a
   page whose own name resolves to 127.0.0.1 (DNS rebinding) counts as
   same-origin". On 10-10 the review reproduced it on main. A rebound page
-  got 200 on /v1/models, /v1/chat/completions and /v1/magpie/quotas without
+  got 200 on /v1/models, /v1/chat/completions and /v1/fogway/quotas without
   a key. Fixed in c431225a.
 - A same-origin exemption needs the Host checked too. A rebound page's GET
   carries no Origin at all.
@@ -150,17 +150,17 @@ protocol, never by a key's name.**
 
 ## The user's own files and settings
 
-**Never let magpie's default override a value the user set themselves.**
+**Never let fogway's default override a value the user set themselves.**
 - CLAUDE_CODE_AUTO_COMPACT_WINDOW overrode the user's own autoCompactWindow
   for ~150 releases (602d4ec6).
-- `magpie claude model default` deleted the user's own ANTHROPIC_BASE_URL and
+- `fogway claude model default` deleted the user's own ANTHROPIC_BASE_URL and
   dropped the stash for 12 days (fe2603ff).
 - Before writing a key, list everywhere the agent reads that setting from.
   Test with user-owned values present.
-- 10-09/10-10: four fixes for magpie writing over a user's own choice.
+- 10-09/10-10: four fixes for fogway writing over a user's own choice.
   - 603dc0c4: dsh's picked model was lost on Disconnect.
   - 5aca7d09: Codex's effort left at Default was written over with medium.
-  - c65d9fb4: magpie-models.json dropped keys added by hand.
+  - c65d9fb4: fogway-models.json dropped keys added by hand.
   - d9bf7c1c: ZCode's API format was put back on every start.
   - Each was written first without a test that holds a user-set value.
 - Seen 2× (2026-10-05, 2026-10-10).
@@ -178,7 +178,7 @@ protocol, never by a key's name.**
   deletes a dsh session only under its own folder, to the trash, with
   Restore, and was tried with real dsh.
 - 10-11: agent/stash.go, which holds every agent's config from before
-  magpie, had readLogins' bug, never looked at when b363327d fixed it. A
+  fogway, had readLogins' bug, never looked at when b363327d fixed it. A
   stash.json that didn't parse read as empty, writes were plain
   os.WriteFile with no lock, and 40 stashes at once kept none of them
   (270b5257). 8b393938 (StepCode, the same evening) noticed and wrote its
@@ -229,7 +229,7 @@ re-derives every place that discloses it.**
 - 169c23c1 sent `omp#` profile ids and the user's own model ids, which
   aren't in the public catalog (fixed in 2cdae80a: only known ids are sent).
 - 7d663a27 sent each partner's daily counts, while the READMEs' Privacy and
-  the site's "What does magpie send about me?" still listed what was sent
+  the site's "What does fogway send about me?" still listed what was sent
   before (b4aa62af).
 - Grep the READMEs (en, zh) and site/public/docs (en, zh, ja) for the
   privacy text in the same commit.
@@ -254,7 +254,7 @@ re-derives every place that discloses it.**
   testdata.
 - Seen 1× (2026-10-10).
 
-**A check that a value is gone looks past text magpie generates.**
+**A check that a value is gone looks past text fogway generates.**
 - 6c099edd's redact test checked that "ops" was gone by substring. The
   placeholder's random suffix spelled it ({{HOSTNAME_mlopsiy3}}) on macOS
   CI. f0453192 strips placeholders before the check, in its sibling

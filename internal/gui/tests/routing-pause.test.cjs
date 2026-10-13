@@ -83,7 +83,7 @@ async function open(engine, lang, width, t) {
   const errors = [], posts = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.route("**/*", serve(lang, posts));
-  await page.goto("http://magpie.test/?view=routing");
+  await page.goto("http://fogway.test/?view=routing");
   const group = page.locator(".rt-group").first();
   await group.waitFor();
   return { page, group, errors, posts };

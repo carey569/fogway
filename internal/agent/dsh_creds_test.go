@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/access"
+	"github.com/fogway/fogway/internal/access"
 )
 
-// #969 (pan17): the DeepSeek Harness desktop app, wired through magpie, failed
-// every turn with `no credential for provider route "magpie"; its profile
-// resolves MAGPIE_GATEWAY_KEY, which is not set — store MAGPIE_GATEWAY_KEY
+// #969 (pan17): the DeepSeek Harness desktop app, wired through fogway, failed
+// every turn with `no credential for provider route "fogway"; its profile
+// resolves FOGWAY_GATEWAY_KEY, which is not set — store FOGWAY_GATEWAY_KEY
 // through the credentials service (the web Models page writes it) or export
-// it` (MISSING_CREDENTIAL), while magpie said it was connected. The route was
+// it` (MISSING_CREDENTIAL), while fogway said it was connected. The route was
 // in its profile; the key was in ~/.dsh/.env, which only dsh's product CLI
 // loads. The key now goes into dsh's own store, ~/.dsh/.credentials.yaml,
 // which every dsh reads (dsh-credentials-local), the desktop app included.
@@ -25,7 +25,7 @@ func TestDshDesktopGetsTheKeyFromItsStore(t *testing.T) {
 	os.WriteFile(web, []byte("# Your patch layer for this dsh profile.\n"), 0o644)
 	os.WriteFile(desktop, []byte("# Your patch layer for this dsh profile.\n"), 0o644)
 	a := dsh(home)
-	if err := a.Field("model").Set("magpie/deepseek/flash"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/flash"); err != nil {
 		t.Fatal(err)
 	}
 	if b, _ := os.ReadFile(desktop); !strings.Contains(string(b), "apiKeyEnv: "+dshKeyRef) {
@@ -36,7 +36,7 @@ func TestDshDesktopGetsTheKeyFromItsStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s := string(b); !strings.HasPrefix(s, "version: 1\n") || !strings.Contains(s, "refs:\n  "+dshKeyRef+": magpie\n") {
+	if s := string(b); !strings.HasPrefix(s, "version: 1\n") || !strings.Contains(s, "refs:\n  "+dshKeyRef+": fogway\n") {
 		t.Fatalf("the key is not in dsh's store:\n%s", s)
 	}
 	// dsh refuses to start on a store any other user can read
@@ -47,8 +47,8 @@ func TestDshDesktopGetsTheKeyFromItsStore(t *testing.T) {
 		t.Fatalf("check: %s", d)
 	}
 
-	// wired by an earlier magpie, the key in .env alone: the check says so,
-	// and the sync that runs as magpie starts writes it
+	// wired by an earlier fogway, the key in .env alone: the check says so,
+	// and the sync that runs as fogway starts writes it
 	os.Remove(creds)
 	if d := a.Check(); !strings.Contains(d, ".credentials.yaml") || !strings.Contains(d, "desktop") {
 		t.Fatalf("a store without the key is not named: %q", d)
@@ -60,8 +60,8 @@ func TestDshDesktopGetsTheKeyFromItsStore(t *testing.T) {
 		t.Fatalf("after the sync: %s", d)
 	}
 
-	// back to dsh's own models: magpie's key goes, the rest stays
-	os.WriteFile(creds, []byte("version: 1\n# mine\nrefs:\n  DEEPSEEK_API_KEY: sk-mine\n  "+dshKeyRef+": magpie\n"), 0o600)
+	// back to dsh's own models: fogway's key goes, the rest stays
+	os.WriteFile(creds, []byte("version: 1\n# mine\nrefs:\n  DEEPSEEK_API_KEY: sk-mine\n  "+dshKeyRef+": fogway\n"), 0o600)
 	if err := a.Field("model").Set("deepseek-v4-pro"); err != nil {
 		t.Fatal(err)
 	}
@@ -72,14 +72,14 @@ func TestDshDesktopGetsTheKeyFromItsStore(t *testing.T) {
 }
 
 // #1332: a caller key this gateway issued, held in dsh's own store, takes dsh
-// through magpie all the same — the store wins over .env (#969) and the
+// through fogway all the same — the store wins over .env (#969) and the
 // gateway authenticates the key — so the check is quiet. A key the gateway
 // doesn't take still is drift.
 func TestDshStoreHoldingAGatewayCallerKey(t *testing.T) {
 	home, dir, web := dshRouteHome(t)
 	os.WriteFile(web, []byte("# Your patch layer for this dsh profile.\n"), 0o644)
 	a := dsh(home)
-	if err := a.Field("model").Set("magpie/deepseek/flash"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/flash"); err != nil {
 		t.Fatal(err)
 	}
 	secret, err := access.Update("add-key", access.Change{Name: "dsh"})
@@ -98,7 +98,7 @@ func TestDshStoreHoldingAGatewayCallerKey(t *testing.T) {
 }
 
 // A store the user keeps is written into, not over; one holding a key of the
-// user's under magpie's name, or in dsh's pre-release flat layout, is left to
+// user's under fogway's name, or in dsh's pre-release flat layout, is left to
 // the user and to dsh.
 func TestDshStoreOfTheUsersOwn(t *testing.T) {
 	home, dir, web := dshRouteHome(t)
@@ -108,11 +108,11 @@ func TestDshStoreOfTheUsersOwn(t *testing.T) {
 
 	own := "version: 1\nrefs:\n  DEEPSEEK_API_KEY: sk-mine\nrecords:\n  llm-pi-ai/amazon-bedrock:\n    kind: api-key\n    env:\n      AWS_PROFILE: prod\n"
 	os.WriteFile(creds, []byte(own), 0o600)
-	if err := a.Field("model").Set("magpie/deepseek/pro"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	b, _ := os.ReadFile(creds)
-	for _, want := range []string{"DEEPSEEK_API_KEY: sk-mine", "AWS_PROFILE: prod", dshKeyRef + ": magpie"} {
+	for _, want := range []string{"DEEPSEEK_API_KEY: sk-mine", "AWS_PROFILE: prod", dshKeyRef + ": fogway"} {
 		if !strings.Contains(string(b), want) {
 			t.Fatalf("missing %q:\n%s", want, b)
 		}

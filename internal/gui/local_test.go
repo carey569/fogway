@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/local"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/local"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func localCall(t *testing.T, mux *http.ServeMux, method, path, body string) (int, localJSON, string) {

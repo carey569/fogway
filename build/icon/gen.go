@@ -1,17 +1,16 @@
 //go:build ignore
 
-// Icon generator. Everything magpie shows is drawn from one bird: a round
-// little magpie in profile, tail cocked, black and white, on a 44-unit grid.
-// magpie.svg is the full drawing, its belly, shoulder and the slits in its
-// tail cut out of the black; the app tile uses it from 64px up.
-// magpie-small.svg drops the eye, which would only be a speck; the tray and
-// the smaller tiles use it, and so does the header in
-// internal/gui/assets/index.html.
+// Icon generator. Everything fogway shows is drawn from one mark: a bridge,
+// its deck and arch, over two bands of fog, black and white, on a 44-unit
+// grid. fogway.svg is the drawing the app tile uses from 64px up;
+// fogway-small.svg is the one the tray and the smaller tiles use, and so
+// does the header in internal/gui/assets/index.html. They are one drawing
+// now, kept as two so a finer one can come for the large tiles.
 //
 //	go run build/icon/gen.go tray internal/gui/tray.png     # 44px black template icon (macOS menu bar)
 //	go run build/icon/gen.go tray-flap internal/gui/trayflap # its frames when clicked (a size after the folder for a bigger look)
 //	go run build/icon/gen.go app 64 internal/gui/icon.png   # app icon at a given size
-//	make icons                                              # regenerates all of them plus magpie.icns
+//	make icons                                              # regenerates all of them plus fogway.icns
 package main
 
 import (
@@ -28,9 +27,9 @@ import (
 )
 
 var (
-	//go:embed magpie.svg
+	//go:embed fogway.svg
 	fullSVG string
-	//go:embed magpie-small.svg
+	//go:embed fogway-small.svg
 	smallSVG string
 )
 
@@ -91,63 +90,60 @@ func tray() image.Image {
 	return img
 }
 
-// The tray bird's flap is the header logo's (internal/gui/assets/app.css,
-// .logo.wag): the drawing cut into body, tail and wing by the same clip
-// paths, each piece turned about the same point through the same keyframes
-// over the same .9s, cubic-bezier(.3, 0, .3, 1) between each two of them,
-// and the whole bird bobbing about its feet. Keep the two alike.
+// The tray icon's stir is the header logo's (internal/gui/assets/app.css,
+// .logo.wag): the drawing cut at y 26 into the span and the fog below it
+// by the same clip paths, the fog drifting sideways and the whole bobbing
+// about the bridge's foot, through the same keyframes over the same .9s,
+// cubic-bezier(.3, 0, .3, 1) between each two of them. Keep the two alike.
 const (
 	flapSecs  = 0.9
 	flapEvery = 0.03 // a frame every 30ms: internal/gui's flap plays them so
-	// the clip paths of index.html's #bird-body (even-odd: the wing is cut
-	// out of it), #bird-tail and #bird-wing, their H and V written as L for
-	// parse
-	clipBody = "M16 0L44 0L44 44L0 44L0 26.4L10.6 26.4L13 24.2L16 19Z M29.8 18.3L26 19L22 21L17 23.5L14.6 24.7L10.6 26.4L6 29V32L9 31.5L12.5 32L16.4 31.8L19 31.4L24 28.8L28.5 24L30.6 21.4Z"
-	clipTail = "M0 0L17 0L17.2 19.6L14 25L10.6 26.4L0 26.4Z"
-	clipWing = "M29.8 18.3L26 19L22 21L17 23.5L14.6 24.7L10.6 26.4L6 29V32L9 31.5L12.5 32L16.4 31.8L19 31.4L24 28.8L28.5 24L30.6 21.4Z"
+	// the clip paths of index.html's #bird-span and #bird-fog, their H and
+	// V written as L for parse
+	clipSpan = "M0 0L44 0L44 26L0 26Z"
+	clipFog  = "M0 26L44 26L44 44L0 44Z"
 )
 
-// A keyframe: at is the fraction of the animation, deg the rotation.
+// A keyframe: at is the fraction of the animation, v the rotation in
+// degrees or the shift in viewBox units.
 type key struct{ at, deg float64 }
 
 var (
-	wingKeys = []key{{0, 0}, {.12, 10}, {.26, -3}, {.40, 8}, {.56, -2}, {.72, 3}, {1, 0}}
-	tailKeys = []key{{0, 0}, {.18, 16}, {.36, -7}, {.54, 9}, {.72, -3}, {.86, 2}, {1, 0}}
-	bobKeys  = []key{{0, 0}, {.18, -4}, {.40, 2}, {.62, -1}, {1, 0}}
+	driftKeys = []key{{0, 0}, {.30, 2.5}, {.65, -1.5}, {1, 0}}
+	bobKeys   = []key{{0, 0}, {.18, -4}, {.40, 2}, {.62, -1}, {1, 0}}
 	// transform-origin, in the viewBox
-	wingAt, tailAt, bobAt = [2]float64{30, 19.8}, [2]float64{14, 22}, [2]float64{26, 38}
+	bobAt = [2]float64{22, 35}
 )
 
 // trayFlap writes the frames the tray icon plays when it is clicked,
-// flap-01.png on, one every flapEvery of the animation, the still bird at
+// flap-01.png on, one every flapEvery of the animation, the still icon at
 // both ends left out.
 func trayFlap(dir string, S int) error {
-	bird := parse(smallSVG)
-	body, tail, wing := parse(`d="`+clipBody+`"`), parse(`d="`+clipTail+`"`), parse(`d="`+clipWing+`"`)
+	icon := parse(smallSVG)
+	span, fog := parse(`d="`+clipSpan+`"`), parse(`d="`+clipFog+`"`)
 	n := int(math.Round(flapSecs / flapEvery))
 	const ss = 8
 	k := float64(S) / 44
 	for f := 1; f < n; f++ {
 		t := float64(f) / float64(n)
-		bob, tl, wg := keyed(bobKeys, t), keyed(tailKeys, t), keyed(wingKeys, t)
-		// each piece is the bird and its clip path both turned as CSS turns
-		// the piece's group: the bob outside, the piece's own turn inside
-		m := func(rings [][][2]float64, at [2]float64, deg float64) []bool {
+		bob, dx := keyed(bobKeys, t), keyed(driftKeys, t)
+		// each piece is the icon and its clip path both moved as CSS moves
+		// the piece's group: the bob outside, the piece's own shift inside
+		m := func(rings [][][2]float64, shift float64) []bool {
 			moved := make([][][2]float64, len(rings))
 			for i, r := range rings {
 				moved[i] = make([][2]float64, len(r))
 				for j, p := range r {
-					q := turn(turn(p, at, deg), bobAt, bob)
-					// shrunk about the middle, as tray() draws the still bird
+					q := turn([2]float64{p[0] + shift, p[1]}, bobAt, bob)
+					// shrunk about the middle, as tray() draws the still icon
 					moved[i][j] = [2]float64{22 + (q[0]-22)*trayK, 22 + (q[1]-22)*trayK}
 				}
 			}
 			return mask(moved, S*ss, k*ss)
 		}
 		pieces := [][2][]bool{
-			{m(bird, tailAt, 0), m(body, tailAt, 0)},
-			{m(bird, tailAt, tl), m(tail, tailAt, tl)},
-			{m(bird, wingAt, wg), m(wing, wingAt, wg)},
+			{m(icon, 0), m(span, 0)},
+			{m(icon, dx), m(fog, dx)},
 		}
 		N := S * ss
 		img := image.NewNRGBA(image.Rect(0, 0, S, S))
@@ -181,7 +177,7 @@ func trayFlap(dir string, S int) error {
 	return nil
 }
 
-// keyed is the rotation at t of keyframes played as CSS plays them, each
+// keyed is the value at t of keyframes played as CSS plays them, each
 // step eased by cubic-bezier(.3, 0, .3, 1).
 func keyed(ks []key, t float64) float64 {
 	for i := 1; i < len(ks); i++ {
@@ -246,7 +242,7 @@ func mask(rings [][][2]float64, n int, k float64) []bool {
 	return out
 }
 
-// glyph is the bird alone, black on clear, as big on an n-pixel canvas as
+// glyph is the mark alone, black on clear, as big on an n-pixel canvas as
 // app draws it on its tile: the layer of build/darwin/AppIcon.icon, which
 // macOS 26 lays on a tile of its own, light or dark (#117).
 func glyph(n int) image.Image {
@@ -374,8 +370,8 @@ func parse(svg string) [][][2]float64 {
 		case "C":
 			p := pts[len(pts)-1]
 			c := [8]float64{p[0], p[1], num(i), num(i + 1), num(i + 2), num(i + 3), num(i + 4), num(i + 5)}
-			for s := 1; s <= 8; s++ {
-				t := float64(s) / 8
+			for s := 1; s <= 32; s++ {
+				t := float64(s) / 32
 				m := 1 - t
 				pts = append(pts, [2]float64{
 					m*m*m*c[0] + 3*m*m*t*c[2] + 3*m*t*t*c[4] + t*t*t*c[6],

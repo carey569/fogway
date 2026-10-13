@@ -3,7 +3,7 @@ package gateway
 import (
 	"encoding/json"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // outputLimit is the most a reply of a provider's model may hold, where

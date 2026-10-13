@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // love1sbug on X: switching Names in agents' lists between Off, Not on
@@ -15,7 +15,7 @@ import (
 // modelPicker labelled every model by its name alone. Each row is now
 // labelled as every agent's list names the model (provider.Labels), and
 // written again when the setting changes; a description that would repeat
-// the provider the label says is left "via magpie".
+// the provider the label says is left "via fogway".
 func TestClaudePickerFollowsSuffixMode(t *testing.T) {
 	home := syncHome(t)
 	if err := provider.Save(provider.Provider{ID: "relay", Name: "Relay", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"glm-4.6", "glm-5"}}); err != nil {
@@ -54,10 +54,10 @@ func TestClaudePickerFollowsSuffixMode(t *testing.T) {
 		glm, mine, mix  string
 		glmNote, mixNot string
 	}{
-		{provider.SuffixOn, "GLM-4.6 · Relay", "My GLM · Relay", "Mix · routing group", "via magpie", "via magpie"},
-		{provider.SuffixOwn, "GLM-4.6 · Relay", "My GLM", "Mix", "via magpie", "routing group · via magpie"},
-		{provider.SuffixOff, "GLM-4.6", "My GLM", "Mix", "Relay · via magpie", "routing group · via magpie"},
-		{provider.SuffixOn, "GLM-4.6 · Relay", "My GLM · Relay", "Mix · routing group", "via magpie", "via magpie"},
+		{provider.SuffixOn, "GLM-4.6 · Relay", "My GLM · Relay", "Mix · routing group", "via fogway", "via fogway"},
+		{provider.SuffixOwn, "GLM-4.6 · Relay", "My GLM", "Mix", "via fogway", "routing group · via fogway"},
+		{provider.SuffixOff, "GLM-4.6", "My GLM", "Mix", "Relay · via fogway", "routing group · via fogway"},
+		{provider.SuffixOn, "GLM-4.6 · Relay", "My GLM · Relay", "Mix · routing group", "via fogway", "via fogway"},
 	} {
 		if err := provider.SetSuffixMode(c.mode); err != nil {
 			t.Fatal(err)

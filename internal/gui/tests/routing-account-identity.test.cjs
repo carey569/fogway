@@ -59,7 +59,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
       const now = new Date();
       let routes = switchedRoutes(now, true);
       await page.route("**/*", serve(lang, () => routes, now));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-act").first().waitFor();
       assert.equal(await page.locator(".rt-act").count(), 2, "two logins stay two rows when their current-login IDs exchange");
       const uni = page.locator(".rt-act", { hasText: "uni@example.test" });

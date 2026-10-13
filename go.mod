@@ -1,4 +1,4 @@
-module github.com/yetone/magpie
+module github.com/fogway/fogway
 
 go 1.26.8
 

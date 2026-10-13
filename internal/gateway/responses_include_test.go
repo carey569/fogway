@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// #315: a Responses request rebuilt by magpie asks for what its client's
+// #315: a Responses request rebuilt by fogway asks for what its client's
 // include did, as prompt_cache_key goes on: a strict Codex relay refuses
-// one without reasoning.encrypted_content. magpie's own search sources are
+// one without reasoning.encrypted_content. fogway's own search sources are
 // added to it once.
 func TestResponsesKeepsInclude(t *testing.T) {
 	include := func(body, host string) []string {

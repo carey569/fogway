@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // clinePin is body with its DeepSeek model pinned to DeepSeek's own API

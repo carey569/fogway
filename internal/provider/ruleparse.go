@@ -4,7 +4,7 @@ package provider
 // agents=a,b intent="…" compact time=09:00-18:00 days=mon-fri
 // folders=~/work,"~/My Project" except-folders=~/work/old, or
 // pause=<model> time=… days=… agents=… folders=… except-folders=… — by
-// magpie group rule and the
+// fogway group rule and the
 // TUI's routing page.
 
 import (
@@ -209,7 +209,7 @@ func ParseRule(g Group, words []string) (r Rule, at int, classifier string, err 
 // effort fixed on the member ("m:high") or, when only one member is of
 // that model, without it.
 func GroupMember(g Group, in string) (string, error) {
-	in = strings.TrimPrefix(strings.TrimSpace(in), "magpie/")
+	in = strings.TrimPrefix(strings.TrimSpace(in), "fogway/")
 	plain := func(m string) string { model, _ := MemberEffort(m); return model }
 	for _, match := range []func(string) bool{
 		func(m string) bool { return m == in },

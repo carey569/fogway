@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
 // AIHubMix's /models leaves out gpt-image-2, which its key draws with; its

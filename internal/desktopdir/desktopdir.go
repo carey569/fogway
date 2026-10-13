@@ -4,7 +4,7 @@
 // On macOS they are ~/Library/Application Support/Claude and Claude-3p, on
 // Linux $XDG_CONFIG_HOME/Claude and Claude-3p. On Windows Desktop's own
 // data (its claude_desktop_config.json, Cowork's sessions and skills) is
-// %APPDATA%\Claude, its 3p mode's is %LOCALAPPDATA%\Claude-3p, and magpie
+// %APPDATA%\Claude, its 3p mode's is %LOCALAPPDATA%\Claude-3p, and fogway
 // writes deploymentMode into %LOCALAPPDATA%\Claude as CC Switch does.
 //
 // Desktop installed from the setup.exe that installs an MSIX package (as on
@@ -41,7 +41,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/appdir"
+	"github.com/fogway/fogway/internal/appdir"
 )
 
 // Dirs are Claude Desktop's folders on one computer.
@@ -50,7 +50,7 @@ type Dirs struct {
 	// claude_desktop_config.json with its MCP servers, Cowork's sessions
 	// and skills (%APPDATA%\Claude on Windows).
 	Data string
-	// Mode is the Claude folder magpie writes deploymentMode into: Data,
+	// Mode is the Claude folder fogway writes deploymentMode into: Data,
 	// except on Windows (%LOCALAPPDATA%\Claude, as CC Switch writes it).
 	Mode string
 	// ThreeP is Claude-3p, Desktop's whole userData in its 3p mode.

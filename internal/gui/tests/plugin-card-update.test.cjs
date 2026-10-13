@@ -34,7 +34,7 @@ function server(lang) {
     if (url.pathname === "/api/plugins/market" || url.pathname === "/api/plugins" || url.pathname === "/api/plugins/listings") { const m = { listings: [{ package: "opencode-copilot-auth", name: "Copilot", icon: "copilot", providers: ["github-copilot"], community: true, summary: { en: "Copilot", zh: "Copilot" }, npm: { version: "0.0.9" } }], state: { bun: true, bunVersion: "1.3.0", plugins: installed } }; return json(url.pathname === "/api/plugins" ? m.state : url.pathname === "/api/plugins/listings" ? { listings: m.listings } : m); }
     if (url.pathname === "/api/plugins/upgrade") { upgrades.push(JSON.parse(route.request().postData() || "{}")); installed[0].version = "0.0.9"; return json({}); }
     if (url.pathname.startsWith("/api/")) return json({});
-    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -59,7 +59,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang));
-        await page.goto("http://magpie.test/?view=plugins");
+        await page.goto("http://fogway.test/?view=plugins");
         const card = page.locator('#view-plugins .pm-card[data-pkg="opencode-copilot-auth"]').first();
         const up = card.locator("button.pm-act.pm-up");
         await up.waitFor();

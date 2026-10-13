@@ -16,10 +16,10 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/fogway/fogway/internal/codexcat"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/codexcat"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 // Helpers the request paths share that lived beside the subscriptions
@@ -43,28 +43,28 @@ var billingHeader = regexp.MustCompile(`^x-anthropic-billing-header:(\s*[A-Za-z_
 
 // sealedTaskError is what a subagent is told whose task its lead sealed
 // when nothing model names can read it. lead is the provider that
-// answered the lead, "" when magpie didn't (the lead was one of Codex's
+// answered the lead, "" when fogway didn't (the lead was one of Codex's
 // own models) or has no record of it in the last sealerKeep. A task
 // already sealed opens only where it was sealed, so the way on with it
 // is said too (#1367). earlier is a provider that answered the lead's
 // earlier turns but can't have sealed the task (canSeal): the lead moved
-// on to Codex's own model, whose turns magpie keeps no record of, and the
+// on to Codex's own model, whose turns fogway keeps no record of, and the
 // task was sealed there (plugins#70). Each says what is sealed: the task
 // itself, which fork_turns="none" doesn't change (#1855).
 func sealedTaskError(model, lead, earlier string) string {
 	if earlier != "" {
-		return fmt.Sprintf("This subagent's task was sealed by the ChatGPT backend, which answered the agent that sent it on one of Codex's own models (a subagent of this thread put there, or the lead after a switch), and only a ChatGPT account can open it. %s can't. %s answered the lead's earlier turns, but it neither seals a task nor opens one. "+sealedTaskItself+" Set Codex's subagent model on magpie's Agents page to a model of a ChatGPT account added in magpie, or to one that isn't served by the ChatGPT backend, so subagents get tasks they can read. To go on with this task, have it spawned again from an agent that isn't on Codex's own models.", model, earlier)
+		return fmt.Sprintf("This subagent's task was sealed by the ChatGPT backend, which answered the agent that sent it on one of Codex's own models (a subagent of this thread put there, or the lead after a switch), and only a ChatGPT account can open it. %s can't. %s answered the lead's earlier turns, but it neither seals a task nor opens one. "+sealedTaskItself+" Set Codex's subagent model on fogway's Agents page to a model of a ChatGPT account added in fogway, or to one that isn't served by the ChatGPT backend, so subagents get tasks they can read. To go on with this task, have it spawned again from an agent that isn't on Codex's own models.", model, earlier)
 	}
 	if lead != "" {
 		return fmt.Sprintf("This subagent's task was sealed by the server that answered its lead (%s), and only that server can open it; %s can't. "+sealedTaskItself+" Give the subagent the lead's model, or a lead model that isn't served by the ChatGPT backend, so its subagents get a task they can read. To go on with this task, use a model on %s for the lead and the subagent, or have the lead spawn the subagent again.", lead, model, lead)
 	}
-	return fmt.Sprintf("This subagent's task was sealed by the ChatGPT backend that answered its lead, and only that backend can open it: a ChatGPT account, or the Responses API provider that answered the lead. %s is neither: magpie has no record of it answering the lead in the last 30 days. "+sealedTaskItself+" Give the subagent the lead's model, or a lead model that isn't served by the ChatGPT backend, so its subagents get a task they can read. To go on with this task, use the lead's model, or have the lead spawn the subagent again.", model)
+	return fmt.Sprintf("This subagent's task was sealed by the ChatGPT backend that answered its lead, and only that backend can open it: a ChatGPT account, or the Responses API provider that answered the lead. %s is neither: fogway has no record of it answering the lead in the last 30 days. "+sealedTaskItself+" Give the subagent the lead's model, or a lead model that isn't served by the ChatGPT backend, so its subagents get a task they can read. To go on with this task, use the lead's model, or have the lead spawn the subagent again.", model)
 }
 
 // canSeal says whether the provider id names could have sealed a
 // subagent's task, as sealedReader has who can open one: a ChatGPT
 // account, or a provider of no sign-in serving the Responses API (a relay
-// of the ChatGPT backend, #1109). One magpie can't find is taken as one
+// of the ChatGPT backend, #1109). One fogway can't find is taken as one
 // that could.
 func canSeal(id string) bool {
 	p, err := provider.Find(id)
@@ -76,7 +76,7 @@ func canSeal(id string) bool {
 }
 
 // leadProvider is the provider that answered a subagent's lead, the
-// thread parent names, in any scope magpie routed it in: "" when it
+// thread parent names, in any scope fogway routed it in: "" when it
 // answered none of the lead's turns, or so long ago it no longer counts.
 // Given a lead's own conversation, it is the provider that answered the
 // lead.
@@ -232,7 +232,7 @@ func withoutSealedMessages(body []byte) ([]byte, bool) {
 		if from == "" {
 			from = "another agent"
 		}
-		note := "[magpie: this message from " + from + " was sealed by the ChatGPT backend, which answered that agent on one of Codex's own models, and only it can open it; this model can't, so it was left out. An agent's final result still reaches the agent that spawned it as text.]"
+		note := "[fogway: this message from " + from + " was sealed by the ChatGPT backend, which answered that agent on one of Codex's own models, and only it can open it; this model can't, so it was left out. An agent's final result still reaches the agent that spawned it as text.]"
 		for j, p := range parts {
 			if c, _ := p["encrypted_content"].(string); p["type"] == "encrypted_content" && nativeSealedAgentPayload.MatchString(c) {
 				parts[j] = map[string]any{"type": "input_text", "text": note}
@@ -284,7 +284,7 @@ func withModel(body []byte, model string) []byte {
 // makes on a hidden thread of its own goes without x-openai-subagent: its
 // x-codex-turn-metadata names the thread's source instead — "thread_title"
 // for the title of a new chat (#314), "guardian_review". A web search
-// magpie runs for a model that can't search is "web_search".
+// fogway runs for a model that can't search is "web_search".
 func callKind(h http.Header) string {
 	v := strings.TrimSpace(h.Get("x-openai-subagent"))
 	if v == "" && h.Get("x-openai-memgen-request") != "" {
@@ -311,10 +311,10 @@ func callKind(h http.Header) string {
 	return v
 }
 
-// codexInput restores summaries magpie made. For a magpie model, it also
+// codexInput restores summaries fogway made. For a fogway model, it also
 // replaces Codex's compaction trigger with a request to summarise the input.
 // OpenAI's own models keep the trigger for their backend to handle.
-func codexInput(body []byte, magpieModel bool) (_ []byte, compact bool) {
+func codexInput(body []byte, fogwayModel bool) (_ []byte, compact bool) {
 	var q map[string]json.RawMessage
 	if json.Unmarshal(body, &q) != nil {
 		return body, false
@@ -329,7 +329,7 @@ func codexInput(body []byte, magpieModel bool) (_ []byte, compact bool) {
 		switch it["type"] {
 		case "compaction", "compaction_summary":
 			enc, _ := it["encrypted_content"].(string)
-			sum, ok := strings.CutPrefix(enc, magpieCompaction)
+			sum, ok := strings.CutPrefix(enc, fogwayCompaction)
 			if !ok {
 				out = append(out, it) // OpenAI's own, for OpenAI
 				continue
@@ -339,7 +339,7 @@ func codexInput(body []byte, magpieModel bool) (_ []byte, compact bool) {
 				out = append(out, userMessage(codexSummaryPrefix+"\n"+string(b)))
 			}
 		case "compaction_trigger":
-			if !magpieModel {
+			if !fogwayModel {
 				out = append(out, it)
 				continue
 			}
@@ -348,7 +348,7 @@ func codexInput(body []byte, magpieModel bool) (_ []byte, compact bool) {
 		case "reasoning":
 			// OpenAI accepts no reasoning content parts in replayed input.
 			// Drop the item so its encrypted_content cannot fail there too.
-			if !magpieModel {
+			if !fogwayModel {
 				if content, present := it["content"]; present && content != nil {
 					parts, ok := content.([]any)
 					if !ok || len(parts) > 0 {
@@ -419,7 +419,7 @@ func refusesInput(status int, b []byte) bool {
 
 // withoutBareReasoning is a Responses request without the reasoning items
 // that have nothing sealed in them, where store isn't true: an id and a
-// summary only, as magpie gives Codex in a translated reply (rs_ and
+// summary only, as fogway gives Codex in a translated reply (rs_ and
 // newID). OpenAI's API and Azure OpenAI's look such an item up among the
 // items they stored, and with store false they stored none, so the whole
 // request goes back 400 "Item with id 'rs_…' not found" (#1008); its
@@ -523,7 +523,7 @@ func withoutReasoningText(body []byte) []byte {
 }
 
 // openaiItemPrefix is the id prefix OpenAI takes for each kind of call item
-// a vendor's reply may have handed Codex with another: magpie, or the
+// a vendor's reply may have handed Codex with another: fogway, or the
 // vendor, gave a tool search's and a custom tool's call a function_call's
 // id (fc_…), and Codex hands the item back on every later turn. OpenAI's
 // own models and the ChatGPT backend turn the whole request away ("Invalid
@@ -1080,8 +1080,8 @@ func vendorMessage(b []byte) string {
 
 // caller is who a request is recorded as: its agent, and the computer it
 // was passed on from, "" for this one. session and native are the session
-// the caller named (sessionOf's X-Magpie-Session, and the agent's own
-// header nativeSessionOf takes, by its name), passed on to a remote magpie
+// the caller named (sessionOf's X-Fogway-Session, and the agent's own
+// header nativeSessionOf takes, by its name), passed on to a remote fogway
 // with the request (#672).
 type caller struct {
 	agent, via string
@@ -1105,7 +1105,7 @@ func withCaller(next http.Handler) http.Handler {
 				break
 			}
 		}
-		if strings.HasPrefix(r.Header.Get("User-Agent"), "magpie/") {
+		if strings.HasPrefix(r.Header.Get("User-Agent"), "fogway/") {
 			if a := label(r.Header.Get(AgentHeader)); a != "" {
 				c.agent = usage.AgentOf(a)
 				c.via = label(r.Header.Get(ViaHeader))
@@ -1116,7 +1116,7 @@ func withCaller(next http.Handler) http.Handler {
 		}
 		ctx := context.WithValue(r.Context(), callerCtx{}, c)
 		if searchingFrom(r) {
-			// another magpie's search: only the model itself searches
+			// another fogway's search: only the model itself searches
 			ctx = context.WithValue(ctx, searchingKey{}, true)
 		}
 		r.Header.Del(AgentHeader)
@@ -1241,9 +1241,9 @@ func relay(w http.ResponseWriter, r *http.Request, from provider.Protocol, name 
 	return 200, col.err
 }
 
-// magpieCompaction marks a compaction item magpie made: its summary, which
-// only magpie reads back.
-const magpieCompaction = "magpie1:"
+// fogwayCompaction marks a compaction item fogway made: its summary, which
+// only fogway reads back.
+const fogwayCompaction = "fogway1:"
 
 var nativeSealedAgentPayload = regexp.MustCompile(`^gAAAAA[A-Za-z0-9_-]+={0,2}$`)
 
@@ -1286,7 +1286,7 @@ func loggedAnswers(convs ...string) []loggedAnswer {
 	}
 	var all []loggedAnswer
 	usage.Visit(time.Now().Add(-sealerKeep), func(r usage.Record) {
-		if r.Provider == "" || r.Provider == "magpie" || r.IsRejected() || r.IsReported() || r.Status <= 0 || r.Status >= 400 || r.Computer != "" || isTitleKind(r.Kind) {
+		if r.Provider == "" || r.Provider == "fogway" || r.IsRejected() || r.IsReported() || r.Status <= 0 || r.Status >= 400 || r.Computer != "" || isTitleKind(r.Kind) {
 			return
 		}
 		if !slices.Contains(convs, r.NativeSession) && !slices.Contains(convs, r.Session) {
@@ -1396,7 +1396,7 @@ type compactOutput struct {
 
 // codexTiers are the service tiers Codex here is offered on each of shown,
 // by id: Fast on a ChatGPT account's GPT model, the tiers of Codex's own
-// entry on a relay's. Another magpie that has this one as its provider
+// entry on a relay's. Another fogway that has this one as its provider
 // offers its Codex the same, and sends the tier asked on (#1234).
 func codexTiers(shown []provider.Entry) map[string][]any {
 	out := map[string][]any{}
@@ -1417,9 +1417,9 @@ func askedTier(body []byte) string {
 	return q.Tier
 }
 
-const AgentHeader = "X-Magpie-Agent"
+const AgentHeader = "X-Fogway-Agent"
 
-const ViaHeader = "X-Magpie-Via"
+const ViaHeader = "X-Fogway-Via"
 
 // label is a header's name for an agent or a computer, if it is a fit one
 // to show: short, one word of printable characters.
@@ -1431,20 +1431,20 @@ func label(v string) string {
 	return v
 }
 
-// boundedSession is a session header's value as magpie keeps it: trimmed,
+// boundedSession is a session header's value as fogway keeps it: trimmed,
 // at most 128 bytes, as sessionOf takes it.
 func boundedSession(v string) string {
 	v = strings.TrimSpace(v)
 	return v[:min(len(v), 128)]
 }
 
-// SearchingHeader marks a request a magpie made to search for another
-// model, to a remote magpie, which then searches only by the model itself.
-const SearchingHeader = "X-Magpie-Searching"
+// SearchingHeader marks a request a fogway made to search for another
+// model, to a remote fogway, which then searches only by the model itself.
+const SearchingHeader = "X-Fogway-Searching"
 
-// searchingFrom is whether a request is a search another magpie made.
+// searchingFrom is whether a request is a search another fogway made.
 func searchingFrom(r *http.Request) bool {
-	return strings.HasPrefix(r.Header.Get("User-Agent"), "magpie/") && r.Header.Get(SearchingHeader) != ""
+	return strings.HasPrefix(r.Header.Get("User-Agent"), "fogway/") && r.Header.Get(SearchingHeader) != ""
 }
 func (u Usage) plus(v Usage, only bool) Usage {
 	for _, f := range []struct{ a, b *int }{{&u.Input, &v.Input}, {&u.Output, &v.Output}, {&u.CacheRead, &v.CacheRead}, {&u.CacheWrite, &v.CacheWrite}, {&u.CacheWrite1h, &v.CacheWrite1h}, {&u.Reasoning, &v.Reasoning}} {
@@ -1507,10 +1507,10 @@ type loggedAnswer struct {
 	at            time.Time
 }
 
-// CodexPath is where Codex's built-in OpenAI provider reaches magpie, as its
+// CodexPath is where Codex's built-in OpenAI provider reaches fogway, as its
 // `openai_base_url`. Codex keeps its own sign-in and sends what it would send
 // the ChatGPT backend: a request for one of its own models goes on there as
-// it came, one for a magpie model (a catalog id, provider/model) is served
-// like any other, and the model list is OpenAI's with magpie's added. Ending
+// it came, one for a fogway model (a catalog id, provider/model) is served
+// like any other, and the model list is OpenAI's with fogway's added. Ending
 // in /backend-api/codex keeps Codex treating it as that backend.
 const CodexPath = "/backend-api/codex"

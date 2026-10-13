@@ -17,8 +17,8 @@ function server(lang, posts, start) {
   const fixed = {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd", dock: false, dockWindow: false, proxy: "",
     redact: false, redactPersonal: false, redactWords: [], codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "",
-    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "", version: "0.1.900", dir: "~/.config/magpie",
-    gateway: "http://127.0.0.1:3425", proxyNow: "none", proxySource: "none", visionModels: [], imageGenModels: [], lanURLs: [],
+    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "", version: "0.1.900", dir: "~/.config/fogway",
+    gateway: "http://127.0.0.1:3725", proxyNow: "none", proxySource: "none", visionModels: [], imageGenModels: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false }, turnDoneAlert: start,
   };
   let cur = fixed;
@@ -48,15 +48,15 @@ function server(lang, posts, start) {
 
 const words = {
   en: { name: "Task done alert", off: "Off", m: (n) => `${n} min`, s: (n) => `${n} s`, cny: "¥ CNY",
-    sub: "A notification when Claude Code, Codex, OpenCode or another agent going through magpie finishes a task that ran at least this long" },
+    sub: "A notification when Claude Code, Codex, OpenCode or another agent going through fogway finishes a task that ran at least this long" },
   zh: { name: "任务完成提醒", off: "关闭", m: (n) => `${n} 分钟`, s: (n) => `${n} 秒`, cny: "¥ 人民币",
-    sub: "Claude Code、Codex、OpenCode 等经由 magpie 的智能体完成一个至少跑了这么久的任务时通知" },
+    sub: "Claude Code、Codex、OpenCode 等经由 fogway 的智能体完成一个至少跑了这么久的任务时通知" },
   "zh-TW": { name: "任務完成提醒", off: "關閉", m: (n) => `${n} 分鐘`, s: (n) => `${n} 秒`,
-    sub: "Claude Code、Codex、OpenCode 等經由 magpie 的智慧體完成一個至少跑了這麼久的任務時通知" },
+    sub: "Claude Code、Codex、OpenCode 等經由 fogway 的智慧體完成一個至少跑了這麼久的任務時通知" },
   ja: { name: "タスク完了通知", off: "オフ", m: (n) => `${n} 分`, s: (n) => `${n} 秒`,
-    sub: "Claude Code、Codex、OpenCode など magpie を通るエージェントが、少なくともこの時間かかったタスクを終えたときに通知" },
+    sub: "Claude Code、Codex、OpenCode など fogway を通るエージェントが、少なくともこの時間かかったタスクを終えたときに通知" },
   de: { name: "Benachrichtigung bei fertiger Aufgabe", off: "Aus", m: (n) => `${n} min`, s: (n) => `${n} s`,
-    sub: "Eine Benachrichtigung, wenn Claude Code, Codex, OpenCode oder ein anderer Agent über magpie eine Aufgabe beendet, die mindestens so lange lief" },
+    sub: "Eine Benachrichtigung, wenn Claude Code, Codex, OpenCode oder ein anderer Agent über fogway eine Aufgabe beendet, die mindestens so lange lief" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -79,7 +79,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const posted = async (n) => { for (let i = 0; i < 100 && posts.length < n; i++) await page.waitForTimeout(20); assert.equal(posts.length, n, "posts"); return posts[n - 1]; };
         const w = words[lang];
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings&tab=usage");
+        await page.goto("http://fogway.test/?view=settings&tab=usage");
         await settingsDrawn(page); // rows found are the ones that stay (#1659)
         const opts = page.locator("#turnDoneSegs .opt");
         await opts.first().waitFor();
@@ -124,7 +124,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     page.setDefaultTimeout(5000);
     await page.route("**/*", server("en", [], 45));
     await watchSettingsReads(page);
-    await page.goto("http://magpie.test/?view=settings&tab=usage");
+    await page.goto("http://fogway.test/?view=settings&tab=usage");
     await settingsDrawn(page); // rows found are the ones that stay (#1659)
     await page.locator("#turnDoneSegs .opt").first().waitFor();
     assert.deepEqual(await page.locator("#turnDoneSegs .opt").allTextContents(), ["Off", "1 min", "3 min", "10 min", "45 s"]);

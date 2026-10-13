@@ -8,13 +8,13 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // A profile's patch list written in flow style, as dsh's own writers leave
 // the template's [] once they add a row (#445), is edited like a block one:
-// every profile gets the model, the user's row stays, and a file magpie
+// every profile gets the model, the user's row stays, and a file fogway
 // can't edit is named in the error, not as config.yaml.
 func TestDshFlowPatchList(t *testing.T) {
 	home := t.TempDir()
@@ -36,12 +36,12 @@ func TestDshFlowPatchList(t *testing.T) {
 	read := func(p string) string { b, _ := os.ReadFile(p); return string(b) }
 
 	f := dsh(home).Field("model")
-	if err := f.Set("magpie/deepseek/pro"); err != nil {
+	if err := f.Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	for _, p := range []string{web, def} {
 		s := read(p)
-		for _, want := range []string{"# Your patch layer", "- id: llm-pi-ai # magpie", "- id: agent-default-model # magpie", `model: "deepseek/pro"`} {
+		for _, want := range []string{"# Your patch layer", "- id: llm-pi-ai # fogway", "- id: agent-default-model # fogway", `model: "deepseek/pro"`} {
 			if !strings.Contains(s, want) {
 				t.Fatalf("missing %q in %s:\n%s", want, p, s)
 			}
@@ -55,7 +55,7 @@ func TestDshFlowPatchList(t *testing.T) {
 	if err := yaml.Unmarshal([]byte(s), &rows); err != nil || len(rows) != 4 || rows[0]["id"] != "some-plugin" || rows[0]["disabled"] != false {
 		t.Fatalf("%v %v\n%s", err, rows, s)
 	}
-	if f.Get() != "magpie/deepseek/pro" {
+	if f.Get() != "fogway/deepseek/pro" {
 		t.Fatalf("get: %q", f.Get())
 	}
 
@@ -69,7 +69,7 @@ func TestDshFlowPatchList(t *testing.T) {
 
 	// a file that is no list is named as itself
 	os.WriteFile(web, []byte("some-plugin:\n  disabled: false\n"), 0o644)
-	err := f.Set("magpie/deepseek/pro")
+	err := f.Set("fogway/deepseek/pro")
 	if err == nil || !strings.Contains(err.Error(), web) || strings.Contains(err.Error(), "config.yaml") {
 		t.Fatalf("error: %v", err)
 	}

@@ -96,7 +96,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         const feed = { next: null };
         await page.route("**/*", serve(lang, feed));
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         await page.locator(".rt-req").nth(first.length - 1).waitFor();
         await page.locator(".rt-ctx .ctx-cache").waitFor();
         await page.waitForTimeout(1500); // the cells come in, the first play ends

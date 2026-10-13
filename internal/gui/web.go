@@ -17,11 +17,11 @@ import (
 
 	"github.com/klauspost/compress/gzhttp"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/update"
 )
 
-// `magpie web` serves the window's page to a browser, for a computer that
+// `fogway web` serves the window's page to a browser, for a computer that
 // can't show the app — no desktop, WSL, a server reached over SSH — with
 // the gateway beside it as the app has. What is the desktop's (the panel,
 // the tray, the Dock) does nothing there; a folder is named, not opened.
@@ -39,13 +39,13 @@ func (webHost) TintPanel([4]uint8, int) bool     { return false }
 func (webHost) TintTitleBar([4]uint8, bool) bool { return false }
 func (webHost) SetTextSize(int)                  {} // the browser zooms its own tab
 func (webHost) OpenFolder(path string) error {
-	return errors.New("in the browser magpie can't open folders: it is " + tilde(path))
+	return errors.New("in the browser fogway can't open folders: it is " + tilde(path))
 }
 func (webHost) ChooseFolder(string) (string, error) {
-	return "", errors.New("in the browser magpie can't show a folder picker: type the folder's path")
+	return "", errors.New("in the browser fogway can't show a folder picker: type the folder's path")
 }
 
-// Web is a started `magpie web`: its address and the link that signs a
+// Web is a started `fogway web`: its address and the link that signs a
 // browser in.
 type Web struct {
 	Addr, Link string
@@ -60,10 +60,10 @@ var webReexec atomic.Bool
 
 // webRunKey hands a run's own key to the version it restarts into, so the
 // browser's cookie still opens the page (#111).
-const webRunKey = "MAGPIE_WEB_RUNKEY"
+const webRunKey = "FOGWAY_WEB_RUNKEY"
 
 // StartWeb serves the page on addr (host:port), as the given version of
-// magpie, which keeps itself up to date as the app does. Every request needs the
+// fogway, which keeps itself up to date as the app does. Every request needs the
 // key the link carries, taken once into a cookie other sites' pages can't
 // send with a POST (every change is one), so neither a page elsewhere nor
 // anyone else on the network reaches the settings and keys behind it.
@@ -116,7 +116,7 @@ func (w *Web) Wait() error {
 	return update.Reexec(exe, os.Args[1:], append(os.Environ(), webRunKey+"="+w.key))
 }
 
-// webKeyMin is the shortest MAGPIE_WEB_KEY taken: it is all that stands
+// webKeyMin is the shortest FOGWAY_WEB_KEY taken: it is all that stands
 // between the network and the keys behind the page.
 const webKeyMin = 16
 
@@ -126,23 +126,23 @@ const webKeyMin = 16
 const webCookieAge = 400 * 24 * time.Hour
 
 // webKey is the key the link carries: a new one each run, unless
-// MAGPIE_WEB_KEY names one — for a page kept running as a service, which
+// FOGWAY_WEB_KEY names one — for a page kept running as a service, which
 // browsers then stay signed in to across restarts. fixed says which.
 func webKey() (key string, fixed bool, err error) {
 	if k := os.Getenv(webRunKey); k != "" {
 		os.Unsetenv(webRunKey) // the run's alone, not its children's
-		if len(k) == 32 && strings.Trim(k, "0123456789abcdef") == "" && os.Getenv("MAGPIE_WEB_KEY") == "" {
+		if len(k) == 32 && strings.Trim(k, "0123456789abcdef") == "" && os.Getenv("FOGWAY_WEB_KEY") == "" {
 			return k, false, nil
 		}
 	}
-	if k := os.Getenv("MAGPIE_WEB_KEY"); k != "" {
+	if k := os.Getenv("FOGWAY_WEB_KEY"); k != "" {
 		if len(k) < webKeyMin {
-			return "", false, fmt.Errorf("MAGPIE_WEB_KEY is %d characters; it needs at least %d", len(k), webKeyMin)
+			return "", false, fmt.Errorf("FOGWAY_WEB_KEY is %d characters; it needs at least %d", len(k), webKeyMin)
 		}
 		// a cookie can't hold a space, ; " \ or a comma: the browser would
 		// be sent one that isn't the key, and turned away
 		if strings.Trim(k, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~") != "" {
-			return "", false, errors.New("MAGPIE_WEB_KEY takes letters, digits and - . _ ~ only (openssl rand -hex 16 makes one)")
+			return "", false, errors.New("FOGWAY_WEB_KEY takes letters, digits and - . _ ~ only (openssl rand -hex 16 makes one)")
 		}
 		return k, true, nil
 	}
@@ -159,7 +159,7 @@ func webGuard(cookie, key string, keep time.Duration, next http.Handler) http.Ha
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if q := r.URL.Query(); q.Has("k") {
 			if !same(q.Get("k")) {
-				http.Error(rw, "this link's key is not this magpie web's: use the link it printed when it started", http.StatusUnauthorized)
+				http.Error(rw, "this link's key is not this fogway web's: use the link it printed when it started", http.StatusUnauthorized)
 				return
 			}
 			http.SetCookie(rw, &http.Cookie{Name: cookie, Value: key, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: int(keep / time.Second)})
@@ -170,7 +170,7 @@ func webGuard(cookie, key string, keep time.Duration, next http.Handler) http.Ha
 			return
 		}
 		if c, err := r.Cookie(cookie); err != nil || !same(c.Value) {
-			http.Error(rw, "open the link magpie web printed when it started: it carries the key", http.StatusUnauthorized)
+			http.Error(rw, "open the link fogway web printed when it started: it carries the key", http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(rw, r)
@@ -178,10 +178,10 @@ func webGuard(cookie, key string, keep time.Duration, next http.Handler) http.Ha
 }
 
 // NetworkLinks are the links to the page, served on port, that other
-// machines open; key is the link's "/?k=…". MAGPIE_PUBLIC_URL with a port
+// machines open; key is the link's "/?k=…". FOGWAY_PUBLIC_URL with a port
 // of its own names the host the container's ports are published on, so
 // the page is at that host on its own port; one without (a reverse proxy's
-// https://magpie.example.com, #372) is where the page is, path and all.
+// https://fogway.example.com, #372) is where the page is, path and all.
 func NetworkLinks(port, key string) []string {
 	if u, err := url.Parse(gateway.PublicURL()); err == nil && u.Host != "" && u.Port() == "" {
 		return []string{strings.TrimRight(u.String(), "/") + key}
@@ -194,7 +194,7 @@ func NetworkLinks(port, key string) []string {
 }
 
 // LANAddrs are this computer's addresses on the local network, for the
-// links to print when the page is served there: MAGPIE_PUBLIC_URL's host
+// links to print when the page is served there: FOGWAY_PUBLIC_URL's host
 // when set (in a container, whose own addresses the network can't reach).
 func LANAddrs() []string {
 	if h := gateway.PublicHost(); h != "" {
@@ -212,13 +212,13 @@ func LANAddrs() []string {
 	return out
 }
 
-// webHandler is what `magpie web` on port serves: the page and its API
+// webHandler is what `fogway web` on port serves: the page and its API
 // behind the key, compressed for the browser.
 func webHandler(port, key string, keep time.Duration, page http.Handler) http.Handler {
-	return webCompressed(webGuard("magpie_web_"+port, key, keep, page))
+	return webCompressed(webGuard("fogway_web_"+port, key, keep, page))
 }
 
-// webCompressed gzips what `magpie web` sends a browser that takes it: the
+// webCompressed gzips what `fogway web` sends a browser that takes it: the
 // page's scripts, styles and SVG icons, and the API's JSON. They went out
 // as they are, about 4 MB for a first load before any data, and the
 // routing trace's JSON grows with every account a request could go to; a
@@ -227,7 +227,7 @@ func webHandler(port, key string, keep time.Duration, page http.Handler) http.Ha
 // Pictures already compressed go as they are.
 //
 // The app's own window gets the page from inside the process, with no
-// network between, so only `magpie web` compresses.
+// network between, so only `fogway web` compresses.
 //
 // A gzipped file's ETag says so ("…-gzip"), as a validator of other bytes;
 // asked for again with it, the file is still a 304. A few bytes of padding
@@ -264,5 +264,5 @@ func compressible(ct string) bool {
 		strings.HasSuffix(ct, "json") || ct == "image/svg+xml"
 }
 
-// isWeb: the page is served to a browser by `magpie web`.
+// isWeb: the page is served to a browser by `fogway web`.
 func isWeb(w Windows) bool { _, ok := w.(webHost); return ok }

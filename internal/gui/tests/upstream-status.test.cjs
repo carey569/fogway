@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", serve(lang, upstream));
         await page.addInitScript(() => { window.open = (u) => { window.opened = u; return null; }; });
 
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.waitForSelector("#providers .row.provider[data-id=anthropic] .badge.upstream");
         let got = await badges(page, "#providers .row.provider[data-id]", ".row");
         assert.equal(got.anthropic.text, w.outage);
@@ -119,7 +119,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await page.locator(".modal:visible, dialog[open]").count(), 0, "no editor");
 
         // the Usage page: on the subscription's card, after its name
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         await page.waitForSelector("#subscriptionUsage > .subscription-card[data-provider=claude] .badge.upstream");
         got = await badges(page, "#subscriptionUsage > .subscription-card[data-provider]", ".subscription-card");
         assert.equal(got.claude.text, w.outage);
@@ -130,7 +130,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
         // all well again: nothing is marked
         upstream.now = allWell;
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.waitForSelector("#providers .row.provider[data-id=anthropic]");
         await page.waitForTimeout(300);
         assert.equal(await page.locator(".badge.upstream").count(), 0);

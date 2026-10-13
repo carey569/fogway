@@ -72,7 +72,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     // go below and the bar scrolls away first
     async function reset(width = 1100) {
       await page.setViewportSize({ width, height: 640 });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await dayButtons.nth(1).waitFor();
     }
     // the reader scrolls the view till sel is y under its top, or less

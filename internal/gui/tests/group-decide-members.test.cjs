@@ -69,7 +69,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const card = (id) => page.locator(`.rt-group[data-id="${id}"]`);
       await card("g").waitFor();
       const pop = page.locator("#pop");

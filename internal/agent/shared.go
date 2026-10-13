@@ -6,9 +6,9 @@ import (
 	"slices"
 )
 
-// keptEffort is the default effort a sync leaves on one of magpie's models:
+// keptEffort is the default effort a sync leaves on one of fogway's models:
 // the one the user set (in the agent's own settings, or by hand) while the
-// model still offers it, else magpie's def. magpie's default never
+// model still offers it, else fogway's def. fogway's default never
 // overrides the user's own.
 func keptEffort(was string, levels []string, def string) string {
 	if was != "" && slices.Contains(levels, was) {

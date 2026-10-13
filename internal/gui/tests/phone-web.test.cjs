@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// magpie web on a phone (jiakun_zhao on X: 移动端的显示效果非常不友好，甚至滚动
-//会抽搐). The header is two rows, the magpie and the icons over the tabs at
+// fogway web on a phone (jiakun_zhao on X: 移动端的显示效果非常不友好，甚至滚动
+//会抽搐). The header is two rows, the fogway and the icons over the tabs at
 // their size, sliding sideways, the one open in sight; a setting's control
 // too wide beside its name goes under it rather than cut the name; iOS isn't
 // let zoom into a field it focuses. And a flick's scroll, which goes on
@@ -43,7 +43,7 @@ async function open(browser, opts, web, view) {
   page.errors = [];
   page.on("pageerror", (e) => page.errors.push(e.message));
   await page.route("**/*", serve(web));
-  await page.goto("http://magpie.test/?view=" + view);
+  await page.goto("http://fogway.test/?view=" + view);
   await page.waitForSelector("#view-" + view, { state: "visible" });
   await page.waitForTimeout(300);
   return page;
@@ -66,7 +66,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       if (new URL(route.request().url()).pathname === "/app.js") await pending;
       await handle(route);
     });
-    const loaded = page.goto("http://magpie.test/");
+    const loaded = page.goto("http://fogway.test/");
     try {
       await page.waitForSelector("#nav", { state: "visible" });
       const [nav, actions] = [await box(page, "#nav"), await box(page, ".top .actions")];
@@ -84,14 +84,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     }
   });
 
-  test(`${engine}: magpie web on a phone`, async (t) => {
+  test(`${engine}: fogway web on a phone`, async (t) => {
     const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
     t.after(() => browser.close());
 
     // the header: two rows, the tabs at their size, the one open in sight
     let page = await open(browser, phone, true, "plugins");
     const [top, nav, actions, brand] = [await box(page, ".top"), await box(page, "#nav"), await box(page, ".top .actions"), await box(page, ".top .brand")];
-    assert.ok(nav.y >= actions.y + actions.height - 1 && nav.y >= brand.y + brand.height - 1, "the tabs are under the magpie and the icons");
+    assert.ok(nav.y >= actions.y + actions.height - 1 && nav.y >= brand.y + brand.height - 1, "the tabs are under the fogway and the icons");
     assert.ok(nav.width >= top.width - 30, `the tabs take the row: ${nav.width} of ${top.width}`);
     const tab = await page.locator("#nav button").first().evaluate((b) => [parseFloat(getComputedStyle(b).fontSize), b.getBoundingClientRect().height]);
     assert.ok(tab[0] >= 13 && tab[1] >= 30, `a tab is readable and tappable: ${tab}`);
@@ -116,7 +116,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const v = document.querySelector("#view-settings");
       v.append(Object.assign(document.createElement("div"), { style: "height:3000px;flex:none" }));
       const frame = () => new Promise((r) => requestAnimationFrame(r));
-      // magpie reads only that a touch happened (WebKit makes no Touch here)
+      // fogway reads only that a touch happened (WebKit makes no Touch here)
       const touch = (type) => v.dispatchEvent(new Event(type, { bubbles: true }));
       touch("touchstart");
       for (let i = 1; i <= 5; i++) { touch("touchmove"); v.scrollTop += 20; await frame(); }

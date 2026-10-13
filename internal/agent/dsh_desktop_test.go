@@ -44,9 +44,9 @@ const dshDesktopPatch = "# Your patch layer for this dsh profile, applied after 
 	"# overrides, disables, and insert lists; `!!js` expressions allowed).\n" +
 	"[]\n"
 
-// The desktop app alone, its profile as its first start leaves it: magpie's
+// The desktop app alone, its profile as its first start leaves it: fogway's
 // model set goes into that profile and dsh's key store, and nothing reads it
-// as no longer going through magpie.
+// as no longer going through fogway.
 func TestDshDesktopOnlyWired(t *testing.T) {
 	home, dir, _ := dshRouteHome(t)
 	t.Setenv("PATH", t.TempDir())
@@ -61,7 +61,7 @@ func TestDshDesktopOnlyWired(t *testing.T) {
 	if a.Path != desktop {
 		t.Fatalf("edits %s, not the desktop app's profile", a.Path)
 	}
-	if err := a.Field("model").Set("magpie/deepseek/flash"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/flash"); err != nil {
 		t.Fatal(err)
 	}
 	b, _ := os.ReadFile(desktop)
@@ -71,7 +71,7 @@ func TestDshDesktopOnlyWired(t *testing.T) {
 	if v, _ := os.ReadFile(filepath.Join(dir, ".credentials.yaml")); !strings.Contains(string(v), dshKeyRef+": ") {
 		t.Fatalf("no key in dsh's store:\n%s", v)
 	}
-	if got := a.Field("model").Get(); got != "magpie/deepseek/flash" {
+	if got := a.Field("model").Get(); got != "fogway/deepseek/flash" {
 		t.Fatalf("model reads %q", got)
 	}
 	if d := a.Check(); d != "" {
@@ -82,10 +82,10 @@ func TestDshDesktopOnlyWired(t *testing.T) {
 	}
 }
 
-// The desktop app first opened while magpie runs, after the CLI's web
+// The desktop app first opened while fogway runs, after the CLI's web
 // profile was wired: its new profile, dsh's empty template, listed none of
-// magpie's models, and the Agents page said DeepSeek Harness no longer goes
-// through magpie until Reapply or magpie's next start (only the catalog sync
+// fogway's models, and the Agents page said DeepSeek Harness no longer goes
+// through fogway until Reapply or fogway's next start (only the catalog sync
 // filled new profiles). The serving round now fills a profile dsh has just
 // made; one with entries of its own, the user's, is still left to Reapply.
 func TestDshDesktopProfileMadeWhileServing(t *testing.T) {
@@ -94,7 +94,7 @@ func TestDshDesktopProfileMadeWhileServing(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := dsh(home)
-	if err := a.Field("model").Set("magpie/deepseek/flash"); err != nil {
+	if err := a.Field("model").Set("fogway/deepseek/flash"); err != nil {
 		t.Fatal(err)
 	}
 	if d := a.Check(); d != "" {
@@ -122,7 +122,7 @@ func TestDshDesktopProfileMadeWhileServing(t *testing.T) {
 	}
 
 	// a profile with the user's own entries and no route is theirs: the
-	// round doesn't put magpie in it
+	// round doesn't put fogway in it
 	own := "- id: agent-default-model\n  config:\n    provider: deepseek-official\n    model: deepseek-v4-pro\n"
 	if err := os.WriteFile(desktop, []byte(own), 0o644); err != nil {
 		t.Fatal(err)

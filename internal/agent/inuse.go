@@ -5,10 +5,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// Models are magpie's models the agent is set to, as catalog ids
+// Models are fogway's models the agent is set to, as catalog ids
 // (provider/model, group/<id>), each once: the agent's own models aside.
 // Usage stats count them (internal/stats).
 func (a *Agent) Models() []string {
@@ -31,7 +31,7 @@ func (a *Agent) Models() []string {
 	vals := a.Values()
 	for _, f := range a.Fields {
 		v := vals[f.Key]
-		if !magpieValue(a, f, v, vals) {
+		if !fogwayValue(a, f, v, vals) {
 			continue
 		}
 		m, _, _ := a.split(v)
@@ -49,12 +49,12 @@ func (a *Agent) Models() []string {
 	return out
 }
 
-// modelRef is v as a catalog id when it names one of magpie's models or
-// groups, as an agent spells it (magpie/…, Claude Code's [1m]); "" else.
+// modelRef is v as a catalog id when it names one of fogway's models or
+// groups, as an agent spells it (fogway/…, Claude Code's [1m]); "" else.
 func modelRef(v string) string {
 	v = strings.TrimSuffix(strings.TrimSpace(v), "[1m]")
-	v = strings.TrimPrefix(v, magpieID+"/")
-	if strings.HasPrefix(v, provider.GroupPrefix) || isMagpie(v) {
+	v = strings.TrimPrefix(v, fogwayID+"/")
+	if strings.HasPrefix(v, provider.GroupPrefix) || isFogway(v) {
 		return v
 	}
 	return ""

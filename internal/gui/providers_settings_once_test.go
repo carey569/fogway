@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/filememo"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/filememo"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // lml on Discord (Windows, about ten providers): the Providers page took
@@ -32,7 +32,7 @@ func TestProviderListReadsSettingsOnce(t *testing.T) {
 	if err := provider.Save(provider.Provider{ID: "relay", Name: "Relay", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: models}); err != nil {
 		t.Fatal(err)
 	}
-	// a big settings file, as a long-used magpie's is, makes each read
+	// a big settings file, as a long-used fogway's is, makes each read
 	// show: some 20000 image answers of other providers' models
 	images := map[string]bool{"relay/model-7": true}
 	for i := range 20000 {

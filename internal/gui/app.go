@@ -19,14 +19,15 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/autostart"
-	"github.com/yetone/magpie/internal/omarchy"
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/shortcut"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/autostart"
+	"github.com/fogway/fogway/internal/local"
+	"github.com/fogway/fogway/internal/omarchy"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/shortcut"
+	"github.com/fogway/fogway/internal/update"
 )
 
 //go:embed tray.png
@@ -139,7 +140,7 @@ func (h *host) Import(link string) {
 	})
 }
 
-// dock puts magpie in the Dock or takes it out as s says, with the window
+// dock puts fogway in the Dock or takes it out as s says, with the window
 // shown or not, full screen or not.
 func (h *host) dock(s settings.Settings, shown bool) {
 	full := application.InvokeSyncWithResult(func() bool { return h.main != nil && h.main.IsFullscreen() })
@@ -165,8 +166,8 @@ func (h *host) ChooseFolder(title string) (string, error) {
 }
 
 // panelTitle names the panel for Hyprland's rule, which places it, and
-// for niri, which finds it by it (the main window is "magpie")
-const panelTitle = "magpie panel"
+// for niri, which finds it by it (the main window is "fogway")
+const panelTitle = "fogway panel"
 
 // FitPanel grows or shrinks the panel to its content and keeps it anchored
 // under the tray icon; a shown panel glides there when g says how. height
@@ -266,8 +267,8 @@ func (h *host) zoomWindows() {
 }
 
 // windowsOptions are the app's Windows options. Portable, WebView2 keeps
-// its profile in data\webview2: left to Wails it is %APPDATA%\magpie.exe,
-// a folder a portable magpie must not leave behind (#508). Installed, it
+// its profile in data\webview2: left to Wails it is %APPDATA%\fogway.exe,
+// a folder a portable fogway must not leave behind (#508). Installed, it
 // stays there, so what the pages kept isn't lost.
 func windowsOptions() application.WindowsOptions {
 	return application.WindowsOptions{
@@ -282,7 +283,7 @@ const panelStart = 520
 // Run starts the desktop app: a menu bar icon whose click drops down a compact
 // panel, plus a regular window for when you want it to stay around.
 // showMain opens the window immediately; otherwise only the tray icon appears.
-// link is a magpie:// link the app was started with, to confirm and import.
+// link is a fogway:// link the app was started with, to confirm and import.
 func Run(version string, showMain bool, link string) error {
 	Version = version
 	webkitDefaults()
@@ -294,25 +295,25 @@ func Run(version string, showMain bool, link string) error {
 	// After an update off the Mac, the old process starts this one and then
 	// quits; let it go before looking for the gateway.
 	update.AwaitPredecessor()
-	// the Mac's second launch hands over to the magpie already running
+	// the Mac's second launch hands over to the fogway already running
 	if runningAlready(showMain || OpenPanel, link) {
 		return nil
 	}
 	go func() {
 		if err := registerScheme(); err != nil {
-			log.Println("magpie:// links:", err)
+			log.Println("fogway:// links:", err)
 		}
-		// Windows has no installer to put magpie in the Start menu
+		// Windows has no installer to put fogway in the Start menu
 		shortcut.Ensure()
 		// Open at login as this version writes it (the Mac's, so a restart
-		// to update from a magpie opened at login comes back)
+		// to update from a fogway opened at login comes back)
 		if err := autostart.Refresh(); err != nil {
 			log.Println("open at login:", err)
 		}
 	}()
-	// MAGPIE_THEME=light|dark forces the palette; handy for screenshots.
+	// FOGWAY_THEME=light|dark forces the palette; handy for screenshots.
 	theme := ""
-	if t := os.Getenv("MAGPIE_THEME"); t != "" {
+	if t := os.Getenv("FOGWAY_THEME"); t != "" {
 		theme = "&theme=" + t
 	}
 	h := &host{query: theme, ready: make(chan struct{})}
@@ -326,12 +327,12 @@ func Run(version string, showMain bool, link string) error {
 		handler = Handler(h, startBackend())
 	}
 	h.app = application.New(application.Options{
-		// Windows and Linux start a new process for a magpie:// link (or a
+		// Windows and Linux start a new process for a fogway:// link (or a
 		// second launch); it hands its arguments to the running one and quits.
 		// The Mac sends the link to the running app itself.
 		SingleInstance: singleInstance(h),
-		Name:           "magpie",
-		Description:    "one place to pick every agent's model",
+		Name:           "Fogway",
+		Description:    "the edge-cloud model gateway for every agent",
 		Icon:           appIconFor(),
 		Assets:         application.AssetOptions{Handler: handler},
 		Mac:            application.MacOptions{ActivationPolicy: dockPolicy(settings.Load().Dock)},
@@ -342,12 +343,14 @@ func Run(version string, showMain bool, link string) error {
 		// way out, so the next launch is the new one.
 		// Quitting doesn't come back to main on a Mac (NSApp terminate:
 		// exits), so the CLIs still being asked something end here.
-		// Account failover magpie wrote into Codex goes with the gateway
+		// Account failover fogway wrote into Codex goes with the gateway
 		// this process serves: Codex left pointed at it would retry till
-		// magpie is open again (Leon920717 on X). The next start writes it
+		// fogway is open again (Leon920717 on X). The next start writes it
 		// again (Sync).
 		OnShutdown: func() {
 			proc.EndProbes()
+			// the model on this computer goes with the app that runs it
+			local.Stop()
 			if served.Load() != nil {
 				if err := agent.EndCodexFailover(); err != nil {
 					log.Println("codex failover:", err)
@@ -356,7 +359,7 @@ func Run(version string, showMain bool, link string) error {
 			updates.install(false)
 		},
 		// Wails exits on some webview errors; say why before it does.
-		ErrorHandler: func(err error) { log.Println("magpie:", err) },
+		ErrorHandler: func(err error) { log.Println("fogway:", err) },
 	})
 	// Windows without the WebView2 runtime can make no window: Wails would
 	// exit on the first, with nothing on screen to say why (#1806). The
@@ -365,14 +368,14 @@ func Run(version string, showMain bool, link string) error {
 		return nil
 	}
 	// Wails' default Learn More replaces the current window with wails.io.
-	// Keep the native menus, but open magpie's help in the system browser.
+	// Keep the native menus, but open fogway's help in the system browser.
 	// macOS only: it is the one that shows a menu bar unasked; on Linux a
 	// set menu becomes a menu bar in every window, the panel's too.
 	if runtime.GOOS == "darwin" {
 		appMenu := application.DefaultApplicationMenu()
 		help := appMenu.FindByRole(application.HelpMenu).GetSubmenu()
 		help.Clear()
-		help.Add("Learn More").OnClick(func(*application.Context) { h.OpenURL("https://usemagpie.ai") })
+		help.Add("Learn More").OnClick(func(*application.Context) { h.OpenURL(update.Site) })
 		h.app.Menu.Set(appMenu)
 	}
 	if Started != nil {
@@ -448,10 +451,10 @@ func Run(version string, showMain bool, link string) error {
 	if runtime.GOOS == "linux" {
 		// set before the tray starts, it is the item's id too, which
 		// Omarchy's bar pins it by (Wails calls it "Wails" otherwise)
-		h.tray.SetLabel("magpie")
+		h.tray.SetLabel("fogway")
 		go dropTrayName()
 	}
-	h.tray.SetTooltip("magpie")
+	h.tray.SetTooltip("fogway")
 	if runtime.GOOS == "darwin" {
 		h.tray.SetTemplateIcon(trayIcon)
 	} else {
@@ -460,7 +463,7 @@ func Run(version string, showMain bool, link string) error {
 	h.tray.SetMenu(menu)
 	h.tray.AttachWindow(h.panel).WindowOffset(6)
 	h.watchTrayUsage()
-	// Omarchy's bar shows magpie once: as its widget (Settings → Bar
+	// Omarchy's bar shows fogway once: as its widget (Settings → Bar
 	// icon) or as the tray's item, not both
 	onBarIcon = h.setTrayInBar
 	h.setTrayInBar(barIcon(h)["on"])
@@ -537,7 +540,7 @@ func Run(version string, showMain bool, link string) error {
 
 // singleInstance makes a second launch hand over to this one, off the Mac.
 // The id covers the config dir, so a sandboxed HOME runs on its own, but
-// not the executable: two copies of magpie on one config (one autostarted
+// not the executable: two copies of fogway on one config (one autostarted
 // from where it was first run, another from where it was put later) would
 // share the gateway's port and put two icons in the tray.
 func singleInstance(h *host) *application.SingleInstanceOptions {
@@ -546,7 +549,7 @@ func singleInstance(h *host) *application.SingleInstanceOptions {
 	}
 	sum := sha256.Sum256([]byte(settings.Dir()))
 	return &application.SingleInstanceOptions{
-		UniqueID: "ai.usemagpie.app.i" + hex.EncodeToString(sum[:6]),
+		UniqueID: "dev.fogway.app.i" + hex.EncodeToString(sum[:6]),
 		OnSecondInstanceLaunch: func(d application.SecondInstanceData) {
 			args := d.Args
 			if len(args) > 0 {
@@ -615,7 +618,7 @@ func (h *host) setBird(b []byte) {
 func panelOptions(goos, theme string) application.WebviewWindowOptions {
 	o := application.WebviewWindowOptions{
 		Name:            "panel",
-		Title:           "magpie",
+		Title:           "Fogway",
 		URL:             "/?mode=panel" + theme,
 		Width:           panelWidth,
 		Height:          520,
@@ -643,21 +646,21 @@ func panelOptions(goos, theme string) application.WebviewWindowOptions {
 	return o
 }
 
-// OpenPanel has Run open the quick panel once it starts, as `magpie panel`
-// does; a second `magpie panel` toggles it in the running one. Omarchy's bar
+// OpenPanel has Run open the quick panel once it starts, as `fogway panel`
+// does; a second `fogway panel` toggles it in the running one. Omarchy's bar
 // icon runs it (see omarchy.AddWidget).
 var OpenPanel bool
 
-// OpenView is the tab the window opens on, as `magpie gui settings` asks:
+// OpenView is the tab the window opens on, as `fogway gui settings` asks:
 // a restart to update comes back where it was asked for.
 var OpenView string
 
 // Started is called once the app has started, by when Wails handles SIGINT
 // and SIGTERM itself (it starts listening as it runs, before the app is
-// said to have started); until then a signal is magpie's to handle.
+// said to have started); until then a signal is fogway's to handle.
 var Started func()
 
-// setTrayInBar has the tray's item leave the bar's tray while magpie's icon
+// setTrayInBar has the tray's item leave the bar's tray while fogway's icon
 // is in Omarchy's bar as its widget, and come back once it isn't. The item
 // is there to be set a moment after the app has started; the newest call
 // wins.

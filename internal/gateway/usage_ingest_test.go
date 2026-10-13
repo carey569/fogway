@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/budget"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/usage"
-	"github.com/yetone/magpie/internal/usageapi"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/budget"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/usage"
+	"github.com/fogway/fogway/internal/usageapi"
 )
 
 type ingestReply struct {
@@ -37,16 +37,16 @@ type ingestReply struct {
 func ingestServer(t *testing.T) func(from, body string, hdr ...string) (int, ingestReply, string) {
 	t.Helper()
 	fresh(t)
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	os.MkdirAll(filepath.Dir(catalog.CachePath()), 0o755)
 	os.WriteFile(catalog.CachePath(), []byte(`{"anthropic":{"id":"anthropic","models":{"claude-opus-5-5":{"id":"claude-opus-5-5","cost":{"input":4,"output":20,"cache_read":0.2,"cache_write":5}}}}}`), 0o644)
 	catalog.Reset()
 	t.Cleanup(catalog.Reset)
 	h := lanGuard(New().Handler())
 	return func(from, body string, hdr ...string) (int, ingestReply, string) {
-		r := httptest.NewRequest("POST", "/v1/magpie/usage/requests", strings.NewReader(body))
+		r := httptest.NewRequest("POST", "/v1/fogway/usage/requests", strings.NewReader(body))
 		r.RemoteAddr = from
-		r.Host = "127.0.0.1:3425" // the address a client on this computer uses
+		r.Host = "127.0.0.1:3725" // the address a client on this computer uses
 		r.Header.Set("Content-Type", "application/json")
 		for i := 0; i+1 < len(hdr); i += 2 {
 			if hdr[i] == "Host" {
@@ -74,8 +74,8 @@ func reportedLines(t *testing.T) int {
 	return bytes.Count(b, []byte(`"source":"reported"`))
 }
 
-// POST /v1/magpie/usage/requests (#1874): this computer reports a call
-// it made itself and it is counted, priced at magpie's prices, as
+// POST /v1/fogway/usage/requests (#1874): this computer reports a call
+// it made itself and it is counted, priced at fogway's prices, as
 // reported; the same rid again is skipped; a call's own cost is kept; and
 // the page and GET tell the reported ones apart and filter them.
 func TestUsageIngest(t *testing.T) {
@@ -94,7 +94,7 @@ func TestUsageIngest(t *testing.T) {
 
 	h := lanGuard(New().Handler())
 	get := func(q string) usageapi.Ledger {
-		r := httptest.NewRequest("GET", "/v1/magpie/usage/requests?period=all"+q, nil)
+		r := httptest.NewRequest("GET", "/v1/fogway/usage/requests?period=all"+q, nil)
 		r.RemoteAddr = "127.0.0.1:5000"
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
@@ -205,7 +205,7 @@ func TestUsageIngestAccess(t *testing.T) {
 	if c, _, b := do("192.168.1.9:5000", rec); c != http.StatusUnauthorized {
 		t.Fatal("another machine with no key:", c, b)
 	}
-	if c, _, b := do("192.168.1.9:5000", rec, "Authorization", "Bearer sk-magpie-wrong-wrong-wrong"); c != http.StatusUnauthorized {
+	if c, _, b := do("192.168.1.9:5000", rec, "Authorization", "Bearer sk-fogway-wrong-wrong-wrong"); c != http.StatusUnauthorized {
 		t.Fatal("another machine with a wrong key:", c, b)
 	}
 	pages := [][]string{
@@ -219,7 +219,7 @@ func TestUsageIngestAccess(t *testing.T) {
 			t.Fatal("a page with no key:", hdr, c, b)
 		}
 		// a rebound name, a page that thinks it is its own origin
-		if c, _, b := do("127.0.0.1:5000", rec, append([]string{"Host", "rebound.example:3425"}, hdr...)...); c != http.StatusForbidden && c != http.StatusUnauthorized {
+		if c, _, b := do("127.0.0.1:5000", rec, append([]string{"Host", "rebound.example:3725"}, hdr...)...); c != http.StatusForbidden && c != http.StatusUnauthorized {
 			t.Fatal("a rebound page:", hdr, c, b)
 		}
 	}

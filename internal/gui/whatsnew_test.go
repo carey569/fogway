@@ -11,15 +11,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/update"
 )
 
-// The version last run is kept in magpie's folder, and the notes since are
+// The version last run is kept in fogway's folder, and the notes since are
 // shown once after an upgrade: not on a fresh install, nor offline.
 func TestWhatsNewAfterUpgrade(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", home)
-	dir := filepath.Join(home, "magpie")
+	dir := filepath.Join(home, "fogway")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"releases": []update.Note{
 			{Version: "0.1.604", Notes: "- four (#464)\n\n### Install\n\nlinks"},
@@ -28,8 +28,8 @@ func TestWhatsNewAfterUpgrade(t *testing.T) {
 		}})
 	}))
 	defer srv.Close()
-	t.Setenv("MAGPIE_NOTES_FEED", srv.URL)
-	t.Setenv("MAGPIE_UPDATE_FEED", "http://127.0.0.1:1/")
+	t.Setenv("FOGWAY_NOTES_FEED", srv.URL)
+	t.Setenv("FOGWAY_UPDATE_FEED", "http://127.0.0.1:1/")
 	old := Version
 	defer func() { Version = old }()
 	last := func() string {
@@ -94,12 +94,12 @@ func TestUpdateNotesWithoutInstall(t *testing.T) {
 	}
 }
 
-// A magpie from before the version was kept, already in use, shows its own
+// A fogway from before the version was kept, already in use, shows its own
 // version's notes; the site without the list yet leaves the update feed's.
 func TestWhatsNewFromBefore(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", home)
-	dir := filepath.Join(home, "magpie")
+	dir := filepath.Join(home, "fogway")
 	os.MkdirAll(dir, 0o755)
 	os.WriteFile(filepath.Join(dir, "settings.json"), []byte("{}"), 0o644)
 	os.Chtimes(filepath.Join(dir, "settings.json"), started.Add(-time.Hour), started.Add(-time.Hour))
@@ -107,8 +107,8 @@ func TestWhatsNewFromBefore(t *testing.T) {
 		json.NewEncoder(w).Encode(update.Release{Version: "0.1.604", Notes: "## Bug Fixes\n\n- four"})
 	}))
 	defer feed.Close()
-	t.Setenv("MAGPIE_UPDATE_FEED", feed.URL)
-	t.Setenv("MAGPIE_NOTES_FEED", feed.URL+"/404")
+	t.Setenv("FOGWAY_UPDATE_FEED", feed.URL)
+	t.Setenv("FOGWAY_NOTES_FEED", feed.URL+"/404")
 	old := Version
 	defer func() { Version = old }()
 	Version = "0.1.604"
@@ -120,12 +120,12 @@ func TestWhatsNewFromBefore(t *testing.T) {
 }
 
 // #525: the dialog comes up by itself on the first start of an update the
-// user didn't ask for from magpie; after "Restart to update" its notes wait
+// user didn't ask for from fogway; after "Restart to update" its notes wait
 // in Settings, and "Don't show again today" keeps it quiet for the day.
 func TestWhatsNewQuietAfterRestartToUpdate(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", home)
-	dir := filepath.Join(home, "magpie")
+	dir := filepath.Join(home, "fogway")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"releases": []update.Note{
 			{Version: "0.1.606", Notes: "- six"},
@@ -134,8 +134,8 @@ func TestWhatsNewQuietAfterRestartToUpdate(t *testing.T) {
 		}})
 	}))
 	defer srv.Close()
-	t.Setenv("MAGPIE_NOTES_FEED", srv.URL)
-	t.Setenv("MAGPIE_UPDATE_FEED", "http://127.0.0.1:1/")
+	t.Setenv("FOGWAY_NOTES_FEED", srv.URL)
+	t.Setenv("FOGWAY_UPDATE_FEED", "http://127.0.0.1:1/")
 	oldV, oldToday := Version, today
 	defer func() { Version, today = oldV, oldToday }()
 	day := "2026-10-02"
@@ -157,7 +157,7 @@ func TestWhatsNewQuietAfterRestartToUpdate(t *testing.T) {
 		updates.exe, updates.self, updates.latest, updates.staged = oExe, oSelf, oLatest, oStaged
 		updates.mu.Unlock()
 	}()
-	exe := filepath.Join(t.TempDir(), "magpie")
+	exe := filepath.Join(t.TempDir(), "fogway")
 	os.WriteFile(exe, []byte("old"), 0o755)
 	self, _ := os.Stat(exe)
 	os.WriteFile(exe, []byte("newer"), 0o755) // in already: install has nothing to swap

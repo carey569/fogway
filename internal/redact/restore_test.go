@@ -39,7 +39,7 @@ func TestRestoreRewrittenPlaceholder(t *testing.T) {
 		{"拨打 {{" + upper + "}} 即可", "拨打 " + phone + " 即可"},
 		{`{"to":"` + body + `"}`, `{"to":"` + phone + `"}`},
 		{"a {" + body + " b", "a {" + phone + " b"}, // a lone { is the text's
-		// not one of magpie's: another hash, inside a longer word
+		// not one of fogway's: another hash, inside a longer word
 		{"{{PHONE_zzzzzzzz}} x" + body + " " + body + "x", "{{PHONE_zzzzzzzz}} x" + body + " " + body + "x"},
 	} {
 		if got := Restore(c.in, false); got != c.want {

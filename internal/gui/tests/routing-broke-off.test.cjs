@@ -30,7 +30,7 @@ const answered = (id, i) => ({
   done: true, status: 200, ms: 3000, ttft: 300, tokens: 3000, out: 100,
 });
 const noted = {
-  id: 101, seq: 101, time: at(0), agent: "codex", model: "openai/gpt-6-luna", provider: "openai", error: "Codex titles are off in magpie's Settings, so magpie answered it itself",
+  id: 101, seq: 101, time: at(0), agent: "codex", model: "openai/gpt-6-luna", provider: "openai", error: "Codex titles are off in fogway's Settings, so fogway answered it itself",
   order: [key], tries: [{ id: key.id, model: key.model, start: at(0), done: true, status: 200, ms: 5, ttft: 5 }],
   done: true, status: 200, ms: 5, ttft: 5, tokens: 30, out: 20,
 };
@@ -77,7 +77,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
       t.after(async () => { await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-day").first().waitFor(); // the view is drawn
       await page.locator(".rt-day:visible").nth(1).click(); // Live, then the day with the requests
       const first = page.locator(".rt-req").nth(1); // the broken-off one, under the newer noted 200
@@ -99,7 +99,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
   }
 }
 
-// A 200 whose error is magpie's own note — Codex's titles turned off in
+// A 200 whose error is fogway's own note — Codex's titles turned off in
 // Settings, a title reply with no title in it — answered: its try has no
 // fail. The rule reads the tries, not the route's error, so the row stays
 // a green dot rather than turning every titled thread's first request red
@@ -115,7 +115,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
       t.after(async () => { await browser.close(); });
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-day").first().waitFor(); // the view is drawn
       await page.locator(".rt-day:visible").nth(1).click();
       const first = page.locator(".rt-req").first(); // the noted 200, newer than the broken-off one

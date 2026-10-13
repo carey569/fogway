@@ -1,12 +1,12 @@
 // fontdpi_probe opens a GTK 3 window with a WebKitGTK page and prints what
 // the page measures. argv[1] is the font DPI GDK is left with before the
 // first webview (-1 is GDK's unset value, #1371). Built with
-// -DMAGPIE_FONT_DPI it runs magpie's guard first, as the app does.
+// -DFOGWAY_FONT_DPI it runs fogway's guard first, as the app does.
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef MAGPIE_FONT_DPI
+#ifdef FOGWAY_FONT_DPI
 #include "fontdpi_gtk3.h"
 #endif
 
@@ -49,8 +49,8 @@ int main(int argc, char **argv) {
 		return 3;
 	printf("initial dpi=%g\n", gdk_screen_get_resolution(gdk_screen_get_default()));
 	gdk_screen_set_resolution(gdk_screen_get_default(), g_ascii_strtod(argv[1], NULL));
-#ifdef MAGPIE_FONT_DPI
-	printf("guard=%d\n", magpie_font_dpi());
+#ifdef FOGWAY_FONT_DPI
+	printf("guard=%d\n", fogway_font_dpi());
 #endif
 	loop = g_main_loop_new(NULL, FALSE);
 	GtkWidget *w = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 	g_signal_connect(view, "load-changed", G_CALLBACK(loaded), NULL);
 	gtk_widget_show_all(w);
 	webkit_web_view_load_html(WEBKIT_WEB_VIEW(view),
-		"<!doctype html><meta name=viewport content='width=device-width'><style>body{margin:0;font:16px sans-serif}</style><p>magpie</p>", NULL);
+		"<!doctype html><meta name=viewport content='width=device-width'><style>body{margin:0;font:16px sans-serif}</style><p>fogway</p>", NULL);
 	g_timeout_add_seconds(20, timeout, NULL);
 	g_main_loop_run(loop);
 	return status;

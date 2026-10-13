@@ -9,27 +9,27 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Routing groups from the terminal: what the Routing view does, through
 // the same provider.SaveGroup, DeleteGroup and ShowGroup.
 
 const groupUsage = `usage:
-  magpie groups                           list routing groups: yours, then those magpie found
-  magpie group <id>                       show one group and its models (also: magpie group show <id>)
-  magpie group add <name> models=<m1>[,m2…] [routing=…] [stays=…]
+  fogway groups                           list routing groups: yours, then those fogway found
+  fogway group <id>                       show one group and its models (also: fogway group show <id>)
+  fogway group add <name> models=<m1>[,m2…] [routing=…] [stays=…]
                                           make a group; agents pick it as group/<id>, the id made from the name;
                                           a name in use replaces that group
-  magpie group set <id> k=v…              change one: name, models (the whole list, in order, patterns too),
+  fogway group set <id> k=v…              change one: name, models (the whole list, in order, patterns too),
                                           models+=<m>[,m2…] (append), models-=<m>[,m2…] (drop), routing, stays,
                                           context (how long a request agents are told it takes: 272k; smallest
                                           is its smallest model's; empty is its largest model's), levels (the reasoning levels agents are offered:
                                           levels=none,low,medium,high,xhigh,max; empty is those every model has —
                                           a model without the one asked is sent its nearest),
-                                          family (a tag: magpie visible shows agents families, not each group),
+                                          family (a tag: fogway visible shows agents families, not each group),
                                           id (what agents pick it as: id=gpt-6-astra drops auto-; the groups
                                           it is in follow; an agent set to the old id needs setting again),
                                           effort=auto (the classifier picks each turn's reasoning; needs classifier=),
@@ -40,32 +40,32 @@ const groupUsage = `usage:
                                           1 to 1000; a model not named keeps its own, 1 by default; empty for all 1),
                                           listed=no (its models leave the lists agents see, offered through the
                                           group alone; listed=yes lists them too again)
-  magpie group pick <id> <model>          route the group manually, every request to that one of its models
+  fogway group pick <id> <model>          route the group manually, every request to that one of its models
                                           (as clicking it on the group's card in the Routing view does)
-  magpie group copy <id> [name]           duplicate a group with its models, routing and rules, listed after it
-                                          (name: "<its name> copy" when left out; also: magpie group duplicate)
-  magpie group template [kind] [name]     a group for a common need, made of your own models in one go; without
+  fogway group copy <id> [name]           duplicate a group with its models, routing and rules, listed after it
+                                          (name: "<its name> copy" when left out; also: fogway group duplicate)
+  fogway group template [kind] [name]     a group for a common need, made of your own models in one go; without
                                           a kind, lists them and the models each would take: smart (hard turns
                                           to the strongest model, easy ones to a cheap one, a classifier telling
                                           them apart), thrifty (a cheap model first, the strongest for high
                                           reasoning or when the cheap ones fail), steady (the strongest model of
                                           each of up to three providers, each behind the other). A name or id in
                                           use is numbered, never replaced
-  magpie group rm <id>…                   remove groups (one magpie found is hidden instead)
-  magpie group restore <id>               bring back a group magpie found that you removed
-  magpie group auto [on|off]              whether magpie finds groups on its own (on by default); off, none is
+  fogway group rm <id>…                   remove groups (one fogway found is hidden instead)
+  fogway group restore <id>               bring back a group fogway found that you removed
+  fogway group auto [on|off]              whether fogway finds groups on its own (on by default); off, none is
                                           listed or served — yours, and found ones you changed, stay — and an
                                           agent set to one is moved to its model from one provider; on brings
                                           them back
-  magpie group rule add|rm|mv <id> …      rules: which model a turn goes to first, by its length, an image,
-                                          the reasoning asked for or the agent (magpie group rule help)
+  fogway group rule add|rm|mv <id> …      rules: which model a turn goes to first, by its length, an image,
+                                          the reasoning asked for or the agent (fogway group rule help)
 
-  magpie finds a group for each model two or more providers serve (auto-<model>, never stored;
-  magpie group auto off stops it);
+  fogway finds a group for each model two or more providers serve (auto-<model>, never stored;
+  fogway group auto off stops it);
   removing one stores {"id":…,"hidden":true} in providers.json, which is what keeps it removed:
   take that record out of the file and the group is back
 
-  models   provider/model ids as magpie models lists them; a bare model id works when one provider serves it;
+  models   provider/model ids as fogway models lists them; a bare model id works when one provider serves it;
            group/<id> puts another group in it, routed by its own routing and rules in its place —
            never one the group is in already (that would put it in itself), at most 8 groups deep
            provider/model:<effort> fixes the member's reasoning — none, minimal, low, medium, high, xhigh
@@ -75,13 +75,13 @@ const groupUsage = `usage:
            provider/model[:effort]:fast sends the member in its vendor's fast mode: priority processing on a
            ChatGPT account (Codex's Fast) or an OpenAI key, Cursor's -fast model, Claude's fast mode on an
            Anthropic key for Opus 4.8 and 5; a model without one is refused (codex/gpt-6.1-sol:high:fast)
-           a pattern puts in every model it matches, as magpie models lists them now and later: a glob, where
+           a pattern puts in every model it matches, as fogway models lists them now and later: a glob, where
            * is any run of characters, / too, over the provider/model id in any case (openrouter/*:free,
            *-free, opencode-zen/*), or re:<regexp> matching the whole id (re:openrouter/.*:(free|beta)).
            Quote it for the shell. The group keeps the pattern, not its models: one the vendor adds joins,
            one it drops leaves. The models you name come first, in your order, then those the patterns
-           match, in the order magpie models lists them; one both named and matched keeps its named place.
-           A pattern never matches a group. models-=<pattern> drops the pattern; magpie group <id> shows
+           match, in the order fogway models lists them; one both named and matched keeps its named place.
+           A pattern never matches a group. models-=<pattern> drops the pattern; fogway group <id> shows
            how many models each matches now, and says when one matches nothing
   routing  smart   (default) of the subscriptions with quota to spare, the one renewing soonest first
            order   the first model until it can't answer, then the next
@@ -102,21 +102,21 @@ const groupUsage = `usage:
                    account that answered is still asked and its error goes to the agent
   effort   agent   (default) each request reasons as much as the agent asked, but at a member's own :<effort>
            auto    as a turn begins, the group's classifier — Jev, from a TypeSafe provider
-                   (magpie provider add typesafe key=…), or any model, as Jev Router on OpenRouter,
+                   (fogway provider add typesafe key=…), or any model, as Jev Router on OpenRouter,
                    asked in words — rates how hard it is, and the turn's requests
                    reason at low, medium, high or xhigh; only those the agent asked to reason
 
-  e.g. magpie group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=order
-       magpie group set opus-anywhere stays=session models+=openrouter/anthropic/claude-opus-5.5
-       magpie group set auto-gpt-6-astra id=gpt-6-astra
-       magpie group add Everything models=group/opus-anywhere,deepseek/deepseek-v4-flash routing=order
-       magpie group set opus-anywhere effort=auto classifier=typesafe/jev-latest
-       magpie group add Fast models=codex/gpt-5.6-luna:low,deepseek/deepseek-v4-flash,glm/glm-5.3-flash:high
-       magpie group set fast models+=gcloud/gemini-3.8-flash:medium
-       magpie group add my-free-pool models='openrouter/*:free,opencode-zen/*-free' routing=order
-       magpie group set opus-anywhere routing=weight weight=claude/claude-opus-5-5=3
-       magpie group pick opus-anywhere copilot/claude-opus-5.5
-       magpie claude group/opus-anywhere`
+  e.g. fogway group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=order
+       fogway group set opus-anywhere stays=session models+=openrouter/anthropic/claude-opus-5.5
+       fogway group set auto-gpt-6-astra id=gpt-6-astra
+       fogway group add Everything models=group/opus-anywhere,deepseek/deepseek-v4-flash routing=order
+       fogway group set opus-anywhere effort=auto classifier=typesafe/jev-latest
+       fogway group add Fast models=codex/gpt-5.6-luna:low,deepseek/deepseek-v4-flash,glm/glm-5.3-flash:high
+       fogway group set fast models+=gcloud/gemini-3.8-flash:medium
+       fogway group add my-free-pool models='openrouter/*:free,opencode-zen/*-free' routing=order
+       fogway group set opus-anywhere routing=weight weight=claude/claude-opus-5-5=3
+       fogway group pick opus-anywhere copilot/claude-opus-5.5
+       fogway claude group/opus-anywhere`
 
 // routingNames: each routing's value in the file, what the CLI calls it,
 // and the other spellings it takes.
@@ -153,7 +153,7 @@ func parseRouting(v string) (string, error) {
 		}
 		names = append(names, r.name)
 	}
-	return "", fmt.Errorf("routing %q is not one magpie has: %s", v, strings.Join(names, ", "))
+	return "", fmt.Errorf("routing %q is not one fogway has: %s", v, strings.Join(names, ", "))
 }
 
 func parseStays(v string) (string, error) {
@@ -165,7 +165,7 @@ func parseStays(v string) (string, error) {
 		}
 		names = append(names, s.name)
 	}
-	return "", fmt.Errorf("stays %q is not one magpie has: %s", v, strings.Join(names, ", "))
+	return "", fmt.Errorf("stays %q is not one fogway has: %s", v, strings.Join(names, ", "))
 }
 
 func routingName(v string) string {
@@ -237,7 +237,7 @@ func memberResolver(keep []string) func(string) (string, error) {
 	}
 	var resolve func(string) (string, error)
 	resolve = func(in string) (string, error) {
-		id := strings.TrimPrefix(strings.TrimSpace(in), "magpie/")
+		id := strings.TrimPrefix(strings.TrimSpace(in), "fogway/")
 		if slices.Contains(keep, id) {
 			return id, nil
 		}
@@ -268,7 +268,7 @@ func memberResolver(keep []string) func(string) (string, error) {
 					return provider.GroupPrefix + g.ID, nil
 				}
 			}
-			return "", fmt.Errorf("magpie has no group %q (magpie groups lists them)", gid)
+			return "", fmt.Errorf("fogway has no group %q (fogway groups lists them)", gid)
 		}
 		if slices.Contains(ids, id) || slices.Contains(keep, id) {
 			return id, nil
@@ -285,11 +285,11 @@ func memberResolver(keep []string) func(string) (string, error) {
 		default:
 			return "", fmt.Errorf("%s is served by %d providers; name one: %s", id, len(hits), strings.Join(hits, ", "))
 		}
-		msg := fmt.Sprintf("magpie knows no model %q", id)
+		msg := fmt.Sprintf("fogway knows no model %q", id)
 		if near := closeMatches(id, ids, 6); len(near) > 0 {
 			msg += "; did you mean " + strings.Join(near, ", ") + "?"
 		}
-		return "", fmt.Errorf("%s (magpie models lists them)", msg)
+		return "", fmt.Errorf("%s (fogway models lists them)", msg)
 	}
 	return resolve
 }
@@ -379,7 +379,7 @@ func applyGroupPairs(g *provider.Group, pairs []string, resolve func(string) (st
 	for _, kv := range pairs {
 		k, v, ok := strings.Cut(kv, "=")
 		if !ok {
-			return fmt.Errorf("expected key=value, got %q (magpie group help)", kv)
+			return fmt.Errorf("expected key=value, got %q (fogway group help)", kv)
 		}
 		var err error
 		switch strings.ToLower(strings.TrimSpace(k)) {
@@ -417,7 +417,7 @@ func applyGroupPairs(g *provider.Group, pairs []string, resolve func(string) (st
 		case "models-", "members-", "model-":
 			for _, m := range splitIDs(v, inGroup(g.Members)) {
 				if provider.IsPattern(m) {
-					m = strings.TrimPrefix(strings.TrimSpace(m), "magpie/")
+					m = strings.TrimPrefix(strings.TrimSpace(m), "fogway/")
 					i := slices.Index(g.Match, m)
 					if i < 0 {
 						return fmt.Errorf("%s is not one of the group's patterns (%s)", m, orNone(g.Match))
@@ -425,7 +425,7 @@ func applyGroupPairs(g *provider.Group, pairs []string, resolve func(string) (st
 					g.Match = slices.Delete(g.Match, i, i+1)
 					continue
 				}
-				m, _ = provider.MemberFast(strings.TrimPrefix(m, "magpie/"))
+				m, _ = provider.MemberFast(strings.TrimPrefix(m, "fogway/"))
 				i := slices.IndexFunc(g.Members, func(x string) bool { return strings.EqualFold(x, m) })
 				if i < 0 { // a bare model id, as models= takes it
 					i = slices.IndexFunc(g.Members, func(x string) bool {
@@ -492,7 +492,7 @@ func applyGroupPairs(g *provider.Group, pairs []string, resolve func(string) (st
 				err = fmt.Errorf("effort=auto (the classifier picks each turn's) or effort=agent (the agent's), not %q", v)
 			}
 		case "classifier", "classify":
-			g.Classifier = strings.TrimPrefix(strings.TrimSpace(v), "magpie/")
+			g.Classifier = strings.TrimPrefix(strings.TrimSpace(v), "fogway/")
 		case "fast":
 			// the members sent in their vendor's fast mode, as they are in
 			// the group
@@ -536,7 +536,7 @@ func applyGroupPairs(g *provider.Group, pairs []string, resolve func(string) (st
 			g.Pick, err = pickMember(g.Members, v)
 			g.Routing = provider.Manual
 		default:
-			return fmt.Errorf("unknown field %q (fields: name, models, models+, models-, routing, pick, stays, context, levels, family, effort, classifier, fast, weight, listed; magpie group help)", k)
+			return fmt.Errorf("unknown field %q (fields: name, models, models+, models-, routing, pick, stays, context, levels, family, effort, classifier, fast, weight, listed; fogway group help)", k)
 		}
 		if err != nil {
 			return err
@@ -548,7 +548,7 @@ func applyGroupPairs(g *provider.Group, pairs []string, resolve func(string) (st
 // pickMember is the group's member the user named: its id, or a bare
 // model id one member has.
 func pickMember(members []string, v string) (string, error) {
-	v = strings.TrimPrefix(strings.TrimSpace(v), "magpie/")
+	v = strings.TrimPrefix(strings.TrimSpace(v), "fogway/")
 	if i := slices.IndexFunc(members, func(x string) bool { return strings.EqualFold(x, v) }); i >= 0 {
 		return members[i], nil
 	}
@@ -570,7 +570,7 @@ func pickMember(members []string, v string) (string, error) {
 // findGroup looks a group up by its id, its catalog id or its name.
 func findGroup(ref string) (provider.Group, error) {
 	all := provider.Groups()
-	ref = strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(ref), "magpie/"), provider.GroupPrefix)
+	ref = strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(ref), "fogway/"), provider.GroupPrefix)
 	for _, match := range []func(provider.Group) bool{
 		func(g provider.Group) bool { return g.ID == ref },
 		func(g provider.Group) bool { return strings.EqualFold(g.ID, ref) },
@@ -587,7 +587,7 @@ func findGroup(ref string) (provider.Group, error) {
 		}
 	}
 	if len(ids) == 0 {
-		return provider.Group{}, fmt.Errorf("no group %q; there are none yet (magpie group add <name> models=…)", ref)
+		return provider.Group{}, fmt.Errorf("no group %q; there are none yet (fogway group add <name> models=…)", ref)
 	}
 	return provider.Group{}, fmt.Errorf("no group %q (groups: %s)", ref, strings.Join(ids, ", "))
 }
@@ -610,7 +610,7 @@ func newGroupID(name string) string {
 	return id
 }
 
-// groupCmd: `magpie group <verb> …`
+// groupCmd: `fogway group <verb> …`
 func groupCmd(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("%s", groupUsage)
@@ -622,7 +622,7 @@ func groupCmd(args []string) error {
 		return nil
 	case "add", "new":
 		if len(rest) == 0 || strings.Contains(rest[0], "=") {
-			return fmt.Errorf("magpie group add <name> models=<m1>[,m2…] [routing=…] [stays=…]\n\n%s", groupUsage)
+			return fmt.Errorf("fogway group add <name> models=<m1>[,m2…] [routing=…] [stays=…]\n\n%s", groupUsage)
 		}
 		verb := "added"
 		if slices.ContainsFunc(provider.Groups(), func(o provider.Group) bool {
@@ -638,7 +638,7 @@ func groupCmd(args []string) error {
 		return showGroup(g)
 	case "set", "edit":
 		if len(rest) < 2 {
-			return fmt.Errorf("magpie group set <id> k=v…\n\n%s", groupUsage)
+			return fmt.Errorf("fogway group set <id> k=v…\n\n%s", groupUsage)
 		}
 		g, err := setGroup(rest[0], rest[1:])
 		if err != nil {
@@ -652,7 +652,7 @@ func groupCmd(args []string) error {
 		return showGroup(g)
 	case "rm", "remove", "delete":
 		if len(rest) < 1 {
-			return fmt.Errorf("magpie group rm <id>…")
+			return fmt.Errorf("fogway group rm <id>…")
 		}
 		gs, err := removeGroups(rest)
 		if err != nil {
@@ -660,7 +660,7 @@ func groupCmd(args []string) error {
 		}
 		for _, g := range gs {
 			if g.Auto {
-				fmt.Println(green.Render("✓"), "removed", bold.Render(g.Name), muted.Render("· magpie found it, so it's hidden: magpie group restore "+g.ID+" brings it back"))
+				fmt.Println(green.Render("✓"), "removed", bold.Render(g.Name), muted.Render("· fogway found it, so it's hidden: fogway group restore "+g.ID+" brings it back"))
 			} else {
 				fmt.Println(green.Render("✓"), "removed", bold.Render(g.Name))
 			}
@@ -668,7 +668,7 @@ func groupCmd(args []string) error {
 		return nil
 	case "pick", "use":
 		if len(rest) != 2 {
-			return fmt.Errorf("magpie group pick <id> <model>")
+			return fmt.Errorf("fogway group pick <id> <model>")
 		}
 		g, err := setGroup(rest[0], []string{"pick=" + rest[1]})
 		if err != nil {
@@ -678,14 +678,14 @@ func groupCmd(args []string) error {
 		return showGroup(g)
 	case "copy", "duplicate", "dup", "clone":
 		if len(rest) < 1 {
-			return fmt.Errorf("magpie group copy <id> [name]")
+			return fmt.Errorf("fogway group copy <id> [name]")
 		}
 		src, err := findGroup(rest[0])
 		if err != nil {
 			return err
 		}
 		if src.Hidden {
-			return fmt.Errorf("%s was removed: magpie group restore %s brings it back first", src.ID, src.ID)
+			return fmt.Errorf("%s was removed: fogway group restore %s brings it back first", src.ID, src.ID)
 		}
 		g, err := provider.CopyGroup(src.ID, strings.Join(rest[1:], " "))
 		if err != nil {
@@ -699,7 +699,7 @@ func groupCmd(args []string) error {
 		return ruleCmd(rest)
 	case "show":
 		if len(rest) != 1 {
-			return fmt.Errorf("magpie group show <id>")
+			return fmt.Errorf("fogway group show <id>")
 		}
 		g, err := findGroup(rest[0])
 		if err != nil {
@@ -710,7 +710,7 @@ func groupCmd(args []string) error {
 		return autoGroupsCmd(rest)
 	case "restore", "unhide":
 		if len(rest) != 1 {
-			return fmt.Errorf("magpie group restore <id>")
+			return fmt.Errorf("fogway group restore <id>")
 		}
 		g, err := restoreGroup(rest[0])
 		if err != nil {
@@ -724,7 +724,7 @@ func groupCmd(args []string) error {
 		return showGroup(g)
 	}
 	if len(rest) > 0 {
-		return fmt.Errorf("magpie group has no %q\n\n%s", verb, groupUsage)
+		return fmt.Errorf("fogway group has no %q\n\n%s", verb, groupUsage)
 	}
 	g, err := findGroup(verb)
 	if err != nil {
@@ -740,7 +740,7 @@ func addGroup(name string, pairs []string) (provider.Group, error) {
 	}
 	if g.ID = strings.ToLower(strings.TrimSpace(g.ID)); g.ID != "" {
 		if old, err := findGroup(g.ID); err == nil && old.ID == g.ID {
-			return g, fmt.Errorf("there is a group %s already: magpie group set %s k=v… changes it", g.ID, g.ID)
+			return g, fmt.Errorf("there is a group %s already: fogway group set %s k=v… changes it", g.ID, g.ID)
 		}
 	} else {
 		// a group is known by its name: adding one under a name taken
@@ -757,7 +757,7 @@ func addGroup(name string, pairs []string) (provider.Group, error) {
 		g.Name = g.ID
 	}
 	if len(g.Members) == 0 && len(g.Match) == 0 {
-		return g, fmt.Errorf("a group needs a model in it: models=<provider/model>[,…] (magpie models lists them), or a pattern: models='openrouter/*:free'")
+		return g, fmt.Errorf("a group needs a model in it: models=<provider/model>[,…] (fogway models lists them), or a pattern: models='openrouter/*:free'")
 	}
 	if err := provider.SaveGroup(g); err != nil {
 		return g, err
@@ -771,14 +771,14 @@ func setGroup(ref string, pairs []string) (provider.Group, error) {
 		return g, err
 	}
 	if g.Hidden {
-		return g, fmt.Errorf("%s was removed: magpie group restore %s brings it back first", g.ID, g.ID)
+		return g, fmt.Errorf("%s was removed: fogway group restore %s brings it back first", g.ID, g.ID)
 	}
 	from := g.ID
 	if err := applyGroupPairs(&g, pairs, memberResolver(g.Members), true); err != nil {
 		return g, err
 	}
 	if len(g.Members) == 0 && len(g.Match) == 0 {
-		return g, fmt.Errorf("a group needs a model in it; magpie group rm %s removes it", from)
+		return g, fmt.Errorf("a group needs a model in it; fogway group rm %s removes it", from)
 	}
 	pruneRules(&g)
 	to := strings.ToLower(strings.TrimSpace(g.ID))
@@ -786,7 +786,7 @@ func setGroup(ref string, pairs []string) (provider.Group, error) {
 		return g, fmt.Errorf("a group's id must be lowercase letters, digits, dots and dashes, not %q", g.ID)
 	}
 	g.ID = from
-	if err := provider.SaveGroup(g); err != nil { // one magpie found is the user's now
+	if err := provider.SaveGroup(g); err != nil { // one fogway found is the user's now
 		return g, err
 	}
 	if to != from {
@@ -798,10 +798,10 @@ func setGroup(ref string, pairs []string) (provider.Group, error) {
 	return findGroup(to)
 }
 
-// removedOnly is a removed found group magpie doesn't find now (its model
+// removedOnly is a removed found group fogway doesn't find now (its model
 // is down to one provider): only its record is left, to keep it removed.
 func removedOnly(ref string) (string, bool) {
-	ref = strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(ref), "magpie/"), provider.GroupPrefix)
+	ref = strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(ref), "fogway/"), provider.GroupPrefix)
 	for _, id := range provider.RemovedGroups() {
 		if strings.EqualFold(id, ref) {
 			return id, true
@@ -824,7 +824,7 @@ func removeGroups(refs []string) ([]provider.Group, error) {
 			return nil, err
 		}
 		if g.Hidden {
-			return nil, fmt.Errorf("%s is removed already; magpie group restore %s brings it back", g.ID, g.ID)
+			return nil, fmt.Errorf("%s is removed already; fogway group restore %s brings it back", g.ID, g.ID)
 		}
 		gs, ids = append(gs, g), append(ids, g.ID)
 	}
@@ -835,12 +835,12 @@ func removeGroup(ref string) (provider.Group, error) {
 	g, err := findGroup(ref)
 	if err != nil {
 		if id, ok := removedOnly(ref); ok {
-			return g, fmt.Errorf("%s is removed already (and no two providers serve its model now); magpie group restore %s brings it back", id, id)
+			return g, fmt.Errorf("%s is removed already (and no two providers serve its model now); fogway group restore %s brings it back", id, id)
 		}
 		return g, err
 	}
 	if g.Hidden {
-		return g, fmt.Errorf("%s is removed already; magpie group restore %s brings it back", g.ID, g.ID)
+		return g, fmt.Errorf("%s is removed already; fogway group restore %s brings it back", g.ID, g.ID)
 	}
 	return g, provider.DeleteGroup(g.ID)
 }
@@ -870,7 +870,7 @@ func groupUses() map[string][]string {
 		if len(a.Fields) == 0 {
 			continue
 		}
-		v := strings.TrimPrefix(a.Fields[0].Get(), "magpie/")
+		v := strings.TrimPrefix(a.Fields[0].Get(), "fogway/")
 		// a group an agent is on carries Claude Code's [1m] mark, as a
 		// model's does, and these are the agents' own settings: the mark
 		// comes off before the id is looked up by it (GroupFinder)
@@ -925,16 +925,16 @@ func catalogByID() map[string]provider.Entry {
 	return out
 }
 
-// groups: `magpie groups`
-// autoGroupsCmd says whether magpie finds groups on its own, or turns
+// groups: `fogway groups`
+// autoGroupsCmd says whether fogway finds groups on its own, or turns
 // that on or off: off, the agents set to one are moved to its model from
 // one provider (agent.Reseat), as the Routing view's switch does.
 func autoGroupsCmd(args []string) error {
 	if len(args) == 0 {
 		if provider.AutoGroupsOn() {
-			fmt.Println("found groups are", green.Render("on"), muted.Render("· a model two or more providers serve is a group of them (auto-<model>); magpie group auto off turns them off"))
+			fmt.Println("found groups are", green.Render("on"), muted.Render("· a model two or more providers serve is a group of them (auto-<model>); fogway group auto off turns them off"))
 		} else {
-			fmt.Println("found groups are", amber.Render("off"), muted.Render("· only the groups you made or changed; magpie group auto on brings the others back"))
+			fmt.Println("found groups are", amber.Render("off"), muted.Render("· only the groups you made or changed; fogway group auto on brings the others back"))
 		}
 		return nil
 	}
@@ -944,10 +944,10 @@ func autoGroupsCmd(args []string) error {
 		on = true
 	case "off", "false", "no", "0":
 	default:
-		return fmt.Errorf("magpie group auto [on|off]")
+		return fmt.Errorf("fogway group auto [on|off]")
 	}
 	if len(args) > 1 {
-		return fmt.Errorf("magpie group auto [on|off]")
+		return fmt.Errorf("fogway group auto [on|off]")
 	}
 	moved, err := agent.Reseat(func() error { return provider.SetAutoGroups(on) })
 	if err != nil {
@@ -973,10 +973,10 @@ func groups() error {
 		}
 	}
 	if len(shown) == 0 {
-		fmt.Println(muted.Render("no routing groups yet ·"), "magpie group add <name> models=<m1>,<m2>", muted.Render("· magpie group help"))
+		fmt.Println(muted.Render("no routing groups yet ·"), "fogway group add <name> models=<m1>,<m2>", muted.Render("· fogway group help"))
 	}
 	if !provider.AutoGroupsOn() {
-		defer fmt.Println(" ", muted.Render("found groups are off · magpie group auto on brings them back"))
+		defer fmt.Println(" ", muted.Render("found groups are off · fogway group auto on brings them back"))
 	}
 	names, uses := catalogByID(), groupUses()
 	for _, e := range provider.Served() {
@@ -1056,7 +1056,7 @@ func groups() error {
 	}
 	if len(ids) > 0 {
 		fmt.Println()
-		fmt.Println(" ", muted.Render("removed: "+strings.Join(ids, ", ")+" · magpie group restore <id> brings one back"))
+		fmt.Println(" ", muted.Render("removed: "+strings.Join(ids, ", ")+" · fogway group restore <id> brings one back"))
 		fmt.Println(" ", muted.Render("  (each is a {\"hidden\": true} record in providers.json that keeps it removed; deleting the record brings it back)"))
 	}
 	return nil
@@ -1066,14 +1066,14 @@ func showGroup(g provider.Group) error {
 	kv := func(k, v string) { fmt.Printf("  %s %s\n", muted.Render(pad(k, 9)), v) }
 	head := bold.Render(g.Name) + muted.Render("  "+provider.GroupPrefix+g.ID)
 	if g.Auto {
-		head += faint.Render("  found by magpie — changing it makes it yours")
+		head += faint.Render("  found by fogway — changing it makes it yours")
 	}
 	if g.Hidden {
-		head += amber.Render("  removed") + muted.Render(" · magpie group restore "+g.ID)
+		head += amber.Render("  removed") + muted.Render(" · fogway group restore "+g.ID)
 	}
 	fmt.Println(" ", head)
 	if g.Routing == provider.Manual {
-		kv("routing", "manual"+muted.Render("  every request to "+g.Picked()+"; magpie group pick "+g.ID+" <model> picks another"))
+		kv("routing", "manual"+muted.Render("  every request to "+g.Picked()+"; fogway group pick "+g.ID+" <model> picks another"))
 	} else {
 		kv("routing", routingName(g.Routing))
 	}
@@ -1156,7 +1156,7 @@ func showGroup(g provider.Group) error {
 }
 
 // whyNotServed is why a group's member isn't served: most often a model its
-// provider's list has but doesn't expose, which `magpie provider models
+// provider's list has but doesn't expose, which `fogway provider models
 // <id> +<model>` puts right (MOMO on Discord: opencode-go/deepseek-flash).
 func whyNotServed(member string) string {
 	pid, model, ok := strings.Cut(member, "/")
@@ -1172,12 +1172,12 @@ func whyNotServed(member string) string {
 	}
 	if slices.ContainsFunc(p.Available(), func(m catalog.Model) bool { return m.ID == model }) &&
 		!slices.ContainsFunc(p.Exposed(), func(m catalog.Model) bool { return m.ID == model }) {
-		return "not served: not exposed · magpie provider models " + p.ID + " +" + model
+		return "not served: not exposed · fogway provider models " + p.ID + " +" + model
 	}
 	return "not served"
 }
 
-// templateCmd: magpie group template [kind] [name] (provider.Templates):
+// templateCmd: fogway group template [kind] [name] (provider.Templates):
 // each template and the models it would take, or one of them added.
 func templateCmd(rest []string) error {
 	if len(rest) == 0 {
@@ -1192,7 +1192,7 @@ func templateCmd(rest []string) error {
 				fmt.Println("  " + muted.Render("classifier "+tp.Group.Classifier))
 			}
 		}
-		fmt.Println(muted.Render("magpie group template <kind> [name] adds one"))
+		fmt.Println(muted.Render("fogway group template <kind> [name] adds one"))
 		return nil
 	}
 	kind := strings.ToLower(rest[0])

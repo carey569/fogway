@@ -11,21 +11,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/update"
 )
 
-// whatsNew shows what changed once magpie runs a newer release than it last
+// whatsNew shows what changed once fogway runs a newer release than it last
 // did (a Discord user: to see whether their issue was fixed). The version it
-// last ran is kept in magpie's own folder; as it starts on a newer one, the
+// last ran is kept in fogway's own folder; as it starts on a newer one, the
 // notes of every release since are asked of the site (where the update feed
-// is) the first time a window or magpie web's page asks, and shown once.
+// is) the first time a window or fogway web's page asks, and shown once.
 // Offline, nothing is shown. Settings can open them again. The notes are
 // in the page's language, Chinese or English, where a release has them in
 // it (freecss on Discord: they should follow Settings' language).
 //
 // The dialog comes up by itself only on the first start of a version the
-// user didn't ask for from inside magpie (#525: releases come many a day,
+// user didn't ask for from inside fogway (#525: releases come many a day,
 // and a dialog after every "Restart to update" is in the way): a restart
 // into an update leaves a note of the version it installs, and that version
 // starting finds it and keeps quiet; the notes are still a click away in
@@ -42,7 +42,7 @@ type whatsNew struct {
 
 var news = &whatsNew{}
 
-// started is when this process began, to tell magpie's folder from before
+// started is when this process began, to tell fogway's folder from before
 // it apart from one this run just made.
 var started = time.Now()
 
@@ -121,8 +121,8 @@ func (n *whatsNew) start() {
 	}
 }
 
-// usedBefore is whether magpie's folder held its files before this run: a
-// magpie from before the version was kept, not a fresh install.
+// usedBefore is whether fogway's folder held its files before this run: a
+// fogway from before the version was kept, not a fresh install.
 func usedBefore(dir string) bool {
 	for _, f := range []string{"settings.json", "providers.json"} {
 		if fi, err := os.Stat(filepath.Join(dir, f)); err == nil && fi.ModTime().Before(started) {
@@ -168,7 +168,7 @@ func (n *whatsNew) get(ctx context.Context, all bool, lang string) whatsNewJSON 
 		if err != nil {
 			j.Error = err.Error()
 		}
-		if len(notes) > 0 { // kept: they don't change while magpie runs
+		if len(notes) > 0 { // kept: they don't change while fogway runs
 			n.mu.Lock()
 			if n.notes == nil {
 				n.notes = map[string][]update.Note{}

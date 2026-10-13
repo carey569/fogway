@@ -4,19 +4,19 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// TestClaudeAutoModeReview: Claude Code in auto mode behind magpie on a
+// TestClaudeAutoModeReview: Claude Code in auto mode behind fogway on a
 // model Anthropic doesn't review (1EFLOPS on X, on Codex's gpt-6.1-sol)
 // said "this session isn't eligible because your requests go through
-// 127.0.0.1:3425…". Anthropic's page says to turn the review off
-// (CLAUDE_CODE_AUTO_MODE_SERVER=0) for a gateway that can't run it: magpie
+// 127.0.0.1:3725…". Anthropic's page says to turn the review off
+// (CLAUDE_CODE_AUTO_MODE_SERVER=0) for a gateway that can't run it: fogway
 // does while no model Claude Code can reach through it is reviewed, and
 // leaves it on while one is, shown or behind a group or a fallback. A
-// value of the user's is theirs, and magpie's goes when Claude Code is
-// taken off magpie.
+// value of the user's is theirs, and fogway's goes when Claude Code is
+// taken off fogway.
 func TestClaudeAutoModeReview(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -118,10 +118,10 @@ func TestClaudeAutoModeReview(t *testing.T) {
 		t.Fatalf("fallback gone: %q, want 0", review())
 	}
 
-	// off magpie, onto Claude Code's own model, and reset: magpie's goes
+	// off fogway, onto Claude Code's own model, and reset: fogway's goes
 	set("model", "claude-opus-4-8")
 	if review() != "" {
-		t.Fatalf("Claude's own model kept magpie's value: %q", review())
+		t.Fatalf("Claude's own model kept fogway's value: %q", review())
 	}
 	set("model", "v/gpt-x")
 	if review() != "0" {
@@ -129,7 +129,7 @@ func TestClaudeAutoModeReview(t *testing.T) {
 	}
 	set("model", "")
 	if review() != "" {
-		t.Fatalf("reset kept magpie's value: %q", review())
+		t.Fatalf("reset kept fogway's value: %q", review())
 	}
 
 	// the user's own value is theirs, through a switch, Sync and reset

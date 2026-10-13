@@ -226,7 +226,7 @@ test("with Safari 15.0's built-ins, the panel and the window draw every page", a
       page.on("pageerror", (e) => errors.push(e.message));
       await page.addInitScript(TAKEN);
       await page.route("**/*", serve);
-      await page.goto(`http://magpie.test/?mode=${mode}`);
+      await page.goto(`http://fogway.test/?mode=${mode}`);
       await page.locator("#agents .row").first().waitFor();
       assert.equal(await page.evaluate(() => [1, 2, 3].findLast((x) => x < 3)), 2, "compat.js fills findLast in");
       assert.deepEqual(await page.evaluate(() => { const a = { b: [1] }, c = structuredClone(a); return [c.b[0], c !== a && c.b !== a.b]; }), [1, true]);

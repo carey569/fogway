@@ -43,7 +43,7 @@ async function serve(route) {
   if (url.pathname === "/api/whatsnew") return json({});
   if (url.pathname === "/api/upstream") return json({ vendors: [], providers: {} });
   // the sidebar's gateway line, when no page has read the providers
-  if (url.pathname === "/api/providers") return json({ providers: [], gateway: { url: "http://127.0.0.1:3425", running: true } });
+  if (url.pathname === "/api/providers") return json({ providers: [], gateway: { url: "http://127.0.0.1:3725", running: true } });
   assert(!url.pathname.startsWith("/api/"), "Unexpected API: " + url.pathname);
   const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
   const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
@@ -88,7 +88,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const errors = [];
     page.on("pageerror", e => errors.push(e.message));
     await page.route("**/*", serve);
-    await page.addInitScript(() => localStorage.setItem("magpie.usageTab", "sessions"));
+    await page.addInitScript(() => localStorage.setItem("fogway.usageTab", "sessions"));
     await context.tracing.start({ screenshots: true, snapshots: true });
     t.after(async () => {
       try {
@@ -100,9 +100,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       } finally { await browser.close(); }
     });
     async function reset() {
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator("#sessFolder:not([hidden])").waitFor();
-      assert.equal(await page.title(), "magpie");
+      assert.equal(await page.title(), "fogway");
       assert.equal(await page.locator("#sessList .sess-item").count(), 40);
       // Always-visible scrollbars make track/thumb input independent of OS preferences.
       await page.addStyleTag({ content: `

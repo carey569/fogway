@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// A sign-in to an account magpie lists already is said to be one (#413:
+// A sign-in to an account fogway lists already is said to be one (#413:
 // WorkBuddy's page offers the account WorkBuddy is signed in to, and adding
 // it read as if a new one came in, or as nothing at all). Add another
 // WorkBuddy account, the sign-in comes back done with again: the status
@@ -71,8 +71,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // the vendor's sign-in page, opened in a new window, gets an empty page:
         // the real one is a page the test can't control (ChatGPT's Cloudflare
         // challenge hung clicks on this page in Chromium, #1307)
-        await page.context().route((url) => url.hostname !== "magpie.test", (route) => route.fulfill({ contentType: "text/html", body: "" }));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.context().route((url) => url.hostname !== "fogway.test", (route) => route.fulfill({ contentType: "text/html", body: "" }));
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator(".row.provider", { hasText: "WorkBuddy" }).click();
         const add = page.locator(".editor .accts .acc.add").first();
         await add.waitFor();

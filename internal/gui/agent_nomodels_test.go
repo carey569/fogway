@@ -10,7 +10,7 @@ import (
 )
 
 // Tystem on Discord: connecting Codex with no provider or subscription in
-// magpie answered "Codex can't be connected to magpie", untranslated. The
+// fogway answered "Codex can't be connected to fogway", untranslated. The
 // answer carries code no_models and the agent's name, which the GUI says
 // in the reader's language.
 func TestAgentConnectNoModels(t *testing.T) {

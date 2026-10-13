@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 func TestCallerKeyManagementAndUsageRoutes(t *testing.T) {

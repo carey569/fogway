@@ -87,7 +87,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, asked));
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings&tab=usage");
+        await page.goto("http://fogway.test/?view=settings&tab=usage");
         await settingsDrawn(page);
         const tab = page.locator("#warmTab-wb");
         await tab.waitFor();
@@ -130,7 +130,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, asked));
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         await settingsDrawn(page);
         const rows = page.locator(".subscription-card", { hasText: "WorkBuddy" }).locator(".wb-checkin");
         await rows.first().waitFor();

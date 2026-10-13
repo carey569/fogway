@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // probeScript is a CLI that is a script starting another program and
@@ -87,7 +87,7 @@ func TestProbeTimeoutEndsWhatItStarted(t *testing.T) {
 	}
 }
 
-// a probe still asking when magpie exits is ended with it, rather than
+// a probe still asking when fogway exits is ended with it, rather than
 // left to init
 func TestEndProbes(t *testing.T) {
 	sh, pidFile := probeScript(t)
@@ -185,14 +185,14 @@ func missFor(t *testing.T, d time.Duration) {
 	t.Cleanup(func() { signalGroup = old })
 }
 
-// magpie exiting right after EndProbes leaves nothing of a probe running,
+// fogway exiting right after EndProbes leaves nothing of a probe running,
 // even when the kill missed some of it at first (JJ-Lin's case on #1278):
 // EndProbes returned after the first signal, the exit ended the loop that
 // signals the group again, and the missed child lived on, adopted by init.
-// The exit is a real one: the test runs itself as a magpie that ends its
+// The exit is a real one: the test runs itself as a fogway that ends its
 // probes and exits at once.
 func TestEndProbesThenExitLeavesNothing(t *testing.T) {
-	if os.Getenv("MAGPIE_PROC_EXIT_HELPER") == "1" {
+	if os.Getenv("FOGWAY_PROC_EXIT_HELPER") == "1" {
 		missFor(t, 300*time.Millisecond)
 		sh, pidFile := probeScript(t)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -208,10 +208,10 @@ func TestEndProbesThenExitLeavesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(self, "-test.run=^TestEndProbesThenExitLeavesNothing$")
-	cmd.Env = append(os.Environ(), "MAGPIE_PROC_EXIT_HELPER=1")
+	cmd.Env = append(os.Environ(), "FOGWAY_PROC_EXIT_HELPER=1")
 	out, err := cmd.Output()
 	if err != nil {
-		t.Fatalf("the exiting magpie: %v\n%s", err, out)
+		t.Fatalf("the exiting fogway: %v\n%s", err, out)
 	}
 	var pid int
 	for _, l := range strings.Split(string(out), "\n") {
@@ -220,10 +220,10 @@ func TestEndProbesThenExitLeavesNothing(t *testing.T) {
 		}
 	}
 	if pid == 0 {
-		t.Fatalf("the exiting magpie named no child:\n%s", out)
+		t.Fatalf("the exiting fogway named no child:\n%s", out)
 	}
 	t.Cleanup(func() { _ = syscall.Kill(pid, syscall.SIGKILL) })
 	if !gone(pid) {
-		t.Fatalf("what the probe started (pid %d) outlived magpie's exit after EndProbes", pid)
+		t.Fatalf("what the probe started (pid %d) outlived fogway's exit after EndProbes", pid)
 	}
 }

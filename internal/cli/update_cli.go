@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/update"
 )
 
 // updateExecutable, updateCanElevate and updateInContainer are
@@ -21,11 +21,11 @@ var (
 	updateInContainer = gateway.InContainer
 )
 
-// updateEveries are the intervals magpie update auto takes, by their
+// updateEveries are the intervals fogway update auto takes, by their
 // minutes in settings.UpdateEveries.
 var updateEveries = map[string]int{"30m": 30, "1h": 60, "6h": 360, "24h": 1440}
 
-// updateAutoCmd is `magpie update auto [on|off] [30m|1h|6h|24h]`: whether
+// updateAutoCmd is `fogway update auto [on|off] [30m|1h|6h|24h]`: whether
 // the app asks for a newer version (and downloads it) by itself, and how
 // often (#472). With neither, it says how it is set.
 func updateAutoCmd(args []string) error {
@@ -37,7 +37,7 @@ func updateAutoCmd(args []string) error {
 		default:
 			m, ok := updateEveries[a]
 			if !ok {
-				return fmt.Errorf("magpie update auto takes on, off or how often (30m, 1h, 6h or 24h), not %q", a)
+				return fmt.Errorf("fogway update auto takes on, off or how often (30m, 1h, 6h or 24h), not %q", a)
 			}
 			s.UpdateEvery = m
 		}
@@ -54,20 +54,20 @@ func updateAutoCmd(args []string) error {
 		}
 	}
 	if s.NoAutoUpdate {
-		fmt.Println("automatic updates are off", muted.Render("· magpie update or Settings' Check looks for one (every "+every+" when on)"))
+		fmt.Println("automatic updates are off", muted.Render("· fogway update or Settings' Check looks for one (every "+every+" when on)"))
 		return nil
 	}
-	fmt.Println("automatic updates are on", muted.Render("· magpie looks for a newer version every "+every+" and downloads it"))
+	fmt.Println("automatic updates are on", muted.Render("· fogway looks for a newer version every "+every+" and downloads it"))
 	return nil
 }
 
-// updateMirrorCmd is `magpie update mirror [<prefix>|off]`: the GitHub
+// updateMirrorCmd is `fogway update mirror [<prefix>|off]`: the GitHub
 // download mirror every update goes through, the app's own among them
 // (settings.UpdateMirror). With nothing, it says which.
 func updateMirrorCmd(args []string) error {
 	s := settings.Load()
 	if len(args) > 1 {
-		return fmt.Errorf("magpie update mirror takes one prefix, or off")
+		return fmt.Errorf("fogway update mirror takes one prefix, or off")
 	}
 	if len(args) == 1 {
 		switch m := strings.TrimSpace(args[0]); m {
@@ -84,10 +84,10 @@ func updateMirrorCmd(args []string) error {
 		}
 	}
 	if s.UpdateMirror == "" {
-		fmt.Println("updates are downloaded from GitHub", muted.Render("· magpie update mirror <prefix> has them come through a mirror; the checksum is still usemagpie.ai's"))
+		fmt.Println("updates are downloaded from GitHub", muted.Render("· fogway update mirror <prefix> has them come through a mirror; the checksum is still the update feed's"))
 		return nil
 	}
-	fmt.Println("updates are downloaded through", bold.Render(s.UpdateMirror), muted.Render("· each is checked against usemagpie.ai's checksum · magpie update mirror off goes back to GitHub"))
+	fmt.Println("updates are downloaded through", bold.Render(s.UpdateMirror), muted.Render("· each is checked against the update feed's checksum · fogway update mirror off goes back to GitHub"))
 	return nil
 }
 
@@ -125,7 +125,7 @@ func updateFlags(args []string) (rest []string, proxy, mirror string, err error)
 	return rest, proxy, mirror, nil
 }
 
-// updateCmd is `magpie update [check] [--proxy <url>] [--mirror <prefix>]`:
+// updateCmd is `fogway update [check] [--proxy <url>] [--mirror <prefix>]`:
 // the app replaces its bundle, the terminal build its binary.
 func updateCmd(args []string) error {
 	args, proxy, mirror, err := updateFlags(args)
@@ -139,7 +139,7 @@ func updateCmd(args []string) error {
 		return updateMirrorCmd(args[2:])
 	}
 	if len(args) > 2 || len(args) == 2 && args[1] != "check" {
-		return fmt.Errorf("usage: magpie update [check] [--proxy <url>] [--mirror <prefix>]")
+		return fmt.Errorf("usage: fogway update [check] [--proxy <url>] [--mirror <prefix>]")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
@@ -150,22 +150,22 @@ func updateCmd(args []string) error {
 	}
 	if !update.Newer(rel.Version, version) {
 		if update.Released(version) {
-			fmt.Println(green.Render("✓"), "magpie", version, muted.Render("is the latest"))
+			fmt.Println(green.Render("✓"), "fogway", version, muted.Render("is the latest"))
 		} else {
-			fmt.Println("magpie", version, muted.Render("was built from source; the latest release is "+rel.Version))
+			fmt.Println("fogway", version, muted.Render("was built from source; the latest release is "+rel.Version))
 		}
 		return nil
 	}
-	fmt.Println("magpie", bold.Render(rel.Version), "is out", muted.Render("(you have "+version+") · "+rel.URL))
+	fmt.Println("fogway", bold.Render(rel.Version), "is out", muted.Render("(you have "+version+") · "+rel.URL))
 	if len(args) > 1 && args[1] == "check" {
 		return nil
 	}
 	if !update.Released(version) {
-		return fmt.Errorf("this magpie was built from source; update it the way you built it, or get the release from %s", update.Site)
+		return fmt.Errorf("this fogway was built from source; update it the way you built it, or get the release from %s", update.Site)
 	}
 	if app := update.Bundle(); app != "" {
 		if update.Stuck(app) != "" {
-			return fmt.Errorf("%s can't be replaced where it is; move magpie to Applications, or download the new version from %s", tilde(app), update.Site)
+			return fmt.Errorf("%s can't be replaced where it is; move fogway to Applications, or download the new version from %s", tilde(app), update.Site)
 		}
 		fmt.Println(muted.Render("  downloading " + update.AppAsset() + via(ctx) + " …"))
 		staged, err := update.Stage(ctx, rel, app)
@@ -179,23 +179,23 @@ func updateCmd(args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(green.Render("✓"), "updated", tilde(app), "to", rel.Version, muted.Render("· quit and reopen magpie to use it"))
+		fmt.Println(green.Render("✓"), "updated", tilde(app), "to", rel.Version, muted.Render("· quit and reopen fogway to use it"))
 		if stale := update.StaleCLI(rel.Version); stale != "" {
 			// The copy won't follow the app; the fix is the link install.sh
-			// makes. `magpie update` run from the copy can't do it (it
+			// makes. `fogway update` run from the copy can't do it (it
 			// replaces the copy with another copy), so name the real step.
-			bin := filepath.Join(app, "Contents", "MacOS", "magpie")
-			fmt.Println(muted.Render("  the `magpie` command at " + tilde(stale) + " is a copy behind this app; re-run the installer, or link it: ln -sf " + tilde(bin) + " " + tilde(stale)))
+			bin := filepath.Join(app, "Contents", "MacOS", "fogway")
+			fmt.Println(muted.Render("  the `fogway` command at " + tilde(stale) + " is a copy behind this app; re-run the installer, or link it: ln -sf " + tilde(bin) + " " + tilde(stale)))
 		}
 		return nil
 	}
-	// the Docker image's /magpie, run as nonroot: the image is what is
+	// the Docker image's /fogway, run as nonroot: the image is what is
 	// updated, and a replace would only fail with "permission denied"
 	if exe, err := updateExecutable(); err == nil && !update.Writable(filepath.Dir(exe)) && !updateCanElevate() && updateInContainer() {
-		return fmt.Errorf("this magpie runs in a container and can't replace itself; pull the new image (docker pull ghcr.io/yetone/magpie:latest) and recreate the container")
+		return fmt.Errorf("this fogway runs in a container and can't replace itself; pull the new image (docker pull ghcr.io/fogway/fogway:latest) and recreate the container")
 	}
 	if exe, err := update.Executable(); err == nil && update.Homebrew(exe) {
-		return fmt.Errorf("this magpie was installed with Homebrew; update it with: brew upgrade magpie")
+		return fmt.Errorf("this fogway was installed with Homebrew; update it with: brew upgrade fogway")
 	}
 	fmt.Println(muted.Render("  downloading " + update.BinaryAsset() + via(ctx) + " …"))
 	if err := update.ReplaceBinary(ctx, rel); err != nil {

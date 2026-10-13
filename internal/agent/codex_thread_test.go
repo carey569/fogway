@@ -6,7 +6,7 @@ import (
 )
 
 // A base URL of the user's own — a proxy of theirs in front of OpenAI — is
-// left as it is when magpie becomes the provider, and after.
+// left as it is when fogway becomes the provider, and after.
 func TestCodexProviderKeepsOwnBaseURL(t *testing.T) {
 	const own = `openai_base_url = "https://proxy.example/v1"`
 	home, read := codexHome(t, "", "model = \"gpt-5.5\"\n"+own+"\n")
@@ -15,7 +15,7 @@ func TestCodexProviderKeepsOwnBaseURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg := read(); !strings.Contains(cfg, own) || strings.Count(cfg, "openai_base_url") != 1 ||
-		!strings.Contains(cfg, `model_provider = "magpie"`) {
+		!strings.Contains(cfg, `model_provider = "fogway"`) {
 		t.Fatalf("\n%s", cfg)
 	}
 	if err := cx.Fields[0].Set(""); err != nil {

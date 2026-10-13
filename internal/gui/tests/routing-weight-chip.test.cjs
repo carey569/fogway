@@ -63,7 +63,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
       await page.route("**/*", serve(lang, "weight"));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       // the one request is opened already
       const req = page.locator(".rt-req").first();
       await req.waitFor();
@@ -93,7 +93,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
       await page.route("**/*", serve(lang, "smart"));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const req = page.locator(".rt-req").first();
       await req.waitFor();
       if (await req.getAttribute("aria-pressed") !== "true") await req.click();

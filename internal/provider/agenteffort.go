@@ -6,7 +6,7 @@ import (
 
 // An agent whose own config can't carry a reasoning effort (Cursor Private
 // Inference, #1003: neither its environment nor its app picks one for most
-// models) has one picked in magpie, kept by agent (settings' AgentEfforts),
+// models) has one picked in fogway, kept by agent (settings' AgentEfforts),
 // and asked for by the gateway on the agent's requests to a model that
 // reasons, in place of the level the agent sent: the user picked it, and
 // Cursor's own, where it has a Reasoning control, is its default as often

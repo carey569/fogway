@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // library is a vendor with an embeddings model and a reranker; what each
@@ -132,18 +132,18 @@ func TestPresetPlanEmbeddingResolvesOutsideChatModels(t *testing.T) {
 
 func TestRerankGoesToTheModelsProvider(t *testing.T) {
 	s, l := shelved(t)
-	code, raw := postRetrieval(t, s, "/v1/rerank", `{"model":"lib/rerank-1","query":"magpie","documents":["a crow","a magpie"],"top_n":2,"return_documents":true}`)
+	code, raw := postRetrieval(t, s, "/v1/rerank", `{"model":"lib/rerank-1","query":"fogway","documents":["a crow","a fogway"],"top_n":2,"return_documents":true}`)
 	if code != 200 || !strings.Contains(raw, `"relevance_score":0.9`) {
 		t.Fatalf("%d %s", code, raw)
 	}
 	sent := l.got("/v1/rerank")
-	if len(sent) != 1 || !strings.Contains(sent[0], `"model":"rerank-1"`) || !strings.Contains(sent[0], `"query":"magpie"`) || !strings.Contains(sent[0], `"top_n":2`) {
+	if len(sent) != 1 || !strings.Contains(sent[0], `"model":"rerank-1"`) || !strings.Contains(sent[0], `"query":"fogway"`) || !strings.Contains(sent[0], `"top_n":2`) {
 		t.Fatalf("vendor was sent %v", sent)
 	}
 }
 
 // What the vendor refuses comes back with its code and its words; a model
-// magpie doesn't know is a 404 before any vendor is asked.
+// fogway doesn't know is a 404 before any vendor is asked.
 func TestRetrievalFailures(t *testing.T) {
 	s, l := shelved(t)
 	if code, raw := postRetrieval(t, s, "/v1/embeddings", `{"model":"lib/chat-model","input":"hi"}`); code != 400 || !strings.Contains(raw, "chat-model is not an embedding model") {

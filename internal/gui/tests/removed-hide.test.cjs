@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // #116 (marsxxl, v0.1.768) gave a removed row of Add a provider's "Removed
-// from magpie — still signed in" a "Don't show here" in its menu, behind a
+// from fogway — still signed in" a "Don't show here" in its menu, behind a
 // "Show N hidden" link. #694 (mintonight) found that pointless (掩耳盗铃):
 // hidden, the account was still signed in; what puts it away is Sign out.
 // The row now has just Add it back and Sign out… side by side, no menu and
@@ -23,7 +23,7 @@ function server(lang, asked, st) {
     const json = (data) => route.fulfill({ json: data });
     const state = () => ({
       providers: [codex], presets: [], plugins: [], gateway: { running: true, window: true },
-      excluded: [{ agent: "gemini", provider: "gemini", why: "You removed it from magpie.", quiet: st.quiet, tucked: st.tucked, agentName: "Gemini CLI", agentIcon: "gemini" }],
+      excluded: [{ agent: "gemini", provider: "gemini", why: "You removed it from fogway.", quiet: st.quiet, tucked: st.tucked, agentName: "Gemini CLI", agentIcon: "gemini" }],
     });
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:false};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
@@ -66,7 +66,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const errors = [], asked = [];
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang, asked, { quiet: true, tucked }));
-          await page.goto("http://magpie.test/?view=providers");
+          await page.goto("http://fogway.test/?view=providers");
           await page.locator("#addProvider").click();
           const sheet = page.locator("#addSheet");
           const row = sheet.locator(`.tile[data-pick="removed:gemini"]`);
@@ -101,7 +101,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         const asked = [];
         await page.route("**/*", server(lang, asked, { quiet: false, tucked: false }));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const line = page.locator("#excluded .excluded");
         await line.waitFor();
         await line.locator("button.link", { hasText: new RegExp("^" + w.quiet + "$") }).click();

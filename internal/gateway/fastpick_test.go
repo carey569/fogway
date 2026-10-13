@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // postAs sends body to path with agent's own token, as the agent wired to
-// magpie does.
+// fogway does.
 func postFrom(t *testing.T, s *Server, agent, path, body string) Route {
 	t.Helper()
 	rec := httptest.NewRecorder()

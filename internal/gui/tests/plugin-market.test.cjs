@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// The Plugins tab: Discover lists the plugins magpie suggests in two
+// The Plugins tab: Discover lists the plugins fogway suggests in two
 // sections; a card installs its plugin, then offers its sign-in, which
 // opens in the Providers add sheet. A search filters at once and adds what
 // npm has. A card opens the plugin's page with its README — no pictures,
@@ -88,7 +88,7 @@ function server(lang, asked) {
     if (url.pathname === "/api/plugin-signin") { asked.push(["signin", body()]); return json({ id: "p1", agent: "github-copilot-plugin", state: "waiting", url: "https://github.test/login/device" }); }
     if (url.pathname === "/api/signin/p1") return json({ id: "p1", agent: "github-copilot-plugin", state: "waiting", url: "https://github.test/login/device" });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "magpie.test") { asked.push(["fetched", url.href]); return route.fulfill({ status: 404, body: "" }); }
+    if (!/^\/[\w./-]*$/.test(url.pathname) || url.host !== "fogway.test") { asked.push(["fetched", url.href]); return route.fulfill({ status: 404, body: "" }); }
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -125,7 +125,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
         // the providers list has no way of its own there: the add sheet's
         // Subscriptions has it, as its last row
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#addProvider").waitFor();
         assert.equal(await page.locator("#view-providers .after-list .more-subs").count(), 0);
         await page.locator("#addProvider").click();
@@ -138,7 +138,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await page.locator('#nav button[data-view="plugins"]').getAttribute("class"), "on");
         assert.match(page.url(), /view=plugins/);
 
-        // Discover: magpie's community's plugins alone, others' only found by a search
+        // Discover: fogway's community's plugins alone, others' only found by a search
         await view.locator(".pm-sechead h3", { hasText: w.ours }).waitFor();
         assert.equal(await view.locator(".pm-sec").count(), 1);
         assert.equal(await view.locator('.pm-card[data-pkg="opencode-copilot-auth"]').count(), 0);

@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/agentenv"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
-// magpie quota --json tells when each key last answered through the gateway
+// fogway quota --json tells when each key last answered through the gateway
 // — a process of its own, which wrote it down — and marks the latest last,
-// as GET /v1/magpie/quotas does (#570).
+// as GET /v1/fogway/quotas does (#570).
 func TestQuotaJSONLastServedAt(t *testing.T) {
 	groupsHome(t)
 	for _, k := range agentenv.Vars {

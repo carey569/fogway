@@ -14,15 +14,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // The gateway knows each agent's requests by what this package says of it.
@@ -40,10 +40,10 @@ func init() {
 	sessions.WSLOff = func() bool { return !wslLooks() }
 }
 
-// others are clients that reach the gateway without being agents magpie
+// others are clients that reach the gateway without being agents fogway
 // sets up: known only by their requests, to be drawn with a logo.
 var others = []*Agent{
-	{ID: "magpie", Name: "magpie", Icon: "magpie", UA: []string{"magpie"}},
+	{ID: "fogway", Name: "fogway", Icon: "fogway", UA: []string{"fogway"}},
 	{ID: "curl", Name: "curl", Icon: "curl", UA: []string{"curl"}},
 	// PI-Desktop (vastsa/PI-Desktop) runs Pi's own library, which says
 	// "pi (…)"; given a User-Agent of its own in its provider's settings
@@ -66,7 +66,7 @@ func Clients() []*Agent {
 	return append(out, others...)
 }
 
-// All returns every agent magpie knows about, detected or not.
+// All returns every agent fogway knows about, detected or not.
 func All() []*Agent {
 	home, cfg := homes()
 	return builtins(home, cfg)
@@ -81,7 +81,7 @@ func homes() (home, cfg string) {
 	return home, cfg
 }
 
-// builtins are the agents magpie has wiring of its own for.
+// builtins are the agents fogway has wiring of its own for.
 func builtins(home, cfg string) []*Agent {
 	return append([]*Agent{
 		claude(home),
@@ -120,22 +120,22 @@ func jsonSet(path, key string) func(string) error {
 	}
 }
 
-// usesMagpie reports whether any of the values is a magpie/… reference.
-func usesMagpie(vals ...string) bool {
+// usesFogway reports whether any of the values is a fogway/… reference.
+func usesFogway(vals ...string) bool {
 	for _, v := range vals {
-		if strings.HasPrefix(v, magpieID+"/") {
+		if strings.HasPrefix(v, fogwayID+"/") {
 			return true
 		}
 	}
 	return false
 }
 
-// prefixed is an agent's Spelled whose values of magpie's are all
-// magpie/<ref>, as its provider/model names them.
-func prefixed(v string) bool { return strings.HasPrefix(v, magpieID+"/") }
+// prefixed is an agent's Spelled whose values of fogway's are all
+// fogway/<ref>, as its provider/model names them.
+func prefixed(v string) bool { return strings.HasPrefix(v, fogwayID+"/") }
 
-// openCodeSpelled is the Spelled of an OpenCode config at path: magpie's
-// provider, or one of the file's own that sends to magpie's gateway (v1),
+// openCodeSpelled is the Spelled of an OpenCode config at path: fogway's
+// provider, or one of the file's own that sends to fogway's gateway (v1),
 // as openCodeRef names a model there.
 func openCodeSpelled(path string, v1 func() string) func(string) bool {
 	return func(v string) bool {
@@ -170,11 +170,11 @@ func pairGet(get func(string) (string, bool), pKey, mKey string) func() string {
 	}
 }
 
-// magpieEffort is the reasoning_effort of the models.<type> object obj in
-// Crush's data file when magpie set it: the object names magpie's provider
+// fogwayEffort is the reasoning_effort of the models.<type> object obj in
+// Crush's data file when fogway set it: the object names fogway's provider
 // and has no field but provider, model and reasoning_effort, which is all
-// magpie ever writes there. An object Crush's picker saved is not magpie's.
-func magpieEffort(data, obj, magpieID string) (string, bool) {
+// fogway ever writes there. An object Crush's picker saved is not fogway's.
+func fogwayEffort(data, obj, fogwayID string) (string, bool) {
 	raw, ok := edit.GetJSON(data, obj)
 	if !ok {
 		return "", false
@@ -195,7 +195,7 @@ func magpieEffort(data, obj, magpieID string) (string, bool) {
 			return "", false
 		}
 	}
-	if prov != magpieID || effort == "" {
+	if prov != fogwayID || effort == "" {
 		return "", false
 	}
 	return effort, true
@@ -246,7 +246,7 @@ func ownOptionsFrom(native func(p string) []catalog.Model, authFile string, cur 
 	for _, p := range extra {
 		set[p] = true
 	}
-	if p, _, ok := strings.Cut(cur, "/"); ok && p != magpieID {
+	if p, _, ok := strings.Cut(cur, "/"); ok && p != fogwayID {
 		set[p] = true
 	}
 	if b, err := readOwnAuth(authFile); err == nil {
@@ -294,10 +294,10 @@ func ownOptionsFrom(native func(p string) []catalog.Model, authFile string, cur 
 
 // ---- agents ----------------------------------------------------------------
 
-// magpieProviderJSONAt is magpieProviderJSONFor for an agent that reaches
+// fogwayProviderJSONAt is fogwayProviderJSONFor for an agent that reaches
 // the gateway at gw: one in a WSL distro under NAT (see wsl.go).
-func magpieProviderJSONAt(shape, catalog, gw string) any {
-	models := magpieModels(catalog) // the catalog is the agent's
+func fogwayProviderJSONAt(shape, catalog, gw string) any {
+	models := fogwayModels(catalog) // the catalog is the agent's
 	switch shape {
 	case "opencode":
 		ms := map[string]any{}
@@ -308,7 +308,7 @@ func magpieProviderJSONAt(shape, catalog, gw string) any {
 				e["modalities"] = map[string]any{"input": []string{"text", "image"}, "output": []string{"text"}}
 			}
 			// without it OpenCode doesn't know when to compact, and a
-			// group's context (magpie group set … context=) never reaches
+			// group's context (fogway group set … context=) never reaches
 			// it; an output of 0 is OpenCode's own default
 			if m.Context > 0 {
 				e["limit"] = map[string]any{"context": m.Context, "output": maxTokens(m)}
@@ -319,7 +319,7 @@ func magpieProviderJSONAt(shape, catalog, gw string) any {
 			e["variants"] = openCodeVariants(m.Efforts)
 			ms[m.ID] = e
 		}
-		return map[string]any{"npm": "@ai-sdk/openai-compatible", "name": "magpie",
+		return map[string]any{"npm": "@ai-sdk/openai-compatible", "name": "fogway",
 			"options": map[string]any{"baseURL": gw + "/v1", "apiKey": openCodeKeyAt(catalog, gw)}, "models": ms}
 	case "crush":
 		var ms []map[string]any
@@ -331,7 +331,7 @@ func magpieProviderJSONAt(shape, catalog, gw string) any {
 			// without it Crush caps every reply at 16384 tokens, a model
 			// that can write more of them never asked for it; an output
 			// above the window is cut to it, as it is for every other
-			// agent magpie hands a limit to
+			// agent fogway hands a limit to
 			tokens := maxTokens(m)
 			if tokens == 0 {
 				tokens = 16384
@@ -342,7 +342,7 @@ func magpieProviderJSONAt(shape, catalog, gw string) any {
 		if ms == nil {
 			ms = []map[string]any{}
 		}
-		return map[string]any{"type": "openai", "name": "magpie", "base_url": gw + "/v1", "api_key": keyAt(gw), "models": ms}
+		return map[string]any{"type": "openai", "name": "fogway", "base_url": gw + "/v1", "api_key": keyAt(gw), "models": ms}
 	case "pi":
 		var ms []map[string]any
 		for _, m := range models {
@@ -358,19 +358,19 @@ func magpieProviderJSONAt(shape, catalog, gw string) any {
 		// Without it a turn of Pi's on Chat or Messages reached the gateway
 		// with no session: its usage had none and "Record gateway
 		// conversations" kept none of it (akic404 on Discord).
-		return map[string]any{"name": "magpie", "baseUrl": gw + "/v1", "api": "openai-completions", "apiKey": keyAt(gw),
+		return map[string]any{"name": "fogway", "baseUrl": gw + "/v1", "api": "openai-completions", "apiKey": keyAt(gw),
 			"compat": map[string]any{"sendSessionAffinityHeaders": true}, "models": ms}
 	}
 	return nil
 }
 
-// piBlockKept is theirsKept for magpie's provider in a Pi models.json at
+// piBlockKept is theirsKept for fogway's provider in a Pi models.json at
 // path, where a sendSessionAffinityHeaders the file already has, the
 // user's own or pi-cache-optimizer's (#1103), stays as it is.
 func piBlockKept(path string, value func() any) func() any {
-	return theirsKept(path, "providers."+magpieID, func() any {
+	return theirsKept(path, "providers."+fogwayID, func() any {
 		v := value()
-		if _, set := edit.GetJSON(path, "providers."+magpieID+".compat.sendSessionAffinityHeaders"); !set {
+		if _, set := edit.GetJSON(path, "providers."+fogwayID+".compat.sendSessionAffinityHeaders"); !set {
 			return v
 		}
 		if m, ok := v.(map[string]any); ok {
@@ -385,7 +385,7 @@ func piBlockKept(path string, value func() any) func() any {
 	}, "models")
 }
 
-// piModelJSON is one of magpie's models as an entry of Pi's models.json.
+// piModelJSON is one of fogway's models as an entry of Pi's models.json.
 // native asks it on the API its provider speaks natively (a model's own
 // api and baseUrl); without it the model is left on the provider's
 // openai-completions (Pencil, pencil.go).
@@ -440,7 +440,7 @@ func piModelJSON(m catalog.Model, gw string, native bool) map[string]any {
 
 // piPromptCache is how long, in seconds, the vendor keeps a model's prompt
 // cache for each of Pi's retention tiers, at the short end of what it
-// publishes; nil where magpie doesn't relay Pi's request as it is, or the
+// publishes; nil where fogway doesn't relay Pi's request as it is, or the
 // vendor's lifetime isn't known. Claude on Anthropic's Messages API keeps
 // one 5 minutes, or an hour asked with a 1h cache_control (Pi's long); GPT
 // on OpenAI's Responses API keeps one in memory 5 to 10 minutes, and only
@@ -459,7 +459,7 @@ func piPromptCache(api any, id string) map[string]any {
 }
 
 // openCodeVariants are the reasoning levels OpenCode offers for a model of
-// magpie's, each asking the gateway for that effort as reasoning_effort
+// fogway's, each asking the gateway for that effort as reasoning_effort
 // (@ai-sdk/openai-compatible's reasoningEffort). OpenCode 1.x offers none
 // for a model the config doesn't mark as reasoning, and adds these. OpenCode
 // 2 makes low, medium and high for every model of an openai-compatible
@@ -481,11 +481,11 @@ func openCodeVariants(efforts []string) orderedJSON {
 	return out
 }
 
-// openCodeReasons is whether a model of magpie's is marked reasoning in
+// openCodeReasons is whether a model of fogway's is marked reasoning in
 // opencode.json, which OpenCode 1 shows as 支持推理 in its model tooltip
 // and takes for a model that thinks (#725: OpenCode Zen's
 // mimo-v2.6-flash-free, which thinks with no levels to pick, said 不支持推理
-// through magpie where it says it reasons under OpenCode's own Zen). OpenCode
+// through fogway where it says it reasons under OpenCode's own Zen). OpenCode
 // 1 also adds low, medium and high of its own to the variants of a reasoning
 // model (ProviderTransform.variants; checked with 1.18.34), so one with levels
 // is marked only when it has those three, else it would be offered levels it
@@ -546,7 +546,7 @@ func (o orderedJSON) MarshalJSON() ([]byte, error) {
 // off is left out, for Pi to offer as before. Another vendor's model there
 // keeps off hidden: without none it always thinks, and ZCode's
 // GLM-5.3-Flash turned Pi's off away ("该模型始终支持思考，不可关闭", #699),
-// as a level left out is one Pi offers. A model whose levels magpie doesn't
+// as a level left out is one Pi offers. A model whose levels fogway doesn't
 // know gets no map: Pi's own defaults, as before.
 func piThinkingLevels(efforts []string, claudeOff bool) map[string]any {
 	if len(efforts) == 0 {
@@ -585,18 +585,18 @@ func openCodeLike(at place, id, name, icon, bin, dir, auth string, ua []string, 
 			break
 		}
 	}
-	provider := theirsKept(path, "provider."+magpieID, func() any { return magpieProviderJSONAt("opencode", id, at.gw()) }, "models")
+	provider := theirsKept(path, "provider."+fogwayID, func() any { return fogwayProviderJSONAt("opencode", id, at.gw()) }, "models")
 	opts := func(key string) func(map[string]string) []Option {
 		return func(cur map[string]string) []Option {
-			return append(ownOptions(auth, cur[key]), viaMagpie(id, magpieID+"/")...)
+			return append(ownOptions(auth, cur[key]), viaFogway(id, fogwayID+"/")...)
 		}
 	}
 	get := func(k string) string { v, _ := edit.GetJSON(path, k); return v }
 	// whether a model the file names, or one OpenChamber sends to the
-	// OpenCode it runs on this config, is one of magpie's: magpie's
+	// OpenCode it runs on this config, is one of fogway's: fogway's
 	// provider has to stay
-	onMagpie := func() bool {
-		return usesMagpie(get("model"), get("small_model"))
+	onFogway := func() bool {
+		return usesFogway(get("model"), get("small_model"))
 	}
 	set := func(key string) func(string) error {
 		return func(v string) error {
@@ -604,10 +604,10 @@ func openCodeLike(at place, id, name, icon, bin, dir, auth string, ua []string, 
 				if err := edit.DelJSON(path, key); err != nil {
 					return err
 				}
-				if onMagpie() {
+				if onFogway() {
 					return nil
 				}
-				return edit.DelJSON(path, "provider."+magpieID)
+				return edit.DelJSON(path, "provider."+fogwayID)
 			}
 			v, err := openCodeRefAt(at, path, id, v)
 			if err != nil {
@@ -621,19 +621,19 @@ func openCodeLike(at place, id, name, icon, bin, dir, auth string, ua []string, 
 		UA:  ua,
 		Bin: bin, Dir: dir, Path: path,
 		Check: func() string {
-			if !usesMagpie(get("model"), get("small_model")) {
+			if !usesFogway(get("model"), get("small_model")) {
 				return ""
 			}
-			return wiringOff(name, path, func(k string) (string, bool) { return edit.GetJSON(path, "provider."+magpieID+".options."+k) },
+			return wiringOff(name, path, func(k string) (string, bool) { return edit.GetJSON(path, "provider."+fogwayID+".options."+k) },
 				"baseURL", at.v1(), "apiKey", openCodeKeyAt(id, at.gw()))
 		},
 		Sync: func() error {
-			// a model of magpie's chosen, but its provider gone from the
+			// a model of fogway's chosen, but its provider gone from the
 			// file: put it back, or the agent has nothing to send it to
-			if _, ok := edit.GetJSON(path, "provider."+magpieID); !ok && onMagpie() {
-				return edit.SetJSON(path, edit.KV{Path: "provider." + magpieID, Value: provider()})
+			if _, ok := edit.GetJSON(path, "provider."+fogwayID); !ok && onFogway() {
+				return edit.SetJSON(path, edit.KV{Path: "provider." + fogwayID, Value: provider()})
 			}
-			return syncJSONInOrder(path, "provider."+magpieID, provider)
+			return syncJSONInOrder(path, "provider."+fogwayID, provider)
 		},
 		Fields: []Field{
 			{Key: "model", Label: "model", Get: jsonGet(path, "model"), Set: set("model"), Options: opts("model")},
@@ -656,21 +656,21 @@ func openCodeKeyAt(id, gw string) string {
 // openCodeRefAt is openCodeRef for the agent at a place, which reaches the
 // gateway at its own address.
 func openCodeRefAt(at place, path, id, v string) (string, error) {
-	ref, ok := strings.CutPrefix(v, magpieID+"/")
-	if !ok || !isMagpie(ref) {
+	ref, ok := strings.CutPrefix(v, fogwayID+"/")
+	if !ok || !isFogway(ref) {
 		return v, nil
 	}
 	if own := ownGatewayProvider(path, ref, at.v1()); own != "" {
 		return own + "/" + ref, nil
 	}
-	provider := theirsKept(path, "provider."+magpieID, func() any { return magpieProviderJSONAt("opencode", id, at.gw()) }, "models")
-	return v, edit.SetJSON(path, edit.KV{Path: "provider." + magpieID, Value: provider()})
+	provider := theirsKept(path, "provider."+fogwayID, func() any { return fogwayProviderJSONAt("opencode", id, at.gw()) }, "models")
+	return v, edit.SetJSON(path, edit.KV{Path: "provider." + fogwayID, Value: provider()})
 }
 
 // ownGatewayProvider is the provider in an OpenCode config, other than
-// magpie's own, whose baseURL is magpie's gateway (v1, as the agent reaches
+// fogway's own, whose baseURL is fogway's gateway (v1, as the agent reaches
 // it) and that lists the model ref, as a layout of one provider per family
-// of magpie's models has; "" when there is none.
+// of fogway's models has; "" when there is none.
 func ownGatewayProvider(path, ref, v1 string) string {
 	raw, ok := edit.GetJSON(path, "provider")
 	if !ok {
@@ -692,14 +692,14 @@ func ownGatewayProvider(path, ref, v1 string) string {
 	sort.Strings(names)
 	for _, name := range names {
 		p := ps[name]
-		if _, has := p.Models[ref]; name != magpieID && has && sameGateway(p.Options.BaseURL, v1) {
+		if _, has := p.Models[ref]; name != fogwayID && has && sameGateway(p.Options.BaseURL, v1) {
 			return name
 		}
 	}
 	return ""
 }
 
-// sameGateway reports whether a base URL is magpie's gateway's (v1), its
+// sameGateway reports whether a base URL is fogway's gateway's (v1), its
 // host spelled 127.0.0.1 or localhost.
 func sameGateway(base, v1 string) bool {
 	norm := func(u string) string {
@@ -727,7 +727,7 @@ func opencodeIn(at place) *Agent {
 // openCodeDir is the folder OpenCode reads its user config from:
 // $OPENCODE_CONFIG_DIR when set, else $XDG_CONFIG_HOME/opencode (cfg).
 // OpenCode 2, the one OpenChamber bundles (#321), reads that folder in place
-// of the other; OpenCode 1 reads both, the variable's last, so what magpie
+// of the other; OpenCode 1 reads both, the variable's last, so what fogway
 // writes there wins in either.
 func openCodeDir(cfg string) string {
 	if d := strings.TrimSpace(appdir.Getenv("OPENCODE_CONFIG_DIR")); d != "" {
@@ -751,7 +751,7 @@ func piIn(at place) *Agent {
 
 // piDir is Pi's agent folder at a place: PI_CODING_AGENT_DIR's when set,
 // "~" in it standing for home, else ~/.pi/agent (config.js, getAgentDir).
-// A relative one is Pi's working directory's, which magpie can't know, so
+// A relative one is Pi's working directory's, which fogway can't know, so
 // it is not taken; nor this machine's variable for a WSL distro's Pi.
 func piDir(at place) string {
 	if at.spell == nil {
@@ -774,60 +774,60 @@ func homeDir(home, d string) string {
 	return filepath.Clean(d)
 }
 
-// beforeMagpie is a copy of an agent's own files taken before magpie first
-// writes them (file.before-magpie beside each), which Disconnect puts back
+// beforeFogway is a copy of an agent's own files taken before fogway first
+// writes them (file.before-fogway beside each), which Disconnect puts back
 // byte for byte when what it left says the same as the copy: the same
 // JSON, in the user's own order, spacing and comments-free layout. Where
 // they differ (the user changed something while connected), what
 // Disconnect left stands. A file that wasn't there (named in the stash
 // under absent) goes again when nothing but empty objects is left in it.
-type beforeMagpie struct {
+type beforeFogway struct {
 	absent string
 	files  []string
 }
 
 // take copies each file aside, or notes it absent; a file that can't be
 // read is neither, and isn't put back.
-func (b beforeMagpie) take() {
+func (b beforeFogway) take() {
 	var gone []string
 	for _, f := range b.files {
 		raw, err := os.ReadFile(f)
 		switch {
 		case err == nil:
-			if edit.WriteAtomic(f+".before-magpie", raw) != nil {
-				os.Remove(f + ".before-magpie")
+			if edit.WriteAtomic(f+".before-fogway", raw) != nil {
+				os.Remove(f + ".before-fogway")
 			}
 		case errors.Is(err, fs.ErrNotExist):
-			os.Remove(f + ".before-magpie")
+			os.Remove(f + ".before-fogway")
 			gone = append(gone, filepath.Base(f))
 		default:
-			os.Remove(f + ".before-magpie")
+			os.Remove(f + ".before-fogway")
 		}
 	}
 	stash(map[string]string{b.absent: strings.Join(gone, "\n")})
 }
 
 // restore puts back what take kept, where Disconnect left the same.
-func (b beforeMagpie) restore() error {
+func (b beforeFogway) restore() error {
 	gone := strings.Split(unstash(b.absent), "\n")
 	for _, f := range b.files {
 		cur, err := os.ReadFile(f)
 		if err != nil {
-			os.Remove(f + ".before-magpie")
+			os.Remove(f + ".before-fogway")
 			continue
 		}
 		var now any
 		if json.Unmarshal(edit.TrimBOM(cur), &now) != nil { // a BOM is the user's own (#1534)
 			continue
 		}
-		if was, err := os.ReadFile(f + ".before-magpie"); err == nil {
+		if was, err := os.ReadFile(f + ".before-fogway"); err == nil {
 			var then any
 			if json.Unmarshal(edit.TrimBOM(was), &then) == nil && reflect.DeepEqual(now, then) && !bytes.Equal(cur, was) {
 				if err := edit.WriteAtomic(f, was); err != nil {
 					return err
 				}
 			}
-			os.Remove(f + ".before-magpie")
+			os.Remove(f + ".before-fogway")
 			continue
 		}
 		if slices.Contains(gone, filepath.Base(f)) && emptyJSON(now) {
@@ -860,7 +860,7 @@ func piLike(at place, id, name, dir string) *Agent {
 	return piLikeKeyed(at, id, name, dir, at.gwKey)
 }
 
-// piLikeKeyed is piLike whose provider "magpie" carries key's key: one
+// piLikeKeyed is piLike whose provider "fogway" carries key's key: one
 // that names the agent (agentKeyAt) for an agent whose requests carry
 // nothing else of it (Prime Agent, primeagent.go).
 func piLikeKeyed(at place, id, name, dir string, key func() string) *Agent {
@@ -873,30 +873,30 @@ func piLikeKeyed(at place, id, name, dir string, key func() string) *Agent {
 	// the model a new session starts on, as the model field shows it
 	startup := func() string { return piStartup(path, pairGet(get, "defaultProvider", "defaultModel")()) }
 	block := piBlockKept(modelsPath, func() any {
-		b := magpieProviderJSONAt("pi", id, at.gw()).(map[string]any)
+		b := fogwayProviderJSONAt("pi", id, at.gw()).(map[string]any)
 		b["apiKey"] = key()
 		return b
 	})
-	writeMagpie := func() error {
-		return edit.SetJSON(modelsPath, edit.KV{Path: "providers." + magpieID, Value: block()})
+	writeFogway := func() error {
+		return edit.SetJSON(modelsPath, edit.KV{Path: "providers." + fogwayID, Value: block()})
 	}
-	// the user's two files as they were before magpie's first write, put
+	// the user's two files as they were before fogway's first write, put
 	// back byte for byte by Disconnect where it leaves them saying the same
-	before := beforeMagpie{at.key(id + ".before.absent"), []string{path, modelsPath}}
+	before := beforeFogway{at.key(id + ".before.absent"), []string{path, modelsPath}}
 	return &Agent{
 		ID: id, Name: name, Icon: id, Bin: id, Dir: dir, Path: path, Spelled: prefixed,
 		Restore: before.restore,
 		Check: func() string {
-			if p, _ := get("defaultProvider"); p != magpieID {
+			if p, _ := get("defaultProvider"); p != fogwayID {
 				return ""
 			}
-			return wiringOff(name, modelsPath, func(k string) (string, bool) { return edit.GetJSON(modelsPath, "providers."+magpieID+"."+k) },
+			return wiringOff(name, modelsPath, func(k string) (string, bool) { return edit.GetJSON(modelsPath, "providers."+fogwayID+"."+k) },
 				"baseUrl", at.v1(), "apiKey", key())
 		},
 		Sync: func() error {
-			return syncJSON(modelsPath, "providers."+magpieID, block)
+			return syncJSON(modelsPath, "providers."+fogwayID, block)
 		},
-		// a provider renamed takes its magpie/<id>/ entries in enabledModels
+		// a provider renamed takes its fogway/<id>/ entries in enabledModels
 		// with it: an entry left on the old id names nothing, and Pi would
 		// leave that model out of Ctrl+P (#1919, #1828)
 		RenameRefs: func(from, to string) (bool, error) {
@@ -916,18 +916,18 @@ func piLikeKeyed(at place, id, name, dir string, key func() string) *Agent {
 						if err := edit.DelJSON(path, "defaultProvider", "defaultModel"); err != nil {
 							return err
 						}
-						if err := edit.DelJSON(modelsPath, "providers."+magpieID); err != nil {
+						if err := edit.DelJSON(modelsPath, "providers."+fogwayID); err != nil {
 							return err
 						}
 						return piScopeWithout(path)
 					}
-					if ref, ok := strings.CutPrefix(v, magpieID+"/"); ok && isMagpie(ref) {
-						if _, has := edit.GetJSON(modelsPath, "providers."+magpieID); !has {
-							if p, _ := get("defaultProvider"); p != magpieID {
+					if ref, ok := strings.CutPrefix(v, fogwayID+"/"); ok && isFogway(ref) {
+						if _, has := edit.GetJSON(modelsPath, "providers."+fogwayID); !has {
+							if p, _ := get("defaultProvider"); p != fogwayID {
 								before.take()
 							}
 						}
-						if err := writeMagpie(); err != nil {
+						if err := writeFogway(); err != nil {
 							return err
 						}
 					}
@@ -938,20 +938,20 @@ func piLikeKeyed(at place, id, name, dir string, key func() string) *Agent {
 					return piScopeWith(path, v)
 				},
 				Options: func(cur map[string]string) []Option {
-					return append(ownOptionsFrom(piRegistry(id), auth, cur["model"]), viaMagpie(id, magpieID+"/")...)
+					return append(ownOptionsFrom(piRegistry(id), auth, cur["model"]), viaFogway(id, fogwayID+"/")...)
 				},
 			},
 			{
 				// Pi's startup thinking level, the same list its /thinking offers;
 				// Pi clamps it to what the model supports. Only this field is
-				// written, and only when it changed: rebuilding providers.magpie
+				// written, and only when it changed: rebuilding providers.fogway
 				// here replaced model fields a person had edited, such as a
 				// contextWindow. Picking the model, and the catalog sync, still
 				// refresh the provider.
 				//
-				// For a model of magpie's, the levels are those Pi offers for
-				// it, from the entry magpie writes, and a level it doesn't
-				// offer is shown as the one Pi runs it at: magpie showed max
+				// For a model of fogway's, the levels are those Pi offers for
+				// it, from the entry fogway writes, and a level it doesn't
+				// offer is shown as the one Pi runs it at: fogway showed max
 				// for a group Pi offered off alone for, so ran without
 				// reasoning (#597).
 				Key: "effort", Label: "thinking",
@@ -1043,10 +1043,10 @@ func gooseIn(at place, cfg string) *Agent {
 					}
 					return removeGooseProvider(provider)
 				}
-				// a model of magpie's: magpie as a custom provider of
+				// a model of fogway's: fogway as a custom provider of
 				// Goose's, each model with its window and whether Goose
 				// can send it a thinking level (see goose.go)
-				if ref, ok := strings.CutPrefix(v, gooseProviderID+"/"); ok && isMagpie(ref) {
+				if ref, ok := strings.CutPrefix(v, gooseProviderID+"/"); ok && isFogway(ref) {
 					if err := writeGooseProvider(provider, at); err != nil {
 						return err
 					}
@@ -1056,8 +1056,8 @@ func gooseIn(at place, cfg string) *Agent {
 			Options: func(cur map[string]string) []Option {
 				// only the native providers this goose is set up with (#987:
 				// every one of four was listed, OpenRouter's hundreds of
-				// models on a goose that had only magpie)
-				return append(ownOptions("", cur["model"], gooseConfigured(path, keyEnv)...), viaMagpie("goose", gooseProviderID+"/")...)
+				// models on a goose that had only fogway)
+				return append(ownOptions("", cur["model"], gooseConfigured(path, keyEnv)...), viaFogway("goose", gooseProviderID+"/")...)
 			},
 		}, {
 			// GOOSE_THINKING_EFFORT, the effort goose asks of a model that
@@ -1122,10 +1122,10 @@ func copilot(home string) *Agent {
 			Set: jsonSet(path, "model"),
 			Options: func(map[string]string) []Option {
 				// "auto" is Copilot's own choice, not a model it lists; the rest
-				// come from the list magpie last fetched from Copilot.
+				// come from the list fogway last fetched from Copilot.
 				out := []Option{{Value: "auto", Note: "let Copilot pick", Icon: "githubcopilot"}}
 				if live, _, ok := catalog.Live("copilot"); ok {
-					// magpie's list has Auto too, offered above
+					// fogway's list has Auto too, offered above
 					live = slices.DeleteFunc(slices.Clone(live), func(m catalog.Model) bool { return m.ID == "auto" })
 					out = append(out, options(live, "")...)
 				}
@@ -1155,7 +1155,7 @@ func crush(home, cfg string) *Agent {
 	// Crush saves the models its own picker chooses to its data file, and
 	// reads that after crush.json, so a pick there wins over one in path.
 	// The picks are read as Crush merges the two files and written where
-	// Crush writes them; magpie's provider stays in path, beside the
+	// Crush writes them; fogway's provider stays in path, beside the
 	// library's MCP servers.
 	data := filepath.Join(home, ".local", "share", "crush", "crush.json")
 	if dir := appdir.Getenv("XDG_DATA_HOME"); dir != "" {
@@ -1182,7 +1182,7 @@ func crushIn(at place) *Agent {
 // crushAt is Crush with its config at path and its data file at data,
 // reaching the gateway as at does.
 func crushAt(at place, path, data string) *Agent {
-	provider := theirsKept(path, "providers."+magpieID, func() any { return magpieProviderJSONAt("crush", "crush", at.gw()) }, "models")
+	provider := theirsKept(path, "providers."+fogwayID, func() any { return fogwayProviderJSONAt("crush", "crush", at.gw()) }, "models")
 	get := func(k string) (string, bool) { return edit.GetJSON(path, k) }
 	set := func(kvs ...edit.KV) error { return edit.SetJSON(path, kvs...) }
 	pick := func(k string) (string, bool) {
@@ -1192,7 +1192,7 @@ func crushAt(at place, path, data string) *Agent {
 		return get(k)
 	}
 	setPick := func(kvs ...edit.KV) error {
-		// Crush keeps API keys in its data file, so one magpie is first to
+		// Crush keeps API keys in its data file, so one fogway is first to
 		// make is made readable by its owner only
 		if _, err := os.Lstat(data); errors.Is(err, fs.ErrNotExist) {
 			if err := os.MkdirAll(filepath.Dir(data), 0o755); err != nil {
@@ -1219,23 +1219,23 @@ func crushAt(at place, path, data string) *Agent {
 				}
 				if json.Unmarshal(edit.TrimBOM(b), &c) == nil {
 					for p := range c.Providers {
-						if p != magpieID {
+						if p != fogwayID {
 							extra = append(extra, p)
 						}
 					}
 				}
 			}
-			return append(ownOptions("", cur[key], extra...), viaMagpie("crush", magpieID+"/")...)
+			return append(ownOptions("", cur[key], extra...), viaFogway("crush", fogwayID+"/")...)
 		}
 	}
 	// replacePick puts v in place of the whole models.<type> object in the
 	// data file. Crush's own picker saves its per-model settings there
 	// (max_tokens, think, reasoning_effort, sampling, provider_options),
 	// and Crush applies them to whatever model the object names, so they
-	// must not stay attached to the model magpie picks: a max_tokens meant
+	// must not stay attached to the model fogway picks: a max_tokens meant
 	// for another model can go upstream as an over-limit request. Only an
-	// effort magpie set itself is kept: one on the large pick when that pick
-	// is already magpie's and carries nothing Crush adds.
+	// effort fogway set itself is kept: one on the large pick when that pick
+	// is already fogway's and carries nothing Crush adds.
 	replacePick := func(obj string) func(string) error {
 		return func(v string) error {
 			p, m, ok := strings.Cut(v, "/")
@@ -1244,7 +1244,7 @@ func crushAt(at place, path, data string) *Agent {
 			}
 			next := map[string]any{"provider": p, "model": m}
 			if obj == "models.large" {
-				if e, ok := magpieEffort(data, obj, magpieID); ok {
+				if e, ok := fogwayEffort(data, obj, fogwayID); ok {
 					next["reasoning_effort"] = e
 				}
 			}
@@ -1260,13 +1260,13 @@ func crushAt(at place, path, data string) *Agent {
 				}
 				large := pairGet(pick, "models.large.provider", "models.large.model")()
 				small := pairGet(pick, "models.small.provider", "models.small.model")()
-				if usesMagpie(large, small) {
+				if usesFogway(large, small) {
 					return nil
 				}
-				return edit.DelJSON(path, "providers."+magpieID)
+				return edit.DelJSON(path, "providers."+fogwayID)
 			}
-			if ref, ok := strings.CutPrefix(v, magpieID+"/"); ok && isMagpie(ref) {
-				if err := set(edit.KV{Path: "providers." + magpieID, Value: provider()}); err != nil {
+			if ref, ok := strings.CutPrefix(v, fogwayID+"/"); ok && isFogway(ref) {
+				if err := set(edit.KV{Path: "providers." + fogwayID, Value: provider()}); err != nil {
 					return err
 				}
 			}
@@ -1279,14 +1279,14 @@ func crushAt(at place, path, data string) *Agent {
 		Check: func() string {
 			large, _ := pick("models.large.provider")
 			small, _ := pick("models.small.provider")
-			if large != magpieID && small != magpieID {
+			if large != fogwayID && small != fogwayID {
 				return ""
 			}
-			return wiringOff("Crush", path, func(k string) (string, bool) { return get("providers." + magpieID + "." + k) },
+			return wiringOff("Crush", path, func(k string) (string, bool) { return get("providers." + fogwayID + "." + k) },
 				"base_url", at.v1(), "api_key", at.gwKey())
 		},
 		Sync: func() error {
-			return syncJSON(path, "providers."+magpieID, provider)
+			return syncJSON(path, "providers."+fogwayID, provider)
 		},
 		Fields: []Field{
 			{Key: "model", Label: "large", Get: pairGet(pick, "models.large.provider", "models.large.model"), Set: setter("models.large.provider", "models.large.model"), Options: opts("model")},
@@ -1313,7 +1313,7 @@ func crushAt(at place, path, data string) *Agent {
 
 // what goose says after a change (notice.go)
 var (
-	noticeGoose = newNotice("Goose loads its providers at start-up — quit and reopen Goose (and open goose sessions) to use magpie's models.")
+	noticeGoose = newNotice("Goose loads its providers at start-up — quit and reopen Goose (and open goose sessions) to use fogway's models.")
 )
 
 // readOwnAuth is os.ReadFile for an agent's own sign-ins (OpenCode's

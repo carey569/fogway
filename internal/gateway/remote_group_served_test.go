@@ -6,9 +6,9 @@ import (
 )
 
 // A route kept in the Routing page's history before Routed was, marked
-// swapped for the member a remote magpie's group answered with, reads as
+// swapped for the member a remote fogway's group answered with, reads as
 // routed; a real swap kept beside it is still one.
-func TestRemoteMagpieGroupHistory(t *testing.T) {
+func TestRemoteFogwayGroupHistory(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	now := historyNoon(t)
 	saveRoute(Route{ID: 1, Time: now, Model: "office/group/auto-deepseek-v4-1-flash", Done: true, Status: 200,

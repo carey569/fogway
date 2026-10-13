@@ -15,7 +15,7 @@ const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/aimer";
 const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json` });
 const lib = {
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("codex", "Codex"), agent("pi", "Pi")],
   instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [],
   skills: [{ name: "grilling", description: "Grill a plan", kind: "folder", agents: ["codex"], source: `${HOME}/skills/grilling` }],
@@ -46,14 +46,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     t.after(() => browser.close());
     // under the sidebar's width: the tabs here are the page's own strip
     const ctx = await browser.newContext({ viewport: { width: 860, height: 800 } });
-    await ctx.addInitScript(() => { try { if (!sessionStorage.getItem("seeded")) { localStorage.setItem("magpie.libTab", "skills"); sessionStorage.setItem("seeded", "1"); } } catch {} });
+    await ctx.addInitScript(() => { try { if (!sessionStorage.getItem("seeded")) { localStorage.setItem("fogway.libTab", "skills"); sessionStorage.setItem("seeded", "1"); } } catch {} });
     const page = await ctx.newPage();
     page.setDefaultTimeout(5000);
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     let open;
     await page.route("**/*", server(new Promise((r) => { open = r; })));
-    await page.goto("http://magpie.test/");
+    await page.goto("http://fogway.test/");
     // how the outline looks the moment it's put in the page
     await page.evaluate(() => {
       new MutationObserver((_, mo) => {
@@ -83,7 +83,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     await tabs.filter({ hasText: "Instructions" }).click();
     assert.equal(await v.locator(".lib-tabs .opt.on").textContent(), "Instructions");
     assert.equal(await v.locator(".lib-skel .row-head").count(), 1, "Instructions' outline has the Agents heading");
-    assert.equal(await page.evaluate(() => localStorage.getItem("magpie.libTab")), "instructions");
+    assert.equal(await page.evaluate(() => localStorage.getItem("fogway.libTab")), "instructions");
 
     const before = await v.locator(".lib-tabs").boundingBox();
     open();
@@ -91,7 +91,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     assert.equal(await v.locator(".lib-skel").count(), 0, "the outline goes");
     assert.deepEqual(await v.locator(".lib-tabs .opt").allTextContents(), ["Instructions", "MCP servers · 1", "Skills · 1", "Hooks", "RTK"]);
     assert.equal(await v.locator(".lib-tabs .opt.on").textContent(), "Instructions");
-    assert.equal(await v.locator(".lib-head .lib-more").getAttribute("title"), "~/.magpie/library");
+    assert.equal(await v.locator(".lib-head .lib-more").getAttribute("title"), "~/.fogway/library");
     const after = await v.locator(".lib-tabs").boundingBox();
     assert.deepEqual([after.x, after.y], [before.x, before.y], "the tabs don't move");
     await v.getByText("Write it once", { exact: false }).waitFor();
@@ -109,7 +109,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       t.after(() => browser.close());
       const ctx = await browser.newContext({ viewport: { width, height: 800 } });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       const errors = [];
@@ -130,7 +130,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         return rest(route);
       });
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       const v = page.locator("#view-library");
       await v.locator(".lib-head .lib-more:not([disabled])").waitFor();

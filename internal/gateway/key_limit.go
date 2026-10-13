@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/budget"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/budget"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // limitClock is the time a gateway key's limit is checked at: the window
@@ -27,7 +27,7 @@ var limitClock = time.Now
 func keyLimited(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		who := access.Caller(r.Context())
-		if !who.Limit.Limited() || r.Method != http.MethodPost || strings.HasPrefix(r.URL.Path, "/_magpie/") || strings.HasPrefix(r.URL.Path, "/mcp/") || strings.HasSuffix(r.URL.Path, "/count_tokens") {
+		if !who.Limit.Limited() || r.Method != http.MethodPost || strings.HasPrefix(r.URL.Path, "/_fogway/") || strings.HasPrefix(r.URL.Path, "/mcp/") || strings.HasSuffix(r.URL.Path, "/count_tokens") {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -49,7 +49,7 @@ func keyLimited(next http.Handler) http.Handler {
 			w.Header().Set("Retry-After", strconv.Itoa(refused.RetryAfter(now)))
 			// the Anthropic and OpenAI SDKs would otherwise retry a 429
 			w.Header().Set("X-Should-Retry", "false")
-			w.Header().Set("X-Magpie-Limit-Reset", refused.Reset.Format(time.RFC3339))
+			w.Header().Set("X-Fogway-Limit-Reset", refused.Reset.Format(time.RFC3339))
 			writeError(w, protoOfPath(r.URL.Path), http.StatusTooManyRequests, msg)
 			c := callerOf(r)
 			appendUsage(r, usage.Record{Time: now, Agent: c.agent, Via: c.via, Requested: model, Status: http.StatusTooManyRequests, Rejected: true,
@@ -74,7 +74,7 @@ func protoOfPath(path string) provider.Protocol {
 	return provider.Chat
 }
 
-// keyLimit answers GET /v1/magpie/limit: the calling gateway key's limit,
+// keyLimit answers GET /v1/fogway/limit: the calling gateway key's limit,
 // what it has used and when it resets; {"limited":false} for a key with
 // none or a request without one.
 func (s *Server) keyLimit(w http.ResponseWriter, r *http.Request) {

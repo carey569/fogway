@@ -14,7 +14,7 @@ import (
 
 // application.New is one per process, so each case runs in a child of this
 // test binary (ufec's way in #1806).
-const testWebView2Env = "MAGPIE_TEST_WEBVIEW2"
+const testWebView2Env = "FOGWAY_TEST_WEBVIEW2"
 
 func TestWebView2Child(t *testing.T) {
 	mode := os.Getenv(testWebView2Env)

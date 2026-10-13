@@ -1,8 +1,8 @@
-// Package autostart opens magpie when the user logs in, in the tray with
+// Package autostart opens fogway when the user logs in, in the tray with
 // no window, so the gateway every agent is pointed at is there from the
 // start. Whether it does is the system's own record — a launch agent on
 // the Mac, a Run value on Windows, an autostart entry on Linux — not a
-// setting of magpie's, so it can't say one thing while the system does
+// setting of fogway's, so it can't say one thing while the system does
 // another.
 package autostart
 
@@ -13,13 +13,13 @@ import (
 	"strings"
 )
 
-// Arg is what magpie is started with at login: the tray, no window.
+// Arg is what fogway is started with at login: the tray, no window.
 const Arg = "tray"
 
-// Enabled reports whether magpie opens at login.
+// Enabled reports whether fogway opens at login.
 func Enabled() bool { return enabled() }
 
-// Set has magpie open at login, or not, as this copy of it.
+// Set has fogway open at login, or not, as this copy of it.
 func Set(on bool) error {
 	if !on {
 		return disable()
@@ -31,7 +31,7 @@ func Set(on bool) error {
 	return enable(exe)
 }
 
-// Refresh brings the system's record up to date when magpie opens at
+// Refresh brings the system's record up to date when fogway opens at
 // login, for a record an older version wrote; it never turns it on.
 func Refresh() error { return refresh() }
 
@@ -52,7 +52,7 @@ func self() (string, error) {
 	// a Mac app opened where it was downloaded runs from a copy the system
 	// makes somewhere random, gone at the next login
 	if strings.Contains(exe, "/AppTranslocation/") {
-		return "", errors.New("move magpie to Applications first, then turn this on")
+		return "", errors.New("move fogway to Applications first, then turn this on")
 	}
 	return exe, nil
 }

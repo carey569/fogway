@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // turnsFollowed has turns followed for a test: a turn as long as the
@@ -95,11 +95,11 @@ func TestTurnDoneSaidAtTheTurnsEnd(t *testing.T) {
 		}
 	}
 	chat := `{"model":"plan/m1","stream":true,"messages":[{"role":"user","content":"hi"}]}`
-	messages := `{"model":"plan/m1","stream":true,"max_tokens":100,"system":"You are Claude Code.\n - Primary working directory: /Users/u/work/magpie\n","messages":[{"role":"user","content":"hi"}]}`
+	messages := `{"model":"plan/m1","stream":true,"max_tokens":100,"system":"You are Claude Code.\n - Primary working directory: /Users/u/work/fogway\n","messages":[{"role":"user","content":"hi"}]}`
 
 	for _, c := range []struct{ name, path, body, folder string }{
 		{"chat", "/v1/chat/completions", chat, ""},
-		{"anthropic", "/v1/messages", messages, "/Users/u/work/magpie"},
+		{"anthropic", "/v1/messages", messages, "/Users/u/work/fogway"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			ends, length := turnsFollowed(t, time.Nanosecond)

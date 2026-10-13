@@ -2,7 +2,7 @@
 // The window focused again, or shown again, reads what the page shows anew,
 // and must not blank or rebuild a chart that didn't change. Under a window
 // manager whose focus follows the mouse (Hyprland on omarchy; Zhenzhen on
-// Discord) the pointer crossing from a terminal into magpie focuses it every
+// Discord) the pointer crossing from a terminal into fogway focuses it every
 // time, and the Usage page's bars flashed: the Overview put its skeleton up,
 // hid the chart and drew it again from nothing. Now the Overview, the
 // Requests tab and the tray panel's Usage tab keep their bars (the same
@@ -33,7 +33,7 @@ function overview(v) {
     calls, errors: 0, input, output, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost: 0.28, bucket: "day", series,
     agents: [{ name: "Codex", icon: "codex-color", calls, errors: 0, input, output, cache_read: 0, cost: 0.28 }],
     models: [{ name: "gpt-6-sol", calls, errors: 0, input, output, cache_read: 0, cost: 0.28 }],
-    path: "~/.config/magpie/usage.jsonl",
+    path: "~/.config/fogway/usage.jsonl",
   };
 }
 
@@ -129,7 +129,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the window, on the Overview
       const calls = { state: 0, overview: 0, requests: 0 }, cur = { v: 0 };
-      const p = await open("http://magpie.test/?view=usage", { width: 1180, height: 760 }, calls, cur);
+      const p = await open("http://fogway.test/?view=usage", { width: 1180, height: 760 }, calls, cur);
       if (await p.locator("#usageTab .opt.on").evaluate((b) => b !== b.parentElement.firstElementChild)) await p.locator(":is(#usageTab .opt, .nav-s):visible").first().click();
       const BAR = "#chart .bars .bar";
       await p.locator(BAR).first().waitFor();
@@ -164,7 +164,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the tray panel's Usage tab: not dimmed, not drawn again
       const pc = { state: 0, overview: 0, requests: 0 };
-      const panel = await open("http://magpie.test/?mode=panel", { width: 440, height: 560 }, pc, { v: 0 });
+      const panel = await open("http://fogway.test/?mode=panel", { width: 440, height: 560 }, pc, { v: 0 });
       await panel.locator('[data-ptab="stats"]').click();
       const PCOL = "#panelUsage .led-chart rect.col";
       await panel.locator(PCOL).first().waitFor();

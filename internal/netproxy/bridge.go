@@ -30,7 +30,7 @@ var (
 func IsSOCKS(u *url.URL) bool { return u != nil && (u.Scheme == "socks5" || u.Scheme == "socks5h") }
 
 // Bridge is the http:// address of a proxy on loopback carrying what it is
-// given through the SOCKS5 proxy socks, one for each, kept while magpie
+// given through the SOCKS5 proxy socks, one for each, kept while fogway
 // runs.
 func Bridge(socks *url.URL) (string, error) {
 	key := socks.String()
@@ -266,7 +266,7 @@ func ForBun(proxy string) string {
 	return proxy
 }
 
-// EnvForBun is env for a bun that magpie starts (bun add, update, remove,
+// EnvForBun is env for a bun that fogway starts (bun add, update, remove,
 // run, or an agent CLI's bun add -g): its *_PROXY with a SOCKS5 one
 // bridged (ForBun). Bun takes only http:// and https:// proxies, and with
 // a socks5:// one every registry fetch failed as UnsupportedProxyProtocol

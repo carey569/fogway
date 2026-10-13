@@ -66,8 +66,8 @@ func TestCodexImportModelsSameBasename(t *testing.T) {
 	config := filepath.Join(home, "other", "config.toml")
 	models := []byte(`{"models":[{"slug":"custom-model","visibility":"list"}]}`)
 	for _, path := range []string{
-		filepath.Join(home, ".codex", "magpie-models.json"),
-		filepath.Join(home, "other", "magpie-models.json"),
+		filepath.Join(home, ".codex", "fogway-models.json"),
+		filepath.Join(home, "other", "fogway-models.json"),
 	} {
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)
@@ -76,10 +76,10 @@ func TestCodexImportModelsSameBasename(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if got := codexImportModels(config, "../.codex/magpie-models.json"); len(got) != 0 {
-		t.Fatalf("magpie's own catalog was imported: %v", got)
+	if got := codexImportModels(config, "../.codex/fogway-models.json"); len(got) != 0 {
+		t.Fatalf("fogway's own catalog was imported: %v", got)
 	}
-	if got := codexImportModels(config, "magpie-models.json"); len(got) != 1 || got[0] != "custom-model" {
+	if got := codexImportModels(config, "fogway-models.json"); len(got) != 1 || got[0] != "custom-model" {
 		t.Fatalf("user catalog with the same basename was skipped: %v", got)
 	}
 }

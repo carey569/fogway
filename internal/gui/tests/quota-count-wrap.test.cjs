@@ -47,7 +47,7 @@ for (const [name, engine] of [["webkit", webkit], ["chromium", chromium]]) {
         const page = await (await browser.newContext({ viewport: { width, height: 820 }, reducedMotion: "reduce" })).newPage();
         page.setDefaultTimeout(5000);
         await page.route("**/*", serve("zh", [...wb, trae.after]));
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         await page.locator(".subscription-card .quota-n").nth(2).waitFor();
         await page.waitForTimeout(300);
         const counts = await page.evaluate(() => [...document.querySelectorAll(".quota-n")].map((n) => ({

@@ -1,12 +1,12 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Allowed addresses (lc on Discord: magpie in Docker on a public host):
+// Allowed addresses (lc on Discord: fogway in Docker on a public host):
 // Settings › Network, under Share on local network, lists the IPs and CIDR
-// ranges other computers may reach magpie from at all. Shown while magpie
+// ranges other computers may reach fogway from at all. Shown while fogway
 // is shared or listens on the network, not otherwise. One is added from a
 // field and its Add button (or Enter), saved as the gateway cleaned it,
 // and taken away with its Remove; one that isn't an address, and a list
 // that would shut out the page saving it, are refused in the page's
-// language and nothing is saved. Set by MAGPIE_ALLOW_IPS, the list is
+// language and nothing is saved. Set by FOGWAY_ALLOW_IPS, the list is
 // shown with no field and no Remove. At a 390px panel every row fits, and
 // no click moves the page. English and Chinese, Chromium and WebKit, the
 // strings in all four languages; no backend, the API is faked here.
@@ -25,10 +25,10 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "/config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "/config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [],
-    lan: true, lanURLs: ["http://192.168.1.20:3425"],
+    lan: true, lanURLs: ["http://192.168.1.20:3725"],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
     ...over,
   };
@@ -60,7 +60,7 @@ function server(lang, posts, over) {
     if (url.pathname === "/api/settings/allowips") {
       const body = route.request().postDataJSON();
       posts.push(body.ips);
-      if (s.allowIPsEnv) return json({ error: "MAGPIE_ALLOW_IPS sets the allow list; change it there" }, 400);
+      if (s.allowIPsEnv) return json({ error: "FOGWAY_ALLOW_IPS sets the allow list; change it there" }, 400);
       const c = clean(body.ips);
       if (c.error) return json({ error: c.error }, 400);
       s.allowIPs = c.ips;
@@ -78,11 +78,11 @@ function server(lang, posts, over) {
 
 const en = {
   name: "Allowed addresses", add: "Add", remove: "Remove", field: "IP address or range",
-  sub: "Other computers reach magpie only from these addresses or ranges (CIDR), even with a gateway key; this computer always can. None listed lets every address in",
-  envSub: "Set by MAGPIE_ALLOW_IPS. Other computers reach magpie only from these addresses, even with a gateway key; this computer always can",
+  sub: "Other computers reach fogway only from these addresses or ranges (CIDR), even with a gateway key; this computer always can. None listed lets every address in",
+  envSub: "Set by FOGWAY_ALLOW_IPS. Other computers reach fogway only from these addresses, even with a gateway key; this computer always can",
   notIP: "Write an address as 203.0.113.7, or a range as 10.0.0.0/8 or 2001:db8::/32",
-  shutOut: "That list leaves out the address this page is open from: add it first, or this page can’t reach magpie",
-  envSet: "MAGPIE_ALLOW_IPS sets this list; change it there",
+  shutOut: "That list leaves out the address this page is open from: add it first, or this page can’t reach fogway",
+  envSet: "FOGWAY_ALLOW_IPS sets this list; change it there",
 };
 const zh = { name: "允许的地址", add: "添加", remove: "移除" };
 
@@ -132,7 +132,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.context().close();
     });
 
-    await t.test("hidden while magpie answers only this computer", async () => {
+    await t.test("hidden while fogway answers only this computer", async () => {
       const { page, errors } = await open(browser, "en", [], { lan: false, lanURLs: [] });
       await page.locator("#lanList .row").first().waitFor();
       assert.equal(await page.locator("#allowList .row").count(), 0);
@@ -237,7 +237,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.context().close();
     });
 
-    await t.test("set by MAGPIE_ALLOW_IPS: shown, not edited", async () => {
+    await t.test("set by FOGWAY_ALLOW_IPS: shown, not edited", async () => {
       const { page, errors } = await open(browser, "en", [], {
         lan: false, lanURLs: [], onNetwork: true,
         allowIPsEnv: "1.2.3.4,10.0.0.0/8", allowIPsFromEnv: ["1.2.3.4", "10.0.0.0/8"], allowIPs: ["9.9.9.9"],

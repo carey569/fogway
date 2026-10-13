@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/filememo"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/filememo"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // The catalog is rebuilt from every provider's files on each Resolve (tens

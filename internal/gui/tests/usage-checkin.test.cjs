@@ -116,7 +116,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, asked));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const card = page.locator(".subscription-card", { hasText: "WorkBuddy" });
       // every account in full, so each row is there to read
@@ -163,7 +163,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, asked));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const card = page.locator(".subscription-card", { hasText: "Trae CN" });
       await card.locator(".wb-checkin").first().waitFor();
@@ -190,7 +190,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, []);
     });
 
-    // #808: Trae CN answers a claim from magpie 9074 for good, since it
+    // #808: Trae CN answers a claim from fogway 9074 for good, since it
     // pays only its own app; the card says to check in there, offers no
     // Check in now, and the Settings tab's line says the same.
     test(`${engine} ${lang}: a Trae CN check-in only its own app gets says to check in in Trae CN`, async (t) => {
@@ -215,7 +215,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         return serve(lang, [])(route);
       });
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const card = page.locator(".subscription-card", { hasText: "Trae CN" });
       await card.locator(".wb-checkin").first().waitFor();
@@ -225,7 +225,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(await card.locator(".ci-now").count(), 0, "a press would only claim again");
 
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=usage");
+      await page.goto("http://fogway.test/?view=settings&tab=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       await page.locator("#traeCheckinSub").waitFor({ state: "attached" });
       const sub = await page.locator("#traeCheckinSub").textContent();
@@ -242,7 +242,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, asked));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const card = page.locator(".subscription-card", { hasText: "MiniMax Code" });
       await card.locator(".wb-checkin").first().waitFor();
@@ -286,7 +286,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         return serve(lang, [])(route);
       });
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=usage");
+      await page.goto("http://fogway.test/?view=settings&tab=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const tab = page.locator("#warmTab-minimax");
       await tab.waitFor();
@@ -309,7 +309,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, asked));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const card = page.locator(".subscription-card", { hasText: "arno" });
       await card.locator(".wb-checkin").first().waitFor();
@@ -352,7 +352,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         return serve(lang, [])(route);
       });
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=usage");
+      await page.goto("http://fogway.test/?view=settings&tab=usage");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const tab = page.locator("#warmTab-qoder");
       await tab.waitFor();

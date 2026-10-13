@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/edit"
 )
 
 func TestPiTakes(t *testing.T) {
@@ -19,9 +19,9 @@ func TestPiTakes(t *testing.T) {
 		{"xai/grok-4.6:high", "xai/grok-4.6", true},
 		{"xai/*", "xai/grok-4.6", true},
 		{"*grok*", "xai/grok-4.6", true},
-		{"magpie/*", "magpie/deepseek/deepseek-v4", false}, // Pi's * stops at a /
-		{"magpie/*/*", "magpie/deepseek/deepseek-v4", true},
-		{"deepseek/*:low", "magpie/deepseek/deepseek-v4", true}, // the model id fits
+		{"fogway/*", "fogway/deepseek/deepseek-v4", false}, // Pi's * stops at a /
+		{"fogway/*/*", "fogway/deepseek/deepseek-v4", true},
+		{"deepseek/*:low", "fogway/deepseek/deepseek-v4", true}, // the model id fits
 		{"grok-4.6", "xai/grok-4.6", false},                     // a bare id: added beside
 		{"xai/grok-4.6", "xai/grok-4.7", false},
 		{"openai-codex/gpt-5.6-sol", "opencode-go/deepseek-v4-flash", false},
@@ -33,7 +33,7 @@ func TestPiTakes(t *testing.T) {
 }
 
 // Pi starts a new session on defaultModel only when enabledModels takes it
-// in: the model magpie picks is added to the list, the user's entries
+// in: the model fogway picks is added to the list, the user's entries
 // kept; there is no list made where there was none, and none left empty
 // (#160)
 func TestPiModelJoinsEnabledModels(t *testing.T) {
@@ -75,7 +75,7 @@ func TestPiModelJoinsEnabledModels(t *testing.T) {
 		t.Errorf("enabledModels grew: %s", got)
 	}
 
-	// set outside magpie: the model shown is the one Pi starts on
+	// set outside fogway: the model shown is the one Pi starts on
 	edit.SetJSON(settings, edit.KV{Path: "defaultModel", Value: "grok-3"})
 	if got := f.Get(); got != "xai/grok-4.6" {
 		t.Errorf("Get with a default outside the list = %q, want the list's first", got)
@@ -99,30 +99,30 @@ func TestPiModelJoinsEnabledModels(t *testing.T) {
 	}
 }
 
-// Turning Pi's model back to its own takes magpie's models out of the list
-// with magpie's provider; a list left with nothing goes, not left empty
+// Turning Pi's model back to its own takes fogway's models out of the list
+// with fogway's provider; a list left with nothing goes, not left empty
 func TestPiModelOffLeavesEnabledModels(t *testing.T) {
 	home := syncHome(t)
 	settings := filepath.Join(home, ".pi", "agent", "settings.json")
 	os.MkdirAll(filepath.Dir(settings), 0o755)
 	f := pi(home).Field("model")
 
-	os.WriteFile(settings, []byte(`{"enabledModels":["xai/grok-4.6","magpie/*/*"]}`), 0o644)
-	if err := f.Set("magpie/relay/glm-4.6"); err != nil {
+	os.WriteFile(settings, []byte(`{"enabledModels":["xai/grok-4.6","fogway/*/*"]}`), 0o644)
+	if err := f.Set("fogway/relay/glm-4.6"); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.Set("magpie/deepseek/deepseek-v4"); err != nil {
+	if err := f.Set("fogway/deepseek/deepseek-v4"); err != nil {
 		t.Fatal(err)
 	}
 	if err := f.Set(""); err != nil {
 		t.Fatal(err)
 	}
 	// the user's glob is theirs
-	if got := strings.Join(strings.Fields(mustGet(t, settings, "enabledModels")), ""); got != `["xai/grok-4.6","magpie/*/*"]` {
+	if got := strings.Join(strings.Fields(mustGet(t, settings, "enabledModels")), ""); got != `["xai/grok-4.6","fogway/*/*"]` {
 		t.Errorf("enabledModels = %s", got)
 	}
 
-	os.WriteFile(settings, []byte(`{"enabledModels":["magpie/relay/glm-4.6"],"defaultProvider":"magpie","defaultModel":"relay/glm-4.6"}`), 0o644)
+	os.WriteFile(settings, []byte(`{"enabledModels":["fogway/relay/glm-4.6"],"defaultProvider":"fogway","defaultModel":"relay/glm-4.6"}`), 0o644)
 	if err := f.Set(""); err != nil {
 		t.Fatal(err)
 	}

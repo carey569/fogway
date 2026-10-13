@@ -20,7 +20,7 @@ const fetched = new Date(Date.now() - 3600e3).toISOString();
 const ids = Array.from({ length: 30 }, (_, i) => `vendor/model-${i}`);
 const free = new Set(["vendor/model-3", "vendor/model-10", "vendor/model-27"]);
 
-// the provider as magpie answers it for these picks: with none, the first
+// the provider as fogway answers it for these picks: with none, the first
 // 24 of the vendor's list are on (served), as Exposed has it; after Select
 // none (noModels), none
 function routerFor(chosen, none) {
@@ -84,7 +84,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const saves = [];
       await page.route("**/*", serve(lang, saves));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const editor = page.locator("#modal:not([hidden]) .editor");
       const open = async () => {
         await page.locator(".row.provider", { hasText: "Router" }).click();

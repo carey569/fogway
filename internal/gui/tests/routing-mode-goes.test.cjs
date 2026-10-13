@@ -75,7 +75,7 @@ async function open(engine, lang, scene, width, t) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("**/*", serve(lang, scene));
-  await page.goto("http://magpie.test/?view=routing");
+  await page.goto("http://fogway.test/?view=routing");
   const req = page.locator(".rt-req").first();
   await req.waitFor();
   if (await req.getAttribute("aria-pressed") !== "true") await req.click();

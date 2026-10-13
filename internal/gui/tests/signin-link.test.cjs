@@ -58,7 +58,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], copied = [], opened = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, copied, opened));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator("#addProvider").click();
       const sheet = page.locator("#addSheet");
       await sheet.locator('.tile[data-pick="Factory"]').click();

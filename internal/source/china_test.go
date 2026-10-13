@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // the 「国内镜像」 switch is off in every test but those that turn it on,
@@ -49,7 +49,7 @@ func TestChinaFirst(t *testing.T) {
 }
 
 func TestChinaComesFirst(t *testing.T) {
-	t.Setenv("MAGPIE_MIRRORS", "")
+	t.Setenv("FOGWAY_MIRRORS", "")
 	raw := "https://registry.npmjs.org/pkg"
 	if got := URLs(raw); len(got) != 1 {
 		t.Fatalf("switch off: URLs = %q", got)
@@ -59,8 +59,8 @@ func TestChinaComesFirst(t *testing.T) {
 		t.Fatalf("switch on: URLs = %q", got)
 	}
 	// with the fallback mirrors too, npmmirror once, first
-	t.Setenv("MAGPIE_MIRRORS", "on")
-	t.Setenv("MAGPIE_NPM_REGISTRY", "")
+	t.Setenv("FOGWAY_MIRRORS", "on")
+	t.Setenv("FOGWAY_NPM_REGISTRY", "")
 	if got := strings.Join(URLs(raw), " "); got != "https://registry.npmmirror.com/pkg "+raw {
 		t.Fatalf("switch and fallback on: URLs = %q", got)
 	}

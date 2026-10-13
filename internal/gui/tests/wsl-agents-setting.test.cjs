@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// #1264 (Etsuya233): magpie on Windows lists the WSL distros and probes the
+// #1264 (Etsuya233): fogway on Windows lists the WSL distros and probes the
 // running ones for agents, with no way to stop it. Settings → General has a
 // "Detect agents in WSL" row where there is WSL (the settings say wsl),
 // on by default: Off and On are saved as noWSLAgents true and false, the
@@ -58,7 +58,7 @@ async function open(engine, lang, posted, st, t, width = 900) {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.route("**/*", serve(lang, posted, st));
   await watchSettingsReads(page);
-  await page.goto("http://magpie.test/?view=settings&tab=general");
+  await page.goto("http://fogway.test/?view=settings&tab=general");
   await settingsDrawn(page); // rows found are the ones that stay (#1659)
   await page.locator("#setPage-general .row.pref").first().waitFor();
   return { page, errors };

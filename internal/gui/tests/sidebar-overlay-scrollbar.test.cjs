@@ -19,7 +19,7 @@ function serve(lang) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:false};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3425", running: true, window: true } });
+    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3725", running: true, window: true } });
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
@@ -59,9 +59,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.addInitScript(() => { try { localStorage.setItem("magpie.navLayout", "side"); } catch {} });
+        await page.addInitScript(() => { try { localStorage.setItem("fogway.navLayout", "side"); } catch {} });
         await page.route("**/*", serve(lang));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.waitForSelector("#nav button.on");
         await page.locator("#side").waitFor();
         await frame(page);
@@ -114,9 +114,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const context = await browser.newContext({ viewport: { width: 1100, height: 1000 }, reducedMotion: "reduce" });
       const page = await context.newPage();
       page.setDefaultTimeout(5000);
-      await page.addInitScript(() => { try { localStorage.setItem("magpie.navLayout", "side"); } catch {} });
+      await page.addInitScript(() => { try { localStorage.setItem("fogway.navLayout", "side"); } catch {} });
       await page.route("**/*", serve("en"));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       await frame(page);
       const s = await bar(page);

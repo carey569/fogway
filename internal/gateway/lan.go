@@ -13,11 +13,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/budget"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/budget"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // The gateway accepts named caller keys locally and, while shared or on the
@@ -25,7 +25,7 @@ import (
 // stale named key.
 
 // listenAddr is where the gateway listens: every interface while it is
-// shared, on its port, else its address. A host MAGPIE_ADDR names itself
+// shared, on its port, else its address. A host FOGWAY_ADDR names itself
 // (127.0.0.1 behind Tailscale Serve, one interface's address) is kept
 // while shared too: sharing asks remote callers for a gateway key, and
 // never widens the listener past the address the user chose (#1112).
@@ -36,10 +36,10 @@ func listenAddr() string {
 	return Addr()
 }
 
-// pinnedHost is the host MAGPIE_ADDR names, "" when it isn't set or names
+// pinnedHost is the host FOGWAY_ADDR names, "" when it isn't set or names
 // every interface (0.0.0.0, ::, or no host).
 func pinnedHost() string {
-	a := os.Getenv("MAGPIE_ADDR")
+	a := os.Getenv("FOGWAY_ADDR")
 	if a == "" {
 		return ""
 	}
@@ -67,15 +67,15 @@ func migrateLANKeyBestEffort() {
 }
 
 func logInvalidPublicURL() {
-	log.Printf("ignoring invalid MAGPIE_PUBLIC_URL: expected an HTTP or HTTPS address with a host")
+	log.Printf("ignoring invalid FOGWAY_PUBLIC_URL: expected an HTTP or HTTPS address with a host")
 }
 
 var warnInvalidPublicURL = sync.OnceFunc(logInvalidPublicURL)
 
-// publicURL is the validated MAGPIE_PUBLIC_URL, with a scheme and without
+// publicURL is the validated FOGWAY_PUBLIC_URL, with a scheme and without
 // trailing slashes. An invalid value is treated as unset and warned once.
 func publicURL() string {
-	u := strings.TrimSpace(os.Getenv("MAGPIE_PUBLIC_URL"))
+	u := strings.TrimSpace(os.Getenv("FOGWAY_PUBLIC_URL"))
 	if u == "" {
 		return ""
 	}
@@ -96,10 +96,10 @@ func publicURL() string {
 	return u
 }
 
-// PublicURL is MAGPIE_PUBLIC_URL, with a scheme; "" when it isn't set.
+// PublicURL is FOGWAY_PUBLIC_URL, with a scheme; "" when it isn't set.
 func PublicURL() string { return publicURL() }
 
-// OnNetwork: MAGPIE_ADDR puts the gateway beyond loopback (0.0.0.0 in the
+// OnNetwork: FOGWAY_ADDR puts the gateway beyond loopback (0.0.0.0 in the
 // Docker image, a server's or one interface's address), so it is reached
 // from other machines, and from a container's host, whether or not it is
 // shared from Settings. Such callers need an enabled gateway key, as they
@@ -114,7 +114,7 @@ func OnNetwork() bool {
 // gateway key — while the gateway is shared, or listens on the network.
 func remoteKeyed() bool { return settings.Load().LAN || OnNetwork() }
 
-// PublicHost is MAGPIE_PUBLIC_URL's host, "" when it isn't set.
+// PublicHost is FOGWAY_PUBLIC_URL's host, "" when it isn't set.
 func PublicHost() string {
 	u, err := url.Parse(publicURL())
 	if err != nil {
@@ -123,12 +123,12 @@ func PublicHost() string {
 	return u.Hostname()
 }
 
-// ContainerAddrs: the addresses magpie finds for itself are a container's,
-// which other machines can't reach, and MAGPIE_PUBLIC_URL doesn't say the
+// ContainerAddrs: the addresses fogway finds for itself are a container's,
+// which other machines can't reach, and FOGWAY_PUBLIC_URL doesn't say the
 // host's.
 func ContainerAddrs() bool { return publicURL() == "" && inContainer("/") }
 
-// InContainer: this magpie runs in a container (Docker, Podman, a
+// InContainer: this fogway runs in a container (Docker, Podman, a
 // Kubernetes pod), whose image is what gets updated, not its binary.
 func InContainer() bool { return inContainer("/") }
 
@@ -150,14 +150,14 @@ func inContainer(root string) bool {
 }
 
 // LANURLs are the addresses other machines on the network reach the
-// gateway at: MAGPIE_PUBLIC_URL when set, else one per IPv4 address this
+// gateway at: FOGWAY_PUBLIC_URL when set, else one per IPv4 address this
 // computer has there.
 func LANURLs() []string {
 	if u := publicURL(); u != "" {
 		return []string{u}
 	}
-	// a gateway MAGPIE_ADDR keeps on one host is reached there alone; on
-	// loopback, only through a proxy, whose address MAGPIE_PUBLIC_URL says
+	// a gateway FOGWAY_ADDR keeps on one host is reached there alone; on
+	// loopback, only through a proxy, whose address FOGWAY_PUBLIC_URL says
 	if h := pinnedHost(); h != "" {
 		if ip := net.ParseIP(h); h == "localhost" || ip != nil && ip.IsLoopback() {
 			return nil
@@ -244,16 +244,16 @@ func lanGuard(next http.Handler) http.Handler {
 		remote := !local(r)
 		if !remote && rebound(r) {
 			log.Printf("refused %s %s: a web page reached loopback under the name %q", r.Method, r.URL.Path, r.Host)
-			writeError(w, provider.Chat, http.StatusForbidden, "magpie doesn't answer a browser that reached it as "+r.Host+" (a web site's name pointed at this computer): call it as localhost or 127.0.0.1, or send an enabled gateway key")
+			writeError(w, provider.Chat, http.StatusForbidden, "fogway doesn't answer a browser that reached it as "+r.Host+" (a web site's name pointed at this computer): call it as localhost or 127.0.0.1, or send an enabled gateway key")
 			return
 		}
 		if remote && !remoteKeyed() {
 			if proxied(r) {
-				log.Printf("refused %s %s through a proxy or tunnel: magpie isn't shared", r.Method, r.URL.Path)
-				http.Error(w, "this request came through a proxy or tunnel (it carries a forwarding header such as X-Forwarded-For or Cf-Connecting-IP), so magpie answers it as one from another machine: only while Settings → Share on local network is on, with an enabled gateway key (Gateway → Gateway keys) sent as Authorization: Bearer <key> or x-api-key", http.StatusForbidden)
+				log.Printf("refused %s %s through a proxy or tunnel: fogway isn't shared", r.Method, r.URL.Path)
+				http.Error(w, "this request came through a proxy or tunnel (it carries a forwarding header such as X-Forwarded-For or Cf-Connecting-IP), so fogway answers it as one from another machine: only while Settings → Share on local network is on, with an enabled gateway key (Gateway → Gateway keys) sent as Authorization: Bearer <key> or x-api-key", http.StatusForbidden)
 				return
 			}
-			http.Error(w, "magpie isn't shared on the local network", http.StatusForbidden)
+			http.Error(w, "fogway isn't shared on the local network", http.StatusForbidden)
 			return
 		}
 		if remote || managedKey(r) {
@@ -277,11 +277,11 @@ var callbacks = struct {
 	tokens map[string]bool
 }{tokens: map[string]bool{}}
 
-// ownCallback: r is the MCP helper of a Claude Code magpie runs handing a
+// ownCallback: r is the MCP helper of a Claude Code fogway runs handing a
 // tool call back, on the path it was given — POST claudeMCPPath and the
 // callback token of a run now live, nothing else. It is let in without a
 // gateway key from wherever it comes: the helper calls the address the
-// gateway listens on, and with MAGPIE_ADDR on one interface's address (a
+// gateway listens on, and with FOGWAY_ADDR on one interface's address (a
 // LAN, Tailscale or loopback-alias IP), which isn't loopback, it was asked
 // for a key it doesn't have (401). Its tool call never reached the run,
 // so every turn with tool results found no run waiting and started a new
@@ -299,9 +299,9 @@ func ownCallback(r *http.Request) bool {
 // gateway: it sends no Origin on a GET, or one equal to the Host, so
 // corsGuard lets it by, and on loopback a call needs no key, so the page
 // could read the models and quotas and spend the user's subscriptions.
-// Agents call magpie as localhost or an IP, and send none of a browser's
-// marks; a hostname of this computer's own (MAGPIE_PUBLIC_URL's,
-// MAGPIE_ADDR's, its own name, a container runtime's name for the host)
+// Agents call fogway as localhost or an IP, and send none of a browser's
+// marks; a hostname of this computer's own (FOGWAY_PUBLIC_URL's,
+// FOGWAY_ADDR's, its own name, a container runtime's name for the host)
 // isn't a web site's. An enabled gateway key, which such a page can't
 // know, still lets a call in.
 func rebound(r *http.Request) bool {
@@ -374,7 +374,7 @@ func identifyCaller(w http.ResponseWriter, r *http.Request) (*http.Request, bool
 			// no unbounded work) until the bucket refills. A valid key never
 			// reaches here, so a real caller is not held.
 			w.Header().Set("Retry-After", strconv.Itoa(int(retry.Seconds())+1))
-			writeError(w, provider.Chat, http.StatusTooManyRequests, "too many failed authentications; slow down and send an enabled magpie gateway key")
+			writeError(w, provider.Chat, http.StatusTooManyRequests, "too many failed authentications; slow down and send an enabled fogway gateway key")
 			return r, false
 		}
 		msg := refusedKey(callerKey(r))
@@ -450,11 +450,11 @@ func callerKey(r *http.Request) string {
 // header that carries none ("Authorization: Bearer ", sent beside an
 // x-api-key by a client with no token set) is passed over, and a client
 // that sends two different values — a stale or placeholder token in
-// Authorization (ANTHROPIC_AUTH_TOKEN left at magpie), the key in x-api-key
+// Authorization (ANTHROPIC_AUTH_TOKEN left at fogway), the key in x-api-key
 // — is let in by whichever is an enabled gateway key. Loopback takes any
 // token, so this mattered only from another computer, which was refused
 // what this one was answered (悠悠哥 on Discord: a client's model list from
-// magpie shared on a NAS failed, from magpie on 127.0.0.1 it came).
+// fogway shared on a NAS failed, from fogway on 127.0.0.1 it came).
 func callerKeys(r *http.Request) []string {
 	var out []string
 	add := func(v string) {
@@ -476,7 +476,7 @@ func callerKeys(r *http.Request) []string {
 	return out
 }
 
-// managedKey: the request carries a named gateway key's form (sk-magpie-…),
+// managedKey: the request carries a named gateway key's form (sk-fogway-…),
 // or a key's own value a user gave it, in any of the places a key is read.
 func managedKey(r *http.Request) bool {
 	return slices.ContainsFunc(callerKeys(r), access.Named)
@@ -488,13 +488,13 @@ func managedKey(r *http.Request) bool {
 // key (#545).
 func refusedKey(key string) string {
 	if key == "" {
-		return "no API key was sent: send a magpie gateway key as Authorization: Bearer <key> (or x-api-key)"
+		return "no API key was sent: send a fogway gateway key as Authorization: Bearer <key> (or x-api-key)"
 	}
 	which := "the API key sent"
 	if len(key) >= 12 { // a short one isn't named, so as not to give most of it away
 		which = "the API key ending in " + key[len(key)-4:]
 	}
-	return which + " is not an enabled magpie gateway key: it is disabled, removed or mistyped"
+	return which + " is not an enabled fogway gateway key: it is disabled, removed or mistyped"
 }
 
 // local is a request from this computer: one that reached the gateway on
@@ -511,14 +511,14 @@ func local(r *http.Request) bool {
 // forwardHeaders are what a proxy or tunnel adds to a request it passes
 // on: cloudflared (Cf-Connecting-IP, and X-Forwarded-For beside it),
 // ngrok, Tailscale serve and funnel, frp's and Caddy's and nginx's HTTP
-// proxies. An agent calling magpie sends none of them.
+// proxies. An agent calling fogway sends none of them.
 var forwardHeaders = []string{"Forwarded", "X-Forwarded-For", "X-Real-IP", "Cf-Connecting-IP", "True-Client-IP", "Tailscale-User-Login"}
 
 // proxied: the request came to loopback through a proxy or tunnel on this
-// computer (#1022, znjhahaha: a Cloudflare Tunnel to 127.0.0.1:3425), so it
+// computer (#1022, znjhahaha: a Cloudflare Tunnel to 127.0.0.1:3725), so it
 // is someone else's, from wherever the proxy reaches, and is treated as
-// from another machine: answered only while magpie is shared, with an
-// enabled gateway key. MAGPIE_TRUST_PROXY=1 says a proxy here signs its
+// from another machine: answered only while fogway is shared, with an
+// enabled gateway key. FOGWAY_TRUST_PROXY=1 says a proxy here signs its
 // clients in itself, and keeps what it forwards local, as before.
 func proxied(r *http.Request) bool {
 	if trustProxy() {
@@ -528,6 +528,6 @@ func proxied(r *http.Request) bool {
 }
 
 func trustProxy() bool {
-	v, _ := strconv.ParseBool(strings.TrimSpace(os.Getenv("MAGPIE_TRUST_PROXY")))
+	v, _ := strconv.ParseBool(strings.TrimSpace(os.Getenv("FOGWAY_TRUST_PROXY")))
 	return v
 }

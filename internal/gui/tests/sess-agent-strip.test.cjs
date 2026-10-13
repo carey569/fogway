@@ -52,7 +52,7 @@ function serve(lang, names) {
       const agent = ids.includes(want) ? want : ids[0];
       return json({
         agents: ids.map((id) => ({ agent: id, count: 2, deletable: true, name: agents[id], icon: "generic" })),
-        agent, sessions: sessions.filter((s) => s.agent === agent), terminal: true, trash: [], trashDir: "~/magpie/trash/sessions",
+        agent, sessions: sessions.filter((s) => s.agent === agent), terminal: true, trash: [], trashDir: "~/fogway/trash/sessions",
       });
     }
     if (url.pathname === "/api/groups") return json({ groups: [] });
@@ -86,13 +86,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, NAMES));
       await page.addInitScript(() => {
-        localStorage.setItem("magpie.usageTab", "sessions");
-        localStorage.setItem("magpie.sessRange", "all");
+        localStorage.setItem("fogway.usageTab", "sessions");
+        localStorage.setItem("fogway.sessRange", "all");
         // the Usage page's own 5 s refresh would rebuild the strip between a
         // measurement and the click it measures; one read is enough here
-        localStorage.setItem("magpie.usageEvery", "0");
+        localStorage.setItem("fogway.usageEvery", "0");
       });
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.waitForFunction(() => document.querySelectorAll("#sessAgent .opt").length === 12);
 
       // #929: eleven agents in range made the strip wider than the window, and
@@ -177,7 +177,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // and Connect's still do
       await page.unroute("**/*");
       await page.route("**/*", serve(lang, NAMES));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.waitForFunction(() => document.querySelectorAll("#sessAgent .opt").length === 12);
       assert.equal((await box(page, "#period")).overflow, "visible", "the Usage page's range strip started scrolling in itself");
       assert.equal((await box(page, "#usageTab")).overflow, "visible", "the Usage page's tab strip started scrolling in itself");

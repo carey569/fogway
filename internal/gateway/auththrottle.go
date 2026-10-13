@@ -64,4 +64,3 @@ func resetAuthThrottle() {
 	t.tokens, t.last, t.now = authFailBurst, time.Time{}, time.Now
 	t.Unlock()
 }
-

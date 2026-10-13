@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 // syncHome is a sandbox home with a models.dev catalog that knows glm-4.6's
@@ -75,18 +75,18 @@ func readFile(path string) string {
 	return string(b)
 }
 
-// A provider added after a magpie model was picked reaches the lists agents
-// keep of magpie's models; a file magpie wrote nothing into stays as it is.
+// A provider added after a fogway model was picked reaches the lists agents
+// keep of fogway's models; a file fogway wrote nothing into stays as it is.
 func TestSyncCatalogRewritesAgentLists(t *testing.T) {
 	home := syncHome(t)
 	piModels := filepath.Join(home, ".pi", "agent", "models.json")
-	writeFile(t, piModels, `{"providers":{"mine":{"baseUrl":"http://x"},"magpie":{"name":"magpie","models":[]}}}`)
+	writeFile(t, piModels, `{"providers":{"mine":{"baseUrl":"http://x"},"fogway":{"name":"fogway","models":[]}}}`)
 	crushCfg := filepath.Join(home, ".config", "crush", "crush.json")
 	crushBody := `{"providers":{"mine":{"base_url":"http://x"}}}`
 	writeFile(t, crushCfg, crushBody)
 	codexDir := filepath.Join(home, ".codex")
-	codexCat := filepath.Join(codexDir, "magpie-models.json")
-	writeFile(t, filepath.Join(codexDir, "config.toml"), "model = \"relay/glm-4.6\"\nmodel_provider = \"magpie\"\nmodel_catalog_json = '"+codexCat+"'\n")
+	codexCat := filepath.Join(codexDir, "fogway-models.json")
+	writeFile(t, filepath.Join(codexDir, "config.toml"), "model = \"relay/glm-4.6\"\nmodel_provider = \"fogway\"\nmodel_catalog_json = '"+codexCat+"'\n")
 	writeFile(t, codexCat, `{"models":[]}`)
 
 	if err := provider.Save(provider.Provider{ID: "added", Name: "Added", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"m2"}}); err != nil {
@@ -100,7 +100,7 @@ func TestSyncCatalogRewritesAgentLists(t *testing.T) {
 		t.Errorf("pi models.json:\n%s", pi)
 	}
 	if got := readFile(crushCfg); got != crushBody {
-		t.Errorf("crush config without magpie changed:\n%s", got)
+		t.Errorf("crush config without fogway changed:\n%s", got)
 	}
 	cx := readFile(codexCat)
 	if !strings.Contains(cx, `"slug": "added/m2"`) || !strings.Contains(cx, `"context_window": 204800`) {
@@ -124,38 +124,38 @@ func must(b []byte, err error) []byte {
 	return b
 }
 
-// A model of magpie's chosen for OpenCode that a provider of the file's own
-// already sends to magpie is named there, and magpie's flat provider isn't
+// A model of fogway's chosen for OpenCode that a provider of the file's own
+// already sends to fogway is named there, and fogway's flat provider isn't
 // added beside it with the same models again.
 func TestOpenCodeKeepsItsOwnGatewayProviders(t *testing.T) {
 	home := syncHome(t)
 	cfg := filepath.Join(home, ".config", "opencode", "opencode.json")
 	writeFile(t, cfg, `{
   "provider": {
-    "magpie-relay": {"npm": "@ai-sdk/openai-compatible", "options": {"baseURL": "http://localhost:3425/v1/"}, "models": {"relay/glm-4.6": {}}},
+    "fogway-relay": {"npm": "@ai-sdk/openai-compatible", "options": {"baseURL": "http://localhost:3725/v1/"}, "models": {"relay/glm-4.6": {}}},
     "elsewhere": {"options": {"baseURL": "https://example.com/v1"}, "models": {"relay/glm-4.6": {}}}
   },
-  "model": "magpie-relay/relay/glm-4.6"
+  "model": "fogway-relay/relay/glm-4.6"
 }`)
 	oc := opencode(home, filepath.Join(home, ".config"))
-	if err := oc.Fields[0].Set("magpie/relay/glm-4.6"); err != nil {
+	if err := oc.Fields[0].Set("fogway/relay/glm-4.6"); err != nil {
 		t.Fatal(err)
 	}
-	if v, _ := edit.GetJSON(cfg, "model"); v != "magpie-relay/relay/glm-4.6" {
+	if v, _ := edit.GetJSON(cfg, "model"); v != "fogway-relay/relay/glm-4.6" {
 		t.Fatalf("model = %q", v)
 	}
-	if _, ok := edit.GetJSON(cfg, "provider.magpie"); ok {
-		t.Fatal("magpie's provider added beside the file's own")
+	if _, ok := edit.GetJSON(cfg, "provider.fogway"); ok {
+		t.Fatal("fogway's provider added beside the file's own")
 	}
-	// a model none of them lists still gets magpie's provider
-	os.WriteFile(cfg, []byte(`{"provider": {"magpie-relay": {"options": {"baseURL": "http://127.0.0.1:3425/v1"}, "models": {}}}}`), 0o644)
-	if err := oc.Fields[0].Set("magpie/relay/glm-4.6"); err != nil {
+	// a model none of them lists still gets fogway's provider
+	os.WriteFile(cfg, []byte(`{"provider": {"fogway-relay": {"options": {"baseURL": "http://127.0.0.1:3725/v1"}, "models": {}}}}`), 0o644)
+	if err := oc.Fields[0].Set("fogway/relay/glm-4.6"); err != nil {
 		t.Fatal(err)
 	}
-	if v, _ := edit.GetJSON(cfg, "model"); v != "magpie/relay/glm-4.6" {
+	if v, _ := edit.GetJSON(cfg, "model"); v != "fogway/relay/glm-4.6" {
 		t.Fatalf("model = %q", v)
 	}
-	if _, ok := edit.GetJSON(cfg, "provider.magpie"); !ok {
-		t.Fatal("magpie's provider not added")
+	if _, ok := edit.GetJSON(cfg, "provider.fogway"); !ok {
+		t.Fatal("fogway's provider not added")
 	}
 }

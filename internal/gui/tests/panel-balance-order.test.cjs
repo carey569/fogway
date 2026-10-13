@@ -12,7 +12,7 @@ const { chromium, webkit } = require("playwright");
 const assets = path.resolve(__dirname, "../assets");
 
 // the reporter's: Codex, DeepSeek, Copilot shown; Gemini CLI and Kimi hidden
-// (#1510's screenshots), in the order magpie itself lists them
+// (#1510's screenshots), in the order fogway itself lists them
 const reporter = {
   quotas: [
     { provider: "codex", name: "Codex", icon: "codex-color", user: "x@y.z", plan: "plus", windows: [{ name: "7d", used: 71 }] },
@@ -68,12 +68,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         t.after(async () => { await browser.close(); });
         const errors = [];
         const context = await browser.newContext({ viewport: { width: 380, height: 640 }, reducedMotion: "reduce" });
-        await context.addInitScript(() => { try { localStorage.setItem("magpie.panelTab", "usage"); } catch {} });
+        await context.addInitScript(() => { try { localStorage.setItem("fogway.panelTab", "usage"); } catch {} });
         const page = await context.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, c));
-        await page.goto("http://magpie.test/?mode=panel");
+        await page.goto("http://fogway.test/?mode=panel");
         const want = c.panel.flat().length;
         await page.waitForFunction((n) => document.querySelectorAll("#panelQuota .pq-card[data-card]").length >= n, want);
 
@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const win = await context.newPage();
         win.on("pageerror", (e) => errors.push(e.message));
         await win.route("**/*", serve(lang, c));
-        await win.goto("http://magpie.test/?view=usage&tab=usage");
+        await win.goto("http://fogway.test/?view=usage&tab=usage");
         await win.waitForFunction((n) => document.querySelectorAll("#subscriptionUsage > [data-key]").length >= n, c.usage.length);
         assert.deepEqual(await win.evaluate(() => [...new Set([...document.querySelectorAll("#subscriptionUsage > [data-key]")].map((x) => x.dataset.key))]), c.usage);
         assert.deepEqual(errors, []);

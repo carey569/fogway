@@ -20,8 +20,8 @@ const S3 = { kind: "s3", url: "s3://bkt/team", user: "AKID", endpoint: "https://
 
 function serve(lang, posts) {
   const settings = {
-    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/magpie",
-    gateway: "http://127.0.0.1:3425", visionModels: [], imageGenModels: [],
+    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/fogway",
+    gateway: "http://127.0.0.1:3725", visionModels: [], imageGenModels: [],
     fx: { rate: 7.2, stale: false },
   };
   let sync = { on: true, ...S3, passphraseSet: true, keys: true, agents: true, library: true, other: DAV };
@@ -87,7 +87,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       });
       page.setDefaultTimeout(5000);
 
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator("#prefs").click();
       await page.locator(":is(#setTab-sync, .nav-s[data-of=setTab-sync]):visible").click();
       const list = page.locator("#syncList");

@@ -46,7 +46,7 @@ function serve(lang) {
     if (url.pathname === "/api/usage/requests") return json({ period: url.searchParams.get("period"), rows: ROWS, offset: 0, total: ROWS.length, calls: ROWS.length, errors: 1, input: 52406, output: 1800, cache_read: 52000, cache_write: 400, reasoning: 0, cost: 0.02, unpriced: 0, agents: [{ id: "claude", name: "Claude Code", icon: "claudecode-color" }] });
     if (url.pathname === "/api/usage/requests/content") return json({ found: false, why: "read" });
     if (url.pathname === "/api/usage/quotas") return json([]);
-    if (url.pathname === "/api/usage") return json({ calls: 3, errors: 1, input: 52406, output: 1800, cache_read: 52000, cache_write: 400, reasoning: 0, unpriced: 0, cost: 0.02, bucket: "day", series: [], agents: [], models: [], path: "~/.config/magpie/usage.jsonl" });
+    if (url.pathname === "/api/usage") return json({ calls: 3, errors: 1, input: 52406, output: 1800, cache_read: 52000, cache_write: 400, reasoning: 0, unpriced: 0, cost: 0.02, bucket: "day", series: [], agents: [], models: [], path: "~/.config/fogway/usage.jsonl" });
     if (url.pathname === "/api/sessions") return json({ sessions: [], dirs: [] });
     if (url.pathname === "/api/sessions/stats") return json({ from: "", to: "", days: [], agents: {} });
     if (url.pathname.startsWith("/api/")) return json({});
@@ -83,7 +83,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang));
           try {
-            await page.goto("http://magpie.test/?view=usage");
+            await page.goto("http://fogway.test/?view=usage");
             await page.locator(":is(#usageTab .opt, .nav-s):visible").nth(1).click();
             const rows = page.locator(".led tbody tr.led-row");
             await rows.nth(ROWS.length - 1).waitFor({ timeout: 15000 });

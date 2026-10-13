@@ -115,7 +115,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
             p.setDefaultTimeout(5000);
             p.on("pageerror", (e) => errors.push(e.message));
             await p.route("**/*", serve(lang, currency, scale, false));
-            await p.goto("http://magpie.test/");
+            await p.goto("http://fogway.test/");
             await p.locator('[data-view="usage"]').first().click();
             await p.locator(":is(#usageTab .opt, .nav-s):visible").nth(1).click();
             await p.locator("#ledChart svg").waitFor();
@@ -140,7 +140,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
             p.setDefaultTimeout(5000);
             p.on("pageerror", (e) => errors.push(e.message));
             await p.route("**/*", serve(lang, currency, scale, true));
-            await p.goto("http://magpie.test/?mode=panel");
+            await p.goto("http://fogway.test/?mode=panel");
             await p.locator('[data-ptab="stats"]').click();
             await p.locator("#panelUsage .pu-card .led-chart svg").waitFor();
             for (let i = 0; i < 3; i++) {

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/update"
 )
 
-// `magpie update` in the Docker image (/magpie, run as nonroot) failed with
+// `fogway update` in the Docker image (/fogway, run as nonroot) failed with
 // the rename's "permission denied"; it now says to pull the new image.
 // Outside a container it goes on to the download as before.
 func TestUpdateInContainerSaysPullTheImage(t *testing.T) {
@@ -22,14 +22,14 @@ func TestUpdateInContainerSaysPullTheImage(t *testing.T) {
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// no checksum: a download is refused before anything is fetched or written
-		json.NewEncoder(w).Encode(update.Release{Version: "0.1.11", URL: "https://github.com/yetone/magpie-releases/releases/tag/v0.1.11",
+		json.NewEncoder(w).Encode(update.Release{Version: "0.1.11", URL: "https://github.com/fogway/fogway/releases/tag/v0.1.11",
 			Assets: map[string]update.Asset{update.BinaryAsset(): {URL: "http://" + r.Host + "/asset"}}})
 	}))
 	defer srv.Close()
-	t.Setenv("MAGPIE_UPDATE_FEED", srv.URL)
+	t.Setenv("FOGWAY_UPDATE_FEED", srv.URL)
 	dir := t.TempDir()
-	exe := filepath.Join(dir, "magpie")
-	if err := os.WriteFile(exe, []byte("magpie"), 0o755); err != nil {
+	exe := filepath.Join(dir, "fogway")
+	if err := os.WriteFile(exe, []byte("fogway"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Chmod(dir, 0o555); err != nil {
@@ -44,7 +44,7 @@ func TestUpdateInContainerSaysPullTheImage(t *testing.T) {
 
 	updateInContainer = func() bool { return true }
 	err := updateCmd([]string{"update"})
-	if err == nil || !strings.Contains(err.Error(), "docker pull ghcr.io/yetone/magpie:latest") {
+	if err == nil || !strings.Contains(err.Error(), "docker pull ghcr.io/fogway/fogway:latest") {
 		t.Fatalf("in a container: %v", err)
 	}
 

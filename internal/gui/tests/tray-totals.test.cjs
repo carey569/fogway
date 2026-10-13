@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// #1984: Settings → the menu bar can show magpie's own tokens and cost for
+// #1984: Settings → the menu bar can show fogway's own tokens and cost for
 // today or the last 7 days, beside the allowances or alone. The picker lists
 // both after the subscriptions, ticked and saved as a card is ("usage:today",
 // "usage:7d"); the pill names a total alone, and counts a mix of them without
@@ -35,7 +35,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsages: [], trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -48,7 +48,7 @@ const empty = (period) => ({
   bucket: period === "today" ? "hour" : "day", series: [], by: { provider: [], agent: [], model: [] }, agents: [], providers: [],
 });
 
-// server answers as magpie does: trayUsage kept as the first of trayUsages
+// server answers as fogway does: trayUsage kept as the first of trayUsages
 function server(lang, posts, asked, web = false) {
   let cur = settingsPayload({ lang });
   return async (route) => {
@@ -104,7 +104,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang, posts, asked));
 
-          await page.goto("http://magpie.test/?view=usage");
+          await page.goto("http://fogway.test/?view=usage");
           await page.locator("#prefs").click();
           await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").click();
           const pill = page.locator("#trayUsagePick button");
@@ -174,7 +174,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, [], asked));
-        await page.goto("http://magpie.test/?view=usage&tab=usage&period=7d");
+        await page.goto("http://fogway.test/?view=usage&tab=usage&period=7d");
         await page.waitForFunction((s) => document.querySelector("#period .opt.on")?.textContent.trim() === s, w.days);
         assert(asked.some((a) => a.startsWith("/api/usage?") && a.includes("period=7d")), "asked: " + asked.join(" "));
         assert.equal(new URL(page.url()).searchParams.get("period"), null);
@@ -191,7 +191,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, [], asked, true));
-        await page.goto("http://magpie.test/?mode=panel");
+        await page.goto("http://fogway.test/?mode=panel");
         await page.locator('[data-ptab="agents"].on').waitFor();
         await page.evaluate(() => panelUseFocus("7d"));
         await page.waitForFunction(() => document.body.dataset.ptab === "stats");

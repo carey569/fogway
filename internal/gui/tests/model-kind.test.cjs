@@ -83,7 +83,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         const posts = [];
         await page.route("**/*", serve(lang, posts));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const open = async (name) => {
           await page.locator(".row.provider", { hasText: name }).first().click();
           await page.locator(".editor .mchips .mchip").first().waitFor();
@@ -129,7 +129,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
         // a subscription's models can't be marked: on a page loaded
         // afresh, the Save's own reply left aside
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await open("GitHub Copilot");
         await rclick(chip("GPT-9"));
         await rowMenu.waitFor();

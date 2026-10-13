@@ -11,7 +11,7 @@ import (
 // at once on each of the provider's keys or accounts, 0 for no limit: the
 // user's MaxConcurrency when they set one, else what the plugin giving the
 // provider says it takes (its auth hook's maxConcurrency, or its
-// package.json's magpie.maxConcurrency), else none.
+// package.json's fogway.maxConcurrency), else none.
 func (p Provider) Concurrency() int {
 	if p.MaxConcurrency != nil {
 		return max(*p.MaxConcurrency, 0)
@@ -207,7 +207,7 @@ func (p Provider) QuotaRestFor() time.Duration {
 // when the vendor doesn't say when they are back, 0 for the gateway's own.
 func SetQuotaRest(id string, minutes int) error {
 	if minutes < 0 || minutes > MaxQuotaRest {
-		return fmt.Errorf("a rest out of quota is from 0 (magpie's own) to %d minutes (8 days), not %d", MaxQuotaRest, minutes)
+		return fmt.Errorf("a rest out of quota is from 0 (fogway's own) to %d minutes (8 days), not %d", MaxQuotaRest, minutes)
 	}
 	p, err := Find(id)
 	if err != nil {

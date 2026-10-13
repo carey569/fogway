@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// codexCall is a request Codex with magpie as its provider sends to
+// codexCall is a request Codex with fogway as its provider sends to
 // /v1/responses: a turn of its own (source "") or a call of a kind of its.
 func codexCall(t *testing.T, s *Server, model, source string) *httptest.ResponseRecorder {
 	t.Helper()

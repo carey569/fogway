@@ -79,7 +79,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the panel: Go's ExecJS runs panelQuotaFocus, the global Go names —
       // a click on the Codex cell is the Allowances tab at Codex's card
-      const panel = await open("http://magpie.test/?mode=panel", { width: 440, height: 640 });
+      const panel = await open("http://fogway.test/?mode=panel", { width: 440, height: 640 });
       await panel.waitForFunction(() => document.querySelectorAll("#panelQuota .pq-card").length >= 4);
       await panel.waitForFunction(() => window.__runtimeReady === true); // native ExecJS can now drain
       // dragged by its header on Linux alone (panel-drag-linux.test.cjs, #1430)
@@ -90,7 +90,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await panel.evaluate(() => panelQuotaFocus("codex|x@y.z"));
       await panel.waitForFunction(() => document.body.dataset.ptab === "usage");
       assert(await panel.locator('#ptabs [data-ptab="usage"]').evaluate((e) => e.classList.contains("on")), "the Allowances tab is the one picked");
-      assert.equal(await panel.evaluate(() => localStorage.getItem("magpie.panelTab")), "usage");
+      assert.equal(await panel.evaluate(() => localStorage.getItem("fogway.panelTab")), "usage");
       await panel.waitForFunction(() => document.querySelector('#panelQuota .pq-card[data-card="codex|x@y.z"]')?.classList.contains("flash"));
       assert.deepEqual(await panel.evaluate(() => window.__scrolled.slice(-1)), ["codex|x@y.z"], "the card is scrolled to");
       assert(await panel.locator('#panelQuota [data-card="codex|x@y.z"]').evaluate((card) => {
@@ -127,7 +127,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // A click before the first quota response must survive the loading cards.
       let release;
       const ready = new Promise((resolve) => { release = resolve; });
-      const slow = await open("http://magpie.test/?mode=panel", { width: 440, height: 300 }, [], false, ready);
+      const slow = await open("http://fogway.test/?mode=panel", { width: 440, height: 300 }, [], false, ready);
       await slow.waitForFunction(() => typeof panelQuotaFocus === "function");
       await slow.evaluate(() => panelQuotaFocus("kimi"));
       await slow.evaluate(() => new Promise(requestAnimationFrame));
@@ -143,11 +143,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await panel.evaluate(() => panelQuotaFocus("codex|other-5@例子.test"));
       await panel.waitForFunction(() => window.__scrolled.at(-1) === "codex|other-5@例子.test");
       await visible(panel, '#panelQuota [data-card="codex|other-5@例子.test"]');
-      assert.deepEqual(await panel.evaluate(() => JSON.parse(localStorage.getItem("magpie.usageAccounts"))), { "codex\nother-5@例子.test": true }, "navigation remembers the account opened");
+      assert.deepEqual(await panel.evaluate(() => JSON.parse(localStorage.getItem("fogway.usageAccounts"))), { "codex\nother-5@例子.test": true }, "navigation remembers the account opened");
       await panel.waitForFunction(() => !document.querySelector('#panelQuota [data-card="codex|other-5@例子.test"]').classList.contains("flash"));
 
       // no allowances to show: no tab to pick, the panel keeps its agents
-      const none = await open("http://magpie.test/?mode=panel", { width: 440, height: 640 }, [], true);
+      const none = await open("http://fogway.test/?mode=panel", { width: 440, height: 640 }, [], true);
       await none.waitForFunction(() => document.querySelectorAll("#agents").length === 1);
       await none.evaluate(() => panelQuotaFocus("codex|x@y.z"));
       await none.waitForFunction(() => document.body.dataset.ptab === "agents");
@@ -155,8 +155,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // the window: opened on its allowances (view=usage&tab=usage), the
       // Overview is the pane whatever the page was last left on, at the
       // provider's card
-      const win = await open("http://magpie.test/?view=usage&tab=usage&provider=kimi", { width: 900, height: 700 }, [
-        () => { try { localStorage.setItem("magpie.usageTab", "requests"); } catch {} },
+      const win = await open("http://fogway.test/?view=usage&tab=usage&provider=kimi", { width: 900, height: 700 }, [
+        () => { try { localStorage.setItem("fogway.usageTab", "requests"); } catch {} },
       ]);
       await win.waitForFunction(() => !document.querySelector("#usagePane").hidden);
       assert.equal(await win.evaluate(() => document.querySelector("#ledgerPane").hidden), true, "the Requests the page was left on are not the pane");
@@ -172,18 +172,18 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // Same vendor, a different account: scroll within the tall vendor card.
       const id = "codex|other-5@例子.test";
-      const account = await open("http://magpie.test/?view=usage&tab=usage&provider=codex&card=" + encodeURIComponent(id), { width: 900, height: 500 });
+      const account = await open("http://fogway.test/?view=usage&tab=usage&provider=codex&card=" + encodeURIComponent(id), { width: 900, height: 500 });
       await account.waitForFunction(() => document.querySelector('.subscription-card[data-provider="codex"]')?.classList.contains("flash"));
       assert.deepEqual(await account.evaluate(() => window.__scrolled.slice(-1)), [id]);
       await visible(account, '.subscription-account[data-card="codex|other-5@例子.test"]');
-      assert.deepEqual(await account.evaluate(() => JSON.parse(localStorage.getItem("magpie.usageAccounts"))), { "codex\nother-5@例子.test": true });
+      assert.deepEqual(await account.evaluate(() => JSON.parse(localStorage.getItem("fogway.usageAccounts"))), { "codex\nother-5@例子.test": true });
       assert.equal(await account.evaluate(() => location.search.includes("card=")), false);
       await account.waitForFunction(() => !document.querySelector('.subscription-card[data-provider="codex"]').classList.contains("flash"));
       await visible(account, '.subscription-account[data-card="codex|other-5@例子.test"]');
 
       // A slow response must not pull the reader back after the request expires.
       let finish;
-      const expired = await open("http://magpie.test/?mode=panel", { width: 440, height: 300 }, [], false, new Promise((resolve) => { finish = resolve; }));
+      const expired = await open("http://fogway.test/?mode=panel", { width: 440, height: 300 }, [], false, new Promise((resolve) => { finish = resolve; }));
       await expired.waitForFunction(() => typeof panelQuotaFocus === "function");
       await expired.clock.install();
       await expired.evaluate(() => panelQuotaFocus("codex|other-5@例子.test"));
@@ -196,7 +196,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // A purposeful user scroll supersedes a still-pending menu-bar request.
       let resume;
-      const scrolled = await open("http://magpie.test/?mode=panel", { width: 440, height: 300 }, [], false, new Promise((resolve) => { resume = resolve; }));
+      const scrolled = await open("http://fogway.test/?mode=panel", { width: 440, height: 300 }, [], false, new Promise((resolve) => { resume = resolve; }));
       await scrolled.waitForFunction(() => typeof panelQuotaFocus === "function");
       await scrolled.evaluate(() => panelQuotaFocus("kimi"));
       await scrolled.mouse.move(200, 150);

@@ -82,7 +82,7 @@ jobs:
         if: runner.os == 'Linux'
         timeout-minutes: 10
         env:
-          MAGPIE_FLOW_BIG: '1'
+          FOGWAY_FLOW_BIG: '1'
         run: |
           bun --version
           go test -timeout 10m -tags "${{ steps.tags.outputs.tags }}" ./internal/plugin/... -run '^TestFlowBigReplyProd$' -count=1

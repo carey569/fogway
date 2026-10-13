@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Command Code's Provider API searches the web by itself for some of its
 // models only (#1590, M3chD09: 12 of 87, its GPT, Grok and Muse models on
 // Responses, its Claude ones on Messages). Those are sent the agent's own
-// web search tool; the rest keep magpie's searcher, and so does every
+// web search tool; the rest keep fogway's searcher, and so does every
 // model when the provider is sent Command Code's zero-data-retention
 // header, under which it refuses every built-in tool.
 func TestCommandCodeSearchesForSomeModels(t *testing.T) {

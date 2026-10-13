@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/appdir"
+	"github.com/fogway/fogway/internal/appdir"
 )
 
 // Gemini moved from rewritten JSON snapshots to append-only JSONL metadata,

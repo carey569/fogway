@@ -11,10 +11,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// searchAPIs is a fake of every search API magpie asks, each on its own
+// searchAPIs is a fake of every search API fogway asks, each on its own
 // path and checking its own way of carrying the key; tavily answers 500
 // while broken is set.
 type searchAPIs struct {
@@ -116,7 +116,7 @@ func TestSearchAPIsEachAsked(t *testing.T) {
 }
 
 // With no provider that can search, a client's web search is given to the
-// model as magpie's tool all the same, and answered by the search APIs the
+// model as fogway's tool all the same, and answered by the search APIs the
 // user set up, in their order: one that fails gives way to the next.
 func TestWebSearchBySearchAPI(t *testing.T) {
 	var mu sync.Mutex
@@ -244,6 +244,6 @@ func TestNoSearchAPINoTool(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !canSearch() {
-		t.Fatal("a search API set up, and magpie can't search")
+		t.Fatal("a search API set up, and fogway can't search")
 	}
 }

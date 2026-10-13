@@ -10,9 +10,9 @@ const sum = (rows) => ({
 
 function fixture(lang, theme, events, options = {}) {
   let keys = [
-    { id: "laptop", name: "Laptop", masked: "sk-magpie-key-…111111" },
-    { id: "server", name: "Server", masked: "sk-magpie-key-…222222" },
-    { id: "work", name: "Work", masked: "sk-magpie-key-…333333" },
+    { id: "laptop", name: "Laptop", masked: "sk-fogway-key-…111111" },
+    { id: "server", name: "Server", masked: "sk-fogway-key-…222222" },
+    { id: "work", name: "Work", masked: "sk-fogway-key-…333333" },
   ];
   for (const k of keys) {
     if (options.limits?.[k.id]) Object.assign(k, options.limits[k.id]);
@@ -24,7 +24,7 @@ function fixture(lang, theme, events, options = {}) {
   const secrets = new Map([["laptop", "fixture-laptop"], ["server", "fixture-server"], ["work", "fixture-work"]]);
   // options.lanURLs is the test's own list, so it can take the network away
   const lanURLs = options.lanURLs || ["http://192.168.1.10:3999", "http://10.0.0.10:3999"];
-  // options.publicURL is MAGPIE_PUBLIC_URL's, offered while shared (#1551)
+  // options.publicURL is FOGWAY_PUBLIC_URL's, offered while shared (#1551)
   const publicURL = () => lan && options.publicURL ? { publicURL: options.publicURL } : {};
   const lanState = () => ({ lang, theme, lan,
     lanURLs: lan ? lanURLs : [], fx: { rate: 7.2, at: new Date().toISOString() },
@@ -71,12 +71,12 @@ function fixture(lang, theme, events, options = {}) {
       let key = keys.find((k) => k.id === lanKeyID);
       if (lan && (!key || body.newKey)) {
         if (!key) {
-          key = { id: "lan-key-" + (++serial), name: "Magpie" };
+          key = { id: "lan-key-" + (++serial), name: "Fogway" };
           lanKeyID = key.id;
           keys.push(key);
         }
         lanSecret = "fixture-lan-" + (++rotations);
-        key.masked = "sk-magpie-key-…" + lanSecret.slice(-6);
+        key.masked = "sk-fogway-key-…" + lanSecret.slice(-6);
       }
       return json(lanState());
     }
@@ -114,14 +114,14 @@ function fixture(lang, theme, events, options = {}) {
         const id = "new-key-" + (++serial);
         secret = body.secret?.trim() || "fixture-created-" + serial;
         secrets.set(id, secret);
-        keys.push({ id, name: body.name, masked: body.secret ? "…" + secret.slice(-4) : "sk-magpie-key-…created" });
+        keys.push({ id, name: body.name, masked: body.secret ? "…" + secret.slice(-4) : "sk-fogway-key-…created" });
       }
       if (action === "rename-key") k.name = body.name;
       if (action === "rotate-key") {
         secret = "fixture-rotated-" + (++rotations);
         secrets.set(k.id, secret);
         if (k.id === lanKeyID) lanSecret = secret;
-        k.masked = "sk-magpie-key-…" + secret.slice(-6);
+        k.masked = "sk-fogway-key-…" + secret.slice(-6);
       }
       if (action === "remove-key") keys = keys.filter((v) => v !== k);
       if (action === "on-key" || action === "off-key") k.off = action === "off-key";
@@ -145,7 +145,7 @@ function fixture(lang, theme, events, options = {}) {
       return json({ keys, secret });
     }
     if (url.pathname === "/api/copy") { events.push({ action: "clipboard", body: req.postDataJSON() }); return json({}); }
-    if (url.pathname === "/api/usage") return json({ ...sum(rows), ...groups(), agents: [], models: [], series: [], bucket: "day", path: "~/.config/magpie/usage.jsonl" });
+    if (url.pathname === "/api/usage") return json({ ...sum(rows), ...groups(), agents: [], models: [], series: [], bucket: "day", path: "~/.config/fogway/usage.jsonl" });
     if (url.pathname === "/api/usage/requests") { events.push({ action: "ledger", query: url.search }); return json(ledger(url.searchParams)); }
     if (url.pathname === "/api/usage/requests/export") { events.push({ action: "export", query: url.search }); return json({ path: "~/Downloads/keys.csv", rows: ledger(url.searchParams).total }); }
     if (url.pathname === "/api/usage/quotas") return json([]);

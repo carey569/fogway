@@ -14,9 +14,9 @@ import (
 )
 
 func TestURLs(t *testing.T) {
-	t.Setenv("MAGPIE_MIRRORS", "on")
-	t.Setenv("MAGPIE_NPM_REGISTRY", "")
-	t.Setenv("MAGPIE_GITHUB_MIRROR", "")
+	t.Setenv("FOGWAY_MIRRORS", "on")
+	t.Setenv("FOGWAY_NPM_REGISTRY", "")
+	t.Setenv("FOGWAY_GITHUB_MIRROR", "")
 
 	got := URLs("https://registry.npmjs.org/@scope/pkg/latest?x=1")
 	want := []string{
@@ -36,8 +36,8 @@ func TestURLs(t *testing.T) {
 		t.Fatalf("github URLs = %q, want %q", got, want)
 	}
 
-	t.Setenv("MAGPIE_NPM_REGISTRY", "https://npm.example/")
-	t.Setenv("MAGPIE_GITHUB_MIRROR", "https://gh.example")
+	t.Setenv("FOGWAY_NPM_REGISTRY", "https://npm.example/")
+	t.Setenv("FOGWAY_GITHUB_MIRROR", "https://gh.example")
 	got = URLs("https://registry.npmjs.org/pkg")
 	if got[1] != "https://npm.example/pkg" {
 		t.Fatalf("npm mirror = %q", got[1])
@@ -49,7 +49,7 @@ func TestURLs(t *testing.T) {
 }
 
 func TestURLsDefaultOff(t *testing.T) {
-	t.Setenv("MAGPIE_MIRRORS", "")
+	t.Setenv("FOGWAY_MIRRORS", "")
 	got := URLs("https://github.com/o/r")
 	if len(got) != 1 || got[0] != "https://github.com/o/r" {
 		t.Fatalf("URLs by default = %q", got)
@@ -57,7 +57,7 @@ func TestURLsDefaultOff(t *testing.T) {
 }
 
 func TestURLsOff(t *testing.T) {
-	t.Setenv("MAGPIE_MIRRORS", "off")
+	t.Setenv("FOGWAY_MIRRORS", "off")
 	got := URLs("https://github.com/o/r")
 	if len(got) != 1 || got[0] != "https://github.com/o/r" {
 		t.Fatalf("URLs with mirrors off = %q", got)
@@ -151,7 +151,7 @@ func TestDoOfficialSkipsMirror(t *testing.T) {
 		io.WriteString(w, "mirror")
 	}))
 	defer mirror.Close()
-	t.Setenv("MAGPIE_GITHUB_MIRROR", mirror.URL)
+	t.Setenv("FOGWAY_GITHUB_MIRROR", mirror.URL)
 
 	req, _ := http.NewRequest("GET", official.URL+"/thing", nil)
 	resp, err := DoOfficial(http.DefaultClient, req)
@@ -250,8 +250,8 @@ func (rt *recordedTransport) RoundTrip(req *http.Request) (*http.Response, error
 }
 
 func TestDoKeepsCredentialsOfficial(t *testing.T) {
-	t.Setenv("MAGPIE_MIRRORS", "on")
-	t.Setenv("MAGPIE_GITHUB_MIRROR", "https://gh.example")
+	t.Setenv("FOGWAY_MIRRORS", "on")
+	t.Setenv("FOGWAY_GITHUB_MIRROR", "https://gh.example")
 	rt := &recordedTransport{}
 	req, _ := http.NewRequest("GET", "https://api.github.com/repos/o/r", nil)
 	req.Header.Set("Authorization", "Bearer secret")

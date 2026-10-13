@@ -55,7 +55,7 @@ function serve(lang, posted) {
 }
 
 const want = {
-  en: { imp: "Import accounts from a file…", instead: "Import from a file instead…", title: "Import ChatGPT accounts", intro: /Codex's auth\.json, codexbar's config\.json \(in ~\/\.codexbar\), or an export from Cockpit Tools, CLIProxyAPI or Sub2API/, spent: /signed out of that account.*only read/, checking: "Checking the accounts with ChatGPT…", done: ["Added", "Already in magpie", "Not added", "Not added"], pasted: "The pasted text" },
+  en: { imp: "Import accounts from a file…", instead: "Import from a file instead…", title: "Import ChatGPT accounts", intro: /Codex's auth\.json, codexbar's config\.json \(in ~\/\.codexbar\), or an export from Cockpit Tools, CLIProxyAPI or Sub2API/, spent: /signed out of that account.*only read/, checking: "Checking the accounts with ChatGPT…", done: ["Added", "Already in fogway", "Not added", "Not added"], pasted: "The pasted text" },
   zh: { imp: null, instead: null, title: null, intro: /codexbar 的 config\.json.*Cockpit Tools.*Sub2API/, spent: /退出该账号/, checking: null, done: null, pasted: "粘贴的内容" },
 };
 
@@ -73,7 +73,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // the browser sign-in opens ChatGPT's page in a new window, and the real
       // one is Cloudflare's challenge: in Chromium, while it runs, clicks on
       // this page hung past their 5s (#1307). The window gets an empty page
-      await context.route((url) => url.hostname !== "magpie.test", (route) => route.fulfill({ contentType: "text/html", body: "" }));
+      await context.route((url) => url.hostname !== "fogway.test", (route) => route.fulfill({ contentType: "text/html", body: "" }));
       t.after(async () => {
         if (process.env.ARTIFACT_DIR) {
           await fs.mkdir(process.env.ARTIFACT_DIR, { recursive: true });
@@ -81,7 +81,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         await browser.close();
       });
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider", { hasText: "ChatGPT" }).click();
       const adds = page.locator(".editor .accts .acc.add");
       await adds.nth(1).waitFor();
@@ -129,7 +129,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.locator(".signing.import .results").waitFor();
       assert.deepEqual(posted, [{ agent: "codex", files: [cpa] }]);
       const done = await page.locator(".signing.import .res .st").allTextContents();
-      assert.deepEqual(done, w.done || [await T("Added"), await T("Already in magpie"), await T("Not added"), await T("Not added")]);
+      assert.deepEqual(done, w.done || [await T("Added"), await T("Already in fogway"), await T("Not added"), await T("Not added")]);
       const failed = page.locator(".signing.import .res.failed");
       assert.match(await failed.nth(0).locator(".why").textContent(), /used since/);
       // a text that held no account is named, not a blank row

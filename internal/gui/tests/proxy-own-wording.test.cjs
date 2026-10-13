@@ -53,7 +53,7 @@ function settingsPayload(lang, source) {
     dock: false, dockWindow: false, proxy, redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow, proxySource: source, login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -94,7 +94,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
               page.on("pageerror", (e) => errors.push(e.message));
               await page.route("**/*", server(lang, source));
               await watchSettingsReads(page);
-              await page.goto("http://magpie.test/?view=settings");
+              await page.goto("http://fogway.test/?view=settings");
               await settingsDrawn(page);
               await page.locator(":is(#setTab-network, .nav-s[data-of=setTab-network]):visible").click();
               const sub = page.locator("#proxySub");

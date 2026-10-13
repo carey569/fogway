@@ -6,14 +6,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/edit"
 )
 
 // Pi's enabledModels (settings.json) is its Ctrl+P cycle and /scoped-models
 // list. While it names anything, a new session starts on defaultModel only
 // when the list takes that model in, and on the list's first model when it
-// doesn't — so a model magpie picks outside it would never be used. The list
-// is the user's: magpie adds the model it picks to it, as Pi's own model
+// doesn't — so a model fogway picks outside it would never be used. The list
+// is the user's: fogway adds the model it picks to it, as Pi's own model
 // picker does, and never makes one where there is none.
 
 // piLevels are the thinking levels a pattern may end in (provider/model:high).
@@ -70,8 +70,8 @@ func piScopeWith(settings, ref string) error {
 	return edit.SetJSON(settings, edit.KV{Path: "enabledModels", Value: append(pats, ref)})
 }
 
-// piScopeWithout takes magpie's models out of Pi's enabledModels once
-// magpie's provider is gone from models.json, where they would name nothing.
+// piScopeWithout takes fogway's models out of Pi's enabledModels once
+// fogway's provider is gone from models.json, where they would name nothing.
 // A list left with nothing is removed, never written empty.
 func piScopeWithout(settings string) error {
 	pats := piScope(settings)
@@ -79,7 +79,7 @@ func piScopeWithout(settings string) error {
 		return nil
 	}
 	kept := slices.DeleteFunc(slices.Clone(pats), func(p string) bool {
-		return !strings.ContainsAny(p, "*?[") && strings.HasPrefix(strings.ToLower(p), magpieID+"/")
+		return !strings.ContainsAny(p, "*?[") && strings.HasPrefix(strings.ToLower(p), fogwayID+"/")
 	})
 	switch {
 	case len(kept) == len(pats):
@@ -109,15 +109,15 @@ func piStartup(settings, def string) string {
 }
 
 // piOffered are the thinking levels Pi offers for model, a provider/model
-// as the model field shows it, when it is one of magpie's: what Pi's
-// /thinking lists for the entry magpie writes for it in models.json. nil
+// as the model field shows it, when it is one of fogway's: what Pi's
+// /thinking lists for the entry fogway writes for it in models.json. nil
 // for any other model, whose levels are Pi's own business.
 func piOffered(agentID, model string) []string {
-	ref, ok := strings.CutPrefix(model, magpieID+"/")
+	ref, ok := strings.CutPrefix(model, fogwayID+"/")
 	if !ok {
 		return nil
 	}
-	for _, m := range magpieModels(agentID) {
+	for _, m := range fogwayModels(agentID) {
 		if m.ID == ref {
 			return piSupported(piModelJSON(m, "", true))
 		}

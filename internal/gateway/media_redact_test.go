@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fogway/fogway/internal/redact"
+	"github.com/fogway/fogway/internal/settings"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/redact"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 const mediaSecret = "sk-proj-abcdEFGH1234ijklMNOP5678qrst"

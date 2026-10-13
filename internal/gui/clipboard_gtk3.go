@@ -27,17 +27,17 @@ func copyText(_ *application.App, text string) bool {
 	var display, seat unsafe.Pointer
 	wayland := false
 	application.InvokeSync(func() {
-		C.magpie_clipboard_set(ct)
-		wayland = C.magpie_clipboard_wayland(&display, &seat) != 0
+		C.fogway_clipboard_set(ct)
+		wayland = C.fogway_clipboard_wayland(&display, &seat) != 0
 	})
 	if !wayland {
 		return true
 	}
 	// off the main thread: GTK answers the read from it when the copy is
-	// magpie's own
+	// fogway's own
 	var out *C.char
 	var n C.size_t
-	got := C.magpie_clipboard_read(display, seat, 2000, &out, &n)
+	got := C.fogway_clipboard_read(display, seat, 2000, &out, &n)
 	var held string
 	if out != nil {
 		held = C.GoStringN(out, C.int(n))

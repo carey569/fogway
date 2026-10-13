@@ -108,7 +108,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           await browser.close();
         });
 
-        await page.goto("http://magpie.test/?view=gateway");
+        await page.goto("http://fogway.test/?view=gateway");
         await page.locator("#foldConnect").click(); // Connect away, the calls in view
         const rows = page.locator("#activity .call-item");
         await rows.first().waitFor();

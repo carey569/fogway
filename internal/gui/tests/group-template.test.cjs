@@ -41,7 +41,7 @@ const KEYS = ["Hard to strong, easy to cheap", "A hard task goes to the stronges
   "Needs a model cheap beside {name}", "Add a provider first", "Added {name}", "Start from a template: made of your own models, added in a click", "Edit first", "Templates"];
 
 function serve(lang, posts) {
-  // a group magpie found is no group of the user's: the cards still show
+  // a group fogway found is no group of the user's: the cards still show
   let list = [{ id: "auto-big", name: "Big", members: ["a/big"], ready: true, auto: true, memberInfo: info(["a/big"]) }];
   const groups = () => ({ models, pools: [], deciders: [], found: true, groups: list, templates });
   const state = { agents: [{ id: "claude", name: "Claude Code", path: "/test/claude", fields: [] }], profiles: [], settings: { lang, theme: "light" } };
@@ -91,7 +91,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // WebKit's notice when a layout outruns its observers, not a fault
       page.on("pageerror", (e) => { if (!/^ResizeObserver loop completed with undelivered notifications/.test(e.message)) errors.push(e.message); });
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const cards = page.locator(".rt-gtpl-card");
       await cards.nth(2).waitFor();
       await page.waitForTimeout(500);
@@ -150,7 +150,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // WebKit's notice when a layout outruns its observers, not a fault
       page.on("pageerror", (e) => { if (!/^ResizeObserver loop completed with undelivered notifications/.test(e.message)) errors.push(e.message); });
       await page.route("**/*", serve(lang, []));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const smart = page.locator(".rt-gtpl-card[data-kind=smart]");
       await smart.waitFor();
       if (process.env.ARTIFACT_DIR) await page.locator(".rt-gtpl").screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${lang}-group-template-cards.png`) });

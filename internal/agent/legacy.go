@@ -6,18 +6,18 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/edit"
 )
 
-// legacyID is what agents knew the gateway by before magpie was called magpie.
+// legacyID is what agents knew the gateway by before fogway was called fogway.
 const legacyID = "dial"
 
 // RenameLegacy rewrites what an older dial left in the agents' files so it
-// says magpie: a model spelled dial/… becomes magpie/… (which also writes
-// the magpie provider entry the agent needs), and then the dial entry,
+// says fogway: a model spelled dial/… becomes fogway/… (which also writes
+// the fogway provider entry the agent needs), and then the dial entry,
 // Codex's table and catalog file, and Claude Code's token go. It runs at
 // start-up; once nothing says dial any more it changes nothing. Errors are
-// swallowed on purpose — a file magpie cannot rewrite is one the user can
+// swallowed on purpose — a file fogway cannot rewrite is one the user can
 // still fix from the picker.
 func RenameLegacy() {
 	for _, a := range All() {
@@ -26,9 +26,9 @@ func RenameLegacy() {
 		}
 		if a.ID == "codex" {
 			// Set() would stash "dial" as the provider to go back to; say
-			// magpie first so it sees a config that is already routed.
+			// fogway first so it sees a config that is already routed.
 			if v, _ := edit.GetTOMLTop(a.Path, "model_provider"); v == legacyID {
-				_ = edit.SetTOMLTop(a.Path, edit.KV{Path: "model_provider", Value: magpieID})
+				_ = edit.SetTOMLTop(a.Path, edit.KV{Path: "model_provider", Value: fogwayID})
 				if f := a.Field("model"); f != nil {
 					_ = f.Set(f.Get())
 				}
@@ -37,7 +37,7 @@ func RenameLegacy() {
 		for i := range a.Fields {
 			f := &a.Fields[i]
 			if rest, ok := strings.CutPrefix(f.Get(), legacyID+"/"); ok {
-				_ = f.Set(magpieID + "/" + rest)
+				_ = f.Set(fogwayID + "/" + rest)
 			}
 		}
 		switch a.ID {

@@ -14,7 +14,7 @@ selection, rapid queued saves and rollback, reload, unavailable faces,
 discovery failure and refresh, empty collections, platform fallback,
 Omarchy precedence and browser-mode isolation. It checks narrow windows and
 no scroll on click in Chromium and WebKit, in English and Chinese.
-`ARTIFACT_DIR` retains screenshots; `MAGPIE_FONT_ASSETS` can point to an older
+`ARTIFACT_DIR` retains screenshots; `FOGWAY_FONT_ASSETS` can point to an older
 asset directory to verify that the test fails on the missing picker.
 `font-cascade.test.cjs` checks that a reset restores the original weights
 under bold parents, while explicit component emphasis survives a choice.
@@ -42,14 +42,14 @@ Creation, renaming and confirmation focus their controls without scrolling.
 Gateway is the only key-management page;
 Settings controls sharing and shows addresses. The test checks that toggling
 sharing retains the key, and that a removed default key is recreated as
-Magpie and appears in Gateway without a reload.
+Fogway and appears in Gateway without a reload.
 
 `gateway-connect-keys.test.cjs` selects loopback and LAN addresses and enabled
 caller keys for Shell, curl, Python and Node examples across all four APIs.
 It checks rotation, disabling, removal, stale list responses, empty states,
 literal custom names and narrow layouts in Chinese and English on both engines.
 Sharing off keeps the original API-key field and hides the gateway-key picker;
-sharing on names the arbitrary local option separately from the Magpie key.
+sharing on names the arbitrary local option separately from the Fogway key.
 
 `connect-address-kept.test.cjs` checks that the address and gateway key
 picked in Connect, and the address picked under Share on local network, are
@@ -59,10 +59,10 @@ the pick comes back once the address does. It runs on both engines, at 1100
 and 420 wide, in every language.
 
 `gateway-takeover.test.cjs` checks the Gateway card's button: with an older
-magpie serving the gateway it reads "Quit magpie {v} and take over" and posts
-`/api/gateway/take-over`; once this magpie serves it is "Restart gateway" and
-posts `/api/gateway/restart`; a magpie of the same version gets no button. A
-refusal (a program that isn't magpie on the port) is said under it with the
+fogway serving the gateway it reads "Quit fogway {v} and take over" and posts
+`/api/gateway/take-over`; once this fogway serves it is "Restart gateway" and
+posts `/api/gateway/restart`; a fogway of the same version gets no button. A
+refusal (a program that isn't fogway on the port) is said under it with the
 program's path and pid; a container's forwarder on the port (OrbStack
 Helper) is said as a container to stop, with `docker stop`, and in dark mode
 the button is bordered so it reads as one. No click scrolls, nothing has a
@@ -266,13 +266,13 @@ dark window: invalid input remains editable, retry reaches the callback route,
 and a pending or accepted submission cannot be submitted twice.
 
 `signin-paste-plugin.test.cjs` checks a plugin's browser sign-in that comes
-back to a port on magpie's machine: the plugin's words, the pasted-address
+back to a port on fogway's machine: the plugin's words, the pasted-address
 field posted to the sign-in, and the plugin's API key way, in a 360px window.
 English and Chinese, Chromium and WebKit.
 
 `plugin-updates.test.cjs` checks the dot on Plugins while a plugin's update
 waits for the reader, gone once it's updated, and the "Auto-updated" chip on a
-plugin magpie updated by itself.
+plugin fogway updated by itself.
 
 `plugin-signin.test.cjs` checks a provider an OpenCode plugin signs in to:
 the add sheet lists it under "From plugins"; its sign-in asks the way, the
@@ -283,7 +283,7 @@ Chinese, Chromium and WebKit, with the API faked.
 `plugin-move-overflow.test.cjs` checks a Plugins card that offers a
 built-in's accounts: the button is one word beside the name, as Install is
 ("Move", its title saying whose accounts and how many), on one line, and it
-stays inside the card and the plugin's name and "magpie community" aren't
+stays inside the card and the plugin's name and "fogway community" aren't
 cut, in a three-, two- and one-column window. English and Chinese, Chromium and WebKit, with the API
 faked.
 
@@ -385,7 +385,7 @@ third picker; unset, its label says what that means (the session's effort, or
 the subagent model's own default; 「跟随当前会话的推理强度…」), a click opens
 the effort slider without scrolling the page, Default its first stop, and a
 level picked is posted for `subagent_effort` alone and lights the square.
-Claude Code's subagents (#468) get no square until it runs through magpie
+Claude Code's subagents (#468) get no square until it runs through fogway
 (nothing to pick), and one that says "same as model" once it does.
 
 `codex-subagents-lead.test.cjs` draws Codex's subagents square (willz on
@@ -408,7 +408,7 @@ effort entry opens the effort slider without scrolling the page, Default its
 first stop, a level picked is posted for that tier's `<tier>_effort` alone and
 named in the square's title, and the session's effort stays. Its subagents'
 effort is a square that says what unset means for Claude Code, and a Claude
-Code not through magpie has no levels, no square and no effort entries.
+Code not through fogway has no levels, no square and no effort entries.
 
 `gateway-fold.test.cjs` folds Connect on the Gateway page with the view
 scrolled: its fields hide, the head keeps the base URL and a copy button, the
@@ -446,7 +446,7 @@ Chinese, Chromium and WebKit.
 
 `routing-side-calls.test.cjs` lists what a DeepSeek chat in Codex sends besides
 its turns (#314): the new chat's title, which Codex asks of its own Luna on a
-hidden thread (known by its turn metadata), and the web searches magpie runs
+hidden thread (known by its turn metadata), and the web searches fogway runs
 for DeepSeek on the model it searches with. Each has its grey tag (Title /
 标题, Web search / 联网搜索), a search's story names the agent and model it
 was for, and picking a request moves nothing. Chromium and WebKit, English
@@ -485,7 +485,7 @@ beside its reasoning and one without none, toggling moves nothing on the page,
 a member whose reasoning changes stays fast under its new id, one taken out
 leaves it, and the save sends the members sent fast as fast.
 
-`group-found-off.test.cjs` turns the groups magpie finds on its own off and on
+`group-found-off.test.cjs` turns the groups fogway finds on its own off and on
 again, in Chromium and WebKit, English and Chinese (蓝猫 on Discord: "路由分组会自动创建，
 可以关闭掉吗"). A switch right under the routing groups' head says what found
 groups are; clicked off it posts groups/found {on:false}, the found group
@@ -533,11 +533,11 @@ under the model's dated name and ones naming none: only the first is marked
 gpt-6-sol · served gpt-6-luna" in its story, in English and Chinese, and the
 click that picks it leaves the page where it is.
 
-`remote-group-served.test.cjs` lists a request sent to a remote magpie for one
+`remote-group-served.test.cjs` lists a request sent to a remote fogway for one
 of its routing groups (group/auto-deepseek-v4-1-flash answered by
 deepseek/deepseek-v4.1-flash) beside a real swap: the group's member is shown
 plain, not amber, in the Routing page's Requests list, with a title (and a
-line in its story) saying the remote magpie's group routed the request there,
+line in its story) saying the remote fogway's group routed the request there,
 and muted with the same title in the Usage page's Requests, while the swap
 stays amber; Chromium and WebKit, English and Chinese, and the click that
 picks it leaves the page where it is.
@@ -578,7 +578,7 @@ what grew above them, and the field keeps its focus and what was typed.
 (#302): the window hidden, the window covered and drawing no frames
 without saying it is hidden, and another tab open. Meanwhile 30 requests
 come and are answered, and 2 are still under way. When the page is seen
-again, at most two magpies per request still under way fly at once, those
+again, at most two fogways per request still under way fly at once, those
 requests do fly, and all 33 are listed. It runs in English and Chinese.
 Before the fix, 39 to 62 birds flew at once.
 
@@ -616,14 +616,14 @@ ended is said as that, while one that couldn't be read stays "Allowance
 unavailable" — the two are not the same thing.
 
 `balance-field-default.test.cjs` leaves a custom provider's Balance field
-empty (#881): its placeholder is the field magpie reads from a Balance URL
+empty (#881): its placeholder is the field fogway reads from a Balance URL
 whose reply it knows (new-api's `/api/usage/token` and `/api/user/self`, a
 sub2api panel's `/api/v1/user/profile`, OpenAI's `credit_grants`), following
 the URL as it is typed; any other URL keeps the example.
 
 `cli-update.test.cjs` draws the agents' CLI versions on the Agents page
 (#202) from a faked API: the version after each name, "Update to x.y.z" only
-where magpie knows how the CLI was installed, the rows' height kept, an
+where fogway knows how the CLI was installed, the rows' height kept, an
 update clicked with the view scrolled (busy, then the new version, the page
 left where it was), a failed one giving its reason and the pill back, and
 the words in Chinese. Nothing is installed.
@@ -672,12 +672,12 @@ the box says the refresh spends the file's sign-in, what is pasted is posted
 as it is, and each account's outcome is listed, in English and Chinese.
 
 `agy-launch.test.cjs` gives Antigravity CLI's row the square that copies the
-command starting agy on magpie: the command in its tooltip, a click copying
+command starting agy on fogway: the command in its tooltip, a click copying
 it with the page left where it was, none on other agents, in the tray
 panel's opened row too, in English and Chinese.
 
 `currency.test.cjs` shows a cost in dollars by default and in yuan, at
-magpie's cached exchange rate, once the Settings page's Currency row picks
+fogway's cached exchange rate, once the Settings page's Currency row picks
 cny (#212): the Usage page's total converts, the row's tooltip carries the
 rate, picking it with the settings list scrolled well down moves nothing,
 and the choice survives a reload — in English and Chinese.
@@ -706,8 +706,8 @@ Off posts `trayNoLogos: true`, a save of another setting keeps it, On posts it
 back; the row has no left-border stripe, no click moves the page, and there is
 no row with no card picked nor off a Mac; in English and Chinese.
 
-`tray-bird.test.cjs` turns the menu bar's magpie icon off and on in Settings:
-on a Mac with a card in the menu bar the Menu bar magpie icon row, under the
+`tray-bird.test.cjs` turns the menu bar's fogway icon off and on in Settings:
+on a Mac with a card in the menu bar the Menu bar fogway icon row, under the
 logos row, shows On by default; Off posts `trayNoBird: true`, a save of
 another setting keeps it, On posts it back; no click moves the page, and there
 is no row with no card picked nor off a Mac; in English and Chinese.
@@ -739,7 +739,7 @@ Japanese and German on Chromium and WebKit, with a mocked API.
 process with an isolated config and a minimal page: a quota click recreates
 the released panel, queued ExecJS selects the account once Wails is ready,
 the next click closes it, and another release can be reopened and focused.
-It requires a macOS graphical session and does not start the magpie backend
+It requires a macOS graphical session and does not start the fogway backend
 or create a status item. Run with
 `go test ./internal/gui -run '^TestTrayCellClickReleasedPanel$' -count=1`.
 
@@ -780,7 +780,7 @@ the arrows, Home and End along them; the part kept in the address
 (?view=settings&tab=…) across a reload, out of it on another view, and
 remembered for Settings opened again without one; a link to a part opening
 on it. The tabs fit, on a line more where they must, in the 560×420 window
-at 100, 110 and 125% and in magpie web on a phone, nothing running off to
+at 100, 110 and 125% and in fogway web on a phone, nothing running off to
 the side. Chromium and WebKit, English and Chinese; ARTIFACT_DIR gets a
 screenshot of each size:
 
@@ -845,7 +845,7 @@ border. English and Chinese.
 page shown draws (#844): on Agents it looks for the agents again (one just
 installed shows, and leaves Install another agent), on Usage it reads the
 allowances afresh, on Providers it refreshes the model lists. It never looks
-for a newer magpie (Settings › About's Check does), its tooltip says what it
+for a newer fogway (Settings › About's Check does), its tooltip says what it
 reads, and no click moves the page. Window and panel, English and Chinese.
 
 `update-hide.test.cjs` keeps the header's Update pill away when asked (Wang
@@ -883,13 +883,13 @@ to the list; the search's Escape emptying it and never hiding the tray; in
 English and Chinese.
 
 `own-signin-remove.test.cjs` opens the Kiro subscription's accounts with
-kiro-cli's own sign-in behind one of magpie's, then alone and first: its
-Remove is there both times, its title saying magpie only hides it and it
-shows again when Kiro signs in anew, and it posts login/forget; magpie's
+kiro-cli's own sign-in behind one of fogway's, then alone and first: its
+Remove is there both times, its title saying fogway only hides it and it
+shows again when Kiro signs in anew, and it posts login/forget; fogway's
 own account in use first has no Remove; in English and Chinese.
 
 `saved-signedout-remove.test.cjs` shows Claude Code signed out with two
-accounts saved in magpie: the Providers line naming them has Remove, whose
+accounts saved in fogway: the Providers line naming them has Remove, whose
 dialog lists them; Cancel and Escape post nothing, Remove posts
 login/forget once per account and the line goes; in English and Chinese.
 
@@ -898,7 +898,7 @@ couldn't be removed while Codex was signed in to it): its row has Sign out,
 asked in the app's own dialog; Cancel and Escape post nothing and go back to
 the editor, Sign out posts login/forget and says so. With another account
 saved the one in use has no Sign out but Remove, which posts login/forget
-(vincentzhang1_55530 on Discord: magpie signs Codex in to another account
+(vincentzhang1_55530 on Discord: fogway signs Codex in to another account
 first), and a signed_in refusal is said in the reader's language. No select, no left border, the page doesn't move; in
 English and Chinese.
 
@@ -970,7 +970,7 @@ Chinese.
 from a faked `/api/usage/requests`: the columns, the model asked for, the
 provider and account, the model sent, "gpt-6-luna" amber by the one a vendor
 answered with another model and plain on a dated name, a failure's red dot
-and 429 and its agent, on another computer whose magpie passed it on, as
+and 429 and its agent, on another computer whose fogway passed it on, as
 "Codex · via office-mac", the totals over them. Older and Newer page through 130 requests
 with the pager held where it was; the agent, Failed and search filters and
 the period ask the server again from the first page; Export CSV posts the
@@ -1021,15 +1021,15 @@ couldn't price (#1856): Overview's and Requests' heads read "2 calls
 unpriced" beside the sum, or alone when none was priced, Overview's calls
 tile counts them, and Sessions says how many models. From 360 to 1240 wide
 the count and the sum stay whole and the page never scrolls sideways; in
-Chromium and WebKit, in every language. `MAGPIE_ASSETS` pointed at older
+Chromium and WebKit, in every language. `FOGWAY_ASSETS` pointed at older
 assets shows it failing.
 
 `usage-loops.test.cjs` checks that Usage says, per model, how many of its
-replies magpie ended stuck in a loop (#1858): "2 looped" beside the model's
+replies fogway ended stuck in a loop (#1858): "2 looped" beside the model's
 failures in the Overview's row and the Requests ranking, the ranking's
 "Other" adding up those it holds, and nothing for a model with none. At 360
 and 1100 wide the page never scrolls sideways; in Chromium and WebKit, in
-every language. `MAGPIE_ASSETS` pointed at older assets shows it failing.
+every language. `FOGWAY_ASSETS` pointed at older assets shows it failing.
 
 `usage-keys-fold.test.cjs` checks the Usage page's card of a provider with
 many keys, each its balance (361 on Discord: an OpenRouter card listed every
@@ -1084,11 +1084,11 @@ failure that spent nothing has no tokens row. No click moves the page and
 nothing spills out of the details; in Chromium and WebKit at 1100 and 390 wide,
 in every language.
 
-`own-requests.test.cjs` (#1839) tells magpie's own requests from the agents':
-magpie's row among the agents and its ledger row carry the "magpie's own" mark,
-the agent's don't; the account's and the model's rows say how many calls magpie
+`own-requests.test.cjs` (#1839) tells fogway's own requests from the agents':
+fogway's row among the agents and its ledger row carry the "fogway's own" mark,
+the agent's don't; the account's and the model's rows say how many calls fogway
 made itself, the other account's nothing; and the account's card says how many
-of the period's requests were magpie's own, also when the summary comes after
+of the period's requests were fogway's own, also when the summary comes after
 the allowances. On the Routing page a classifier on a subscription's model says
 every turn starts with a request to it, a group asking a subscription first
 while picking the effort too says two, and one on a key says nothing. No click
@@ -1173,7 +1173,7 @@ page and of the heatmap no longer wanted are cancelled, not left holding the
 browser's connections; Refresh pressed while the page is read sends no second
 read and turns until that one answers; the newest answer is drawn and a
 cancelled read is never said as an error; a refresh afterwards reads afresh.
-Chromium and WebKit, at 1180 and 560. `MAGPIE_ASSETS` points it at an older
+Chromium and WebKit, at 1180 and 560. `FOGWAY_ASSETS` points it at an older
 assets directory to see it fail there.
 
 `shared-skills.test.cjs` opens the Library's Skills tab with skills found in
@@ -1217,10 +1217,10 @@ is on; the clicks scroll nothing; Chromium and WebKit, in English and
 Chinese, with `/api/plugins` faked.
 
 `remove-all-skills.test.cjs` opens the Library's Skills tab with three
-skills, two kept by magpie and one linked from a folder of the user's
+skills, two kept by fogway and one linked from a folder of the user's
 (#449): Remove all beside Turn all on/off is red, and asks in the page first
 (a browser dialog fails the test), naming the agents that lose them, the two
-folders that go to magpie's backups and the one only unlinked; Cancel posts
+folders that go to fogway's backups and the one only unlinked; Cancel posts
 nothing; its own button posts every skill's name to
 `library/skills/remove-all` once, and no row is left; the clicks scroll
 nothing; Chromium and WebKit, in English and Chinese, with `/api/plugins`
@@ -1255,7 +1255,7 @@ English, Traditional Chinese, Japanese, German and back (kiwiflysky on X).
 In English it is handed a wide font (Menlo, as the host hands a saved font)
 on the Agents page, swept from 1000 to 640px: each width is fitted to the
 system font first and, given Menlo, must match a fresh fit. Each language is
-then swept from 1100 to 600px, and the tabs keep 7.5px from the magpie (or
+then swept from 1100 to 600px, and the tabs keep 7.5px from the fogway (or
 the header's padding past the traffic lights) and from the buttons, which
 stay in the header; drawn in all the way, they scroll in the room between.
 Chromium and WebKit, with `/api/settings` faked.
@@ -1284,8 +1284,8 @@ pick puts the old model back with the reason; in English and Chinese.
 `claude-direct.test.cjs` shows Claude Code with `"model": "sonnet"` in its
 settings.json: the row reads the alias as the model it stands for, with
 Claude's logo; its tooltip says a model Claude Code asks Anthropic for
-itself isn't through magpie, so settings.json names no magpie endpoint, and
-picking one says "straight to Anthropic"; a magpie model says neither, and
+itself isn't through fogway, so settings.json names no fogway endpoint, and
+picking one says "straight to Anthropic"; a fogway model says neither, and
 no pick moves the scrolled page. Chromium and WebKit, in English and
 Chinese.
 
@@ -1296,7 +1296,7 @@ theme's background, square corners and its name in place of the choices, and
 Settings → Bar icon, whose On and Off each post and move nothing, hidden when
 the app says Omarchy's bar isn't there; in English and Chinese.
 
-`brand.test.cjs` holds the header's logo and name: shown in `magpie web`
+`brand.test.cjs` holds the header's logo and name: shown in `fogway web`
 on Windows, macOS and Linux alike, beside the tabs; hidden in the Windows
 window, whose title bar has them; shown in the Mac window.
 
@@ -1345,10 +1345,10 @@ The API is faked.
 to see whether their issue was fixed): after an upgrade the window opens a
 dialog with every release's notes since the version last run, newest first,
 once (the app is told they were seen, and a reload shows nothing); a fresh
-install and the tray's panel show nothing, and magpie web's page shows it as
+install and the tray's panel show nothing, and fogway web's page shows it as
 the window does. Headings, bullets, bold and code are drawn, #464 links the
 issue and, like a markdown link, opens in the browser through the app (in a
-tab in magpie web) without moving the page; a javascript: link stays text and
+tab in fogway web) without moving the page; a javascript: link stays text and
 HTML in the notes is shown as text, never run. Settings' What's new row (under
 Version) opens them again, the waiting update's notes first, marked Not installed
 yet. The dialog shown by itself has "Don't show again today" (#525), told
@@ -1361,18 +1361,18 @@ English and Chinese, API faked.
 `sessions-manage.test.cjs` opens the Sessions page (TJHHHH on Discord): an
 agent's sessions by the folder they ran in, the latest folder open, each with
 its resume command; unfolding a folder, opening a row and picking a session
-leave the page where it is. Delete asks in magpie's own dialog (a browser
+leave the page where it is. Delete asks in fogway's own dialog (a browser
 `confirm()` fails the test), Cancel sends nothing, Delete posts the ids
 picked to sessions/delete, a session still being written to is said so, the
 Trash lists what went and Restore posts its key; an agent whose sessions
-magpie can't delete (OpenCode) shows no delete. No left-border accent, every
+fogway can't delete (OpenCode) shows no delete. No left-border accent, every
 string in Chinese. Chromium and WebKit, English and Chinese, API faked.
 
 `sessions-talk.test.cjs` shows a session's conversation and carries a Pi
 session on in oh-my-pi (sxwedo, #845). Show conversation in a session's
 details reads sessions/transcript by agent and id, once, and lists the
 user's words, the model's, each tool call by name and its result, thinking
-folded; an agent magpie can't read (OpenCode) has no such button. Continue
+folded; an agent fogway can't read (OpenCode) has no such button. Continue
 in is the app's menu, not a `<select>`: copy posts the `omp --fork` command,
 the terminal posts agent, id and `in: "omp"`; the details say the command.
 No click moves the page, no left-border accent, every string in Chinese,
@@ -1380,7 +1380,7 @@ Japanese and German. Chromium and WebKit, English and Chinese, API faked.
 
 `sessions-usage-open.test.cjs` keeps one list of sessions (#752): each
 Sessions page row shows the tokens, cost and models Usage → Sessions showed,
-its details what each model spent and where magpie routed it, and its filter
+its details what each model spent and where fogway routed it, and its filter
 finds a model. Usage's latest sessions keep their numbers but no Resume; a
 row there opens the session on the Sessions page (its agent, its folder
 unfolded, the row opened and brought into sight by that click, with no
@@ -1399,11 +1399,11 @@ leaves the filter hidden, and the other strips on the page and elsewhere keep
 their behaviour. No left-border accent. English and Chinese, Chromium and
 WebKit, API faked.
 
-`sessions-purge.test.cjs` erases sessions in magpie's trash for good (#487):
+`sessions-purge.test.cjs` erases sessions in fogway's trash for good (#487):
 a trashed row's Delete forever and the Trash's Empty trash each ask in
-magpie's own dialog (a browser `confirm()` fails the test), Cancel sends
+fogway's own dialog (a browser `confirm()` fails the test), Cancel sends
 nothing and leaves the page where it is, the confirm posts sessions/purge
-with the row's key or `all`, the list empties, and the note says magpie
+with the row's key or `all`, the list empties, and the note says fogway
 never erases them by itself. No left-border accent, every string in Chinese.
 Chromium and WebKit, English and Chinese, API faked.
 
@@ -1411,18 +1411,18 @@ Chromium and WebKit, English and Chinese, API faked.
 at once (#527): each folder's row starts with a box, as each session's does,
 that picks every session of the folder shown, folded or not; the bar counts
 sessions, not folders, a session's own box part-ticks its folder's, and a
-filter picks only what it shows. The bar's Delete asks in magpie's own
+filter picks only what it shows. The bar's Delete asks in fogway's own
 dialog (a browser `confirm()` fails the test), naming the folder and its
 path for one whole folder and how many folders for several; Cancel posts
 nothing; the confirm posts sessions/delete with their ids, so they go to
-magpie's trash as single deletes do; a session still being written to is
-left and said so, other folders stay, and an agent magpie can't delete from
+fogway's trash as single deletes do; a session still being written to is
+left and said so, other folders stay, and an agent fogway can't delete from
 has no boxes. No click moves the page, no left-border accent, every string
 in Chinese. Chromium and WebKit, English and Chinese, API faked.
 
 `sessions-codex-provider.test.cjs` moves Codex sessions made with another
 provider to the one Codex uses now (#887): the Codex tab says how many there
-are and which provider, tags each, and Move opens magpie's own dialog with
+are and which provider, tags each, and Move opens fogway's own dialog with
 each ticked; Cancel posts nothing, an unticked one isn't moved, Move posts
 sessions/codex-provider with each id and Codex's provider, and Undo posts
 each back to the provider it had. No click moves the page, no left-border
@@ -1457,7 +1457,7 @@ leaves the page where it is. Chromium and WebKit, API faked.
 `routing-zcode-blocked.test.cjs` opens a request ZCode's Start Plan turned
 away (#425: 405 "request has been blocked due to unusual activity") on the
 Routing page: what the gateway made of it is given without the hint it adds,
-and the hint (ZCode still turned it away though magpie sends it as the ZCode
+and the hint (ZCode still turned it away though fogway sends it as the ZCode
 app does: the network blocked this IP, or ZCode checks something new; use a
 GLM Coding Plan or another provider in the group) is on its own line in English and Chinese;
 another 405 gets none, and picking the request leaves the page where it is.
@@ -1512,7 +1512,7 @@ Chromium and WebKit, API faked. Before the fix the WebDAV fields were
 empty and nothing said which was on or kept.
 
 `webdav-settings-refresh.test.cjs` checks the Settings page's sync row
-against a setup changed behind the window (#305: magpie webdav / magpie s3
+against a setup changed behind the window (#305: fogway webdav / fogway s3
 at the terminal): the faked `/api/davsync` answers differently between
 reads, and the window's focus — or the page becoming visible again — must
 re-read it, the row, its status and the form's ticks following what the CLI
@@ -1546,7 +1546,7 @@ that draws the latest numbers. The checks run in English and Chinese.
 delete fails after the provider is already gone (an agent's file could not
 be rewritten), one click closes the editor, the provider's row disappears,
 the other rows stay, and the status line shows the error; no second Remove
-is needed. If the delete succeeds but leaves an agent on a model magpie no
+is needed. If the delete succeeds but leaves an agent on a model fogway no
 longer serves, the status line warns about it and has no left-border
 accent. If the delete fails while the provider is still there, the editor
 stays open and shows the error. The checks run in English and Chinese, in
@@ -1560,7 +1560,7 @@ says it was copied. Open again is still there, and nothing scrolls. The
 checks run in English and Chinese, in Chromium and WebKit.
 
 `copy-command.test.cjs` copies from a tab with no clipboard API, as
-`magpie web` on a NAS is when opened from another computer over http:
+`fogway web` on a NAS is when opened from another computer over http:
 /api/copy refuses and navigator.clipboard is missing, so the copy command
 copies the sign-in link, the status line says it was copied, the textarea
 it used is gone, and nothing scrolls. English and Chinese, in Chromium and
@@ -1578,7 +1578,7 @@ opened again has no box. English and Chinese, Chromium and WebKit;
 the API is faked.
 
 `signin-paste-codex.test.cjs` checks a ChatGPT sign-in finished from its
-pasted address, for a magpie the browser can't reach (on a server, in
+pasted address, for a fogway the browser can't reach (on a server, in
 Docker). While the sign-in waits, the box says to copy the address of the
 page that won't load, and a Callback URL field sits inside it with no
 left-border accent. Finish sign-in stays off until something is typed, then
@@ -1593,8 +1593,8 @@ server-or-Docker guess, and the pasted address finishes the sign-in. Every
 language, Chromium and WebKit, 900 and 420 wide.
 
 `signin-paste-key.test.cjs` checks Command Code signed in to from a browser
-that can't reach magpie (on a server, in Docker), where Command Code's page
-posts its key to magpie unseen and leaves no address to paste. While the
+that can't reach fogway (on a server, in Docker), where Command Code's page
+posts its key to fogway unseen and leaves no address to paste. While the
 sign-in waits, the box says to make an API key on Command Code's keys page,
 a link opens that page, and a hidden API key field sits inside the box with
 no left-border accent; Finish sign-in posts the key once to the sign-in's
@@ -1680,11 +1680,11 @@ off. Neither click moves the page. In the tray panel, Opus 4.5's slider ends
 at high, and a step posts that level and says the same restart. Chromium and
 WebKit, in English and Chinese, with `/api/plugins` faked.
 
-`remote-magpie.test.cjs` adds a Remote magpie (another computer's magpie,
+`remote-fogway.test.cjs` adds a Remote fogway (another computer's fogway,
 shared on its network) from the Add sheet: its tile, the address field with
-its placeholder and a hint on where the other magpie shows its address and
-key; saving without an address says the other magpie's address is needed,
-and saving posts the `remote-magpie` preset with the key and the address as
+its placeholder and a hint on where the other fogway shows its address and
+key; saving without an address says the other fogway's address is needed,
+and saving posts the `remote-fogway` preset with the key and the address as
 typed. OpenAI's editor has no address field. No click moves the page;
 English and Chinese, Chromium and WebKit.
 
@@ -1708,7 +1708,7 @@ Test send the editor's form with `typed: true`, the editor stays open with
 the key still typed, nothing is saved; a new key's box focuses the key and
 its name says it is optional. In English and Chinese, Chromium and WebKit.
 
-`phone-web.test.cjs` opens magpie web on an iPhone 13: the magpie and the
+`phone-web.test.cjs` opens fogway web on an iPhone 13: the fogway and the
 icons over the tabs, which take a row of their own at a size to read and tap
 and slide to keep the one open (Plugins) in sight, nothing wider than the
 screen, iOS kept from zooming into a field; no setting's name cut short. A
@@ -1720,7 +1720,7 @@ app's window keep the one-row header. Chromium and WebKit.
 "Allowance alert" and "Low balance alert" start Off; On saves 80% (and 5 for a
 balance), the field beside it saves the number typed and puts back a share
 past 100 unsaved, and a setting saved later (the currency) keeps both
-alerts. With magpie's notifications turned off in the system, both rows say
+alerts. With fogway's notifications turned off in the system, both rows say
 so. No click moves the page and no row has a coloured left border; English
 and Chinese, Chromium and WebKit, with `/api/plugins` faked.
 
@@ -1744,12 +1744,12 @@ is not picked automatically. A signed-in account (Codex) has no such row.
 Every string has its Chinese; English and Chinese, Chromium and WebKit.
 
 `lan-docker.test.cjs` checks Share on local network in a container (Discord:
-magpie in Docker on a NAS showed the container's own 172.17.x address).
-Opened over the network from `magpie web`, the address is the host the page
+fogway in Docker on a NAS showed the container's own 172.17.x address).
+Opened over the network from `fogway web`, the address is the host the page
 was opened at, on the gateway's port, with an "In a container" row saying so;
 the OpenAI/Anthropic switch keeps that host and doesn't move the page. Opened
 at localhost, the container's address stays and the row says it is the
-container's own and to set `MAGPIE_PUBLIC_URL`. Outside a container nothing
+container's own and to set `FOGWAY_PUBLIC_URL`. Outside a container nothing
 changes. No coloured left border; English and Chinese, Chromium and WebKit,
 with `/api/plugins` faked.
 
@@ -1789,7 +1789,7 @@ page's Requests (jorben, #447): a request the archive kept names it in its
 row's details, with "Fetch from archive" and "Download"; fetched, a body past
 256 KB is said by its size and a note to download it, and an archive too large
 to read on the page says so. Download in the app posts `archive/export` and
-says where the file was saved; in magpie web it follows a download link to
+says where the file was saved; in fogway web it follows a download link to
 `archive/file`. A request with no copy, with the archive on, says "Not
 archived". No click moves the page; no left-border accent; every new string
 has its Chinese. English and Chinese, app and web, Chromium and WebKit.
@@ -1802,12 +1802,12 @@ they are, the fold is remembered across a reload, and a provider switched
 off moves under it. English and Chinese, Chromium and WebKit, with
 `/api/plugins` faked.
 
-`account-return.test.cjs` checks the accounts of Codex after magpie signed
+`account-return.test.cjs` checks the accounts of Codex after fogway signed
 it in to another because the first was all but used up (#408: 智能路由会自动把
 所使用账号设为首选). The account it stands in on says "First for now" (暂为首选),
 its title naming the one it goes back to, and that one "First again once it
 has room" (额度恢复后切回首选); with nothing to go back to, the account Codex
-is on is just "First". The Routing note says magpie moves back. The page
+is on is just "First". The Routing note says fogway moves back. The page
 doesn't move; English and Chinese, Chromium and WebKit.
 
 `keep-login.test.cjs` checks the tick under Codex's accounts that keeps
@@ -1817,18 +1817,18 @@ it signed in to an account of the user's choosing rather than the first
 provider/keeplogin with keepLoginAs; the order holds, the first saying First
 and the chosen one Signed in (已登录), Make first on it posting
 provider/arrange rather than a sign-in; picking "the first account" goes
-back. The Routing note follows each, In order says magpie moves Codex on
+back. The Routing note follows each, In order says fogway moves Codex on
 once used up (#530), and one account has no tick. The page doesn't move;
 English and Chinese, Chromium and WebKit.
 
-`signin-again.test.cjs` checks a sign-in to an account magpie lists
+`signin-again.test.cjs` checks a sign-in to an account fogway lists
 already (#413: WorkBuddy's page offers the account WorkBuddy is signed in
 to). Adding another WorkBuddy account comes back done with `again`: the
 status says it is already listed and its sign-in renewed (该账号已在列表中，
 已更新登录), not "added"; a new account still says added. The page doesn't
 move; English and Chinese, Chromium and WebKit.
 
-`web-page.test.cjs` checks the page `magpie web` serves to a browser (Jorben
+`web-page.test.cjs` checks the page `fogway web` serves to a browser (Jorben
 on Discord: no request archive switch and no usage chart icons in the remote
 web UI, and a 404 for `/wails/runtime.js`). With `web` set the page never
 asks for `/wails/runtime.js`, which the browser has none of, and nothing
@@ -1838,7 +1838,7 @@ moving the page, and the Usage page's chart draws its columns with each provider
 in its ranking. English and Chinese, Chromium and WebKit, with the API and
 `/api/plugins` faked. Go's `TestPageFilesRevalidate` checks that the page's
 files go out with `Cache-Control: no-cache` and an ETag of their content, so
-a cache in front of `magpie web` can't keep an older version's `app.js`.
+a cache in front of `fogway web` can't keep an older version's `app.js`.
 
 `balance-parts.test.cjs` checks a custom provider's balance card (#420): a
 balance field with several amounts shows each on a line of its own, the
@@ -1855,14 +1855,14 @@ and WebKit, `/api/plugins` faked.
 of one's own for when no provider can search). It lists the search APIs in
 the order they are tried and has a row to add one: picking SearXNG asks for
 its address, Add posts `{vendor, key, url}`, an API that needs a key sends
-nothing without one, a key magpie refuses is said in the row with the API
+nothing without one, a key fogway refuses is said in the row with the API
 and what was typed kept, and Remove posts `{vendor, remove: true}`. No click
 moves the page. English and Chinese, Chromium and WebKit, with `/api/plugins`
 faked.
 
 `searcher-pick.test.cjs` checks the Web search section's "Searches for other
 models" row (01huadalang on Discord: pick which provider searches for a model
-that can't). With none named it shows Automatic and magpie's own pick; its
+that can't). With none named it shows Automatic and fogway's own pick; its
 picker offers Automatic first, each provider that can search by its small
 model, and each of its models, including a relay said to search; the row says
 those relays require manual selection and are not automatic fallback choices.
@@ -1872,7 +1872,7 @@ search providers and configured search APIs named as alternatives.
 A model picked is saved as `searcher:
 "<provider>/<model>"`, a provider by its small model as `searcher:
 "<provider>"`, and shown; another setting saved still sends the pick; one
-named that magpie can't use (turned off) is said in the row with magpie's
+named that fogway can't use (turned off) is said in the row with fogway's
 pick shown instead; Automatic sends `searcher: ""`. No click moves the page.
 The picker is checked in English and Chinese; the help also in Japanese and
 German, at 560 and 1000 pixels in light and dark themes, including a selected
@@ -1884,23 +1884,23 @@ Set `ARTIFACT_DIR` to retain screenshots of the help.
 `provider-file-error.test.cjs` checks a providers.json that is there but
 can't be read (#415's review): the Providers page says over the list that the
 file can't be read (无法读取供应商配置文件), was left unchanged and is to be
-fixed or moved aside, with magpie's reason; the Add sheet doesn't open as for
+fixed or moved aside, with fogway's reason; the Add sheet doesn't open as for
 a first use, a signed-in account still listed stays under it, and a file that
 reads shows none of it. English and Chinese, Chromium and WebKit, with
 `/api/plugins` faked.
 
-`public-url.test.cjs` checks the address MAGPIE_PUBLIC_URL puts beside this
+`public-url.test.cjs` checks the address FOGWAY_PUBLIC_URL puts beside this
 computer's on the Gateway page's Connect section, and what its hint says
 about the gateway: loopback, open to the network (listening beyond loopback
 with nothing shared), and a network address that needs an enabled gateway
 key. English and Chinese, Chromium and WebKit, with `/api/plugins` faked.
 
-`public-url-default.test.cjs` checks that Connect starts at MAGPIE_PUBLIC_URL,
+`public-url-default.test.cjs` checks that Connect starts at FOGWAY_PUBLIC_URL,
 labelled Public address, with the snippets on it, until an address is
 picked, and that a pick (this computer's) is kept after a reload (#1551).
-About shows the public URL beside the local one; magpie web shows it as the
+About shows the public URL beside the local one; fogway web shows it as the
 gateway's address and the MCP server's, the app keeps those local. Without
-MAGPIE_PUBLIC_URL Connect starts at this computer's. Every language,
+FOGWAY_PUBLIC_URL Connect starts at this computer's. Every language,
 Chromium and WebKit, at 1100 and 420 wide.
 
 `provider-picks-stay.test.cjs` checks that the models picked in one
@@ -1950,7 +1950,7 @@ only records screenshots).
 The Test workflow does not run this suite.
 
 `usage-stale-answer.test.cjs` and `providers-fetching-retry.test.cjs` use Node's
-VM and need no browser. Set `MAGPIE_APP_JS` to another revision's `app.js` to
+VM and need no browser. Set `FOGWAY_APP_JS` to another revision's `app.js` to
 run their behavior checks against that source.
 
 The request-ledger review regressions also cover the explicit data-source notes
@@ -2050,7 +2050,7 @@ WebKit:
 node --test internal/gui/tests/favorite-star.test.cjs
 
 `claude-picker-fold.test.cjs` checks Claude Code's model picker (#496): the
-models magpie serves on the very account Claude Code is signed in to fold
+models fogway serves on the very account Claude Code is signed in to fold
 into one row after Claude Code's own, though the account comes after the
 providers the user added (Claude Code headed once); a click or Enter opens
 and closes it in place, the page not moving and the keys left to the
@@ -2071,12 +2071,12 @@ English and Chinese:
 node --test internal/gui/tests/list-sort.test.cjs
 
 `quota-name-translated.test.cjs` holds the rule that a window's name is
-what magpie translates while its display is shown as it came (#1001): a
+what fogway translates while its display is shown as it came (#1001): a
 plugin that puts its sentence in the display keeps the card English in
 every language, as the ZCode plugin's claim line did. The fixture is that
-line with its name a sentence magpie knows and a display of the plugin's
+line with its name a sentence fogway knows and a display of the plugin's
 own ("1 · ZCode Trust Build"); the name reads in the language and the
-count and plan name do not. It covers every language magpie has (en, zh,
+count and plan name do not. It covers every language fogway has (en, zh,
 zh-TW, ja, de), and each is rendered at 440, 560 and 1000px in Chromium
 and WebKit — a translated name is a sentence, and `.quota-labels > span`
 is nowrap with no ellipsis, so one wider than its `.quota` is cut off
@@ -2215,9 +2215,9 @@ faked; no user configuration is read or changed.
 node --test internal/gui/tests/agent-field-names.test.cjs
 ```
 
-`import-row.test.cjs` checks the row of an app magpie is added to by a link
+`import-row.test.cjs` checks the row of an app fogway is added to by a link
 of its own (Cindy) on the Agents page: a line under its name says whether
-magpie is added (green once it is), its button stands where the other rows'
+fogway is added (green once it is), its button stands where the other rows'
 model picker does, as wide and lined up with it at 960 and 700px, and a click
 opens the app's link. English and Chinese, Chromium and WebKit.
 
@@ -2240,12 +2240,12 @@ accounts on, and Privacy's own Hide accounts row says so and turns it off,
 without scrolling. English and Chinese, Chromium and WebKit.
 
 `cli-path.test.cjs` checks Settings › About › Command line (PAMI on Discord):
-it says what `magpie` in a new terminal runs, with a dot for each shell (no
+it says what `fogway` in a new terminal runs, with a dot for each shell (no
 left border, no native select); Add to PATH posts `/api/cli` with no shell and
 the row turns green, a shell whose PATH lacks the folder has a button naming
 its profile that posts that shell alone, and no click scrolls. On Windows it
 lists PowerShell and cmd with no profile buttons, and a program not named
-magpie.exe (the site's portable download, #942) is said to get a magpie.cmd
+fogway.exe (the site's portable download, #942) is said to get a fogway.cmd
 that runs it, in Add's tooltip, the row and the status; a translocated app gets no
 button. Every string has zh, ja and de. English and Chinese, Chromium and
 WebKit; the API is faked, no shell profile is read or written.
@@ -2338,7 +2338,7 @@ and checks one character a key, the focus, the caret, and that the field
 never leaves the page. The rows around each still follow it: the groups and
 keys it matches, the routing header in the other language after
 `setLocale`, the plugins listings arriving while the reader types. In
-English, Chinese, Japanese and German, at 1100px and 440px. `MAGPIE_FILTER_ASSETS` points it
+English, Chinese, Japanese and German, at 1100px and 440px. `FOGWAY_FILTER_ASSETS` points it
 at another assets folder, to see it fail on the old code.
 
 ## Volcengine Ark access key

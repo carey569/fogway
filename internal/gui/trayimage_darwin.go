@@ -283,7 +283,7 @@ static NSStatusBarButton *mpFind(NSView *v) {
 	return nil;
 }
 
-// mpButton is magpie's one status item's button, in the status bar's window.
+// mpButton is fogway's one status item's button, in the status bar's window.
 static NSStatusBarButton *mpButton(void) {
 	for (NSWindow *w in NSApp.windows) {
 		NSStatusBarButton *b = mpFind(w.contentView);

@@ -1,6 +1,6 @@
 # Sync and backup
 
-`internal/backup` collects magpie's portable setup into a passphrase-sealed
+`internal/backup` collects fogway's portable setup into a passphrase-sealed
 bundle. `internal/davsync` keeps that bundle in a WebDAV folder, an S3 bucket
 or a GitHub repository. It merges changes between computers; it does not
 clone a working tree or synchronize arbitrary files.
@@ -10,7 +10,7 @@ clone a working tree or synchronize arbitrary files.
 - [`Config`, `Configure`, `Status` and `syncOnce`](../../internal/davsync/davsync.go)
   keep the active server in `sync.json`, and the last local/remote hashes,
   versions, notices and undo file in `sync-state.json`. These files live beside
-  magpie's settings. Secrets are local, never in the status response.
+  fogway's settings. Secrets are local, never in the status response.
 - The [`remote`](../../internal/davsync/dav.go) interface reads a version and
   conditionally replaces it. WebDAV and S3 use ETags; GitHub uses the blob SHA
   required by its Contents API. [`github.go`](../../internal/davsync/github.go)
@@ -47,7 +47,7 @@ When a remote file is empty, damaged or another app's format, sync stops and
 describes it through `ServerFile`. Settings and the backend's `upload` command
 can replace it with this computer's setup, keeping the old file first.
 HTML and XML are not offered for replacement. GitHub diagnostics name the
-repository and `magpie github upload`, rather than WebDAV's recovery path.
+repository and `fogway github upload`, rather than WebDAV's recovery path.
 
 Switching services keeps all inactive kinds in `Config.Servers`. `Other`
 remains the most recently left server for compatibility with older saved
@@ -65,7 +65,7 @@ repository can keep the token. The branch is part of the sync state key.
   backup initializes its default branch through the Contents API. A selected
   branch other than the default must already exist. The token needs repository
   Contents read and write.
-- Backups are `<prefix>/magpie/magpie.magpie-backup`; optional usage files
+- Backups are `<prefix>/fogway/fogway.fogway-backup`; optional usage files
   live beside them under `usage/`. Changes create commits, and unchanged
   setup does not create another backup commit.
 - Tokens are separate from the library's GitHub token, sent only to

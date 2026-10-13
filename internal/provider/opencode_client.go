@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
-// OpenCodeVersion is the OpenCode release magpie says it is to OpenCode's
+// OpenCodeVersion is the OpenCode release fogway says it is to OpenCode's
 // gateway. Zen's free tier turns away anything older than 1.18.0 (426
 // "OpenCode 1.18.0 or newer is required to use the free tier").
 const OpenCodeVersion = "1.19.0"

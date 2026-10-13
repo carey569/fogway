@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // connectProxy is an HTTP proxy that notes the host:port of each CONNECT
@@ -34,12 +34,12 @@ type connectProxy struct {
 func newConnectProxy(t *testing.T, dial func(addr string) (net.Conn, error)) *connectProxy {
 	t.Helper()
 	var ln net.Listener
-	for range 20 { // a free port, never one of magpie's own (3425-3437)
+	for range 20 { // a free port, never one of fogway's own (3725-3737)
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if p := l.Addr().(*net.TCPAddr).Port; p >= 3425 && p <= 3437 {
+		if p := l.Addr().(*net.TCPAddr).Port; p >= 3725 && p <= 3737 {
 			l.Close()
 			continue
 		}
@@ -101,7 +101,7 @@ func (p *connectProxy) reset() {
 	p.mu.Unlock()
 }
 
-// A web search magpie makes for a turn goes through the proxy its searcher
+// A web search fogway makes for a turn goes through the proxy its searcher
 // follows, not the one the turn's provider is set to (#1522): Claude Code
 // on opencode-go, set to "direct", with Codex searching and the proxy on
 // Auto, had the search to chatgpt.com dialed directly, to the poisoned

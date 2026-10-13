@@ -5,14 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // claudeOpusThenSonnet is #1050's Claude Code before the switch: on
-// magpie's Opus 5.5, its sonnet tier and its subagents given Sonnet 5.5,
-// both 1M models, as magpie's record (applied.json) had them. It answers
+// fogway's Opus 5.5, its sonnet tier and its subagents given Sonnet 5.5,
+// both 1M models, as fogway's record (applied.json) had them. It answers
 // the settings.json.
 func claudeOpusThenSonnet(t *testing.T, a *Agent, home string) string {
 	t.Helper()
@@ -37,7 +37,7 @@ func claudeOpusThenSonnet(t *testing.T, a *Agent, home string) string {
 }
 
 // sonnetFollowsAsBefore moves the main model onto Sonnet 5.5 in Claude
-// Code's /model, and leaves what magpie's Follow writes as a magpie before
+// Code's /model, and leaves what fogway's Follow writes as a fogway before
 // #1050's fix left it: the tier and the subagents on the new main model
 // following it, not marked as the user's own.
 func sonnetFollowsAsBefore(t *testing.T, a *Agent, path string) {
@@ -55,13 +55,13 @@ func sonnetFollowsAsBefore(t *testing.T, a *Agent, path string) {
 	forget(at.key("claude.tier_own.sonnet"), at.key("claude.tier_own.subagent"))
 }
 
-// The main model moved onto the Sonnet 5.5 magpie had given the sonnet tier
-// and the subagents, in Claude Code's own /model (whose list magpie writes,
-// each "· via magpie"): the two now follow the main model, read as empty,
-// and run on the model magpie set them to. That isn't "changed outside
-// magpie" (#1050, cjyrainbow: Claude Code · WSL Ubuntu 已在 magpie 之外换掉
-// claude/claude-sonnet-5-5[1m] while everything still went through magpie).
-// The main model taken off magpie still is.
+// The main model moved onto the Sonnet 5.5 fogway had given the sonnet tier
+// and the subagents, in Claude Code's own /model (whose list fogway writes,
+// each "· via fogway"): the two now follow the main model, read as empty,
+// and run on the model fogway set them to. That isn't "changed outside
+// fogway" (#1050, cjyrainbow: Claude Code · WSL Ubuntu 已在 fogway 之外换掉
+// claude/claude-sonnet-5-5[1m] while everything still went through fogway).
+// The main model taken off fogway still is.
 func TestClaudeFollowerOnTheMainModelIsNoDrift(t *testing.T) {
 	home, _ := codexHome(t, "", "")
 	a := claude(home)
@@ -73,15 +73,15 @@ func TestClaudeFollowerOnTheMainModelIsNoDrift(t *testing.T) {
 		t.Fatalf("not #1050's state: %v\n%s", v, readFile(path))
 	}
 	if d := a.Drift(); d != nil {
-		t.Fatalf("drift on a tier following magpie's model: %+v", *d)
+		t.Fatalf("drift on a tier following fogway's model: %+v", *d)
 	}
 
-	// the main model on Anthropic's own: changed outside magpie
+	// the main model on Anthropic's own: changed outside fogway
 	if err := edit.SetJSON(path, edit.KV{Path: "env.ANTHROPIC_BASE_URL", Value: "https://api.anthropic.com"}, edit.KV{Path: "model", Value: "claude-sonnet-5-5"}); err != nil {
 		t.Fatal(err)
 	}
 	if d := a.Drift(); d == nil || d.Kind != "replaced" && d.Kind != "unwired" {
-		t.Fatalf("the main model off magpie isn't said: %+v", d)
+		t.Fatalf("the main model off fogway isn't said: %+v", d)
 	}
 }
 
@@ -91,7 +91,7 @@ func TestWSLClaudeFollowerOnTheMainModelIsNoDrift(t *testing.T) {
 	root, home := claudeDistroHome(t, `{"model": "opus"}`)
 	d := distro{Name: "Ubuntu", Root: root, Home: "/home/me", Has: map[string]bool{"dir:.claude": true},
 		Gateway: "172.20.0.1", Mirrored: true, Running: true}
-	// what magpie sees there is kept for when the distro stops
+	// what fogway sees there is kept for when the distro stops
 	seen := d
 	wsl.Lock()
 	if wsl.seen == nil {
@@ -107,7 +107,7 @@ func TestWSLClaudeFollowerOnTheMainModelIsNoDrift(t *testing.T) {
 		t.Fatalf("not #1050's state: %v\n%s", v, readFile(path))
 	}
 	if dr := a.Drift(); dr != nil {
-		t.Fatalf("drift on a tier following magpie's model: %+v", *dr)
+		t.Fatalf("drift on a tier following fogway's model: %+v", *dr)
 	}
 	d.Running = false
 	stopped := wslAgent(wslKindOf("claude"), d)
@@ -115,18 +115,18 @@ func TestWSLClaudeFollowerOnTheMainModelIsNoDrift(t *testing.T) {
 		t.Fatalf("stopped: not what was last seen: %v", v)
 	}
 	if dr := stopped.Drift(); dr != nil {
-		t.Fatalf("stopped: drift on a tier following magpie's model: %+v", *dr)
+		t.Fatalf("stopped: drift on a tier following fogway's model: %+v", *dr)
 	}
 	noOwnClaude(t)
 }
 
 // A model given to a tier or the subagents stays theirs when the main model
-// moves onto it and on again, picked in magpie or in Claude Code's /model:
+// moves onto it and on again, picked in fogway or in Claude Code's /model:
 // #1050's sonnet tier and subagents, given Sonnet 5.5, went to Opus 5.5
 // with the main model's way back from Sonnet 5.5, the pick lost without a
 // word. "Same as model" picked for them afterwards has them follow again.
 func TestClaudeOwnTierStaysThroughTheMainModel(t *testing.T) {
-	for _, via := range []string{"magpie", "/model"} {
+	for _, via := range []string{"fogway", "/model"} {
 		t.Run(via, func(t *testing.T) {
 			home, _ := codexHome(t, "", "")
 			a := claude(home)
@@ -134,7 +134,7 @@ func TestClaudeOwnTierStaysThroughTheMainModel(t *testing.T) {
 			env := func(k string) string { v, _ := edit.GetJSON(path, "env."+k); return v }
 			main := func(m string) {
 				t.Helper()
-				if via == "magpie" {
+				if via == "fogway" {
 					if err := a.Apply("model", m); err != nil {
 						t.Fatal(err)
 					}

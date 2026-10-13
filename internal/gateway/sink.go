@@ -12,7 +12,7 @@ package gateway
 // the accounts, where without Sink it goes back to the first each time
 // that one's rest ends.
 //
-// What sank is remembered in memory, until magpie restarts — or until it
+// What sank is remembered in memory, until fogway restarts — or until it
 // sinks again, which sends it to the back once more. Nothing else changes:
 // a resting one still waits behind every one ready (restLast), an account
 // out of quota or credit rests as before and doesn't sink, and with Sink
@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 type sinking struct {

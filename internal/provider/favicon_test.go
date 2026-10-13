@@ -29,7 +29,7 @@ func TestFaviconSites(t *testing.T) {
 		}
 	}
 	// the guard itself refuses a loopback site
-	if _, err := FaviconFor(context.Background(), "http://localhost:3425/v1", ""); err == nil {
+	if _, err := FaviconFor(context.Background(), "http://localhost:3725/v1", ""); err == nil {
 		t.Error("a local base URL's icon was fetched")
 	}
 }

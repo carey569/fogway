@@ -13,7 +13,7 @@ import (
 // the first from when the limit was set, each next one Days×24h after
 // the last. Tokens counts each call's uncached input, output (reasoning
 // included) and cache writes, and its cache reads too when CacheReads is
-// set; Cost is an estimate in US dollars at the prices magpie shows on
+// set; Cost is an estimate in US dollars at the prices fogway shows on
 // the Usage page, not a vendor's bill. A cap of 0 is no cap; a limit with
 // neither is no limit.
 type Limit struct {
@@ -23,7 +23,7 @@ type Limit struct {
 	Tokens     int64   `json:"tokens,omitempty"`
 	Cost       float64 `json:"cost,omitempty"`
 	CacheReads bool    `json:"cacheReads,omitempty"`
-	// Since is magpie's, never the caller's (Update sets it): for "days",
+	// Since is fogway's, never the caller's (Update sets it): for "days",
 	// when the first cycle began, the limit set or last reset; for a
 	// calendar period, when it was last reset, so a call before it in
 	// the same window doesn't count. Zero for a calendar limit never

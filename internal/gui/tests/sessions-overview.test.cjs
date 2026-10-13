@@ -111,7 +111,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], seen = [], ctl = {};
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, seen, ctl));
-      await page.addInitScript(() => { localStorage.setItem("magpie.usageTab", "sessions"); localStorage.setItem("magpie.sessRange", "all"); });
+      await page.addInitScript(() => { localStorage.setItem("fogway.usageTab", "sessions"); localStorage.setItem("fogway.sessRange", "all"); });
       t.after(async () => {
         if (process.env.ARTIFACT_DIR) {
           await fs.mkdir(process.env.ARTIFACT_DIR, { recursive: true });
@@ -120,7 +120,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }
         await browser.close();
       });
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator("#sessGrid:not([hidden])").waitFor();
       await page.waitForFunction(() => !document.querySelector("#sessStats .kpi.stale") && document.querySelectorAll("#sessTop .sess-top").length === 3);
 
@@ -140,16 +140,16 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const levels = await page.locator("#sessChart .sess-cal i").evaluateAll((es) => es.map((e) => e.className));
         assert(levels.includes("l0") && levels.includes("l4"), levels.join());
         await page.locator("#sessChart .segs .opt").nth(3).click();
-        assert.equal(await page.evaluate(() => localStorage.getItem("magpie.sessMetric")), "sessions");
+        assert.equal(await page.evaluate(() => localStorage.getItem("fogway.sessMetric")), "sessions");
         const title = await page.locator("#sessChart .sess-cal i.l4").first().getAttribute("title");
         assert.match(title, lang === "en" ? /2 sessions/ : /2 个会话/);
         // messages and output tokens, the heatmap's other ways
         assert.deepEqual((await page.locator("#sessChart .segs .opt").allInnerTexts()).slice(0, 3), lang === "en" ? ["Tokens", "Output tokens", "Messages"] : ["Token", "输出 Token", "消息"]);
         await page.locator("#sessChart .segs .opt").nth(2).click();
-        assert.equal(await page.evaluate(() => localStorage.getItem("magpie.sessMetric")), "messages");
+        assert.equal(await page.evaluate(() => localStorage.getItem("fogway.sessMetric")), "messages");
         assert.match(await page.locator("#sessChart .sess-cal i.l4").first().getAttribute("title"), lang === "en" ? /30 messages/ : /30 条消息/);
         await page.locator("#sessChart .segs .opt").nth(1).click();
-        assert.equal(await page.evaluate(() => localStorage.getItem("magpie.sessMetric")), "output");
+        assert.equal(await page.evaluate(() => localStorage.getItem("fogway.sessMetric")), "output");
         await page.locator("#sessChart .segs .opt").nth(0).click();
       });
 
@@ -193,7 +193,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // an empty bin says 0 over a stub
         assert.equal(await shape.locator(".col .plot > b").last().innerText(), "0");
         assert.equal(await shape.locator(".plot > i").last().getAttribute("class"), "none");
-        assert.equal(await page.evaluate(() => localStorage.getItem("magpie.sessShape")), "minutes");
+        assert.equal(await page.evaluate(() => localStorage.getItem("fogway.sessShape")), "minutes");
         assert.equal((await shape.boundingBox()).y, y);
         await shape.locator(".segs .opt").nth(0).click();
       });
@@ -248,7 +248,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await page.locator("#sessTop .sess-detail").count(), 0);
         await page.locator("#sessTop .segs .opt").nth(1).click();
         assert.equal(await page.locator("#sessTop .sess-top .name").first().innerText(), "Top session 2");
-        assert.equal(await page.evaluate(() => localStorage.getItem("magpie.sessTop")), "cost");
+        assert.equal(await page.evaluate(() => localStorage.getItem("fogway.sessTop")), "cost");
       });
 
       await t.test("a project picked from its bar, the page left where it was", async () => {

@@ -1,10 +1,10 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // lc on Discord ("只可列出？不可删除？"): Claude Code sessions seen only through
-// magpie's gateway, their own files on another computer, were listed under
-// "No folder" at "0 B" with a note that magpie can't delete them. Now they
+// fogway's gateway, their own files on another computer, were listed under
+// "No folder" at "0 B" with a note that fogway can't delete them. Now they
 // sit under "Seen through the gateway", say why they can't be resumed,
-// show the size of what magpie recorded of them (nothing when it recorded
-// nothing), and each has a Delete that asks in magpie's own dialog, says
+// show the size of what fogway recorded of them (nothing when it recorded
+// nothing), and each has a Delete that asks in fogway's own dialog, says
 // what goes and what stays, and moves them to the Trash, where they are
 // marked and the recording's expiry is said. A click leaves the page where
 // it is; it fits at 390px. In every language, Chromium and WebKit; no
@@ -22,7 +22,7 @@ const gw = (id, size, min) => ({
   agent: "claude", id, title: id, start: at(min + 30), last: at(min), input: 4000, output: 300, cache_read: 0, cache_write: 0,
   size, models: [{ model: "deepseek-flash", requests: 3 }], read_only: true, transcript: size > 0, gateway: true, deletable: true,
 });
-const DIR = "~/Library/Application Support/magpie/trash/sessions";
+const DIR = "~/Library/Application Support/fogway/trash/sessions";
 
 function serve(lang, calls) {
   const store = { sessions: [gw(A, 2048, 90), gw(B, 0, 120)], trash: [] };
@@ -61,16 +61,16 @@ function serve(lang, calls) {
 
 const KEYS = {
   seen: "Seen through the gateway",
-  note: "These {agent} sessions were seen only through magpie's gateway: {agent}'s own files of them aren't on this computer (it may run on another one, in a container or with another config folder), so they can't be resumed here. Delete takes one off this list and moves any conversation magpie recorded of it to its trash; Usage keeps what it spent.",
-  some: "Sessions under \"Seen through the gateway\" have no {agent} files on this computer, so they can't be resumed here. Delete takes one off this list and moves any conversation magpie recorded of it to its trash; Usage keeps what it spent.",
+  note: "These {agent} sessions were seen only through fogway's gateway: {agent}'s own files of them aren't on this computer (it may run on another one, in a container or with another config folder), so they can't be resumed here. Delete takes one off this list and moves any conversation fogway recorded of it to its trash; Usage keeps what it spent.",
+  some: "Sessions under \"Seen through the gateway\" have no {agent} files on this computer, so they can't be resumed here. Delete takes one off this list and moves any conversation fogway recorded of it to its trash; Usage keeps what it spent.",
   size: "{size} recorded",
-  confirm: "A session seen only through the gateway leaves this list, and any conversation magpie recorded of it is moved to magpie's trash ({dir}): Trash puts it back. {agent}'s own files elsewhere are not touched, and Usage keeps what it spent. One with a request in the last minute is left alone.",
-  expire: "Conversations magpie recorded through the gateway still expire after 7 days here, and Delete saved conversations… erases them too.",
+  confirm: "A session seen only through the gateway leaves this list, and any conversation fogway recorded of it is moved to fogway's trash ({dir}): Trash puts it back. {agent}'s own files elsewhere are not touched, and Usage keeps what it spent. One with a request in the last minute is left alone.",
+  expire: "Conversations fogway recorded through the gateway still expire after 7 days here, and Delete saved conversations… erases them too.",
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh", "zh-TW", "ja", "de"]) {
-    test(`${engine} ${lang}: a session seen only through the gateway can be deleted, after magpie's own dialog`, async (t) => {
+    test(`${engine} ${lang}: a session seen only through the gateway can be deleted, after fogway's own dialog`, async (t) => {
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       t.after(() => browser.close());
       const page = await (await browser.newContext({ viewport: { width: 1000, height: 700 }, reducedMotion: "reduce" })).newPage();
@@ -80,7 +80,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("dialog", (d) => { errors.push("a browser dialog: " + d.message()); d.dismiss(); });
       const calls = [];
       await page.route("**/*", serve(lang, calls));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const tr = (k, v) => page.evaluate(([k, v]) => t(k, v), [k, v]);
       if (lang !== "en") {
         const missing = await page.evaluate(([lang, keys]) => keys.filter((k) => !I18N[lang]?.[k]), [lang, Object.values(KEYS)]);
@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const folder = view.locator(".sm-folder").first();
       assert.equal((await folder.locator(".fold .name").textContent()).trim(), await tr(KEYS.seen));
       assert.equal((await folder.locator(".sm-path").textContent()).trim(), "");
-      // what magpie recorded is its size; nothing recorded says no size at all
+      // what fogway recorded is its size; nothing recorded says no size at all
       const subA = (await rowA.locator(".sub").first().textContent());
       assert(subA.includes(await tr(KEYS.size, { size: "2 KB" })) || subA.includes(await tr(KEYS.size, { size: "2.0 KB" })), `recorded size in ${subA}`);
       const subB = (await view.locator(".sm-sess").filter({ hasText: B }).locator(".sub").first().textContent());

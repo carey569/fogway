@@ -1,6 +1,6 @@
-// Package usageapi builds what magpie tells of its usage log: the Usage
+// Package usageapi builds what fogway tells of its usage log: the Usage
 // page's summary and its requests, a page at a time. The GUI's /api/usage
-// and the gateway's /v1/magpie/usage answer the same JSON from here, so an
+// and the gateway's /v1/fogway/usage answer the same JSON from here, so an
 // app reading one reads the other.
 package usageapi
 
@@ -11,15 +11,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // Client is an agent as the usage JSON names it.
 type Client struct{ ID, Name, Icon string }
 
-// Clients are the agents magpie knows, for their names and logos: set by
+// Clients are the agents fogway knows, for their names and logos: set by
 // the GUI (internal/agent imports the gateway, which imports this). Unset,
 // an agent is named by its id.
 var Clients func() []Client
@@ -61,7 +61,7 @@ type Usage struct {
 }
 
 // State is the Usage page's summary of a period: what /api/usage and the
-// gateway's GET /v1/magpie/usage answer.
+// gateway's GET /v1/fogway/usage answer.
 func State(p usage.Period) Usage { return stateOf(usage.Summarize(p)) }
 
 // PageSessions is how many sessions Page lists: the Usage page draws none of
@@ -196,8 +196,8 @@ type Ledger struct {
 	// the two together, so the page can show all three (#the usage report).
 	Through usage.Totals `json:"through"`
 	Direct  usage.Totals `json:"direct"`
-	// Reported: the calls a client told magpie of through POST
-	// /v1/magpie/usage/requests (#1874), which went straight to their vendor
+	// Reported: the calls a client told fogway of through POST
+	// /v1/fogway/usage/requests (#1874), which went straight to their vendor
 	Reported usage.Totals `json:"reported"`
 	// Agents, Providers and Purposes: those with calls in the period, for the filters
 	Agents    []Named  `json:"agents"`

@@ -8,8 +8,8 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func TestKimi(t *testing.T) {
@@ -85,7 +85,7 @@ max_steps_per_turn = 100
 	}
 	var own []string
 	for _, o := range f.Options(a.Values()) {
-		if !strings.HasPrefix(o.Value, "magpie/") {
+		if !strings.HasPrefix(o.Value, "fogway/") {
 			own = append(own, o.Value)
 		}
 	}
@@ -93,19 +93,19 @@ max_steps_per_turn = 100
 		t.Fatalf("own options: %v", own)
 	}
 
-	if err := f.Set("magpie/deepseek/pro"); err != nil {
+	if err := f.Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	valid()
 	raw := read()
-	p := table("providers.magpie")
-	m := table(`models."magpie/deepseek/pro"`)
-	if p["type"] != "kimi" || p["api_key"] != "magpie" || !strings.HasSuffix(p["base_url"], "/v1") ||
-		m["provider"] != "magpie" || m["model"] != "deepseek/pro" || m["max_context_size"] == "" ||
-		table(`models."magpie/deepseek/flash"`) == nil {
+	p := table("providers.fogway")
+	m := table(`models."fogway/deepseek/pro"`)
+	if p["type"] != "kimi" || p["api_key"] != "fogway" || !strings.HasSuffix(p["base_url"], "/v1") ||
+		m["provider"] != "fogway" || m["model"] != "deepseek/pro" || m["max_context_size"] == "" ||
+		table(`models."fogway/deepseek/flash"`) == nil {
 		t.Fatalf("tables:\n%s", raw)
 	}
-	if f.Get() != "magpie/deepseek/pro" || table(`providers."managed:kimi-code".oauth`)["key"] != "oauth/kimi-code" ||
+	if f.Get() != "fogway/deepseek/pro" || table(`providers."managed:kimi-code".oauth`)["key"] != "oauth/kimi-code" ||
 		table("loop_control")["max_steps_per_turn"] != "100" || !strings.Contains(raw, "default_thinking = true") {
 		t.Fatalf("config:\n%s", raw)
 	}
@@ -121,42 +121,42 @@ max_steps_per_turn = 100
 		t.Fatal(err)
 	}
 	valid()
-	if table(`models."magpie/glm/glm-5"`) == nil || strings.Count(read(), "[providers.magpie]") != 1 {
+	if table(`models."fogway/glm/glm-5"`) == nil || strings.Count(read(), "[providers.fogway]") != 1 {
 		t.Fatalf("sync:\n%s", read())
 	}
 
-	// its wiring gone while the default is still magpie's
-	edit.SetTOMLKey(path, "providers.magpie", "base_url", "http://elsewhere/v1")
+	// its wiring gone while the default is still fogway's
+	edit.SetTOMLKey(path, "providers.fogway", "base_url", "http://elsewhere/v1")
 	if a.Check() == "" {
 		t.Fatal("check missed the moved base_url")
 	}
 
-	// reset: back to the Kimi Code model the user had, magpie's tables gone
+	// reset: back to the Kimi Code model the user had, fogway's tables gone
 	if err := f.Set(""); err != nil {
 		t.Fatal(err)
 	}
 	valid()
 	raw = read()
-	if f.Get() != "kimi-code/kimi-for-coding" || strings.Contains(raw, "magpie") {
+	if f.Get() != "kimi-code/kimi-for-coding" || strings.Contains(raw, "fogway") {
 		t.Fatalf("reset:\n%s", raw)
 	}
-	// and Sync, with magpie out, writes nothing back
+	// and Sync, with fogway out, writes nothing back
 	if err := a.Sync(); err != nil || read() != raw {
 		t.Fatalf("sync after reset: %v\n%s", err, read())
 	}
 
-	// its own model from magpie: magpie's tables go too
-	f.Set("magpie/deepseek/flash")
+	// its own model from fogway: fogway's tables go too
+	f.Set("fogway/deepseek/flash")
 	if err := f.Set("kimi-code/kimi-for-coding"); err != nil {
 		t.Fatal(err)
 	}
 	valid()
-	if strings.Contains(read(), "magpie") {
+	if strings.Contains(read(), "fogway") {
 		t.Fatalf("own:\n%s", read())
 	}
 }
 
-// A kimi that has never run has no config; magpie writes one Kimi takes.
+// A kimi that has never run has no config; fogway writes one Kimi takes.
 func TestKimiNoConfig(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -172,19 +172,19 @@ func TestKimiNoConfig(t *testing.T) {
 		t.Fatalf("path: %s", a.Path)
 	}
 	f := a.Field("model")
-	if err := f.Set("magpie/deepseek/pro"); err != nil {
+	if err := f.Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	b, _ := os.ReadFile(a.Path)
 	var c map[string]any
-	if err := toml.Unmarshal(b, &c); err != nil || c["default_model"] != "magpie/deepseek/pro" {
+	if err := toml.Unmarshal(b, &c); err != nil || c["default_model"] != "fogway/deepseek/pro" {
 		t.Fatalf("%v\n%s", err, b)
 	}
 	if err := f.Set(""); err != nil {
 		t.Fatal(err)
 	}
 	b, _ = os.ReadFile(a.Path)
-	if strings.Contains(string(b), "magpie") {
+	if strings.Contains(string(b), "fogway") {
 		t.Fatalf("reset:\n%s", b)
 	}
 }

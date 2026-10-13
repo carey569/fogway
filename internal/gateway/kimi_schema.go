@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // kimiToolEnumTypes is body with a type written into each schema of its

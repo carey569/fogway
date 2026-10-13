@@ -26,7 +26,7 @@ function server(lang, posts) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsages: [], trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -74,7 +74,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator("#prefs").click();
       await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").click();
       const pill = page.locator("#trayUsagePick button");
@@ -86,7 +86,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await pill.click();
       const items = page.locator(".proto-menu .pm-item");
       await items.first().waitFor();
-      // magpie's own two totals follow (#1984, tray-totals.test.cjs)
+      // fogway's own two totals follow (#1984, tray-totals.test.cjs)
       const rows = (await items.evaluateAll((bs) => bs.map((b) => [b.querySelector(".pm-name").textContent.trim(), b.querySelector(".pm-note").textContent.trim()]))).slice(0, -2);
       assert.deepEqual(rows, [
         [w.off, ""], ["Claude Code", w.inUse], ["Claude Code", "Max · a@b.c"], ["Claude Code", "Pro · d@e.f"], ["Codex", "Plus · x@y.z"],

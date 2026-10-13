@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // sub2api's refusals, as v0.1.149 sends them on the OpenAI and Responses
@@ -127,7 +127,7 @@ func TestRestingKeyReadAgainInAnOrderedGroup(t *testing.T) {
 	week := time.Now().Add(72 * time.Hour).Truncate(time.Second).Format(time.RFC3339)
 	var mu sync.Mutex
 	limit, reads, raised := 800, 0, 0
-	// the owner raises the limit after the key refused, before magpie
+	// the owner raises the limit after the key refused, before fogway
 	// reads its windows again: a reading that reaches the relay after the
 	// refusal waits for it. Else the reading ee2588c2 asks again at once,
 	// once one still out as the key refused is back, could reach the

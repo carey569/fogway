@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Checkboxes are magpie's own, not the system's (ARNO on Discord: 会话面板下的
+// Checkboxes are fogway's own, not the system's (ARNO on Discord: 会话面板下的
 // checkbox的样式和软件整体的设计风格有点割裂 — white native boxes in the dark
 // Sessions page). On the Sessions page, in light and dark, an unticked box
 // is drawn on the card's colour with a rounded border, a ticked one and a
@@ -47,7 +47,7 @@ function serve(lang, calls, theme) {
           { agent: "codex", count: store.codex.length, deletable: true, name: "Codex", icon: "codex" },
           { agent: "opencode", count: store.opencode.length, deletable: false, name: "OpenCode", icon: "opencode" },
         ],
-        agent, sessions: store[agent], terminal: false, trash: store.trash, trashDir: "~/Library/Application Support/magpie/trash/sessions",
+        agent, sessions: store[agent], terminal: false, trash: store.trash, trashDir: "~/Library/Application Support/fogway/trash/sessions",
       });
     }
     if (url.pathname === "/api/sessions/delete") {
@@ -79,7 +79,7 @@ const nav = { en: "Sessions", zh: "会话" };
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh"]) {
     for (const theme of ["light", "dark"]) {
-      test(`${engine} ${lang} ${theme}: the Sessions page's checkboxes are drawn as magpie's own`, async (t) => {
+      test(`${engine} ${lang} ${theme}: the Sessions page's checkboxes are drawn as fogway's own`, async (t) => {
         const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
         const page = await (await browser.newContext({ viewport: { width: 900, height: 560 }, reducedMotion: "reduce", colorScheme: theme })).newPage();
         t.after(async () => {
@@ -93,7 +93,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, [], theme));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#nav").getByRole("button", { name: nav[lang], exact: true }).click();
         const view = page.locator("#view-sessions");
         await view.locator('.row.sm-sess[data-id="a-login"]').waitFor();

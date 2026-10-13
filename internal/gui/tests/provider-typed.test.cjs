@@ -61,7 +61,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       const calls = [];
       await page.route("**/*", serve(lang, calls));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const missing = await page.evaluate((w) => Object.values(w).filter((s) => /[a-z]/i.test(s) && !I18N.zh[s] && !["optional"].includes(s)), words.en);
       if (lang === "en") assert.deepEqual(missing, [], "every string has its Chinese");
       await page.locator(".row.provider", { hasText: "Relay" }).click();

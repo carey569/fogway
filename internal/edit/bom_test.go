@@ -55,15 +55,15 @@ func TestJSONSettingsWithBOM(t *testing.T) {
 	if v, ok := GetJSON(p, "model"); !ok || v != "deepseek-chat" {
 		t.Fatalf("GetJSON through a BOM: %q %v", v, ok)
 	}
-	if err := SetJSON(p, KV{Path: "model", Value: "magpie/deepseek/deepseek-flash"}, KV{Path: "env.MAGPIE", Value: "1"}); err != nil {
+	if err := SetJSON(p, KV{Path: "model", Value: "fogway/deepseek/deepseek-flash"}, KV{Path: "env.FOGWAY", Value: "1"}); err != nil {
 		t.Fatal(err)
 	}
-	keptAsWritten(t, p, `"model": "magpie/deepseek/deepseek-flash"`, `"MAGPIE": "1"`, `"ANTHROPIC_AUTH_TOKEN": "sk-user-own"`, `"Bash(git status)"`)
-	if err := DelJSON(p, "env.MAGPIE"); err != nil {
+	keptAsWritten(t, p, `"model": "fogway/deepseek/deepseek-flash"`, `"FOGWAY": "1"`, `"ANTHROPIC_AUTH_TOKEN": "sk-user-own"`, `"Bash(git status)"`)
+	if err := DelJSON(p, "env.FOGWAY"); err != nil {
 		t.Fatal(err)
 	}
 	got := keptAsWritten(t, p, `"ANTHROPIC_BASE_URL"`)
-	if strings.Contains(got, "MAGPIE") {
+	if strings.Contains(got, "FOGWAY") {
 		t.Fatalf("DelJSON through a BOM left the key: %q", got)
 	}
 	if err := SetJSON(p, KV{Path: "model", Value: "deepseek-chat"}); err != nil {
@@ -81,11 +81,11 @@ func TestJSONItemWithBOM(t *testing.T) {
 	if _, ok := GetJSONItem(p, map[string]string{"name": "mine"}); !ok {
 		t.Fatal("GetJSONItem through a BOM found nothing")
 	}
-	if err := SetJSONItem(p, map[string]string{"name": "magpie"}, map[string]any{"vendor": "customoai", "name": "magpie"}); err != nil {
+	if err := SetJSONItem(p, map[string]string{"name": "fogway"}, map[string]any{"vendor": "customoai", "name": "fogway"}); err != nil {
 		t.Fatal(err)
 	}
-	keptAsWritten(t, p, `"name": "mine"`, `"name": "magpie"`)
-	if err := DelJSONItem(p, map[string]string{"name": "magpie"}); err != nil {
+	keptAsWritten(t, p, `"name": "mine"`, `"name": "fogway"`)
+	if err := DelJSONItem(p, map[string]string{"name": "fogway"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := read(t, p); got != in {
@@ -94,7 +94,7 @@ func TestJSONItemWithBOM(t *testing.T) {
 }
 
 // Codex's config.toml saved by a Windows editor: Codex itself reads through
-// the BOM (its toml parser skips one), where magpie refused the file with
+// the BOM (its toml parser skips one), where fogway refused the file with
 // "UTF-8 BOM is not supported".
 func TestTOMLConfigWithBOM(t *testing.T) {
 	in := utf8BOM + "model = \"gpt-5\"\r\n\r\n[model_providers.mine]\r\nname = \"Mine\"\r\nbase_url = \"https://example.com/v1\"\r\n"
@@ -105,14 +105,14 @@ func TestTOMLConfigWithBOM(t *testing.T) {
 	if tables, err := TOMLTables(p); err != nil || len(tables) != 1 {
 		t.Fatalf("TOMLTables through a BOM: %v %v", tables, err)
 	}
-	if err := SetTOMLTop(p, KV{Path: "model_provider", Value: "magpie"}); err != nil {
+	if err := SetTOMLTop(p, KV{Path: "model_provider", Value: "fogway"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := SetTOMLTable(p, "model_providers.magpie", KV{Path: "name", Value: "magpie"}); err != nil {
+	if err := SetTOMLTable(p, "model_providers.fogway", KV{Path: "name", Value: "fogway"}); err != nil {
 		t.Fatal(err)
 	}
-	keptAsWritten(t, p, `model_provider = "magpie"`, "[model_providers.magpie]", "[model_providers.mine]")
-	if err := DelTOMLTable(p, "model_providers.magpie"); err != nil {
+	keptAsWritten(t, p, `model_provider = "fogway"`, "[model_providers.fogway]", "[model_providers.mine]")
+	if err := DelTOMLTable(p, "model_providers.fogway"); err != nil {
 		t.Fatal(err)
 	}
 	if err := DelTOMLTop(p, "model_provider"); err != nil {
@@ -130,10 +130,10 @@ func TestEnvAndYAMLWithBOM(t *testing.T) {
 	if v, ok := GetEnvFile(env, "OPENAI_API_KEY"); !ok || v != "sk-own" {
 		t.Fatalf("GetEnvFile through a BOM: %q %v", v, ok)
 	}
-	if err := SetEnvFile(env, KV{Path: "OPENAI_API_KEY", Value: "magpie"}); err != nil {
+	if err := SetEnvFile(env, KV{Path: "OPENAI_API_KEY", Value: "fogway"}); err != nil {
 		t.Fatal(err)
 	}
-	got := keptAsWritten(t, env, "OPENAI_API_KEY=magpie", "OTHER=1")
+	got := keptAsWritten(t, env, "OPENAI_API_KEY=fogway", "OTHER=1")
 	if strings.Count(got, "OPENAI_API_KEY") != 1 {
 		t.Fatalf("SetEnvFile added the key beside the first one: %q", got)
 	}
@@ -141,10 +141,10 @@ func TestEnvAndYAMLWithBOM(t *testing.T) {
 	if v, ok := GetYAMLTop(y, "model"); !ok || v != "mine" {
 		t.Fatalf("GetYAMLTop through a BOM: %q %v", v, ok)
 	}
-	if err := SetYAMLTop(y, KV{Path: "model", Value: "magpie"}); err != nil {
+	if err := SetYAMLTop(y, KV{Path: "model", Value: "fogway"}); err != nil {
 		t.Fatal(err)
 	}
-	got = keptAsWritten(t, y, "model: magpie", "provider: own")
+	got = keptAsWritten(t, y, "model: fogway", "provider: own")
 	if strings.Count(got, "model:") != 1 {
 		t.Fatalf("SetYAMLTop added the key beside the first one: %q", got)
 	}

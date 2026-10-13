@@ -10,15 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // traceJSON is the gateway's routing trace since the page last asked.
 type traceJSON struct {
 	gateway.TraceState
-	Mine   bool        `json:"mine"` // this magpie serves the gateway: another's trace isn't here
+	Mine   bool        `json:"mine"` // this fogway serves the gateway: another's trace isn't here
 	Now    time.Time   `json:"now"`
 	Routes []routeJSON `json:"routes"`
 }
@@ -157,17 +157,17 @@ var mainName = regexp.MustCompile(`^[A-Za-z0-9._@:/ -]{1,80}$`)
 // which escaping the whole of it lost).
 func mainURL(view, query string) string { return "/?view=" + view + query }
 
-// argView is a tab named on the command line (`magpie gui settings`, a
+// argView is a tab named on the command line (`fogway gui settings`, a
 // restart to update) as ShowMain takes it: a name, never parameters.
 func argView(s string) string { return url.QueryEscape(s) }
 
 // quotaView opens the Usage overview at a provider/account card, or at
-// the period of one of magpie's own totals (trayTotal). Invalid provider
+// the period of one of fogway's own totals (trayTotal). Invalid provider
 // names fall back to the overview without a target.
 func quotaView(id string) string {
 	view := "usage&tab=usage"
 	if p, ok := trayTotalPeriod(id); ok {
-		return view + "&period=" + string(p) // magpie's own total: the Overview at its period
+		return view + "&period=" + string(p) // fogway's own total: the Overview at its period
 	}
 	provider, _, hasAccount := strings.Cut(id, "|")
 	if mainName.MatchString(provider) {
@@ -283,7 +283,7 @@ func traceRoutes(mux *http.ServeMux) {
 		writeJSON(rw, out)
 	})
 	// the routes of a day gone by, from the history the gateway keeps on
-	// disk — read whichever magpie serves the gateway
+	// disk — read whichever fogway serves the gateway
 	mux.HandleFunc("GET /api/gateway/history", func(rw http.ResponseWriter, r *http.Request) {
 		day := r.URL.Query().Get("day")
 		days, routes, cut := gateway.History(day)

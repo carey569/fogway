@@ -9,7 +9,7 @@ COPY . .
 
 ARG VERSION=dev
 RUN CGO_ENABLED=0 go build -tags nogui -trimpath \
-      -ldflags "-s -w -X main.version=${VERSION}" -o /out/magpie . \
+      -ldflags "-s -w -X main.version=${VERSION}" -o /out/fogway . \
     && mkdir -p /config/home /config/cache /config/data /config/state
 
 # A shell for the container's terminal: NAS panels (Synology, 1Panel,
@@ -24,40 +24,40 @@ RUN mkdir -p /out/bin /out/lib \
 
 FROM busybox:1.37-uclibc AS busybox
 
-# cc, not static: plugins run on Bun, which magpie downloads on first use
+# cc, not static: plugins run on Bun, which fogway downloads on first use
 # and which needs glibc (static has no libc at all, and Bun's musl build
 # would need musl). cc is static plus glibc, libgcc and libstdc++.
 FROM gcr.io/distroless/cc-debian12:nonroot
 
-COPY --from=build /out/magpie /magpie
+COPY --from=build /out/fogway /fogway
 COPY --from=busybox /bin/busybox /bin/busybox
 COPY --from=shell /out/bin/bash /bin/bash
 COPY --from=shell /out/lib/ /usr/lib/
-# busybox's commands, and magpie on PATH, so `magpie accounts add …` works
+# busybox's commands, and fogway on PATH, so `fogway accounts add …` works
 # in that terminal
 USER root
-RUN ["/bin/busybox", "sh", "-c", "/bin/busybox --install -s /bin && mkdir -p /usr/local/bin && ln -s /magpie /usr/local/bin/magpie"]
+RUN ["/bin/busybox", "sh", "-c", "/bin/busybox --install -s /bin && mkdir -p /usr/local/bin && ln -s /fogway /usr/local/bin/fogway"]
 USER nonroot
 COPY --from=build --chown=65532:65532 /config /config
 
-# Everything magpie and the sign-ins it manages write goes into the volume:
-# its own files (/config/magpie), sign-ins kept where an agent keeps them
+# Everything fogway and the sign-ins it manages write goes into the volume:
+# its own files (/config/fogway), sign-ins kept where an agent keeps them
 # (~/.codex, ~/.claude…, under HOME), and the cache holding Bun and the
-# model catalog. magpie makes the folders a volume from an older image
+# model catalog. fogway makes the folders a volume from an older image
 # lacks.
 ENV HOME=/config/home \
     XDG_CONFIG_HOME=/config \
     XDG_CACHE_HOME=/config/cache \
     XDG_DATA_HOME=/config/data \
     XDG_STATE_HOME=/config/state \
-    MAGPIE_ADDR=0.0.0.0:3425
+    FOGWAY_ADDR=0.0.0.0:3725
 
 VOLUME /config
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/magpie", "healthcheck"]
+    CMD ["/fogway", "healthcheck"]
 
-EXPOSE 3425 3430
+EXPOSE 3725 3730
 
-ENTRYPOINT ["/magpie"]
+ENTRYPOINT ["/fogway"]
 CMD ["serve"]

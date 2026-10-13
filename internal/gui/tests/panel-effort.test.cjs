@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // The tray panel's effort slider shows an agent's effort as it is when that
-// isn't one of the levels offered — omp at auto before magpie listed it, an
+// isn't one of the levels offered — omp at auto before fogway listed it, an
 // agent with none set — rather than as the lowest level, which a touch on
 // the slider then wrote over it. A touch where it stands posts nothing; the
 // next stop is the lowest level. A level beyond those offered (max, the
@@ -27,7 +27,7 @@ const agent = (id, name, effort, options = levels) => ({
 const some = (...vs) => vs.map((value) => ({ value }));
 const state = { agents: [agent("omp", "omp", "auto"), agent("pi", "Pi", ""),
   agent("codex", "Codex", "max", some("low", "medium", "high")),
-  // omp as magpie lists it now, auto first, and one at minimal beside it
+  // omp as fogway lists it now, auto first, and one at minimal beside it
   agent("omp-listed", "omp", "auto", [{ value: "auto" }, ...levels]),
   agent("pi-minimal", "Pi", "minimal"),
   agent("kimi", "Kimi", "medium", some("low", "high")),
@@ -74,7 +74,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       return page;
     };
     const open = async (lang, sets, id) => {
-      const page = await load(lang, sets, "http://magpie.test/?mode=panel");
+      const page = await load(lang, sets, "http://fogway.test/?mode=panel");
       await page.locator(`${row(id)} .ag-sum`).click();
       await page.waitForTimeout(700);
       const box = page.locator(`${row(id)} .ag-open .effort-control`);
@@ -130,7 +130,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     await t.test("as bars", async () => {
       const lit = (page, id) => page.locator(`${row(id)} .field[data-key="effort"] .effort-ic rect[opacity="1"]`).count();
       const ids = ["omp-listed", "pi-minimal", "codex", "kimi", "grok", "hermes"];
-      const page = await load("en", [], "http://magpie.test/", { width: 980, height: 900 });
+      const page = await load("en", [], "http://fogway.test/", { width: 980, height: 900 });
       await page.locator(row("hermes")).waitFor();
       const icons = [];
       for (const id of ids) {
@@ -140,7 +140,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         if (await more.count()) { await more.click(); await page.locator(`${row(id)} .ag-exp`).waitFor(); }
         icons.push(await lit(page, id));
       }
-      const panel = await load("en", [], "http://magpie.test/?mode=panel");
+      const panel = await load("en", [], "http://fogway.test/?mode=panel");
       await panel.locator(row("hermes")).waitFor();
       const bars = [];
       for (const id of ids) bars.push(Number(await panel.locator(`${row(id)} .ag-sum .eff`).getAttribute("data-l")));

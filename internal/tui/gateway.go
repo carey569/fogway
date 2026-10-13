@@ -6,14 +6,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
 // The terminal serves the gateway while it is open, as the app does, when
-// no magpie has it: in WSL with only magpie tui, the agents it connected to
-// magpie asked an address nothing listened at, and Claude Code said
-// ECONNREFUSED (gnayiab on X). Another magpie that has it (the app, magpie
-// web, magpie serve) keeps it, and this one takes it up once that one is
+// no fogway has it: in WSL with only fogway tui, the agents it connected to
+// fogway asked an address nothing listened at, and Claude Code said
+// ECONNREFUSED (gnayiab on X). Another fogway that has it (the app, fogway
+// web, fogway serve) keeps it, and this one takes it up once that one is
 // gone.
 
 // gw is who serves the gateway, for the status line.
@@ -25,7 +25,7 @@ var gw struct {
 // gatewayWatch is how often the terminal looks for a gateway gone.
 var gatewayWatch = 15 * time.Second
 
-// serveGateway serves the gateway here until ctx ends whenever no magpie
+// serveGateway serves the gateway here until ctx ends whenever no fogway
 // answers at its address, and returns a wait for the one it serves to have
 // stopped.
 func serveGateway(ctx context.Context) (wait func()) {
@@ -82,7 +82,7 @@ func serveGateway(ctx context.Context) (wait func()) {
 // nothing else to say: served here, or why agents can't reach it.
 func gatewayStatus() string {
 	if gw.here.Load() {
-		return sMuted.Render("● gateway " + gateway.URL() + " · served while magpie tui is open")
+		return sMuted.Render("● gateway " + gateway.URL() + " · served while fogway tui is open")
 	}
 	if e := gw.err.Load(); e != nil && *e != "" {
 		return sBad.Render("✗ ") + sText.Render("gateway not running: "+*e)
@@ -92,5 +92,5 @@ func gatewayStatus() string {
 
 // gatewayGoneNote is said as the terminal quits having served the gateway.
 func gatewayGoneNote() string {
-	return "magpie: the gateway stopped with magpie tui; agents connected to magpie reach it while magpie tui, magpie web or magpie serve runs"
+	return "fogway: the gateway stopped with fogway tui; agents connected to fogway reach it while fogway tui, fogway web or fogway serve runs"
 }

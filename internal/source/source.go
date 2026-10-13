@@ -1,4 +1,4 @@
-// Package source chooses where magpie reads from, with a mirror as a
+// Package source chooses where fogway reads from, with a mirror as a
 // fallback when the official address can't be reached. The official source
 // stays first; a mirror is only asked when it fails. The Plugins page's
 // 「国内镜像」 switch (China) puts a mirror in China first for the few
@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 const (
@@ -40,7 +40,7 @@ var China = func() bool { return settings.Load().ChinaMirror }
 // official address: npmmirror for npm's registry and Bun's releases (whose
 // zips are checked against Bun's checksums all the same), jsDelivr for the
 // community repo's plugin list. Never a proxy such as gh-proxy, which
-// would hand magpie whatever it liked.
+// would hand fogway whatever it liked.
 func chinaFirst(raw string) string {
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" {
@@ -65,9 +65,9 @@ func chinaFirst(raw string) string {
 }
 
 // Enabled reports whether mirror fallback was turned on with
-// MAGPIE_MIRRORS=on (or true, 1, cn).
+// FOGWAY_MIRRORS=on (or true, 1, cn).
 func Enabled() bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv("MAGPIE_MIRRORS"))) {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("FOGWAY_MIRRORS"))) {
 	case "on", "true", "1", "cn":
 		return true
 	}
@@ -75,14 +75,14 @@ func Enabled() bool {
 }
 
 func npmBase() string {
-	if v := strings.TrimRight(strings.TrimSpace(os.Getenv("MAGPIE_NPM_REGISTRY")), "/"); v != "" {
+	if v := strings.TrimRight(strings.TrimSpace(os.Getenv("FOGWAY_NPM_REGISTRY")), "/"); v != "" {
 		return v
 	}
 	return npmMirror
 }
 
 func githubBase() string {
-	if v := strings.TrimRight(strings.TrimSpace(os.Getenv("MAGPIE_GITHUB_MIRROR")), "/"); v != "" {
+	if v := strings.TrimRight(strings.TrimSpace(os.Getenv("FOGWAY_GITHUB_MIRROR")), "/"); v != "" {
 		return v
 	}
 	return githubMirror

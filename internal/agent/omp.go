@@ -3,11 +3,11 @@ package agent
 // omp (oh-my-pi, a fork of Pi) keeps its settings in ~/.omp/agent/config.yml
 // (or where ompDir says its variables move it),
 // the model of each role under modelRoles as "provider/model", and providers
-// of the user's own in models.yml beside it. magpie adds itself there as the
-// provider "magpie", keyless (auth: none) on loopback, with the catalog as its models; a
-// model through magpie is "magpie/<provider>/<model>", which omp matches
+// of the user's own in models.yml beside it. fogway adds itself there as the
+// provider "fogway", keyless (auth: none) on loopback, with the catalog as its models; a
+// model through fogway is "fogway/<provider>/<model>", which omp matches
 // whole against provider/id. The other roles, the fallback chains and the
-// like may name them as well (ompRefKeys); magpie stays while any does.
+// like may name them as well (ompRefKeys); fogway stays while any does.
 
 import (
 	"fmt"
@@ -18,11 +18,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,9 +34,9 @@ var ompEfforts = []string{"minimal", "low", "medium", "high", "xhigh", "max"}
 // models under each key; the key is a role's name, the only kind omp 16
 // takes (agent-session.ts), or from omp 18 a model selector as well
 // (retry-fallback-chains.ts) — a role's name read with them is no model of
-// magpie's and is passed over), the models it cycles through (enabledModels,
+// fogway's and is passed over), the models it cycles through (enabledModels,
 // also scoped to paths) and the models of task agents. An entry may end in a
-// thinking level ("magpie/deepseek/pro:max").
+// thinking level ("fogway/deepseek/pro:max").
 var ompRefKeys = []string{"modelRoles", "retry.fallbackChains", "enabledModels", "task.agentModelOverrides"}
 
 // ompRefs calls fn on each model of a value under ompRefKeys, the spaces
@@ -76,10 +76,10 @@ func ompSplit(v string) (model, level string, one bool) {
 	return model, level, true
 }
 
-// ompOnMagpie: a role's value is one of magpie's models, at a level or not.
-func ompOnMagpie(v string) bool {
+// ompOnFogway: a role's value is one of fogway's models, at a level or not.
+func ompOnFogway(v string) bool {
 	_, _, one := ompSplit(v)
-	return one && usesMagpie(v)
+	return one && usesFogway(v)
 }
 
 // ompYAMLList: a value the stash keeps is a list as the YAML it was written
@@ -195,7 +195,7 @@ func ompIn(at place) *Agent {
 	return ompAt(at, filepath.Join(at.home, ".omp", "agent"), func() ompProviderEntry { return ompProviderAt(at.gw(), at.version) })
 }
 
-// ompAt is omp with its agent folder at dir, magpie's entry in its
+// ompAt is omp with its agent folder at dir, fogway's entry in its
 // models.yml being entry's.
 func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 	ompProvider := entry
@@ -220,59 +220,59 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 			return strings.Join(edit.GetYAMLList(path, k), ",")
 		}
 	}
-	// onMagpie: a role, a fallback chain, … (ompRefKeys) still names one of
-	// magpie's models
-	onMagpie := func() (used bool, err error) {
+	// onFogway: a role, a fallback chain, … (ompRefKeys) still names one of
+	// fogway's models
+	onFogway := func() (used bool, err error) {
 		err = edit.EditYAMLStrings(path, ompRefKeys, func(v string) string {
-			ompRefs(v, func(m string) string { used = used || usesMagpie(m); return m })
+			ompRefs(v, func(m string) string { used = used || usesFogway(m); return m })
 			return v
 		})
 		return used, err
 	}
-	writeMagpie := func() error {
+	writeFogway := func() error {
 		models := pick("models")
 		if _, err := os.Stat(models); err != nil {
 			// omp moves an older models.json to models.yml only while there is
-			// no models.yml, so one magpie writes first has to carry it over
+			// no models.yml, so one fogway writes first has to carry it over
 			if err := edit.JSONToYAML(filepath.Join(dir, "models.json"), models); err != nil {
 				return err
 			}
 		}
-		return edit.SetYAML(models, edit.KV{Path: "providers." + magpieID, Value: ompProvider()})
+		return edit.SetYAML(models, edit.KV{Path: "providers." + fogwayID, Value: ompProvider()})
 	}
-	// dropMagpie takes magpie's provider out of models.yml once nothing in
-	// the config is on magpie; while something is (a fallback chain, another
-	// role), it writes it afresh instead, so a role set off magpie — applying
+	// dropFogway takes fogway's provider out of models.yml once nothing in
+	// the config is on fogway; while something is (a fallback chain, another
+	// role), it writes it afresh instead, so a role set off fogway — applying
 	// again what Check found — mends the wiring that is left.
-	// The plain entries of enabledModels on magpie, which magpie adds there
-	// (omp_scope.go), don't count: once nothing else is on magpie they go
+	// The plain entries of enabledModels on fogway, which fogway adds there
+	// (omp_scope.go), don't count: once nothing else is on fogway they go
 	// with its provider (#1769). Those scoped to folders are the user's, and
 	// count.
-	dropMagpie := func() error {
+	dropFogway := func() error {
 		used := false
 		err := edit.EditYAMLStrings(path, slices.DeleteFunc(slices.Clone(ompRefKeys), func(k string) bool { return k == "enabledModels" }), func(v string) string {
-			ompRefs(v, func(m string) string { used = used || usesMagpie(m); return m })
+			ompRefs(v, func(m string) string { used = used || usesFogway(m); return m })
 			return v
 		})
 		if err == nil && !used {
-			used, err = ompScopeFoldersOnMagpie(path)
+			used, err = ompScopeFoldersOnFogway(path)
 		}
 		switch {
 		case err != nil:
 			return err
 		case used:
-			return writeMagpie()
+			return writeFogway()
 		}
 		if err := ompScopeWithout(path); err != nil {
 			return err
 		}
-		return edit.DelYAML(pick("models"), "providers."+magpieID)
+		return edit.DelYAML(pick("models"), "providers."+fogwayID)
 	}
 	// was are the stash's keys for the roles, one each
 	var was []string
-	// role is the field for one of omp's model roles: one of magpie's brings
-	// magpie's provider into models.yml, and it goes once nothing is on it.
-	// What the user had there before magpie took the role over is stashed,
+	// role is the field for one of omp's model roles: one of fogway's brings
+	// fogway's provider into models.yml, and it goes once nothing is on it.
+	// What the user had there before fogway took the role over is stashed,
 	// and resetting the role puts it back: a list of models as the YAML it
 	// was written in, a flow list flow and a block one block.
 	role := func(key, label, name string, quiet bool) Field {
@@ -293,20 +293,20 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 			Set: func(v string) error {
 				cur := get()
 				if v == "" {
-					if ompOnMagpie(cur) {
+					if ompOnFogway(cur) {
 						v = unstash(w)
 					}
 					if v == "" {
 						if err := edit.DelYAML(path, k); err != nil {
 							return err
 						}
-						return dropMagpie()
+						return dropFogway()
 					}
 					if ompYAMLList(v) {
 						if err := edit.SetYAML(path, edit.KV{Path: k, Value: edit.YAMLText(v)}); err != nil {
 							return err
 						}
-						return dropMagpie()
+						return dropFogway()
 					}
 				} else if _, level, one := ompSplit(v); one && level == "" {
 					// another model keeps the role's thinking level; omp
@@ -321,11 +321,11 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 					}
 				}
 				model, _, one := ompSplit(v)
-				if ref, ok := strings.CutPrefix(model, magpieID+"/"); one && ok && isMagpie(ref) {
-					if !ompOnMagpie(cur) {
+				if ref, ok := strings.CutPrefix(model, fogwayID+"/"); one && ok && isFogway(ref) {
+					if !ompOnFogway(cur) {
 						stash(map[string]string{w: kept()})
 					}
-					if err := writeMagpie(); err != nil {
+					if err := writeFogway(); err != nil {
 						return err
 					}
 					return edit.SetYAML(path, edit.KV{Path: k, Value: v})
@@ -334,10 +334,10 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 				if err := edit.SetYAML(path, edit.KV{Path: k, Value: v}); err != nil {
 					return err
 				}
-				return dropMagpie()
+				return dropFogway()
 			},
 			Options: func(cur map[string]string) []Option {
-				opts := append(ompOwnOptions(pick("models"), cur[key]), viaMagpie("omp", magpieID+"/")...)
+				opts := append(ompOwnOptions(pick("models"), cur[key]), viaFogway("omp", fogwayID+"/")...)
 				// a catalog model with a thinking level is offered as it
 				// reads, beside the model: that keeps the level, the model
 				// alone clears it
@@ -379,7 +379,7 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 		// (commit/model-selection.ts), tiny names sessions and classifies
 		// and takes smol's model, memory takes tiny's, else smol's
 		// (ROLE_CONFIGURED_FALLBACK). omp's other roles (KIND_ROLE_IDS)
-		// are for kinds of model other than the chat models magpie writes
+		// are for kinds of model other than the chat models fogway writes
 		// for omp: image making, web search, speech, dictation, and the
 		// judge its find tool turns on for a TypeSafe jev model
 		role("commit", "commit", "commit", true),
@@ -404,7 +404,7 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 	// ":level" omp reads off the end of the role's model
 	// (splitThinkingSuffix, resolveModelRoleValue): #1397, the slow role at
 	// high while sessions start at medium. It is the role's value written
-	// again, so it goes through the role's own Set (magpie's provider, the
+	// again, so it goes through the role's own Set (fogway's provider, the
 	// stash). Offered while the role is one model: a role that follows
 	// another, or a list omp falls back through, has no level here. Unset,
 	// the role runs at the session's level
@@ -451,14 +451,14 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 		// a list of models is the user's own
 		SplitSuffix: ompSplit,
 		Sync: func() error {
-			return syncYAML(pick("models"), "providers."+magpieID, func() any { return ompProvider() })
+			return syncYAML(pick("models"), "providers."+fogwayID, func() any { return ompProvider() })
 		},
 		// a provider renamed takes its models' ids in models.yml with it; a
 		// name left on the old one omp would pass over, with a warning. So
-		// does what a role had before magpie (a list may name magpie's
+		// does what a role had before fogway (a list may name fogway's
 		// models), which a reset puts back
 		RenameRefs: func(from, to string) (bool, error) {
-			old, now := magpieID+"/"+from+"/", magpieID+"/"+to+"/"
+			old, now := fogwayID+"/"+from+"/", fogwayID+"/"+to+"/"
 			move := func(v string) string {
 				return ompRefs(v, func(m string) string {
 					if rest, ok := strings.CutPrefix(m, old); ok {
@@ -501,19 +501,19 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 			return ""
 		},
 		Check: func() string {
-			// whatever keeps magpie's provider in models.yml has its wiring
+			// whatever keeps fogway's provider in models.yml has its wiring
 			// checked, a fallback chain alone as much as a role
-			if used, _ := onMagpie(); !used {
+			if used, _ := onFogway(); !used {
 				return ""
 			}
 			models := pick("models")
-			if d := wiringOff("omp", models, func(k string) (string, bool) { return edit.GetYAML(models, "providers."+magpieID+"."+k) },
+			if d := wiringOff("omp", models, func(k string) (string, bool) { return edit.GetYAML(models, "providers."+fogwayID+"."+k) },
 				"baseUrl", at.v1()); d != "" {
 				return d
 			}
-			// a default role on magpie that enabledModels leaves out never
+			// a default role on fogway that enabledModels leaves out never
 			// starts; setting it again adds it there (#1769)
-			if def := roleGet("default")(); ompOnMagpie(def) {
+			if def := roleGet("default")(); ompOnFogway(def) {
 				if m := ompScopeLeavesOut(path, def); m != "" {
 					return "omp's enabledModels (" + filepath.Base(path) + ") leaves out " + m + ", so new sessions start on another of its models"
 				}
@@ -593,13 +593,13 @@ var ompVersion = func() string { return (&Agent{ID: "omp", Bin: "omp"}).Installe
 
 // ompTakesMax says whether omp at version v takes max in models.yml. One
 // whose version isn't known is taken for an older one: a max it refuses
-// costs every model magpie gives it, an xhigh in its place only the top
+// costs every model fogway gives it, an xhigh in its place only the top
 // level of a model that has both.
 func ompTakesMax(v string) bool {
 	return v != "" && !Newer(ompMaxSince, v)
 }
 
-// ompProvider is magpie's entry in models.yml. The thinking efforts are the
+// ompProvider is fogway's entry in models.yml. The thinking efforts are the
 // levels omp offers for the model; on Chat it sends them as
 // reasoning_effort.
 //
@@ -618,7 +618,7 @@ func ompProvider() ompProviderEntry { return ompProviderAt(gateway.URL(), ompVer
 func ompProviderAt(gw, version string) ompProviderEntry {
 	takesMax := ompTakesMax(version)
 	ms := []ompModel{}
-	for _, m := range magpieModels("omp") {
+	for _, m := range fogwayModels("omp") {
 		e := ompModel{ID: m.ID, Name: m.Name, Context: m.Context, MaxTokens: maxTokens(m)}
 		mode := "effort"
 		switch {
@@ -679,7 +679,7 @@ func ompProviderAt(gw, version string) ompProviderEntry {
 // either one had. A provider in both stays one group, where it first comes:
 // the picker draws a heading at each change of group. A provider with only
 // discovery has its models listed by omp asking it at run time, out of
-// magpie's sight, so it offers none here.
+// fogway's sight, so it offers none here.
 func ompOwnOptions(modelsFile, cur string) []Option {
 	var f struct {
 		Providers map[string]struct {
@@ -694,7 +694,7 @@ func ompOwnOptions(modelsFile, cur string) []Option {
 	}
 	providers := make([]string, 0, len(f.Providers))
 	for p := range f.Providers {
-		if p != magpieID {
+		if p != fogwayID {
 			providers = append(providers, p)
 		}
 	}

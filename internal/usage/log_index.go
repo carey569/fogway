@@ -39,7 +39,7 @@ type logSnapshot struct {
 	version uint64
 	blocks  []*rowChunk
 	first   time.Time
-	// firstOwn is the first call magpie carried itself, leaving out what
+	// firstOwn is the first call fogway carried itself, leaving out what
 	// apps reported (#1874): a backfill reaching back doesn't make the log
 	// reach back to a subscription window's start.
 	firstOwn     time.Time

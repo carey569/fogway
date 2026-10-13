@@ -126,7 +126,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", serve(lang, st, ctl));
         // opened on another tab: General is drawn while hidden
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings&tab=about");
+        await page.goto("http://fogway.test/?view=settings&tab=about");
         await settingsDrawn(page); // rows found are the ones that stay (#1659)
         await page.locator("#setTab-general").waitFor();
         await page.waitForTimeout(300);

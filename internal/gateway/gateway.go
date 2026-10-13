@@ -28,21 +28,21 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/yetone/magpie/internal/awake"
+	"github.com/fogway/fogway/internal/awake"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/redact"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/redact"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 // DefaultAddr is where the gateway listens unless Settings' port or
-// MAGPIE_ADDR says otherwise.
-const DefaultAddr = "127.0.0.1:3425"
+// FOGWAY_ADDR says otherwise.
+const DefaultAddr = "127.0.0.1:3725"
 
 // Token is the bearer token agents are told to use. The gateway only
 // listens on loopback and accepts anything, but agents insist on one.
-const Token = "magpie"
+const Token = "fogway"
 
 // TokenFor is the token an agent that says nothing of itself in its
 // User-Agent is told to use, so the gateway still knows it: Alma's requests
@@ -63,16 +63,16 @@ func agentOf(r *http.Request) string {
 		// cursor-agent talks to Cursor's backend alone, never to a
 		// gateway: a Cursor User-Agent here is Cursor Private Inference's
 		// ("Cursor-CLI/…") sent with a key other than its own, the one
-		// typed in its Open configuration or a model's settings ("magpie"),
+		// typed in its Open configuration or a model's settings ("fogway"),
 		// and it is shown its models as with its key (mamba on Discord)
 		return "cursor-local"
 	}
 	return usage.AgentOf(ua)
 }
 
-// startedByAgent says whether a request is from no agent magpie knows but
+// startedByAgent says whether a request is from no agent fogway knows but
 // from something an agent started with its environment (a hook's script): it
-// came with the plain gateway token, not one magpie gave an agent, and
+// came with the plain gateway token, not one fogway gave an agent, and
 // its User-Agent names no agent.
 func startedByAgent(r *http.Request, agent string) bool {
 	if _, ok := strings.CutPrefix(callerKey(r), Token+"-"); ok {
@@ -82,7 +82,7 @@ func startedByAgent(r *http.Request, agent string) bool {
 }
 
 // StandIn is the model an agent is set to use in place of one it named that
-// magpie doesn't serve it: Claude Code asks for claude-haiku-… by name for
+// fogway doesn't serve it: Claude Code asks for claude-haiku-… by name for
 // its small tasks, whatever its haiku tier is set to, and that goes to the
 // tier's model rather than to some provider that happens to list the name.
 // "" leaves the model as asked. Set by main.
@@ -106,7 +106,7 @@ func withWires(r *http.Request) *http.Request {
 }
 
 // wiresOf is the names in force for ctx: the ones withWires read, or the
-// ones in force now for a request magpie made for itself and never carried
+// ones in force now for a request fogway made for itself and never carried
 // them on.
 func wiresOf(ctx context.Context) map[string]string {
 	if load, ok := ctx.Value(wiresKey{}).(func() map[string]string); ok {
@@ -115,7 +115,7 @@ func wiresOf(ctx context.Context) map[string]string {
 	return settings.Load().ModelWires
 }
 
-// standIn is StandIn's model for one magpie shows no entry for: not a
+// standIn is StandIn's model for one fogway shows no entry for: not a
 // catalog id or model, nor a ready provider's "provider/model".
 func standIn(agent, asked string) string {
 	if StandIn == nil || !unserved(asked) {
@@ -131,29 +131,29 @@ func standIn(agent, asked string) string {
 // claudeFamily is a full id of one of the model families Claude Code has a
 // tier for, as Claude Code or a wrapper of it names one: claude-sonnet-4-6,
 // claude-fable-5-1, claude-haiku-4-5-20251001, claude-3-5-sonnet-20241022,
-// whatever the version, matched by family so a release magpie has never
+// whatever the version, matched by family so a release fogway has never
 // heard of is one too. A provider's "a/claude-…" is not one.
 var claudeFamily = regexp.MustCompile(`^claude-(?:[0-9][0-9.-]*-)?(?:opus|sonnet|haiku|fable)(?:[-.@:]|$)`)
 
 // claudeTierStandIn is the model Claude Code is set to use for the tier of
-// a full Claude id it names (StandIn), even one magpie serves: Claude Code
+// a full Claude id it names (StandIn), even one fogway serves: Claude Code
 // asks for claude-haiku-… by name for its small tasks, and a wrapper (T3
 // Code, KevinXC on Discord) asks for every model by its full id, so
-// claude-sonnet-5 went to the Claude account magpie serves it on, spent,
+// claude-sonnet-5 went to the Claude account fogway serves it on, spent,
 // while claude-sonnet-4-6, which no provider of the user's listed, went to
 // the sonnet tier. Every id of a family now goes to its tier, as Claude
 // Code's own aliases do. A routing group of the user's own named by the id
-// still has it; one magpie found (auto-…) was never picked for it. "" when
+// still has it; one fogway found (auto-…) was never picked for it. "" when
 // the id is no such one, the agent isn't Claude Code, or Claude Code isn't
-// routed through magpie (StandIn says nothing).
+// routed through fogway (StandIn says nothing).
 //
-// A client magpie doesn't know as an agent (Python-urllib, an Anthropic SDK)
-// naming such an id that magpie doesn't serve is taken for one Claude Code
+// A client fogway doesn't know as an agent (Python-urllib, an Anthropic SDK)
+// naming such an id that fogway doesn't serve is taken for one Claude Code
 // started: a hook, statusline or plugin script inherits Claude Code's
 // ANTHROPIC_BASE_URL and token, and asks for claude-sonnet-4-6 by name,
 // which went nowhere, a 404 (tbxark on X). It gets Claude Code's tier too.
 // An id the user does serve (a Claude account, an Anthropic key) goes
-// where it is served, and an agent magpie knows keeps its own models.
+// where it is served, and an agent fogway knows keeps its own models.
 func claudeTierStandIn(r *http.Request, agent, asked string) string {
 	if StandIn == nil || !claudeFamily.MatchString(strings.ToLower(strings.TrimSuffix(asked, "[1m]"))) {
 		return ""
@@ -174,7 +174,7 @@ func claudeTierStandIn(r *http.Request, agent, asked string) string {
 	return m
 }
 
-// unserved: magpie shows no entry for the model — not a catalog id or
+// unserved: fogway shows no entry for the model — not a catalog id or
 // model, nor the "provider/model" of a provider that is on (a routing
 // group's id is taken as served). A switched-off provider's is unserved: a
 // session that started before it was switched off still asks for the model
@@ -201,23 +201,23 @@ func unserved(asked string) bool {
 }
 
 // switchedOff says a request for model went nowhere because p, which
-// serves it, is switched off in magpie (provider.Provider.Off).
+// serves it, is switched off in fogway (provider.Provider.Off).
 func switchedOff(p provider.Provider, model string) string {
-	return fmt.Sprintf("%s is switched off in Magpie, so %q is not served; switch it on again in Magpie's Providers to use it", p.Name, model)
+	return fmt.Sprintf("%s is switched off in Fogway, so %q is not served; switch it on again in Fogway's Providers to use it", p.Name, model)
 }
 
 // Version is set by main.
 var Version = "dev"
 
-// Addr is the listen address: MAGPIE_ADDR, else Settings' port on
+// Addr is the listen address: FOGWAY_ADDR, else Settings' port on
 // loopback (settings.GatewayAddr).
 func Addr() string { return settings.GatewayAddr() }
 
-// SavedURL is URL by Settings alone, MAGPIE_ADDR left aside: where the
-// installed magpie, whose settings these are, is reached.
+// SavedURL is URL by Settings alone, FOGWAY_ADDR left aside: where the
+// installed fogway, whose settings these are, is reached.
 func SavedURL() string { return "http://" + settings.SavedAddr() }
 
-// URL is the base URL agents use, e.g. http://127.0.0.1:3425: a gateway
+// URL is the base URL agents use, e.g. http://127.0.0.1:3725: a gateway
 // listening on every interface is reached here on loopback.
 func URL() string {
 	a := Addr()
@@ -228,8 +228,8 @@ func URL() string {
 }
 
 // Window says this process shows the routing of the gateway it serves:
-// the app's window (a tray's too, when opened) or magpie web's page, and
-// not magpie serve, which has none. Set by the gui.
+// the app's window (a tray's too, when opened) or fogway web's page, and
+// not fogway serve, which has none. Set by the gui.
 var Window bool
 
 // Running reports whether a gateway answers at the address.
@@ -238,27 +238,27 @@ func Running() bool {
 	return running
 }
 
-// Serving asks the address what answers there: whether a magpie gateway
-// does, and whether the magpie serving it has a window its routing can be
+// Serving asks the address what answers there: whether a fogway gateway
+// does, and whether the fogway serving it has a window its routing can be
 // watched in (#110).
 func Serving() (running, window bool) {
 	s := ServedBy()
 	return s.Running, s.Window
 }
 
-// Served is what the magpie answering at the gateway's address says of
+// Served is what the fogway answering at the gateway's address says of
 // itself.
 type Served struct {
-	Running bool   // a magpie gateway answers
+	Running bool   // a fogway gateway answers
 	Window  bool   // its routing can be watched in its window (#110)
 	Version string // its version; "" from one that doesn't say
 }
 
-// ServedBy asks the address which magpie answers there. Another magpie can
-// keep the port after this one is updated (a magpie serve left running, a
+// ServedBy asks the address which fogway answers there. Another fogway can
+// keep the port after this one is updated (a fogway serve left running, a
 // second copy, one that didn't quit), and every agent's request is then
 // still that one's to send: in #506 a Factory 403 came worded as v0.1.550
-// and earlier word it to two people whose magpie said v0.1.630, so none of
+// and earlier word it to two people whose fogway said v0.1.630, so none of
 // the fixes since reached their requests. Its version tells it apart.
 func ServedBy() Served {
 	c := &http.Client{Timeout: 700 * time.Millisecond}
@@ -273,8 +273,8 @@ func ServedBy() Served {
 		Version string `json:"version"`
 		Window  bool   `json:"window"`
 	}
-	if decodeJSON(b, &info) != nil || info.Name != "magpie" {
-		return Served{Running: bytes.Contains(b, []byte(`"magpie"`)), Window: bytes.Contains(b, []byte(`"window":true`))}
+	if decodeJSON(b, &info) != nil || info.Name != "fogway" {
+		return Served{Running: bytes.Contains(b, []byte(`"fogway"`)), Window: bytes.Contains(b, []byte(`"window":true`))}
 	}
 	return Served{Running: true, Window: info.Window, Version: info.Version}
 }
@@ -286,11 +286,11 @@ type Call struct {
 	ID    uint64    `json:"id,omitempty"`
 	Time  time.Time `json:"time"`
 	Agent string    `json:"agent"`         // who called, from the client's User-Agent
-	Via   string    `json:"via,omitempty"` // the computer a remote magpie's request came from (AgentHeader)
+	Via   string    `json:"via,omitempty"` // the computer a remote fogway's request came from (AgentHeader)
 	// Kind: what the agent made the call for, when it isn't its turn —
 	// a Codex subagent's (callKind) — "" for a turn
 	Kind string `json:"kind,omitempty"`
-	// For: the request a call of magpie's own (a web search) was made for
+	// For: the request a call of fogway's own (a web search) was made for
 	For      *CallFor          `json:"for,omitempty"`
 	Model    string            `json:"model"`
 	Provider string            `json:"provider"`
@@ -371,7 +371,7 @@ func New() *Server {
 		// (netproxy.HTTP1, which provider/codex_http1.go sets)
 		client: &http.Client{Transport: rpmTransport{upstreamTransport()}},
 		unfit:  make(map[string]bool),
-		debug:  os.Getenv("MAGPIE_DEBUG") != "",
+		debug:  os.Getenv("FOGWAY_DEBUG") != "",
 	}
 }
 
@@ -420,14 +420,14 @@ func (s *Server) record(c Call) {
 	}
 }
 
-// WhileServing is work only the magpie serving the gateway does, begun
-// once it is bound and ended with it: one of the magpies running, never
+// WhileServing is work only the fogway serving the gateway does, begun
+// once it is bound and ended with it: one of the fogways running, never
 // two at once.
 var WhileServing []func(context.Context)
 
 // ListenAndServe runs the gateway until ctx ends, and returns once the
 // requests in flight then have finished: within 2s, or, handing over, as
-// long as a stream takes. A bind error means another magpie is already
+// long as a stream takes. A bind error means another fogway is already
 // serving, which is fine for the caller to ignore.
 func (s *Server) ListenAndServe(ctx context.Context) error {
 	migrateLANKeyBestEffort()
@@ -441,7 +441,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	stopOTel := usage.StartOTel()
 	defer stopOTel()
 	srv := &http.Server{Handler: lanGuard(s.Handler()), ReadHeaderTimeout: 30 * time.Second, IdleTimeout: 5 * time.Minute}
-	// the magpie serving the gateway keeps the computer awake while agents
+	// the fogway serving the gateway keeps the computer awake while agents
 	// work, when settings say to
 	go keepLocal(ctx) // the model on this computer, as local.json says
 	go awake.Keep(ctx, func() awake.Level {
@@ -502,17 +502,17 @@ func (s *Server) Handler() http.Handler {
 	// Claude Desktop's third-party gateway looks for one here before it
 	// takes the address
 	mux.HandleFunc("GET /api/hello", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]any{"name": "magpie", "version": Version})
+		writeJSON(w, 200, map[string]any{"name": "fogway", "version": Version})
 	})
-	mux.HandleFunc("GET /v1/magpie/quotas", s.quotas)
-	mux.HandleFunc("GET /v1/magpie/usage", s.usageSummary)
-	mux.HandleFunc("GET /v1/magpie/usage/requests", s.usageRequests)
-	mux.HandleFunc("POST /v1/magpie/usage/requests", s.usageIngest)
-	mux.HandleFunc("GET /v1/magpie/quotas/history", s.quotasHistory)
-	mux.HandleFunc("GET /v1/magpie/route", s.sessionRoute)
-	mux.HandleFunc("GET /v1/magpie/concurrency", s.concurrency)
-	mux.HandleFunc("GET /v1/magpie/local", s.localStatus)
-	mux.HandleFunc("GET /v1/magpie/limit", s.keyLimit)
+	mux.HandleFunc("GET /v1/fogway/quotas", s.quotas)
+	mux.HandleFunc("GET /v1/fogway/usage", s.usageSummary)
+	mux.HandleFunc("GET /v1/fogway/usage/requests", s.usageRequests)
+	mux.HandleFunc("POST /v1/fogway/usage/requests", s.usageIngest)
+	mux.HandleFunc("GET /v1/fogway/quotas/history", s.quotasHistory)
+	mux.HandleFunc("GET /v1/fogway/route", s.sessionRoute)
+	mux.HandleFunc("GET /v1/fogway/concurrency", s.concurrency)
+	mux.HandleFunc("GET /v1/fogway/local", s.localStatus)
+	mux.HandleFunc("GET /v1/fogway/limit", s.keyLimit)
 	mux.HandleFunc("POST /v1/chat/completions", s.handle(provider.Chat))
 	mux.HandleFunc("POST /chat/completions", s.handle(provider.Chat))
 	mux.HandleFunc("POST /v1/responses", s.handle(provider.Responses))
@@ -530,20 +530,20 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1beta/models", s.geminiModels)
 	mux.HandleFunc("POST /v1beta/models/{call...}", s.gemini)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		writeError(w, provider.Chat, http.StatusNotFound, "magpie serves /v1/chat/completions, /v1/responses, /v1/messages, /v1/embeddings, /v1/rerank and /v1beta/models/*")
+		writeError(w, provider.Chat, http.StatusNotFound, "fogway serves /v1/chat/completions, /v1/responses, /v1/messages, /v1/embeddings, /v1/rerank and /v1beta/models/*")
 	})
 	return s.counted(corsGuard(callerGuard(withCaller(keyLimited(mux)))))
 }
 
 // responsesOverHTTP answers a GET on /v1/responses, which is how a client
-// opens Responses over a WebSocket (#1005): magpie relays Responses over
+// opens Responses over a WebSocket (#1005): fogway relays Responses over
 // HTTP alone, its stream as SSE, so the upgrade is told 426 — the answer a
 // client falls back to HTTP on at once (Codex does, as on CodexPath) — in
 // place of the 404 every unknown path gets, which read as a broken
 // gateway. A plain GET is told to POST.
 func responsesOverHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
-		writeError(w, provider.Responses, http.StatusUpgradeRequired, "magpie relays Responses over HTTP only: send POST /v1/responses (streamed as SSE); Responses over a WebSocket is not served")
+		writeError(w, provider.Responses, http.StatusUpgradeRequired, "fogway relays Responses over HTTP only: send POST /v1/responses (streamed as SSE); Responses over a WebSocket is not served")
 		return
 	}
 	w.Header().Set("Allow", "POST")
@@ -551,21 +551,21 @@ func responsesOverHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) info(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, 200, map[string]any{"name": "magpie", "version": Version, "models": len(provider.Catalog()), "window": Window,
-		"apis": []string{"/v1/chat/completions", "/v1/responses", "/v1/messages", "/v1beta/models/{model}:generateContent", "/v1/embeddings", "/v1/rerank", "/v1/magpie/quotas", "/v1/magpie/quotas/history", "/v1/magpie/usage", "/v1/magpie/usage/requests", "/v1/magpie/route"}})
+	writeJSON(w, 200, map[string]any{"name": "fogway", "version": Version, "models": len(provider.Catalog()), "window": Window,
+		"apis": []string{"/v1/chat/completions", "/v1/responses", "/v1/messages", "/v1beta/models/{model}:generateContent", "/v1/embeddings", "/v1/rerank", "/v1/fogway/quotas", "/v1/fogway/quotas/history", "/v1/fogway/usage", "/v1/fogway/usage/requests", "/v1/fogway/route"}})
 }
 
-// quotas is what is left of every subscription, plan and key magpie has,
-// for an agent choosing where to send its work (magpie quota --json is the
+// quotas is what is left of every subscription, plan and key fogway has,
+// for an agent choosing where to send its work (fogway quota --json is the
 // same). It names the accounts and their balances, so it answers this
 // machine, and another only with an enabled gateway key, which lanGuard
-// asks of it while the gateway is shared or MAGPIE_ADDR puts it on the
+// asks of it while the gateway is shared or FOGWAY_ADDR puts it on the
 // network. A key held to a budget, models or accounts is someone else's
 // to use and is told none of it (refuseHeld), as are quotasHistory,
 // quotaCards, quotaCardsRefresh and concurrency.
 func (s *Server) quotas(w http.ResponseWriter, r *http.Request) {
 	if !local(r) && !sharedWith(r) {
-		writeError(w, provider.Chat, http.StatusForbidden, "magpie's quotas are told to another machine only when magpie is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
+		writeError(w, provider.Chat, http.StatusForbidden, "fogway's quotas are told to another machine only when fogway is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
 		return
 	}
 	if refuseHeld(w, r, heldRefused) {
@@ -577,12 +577,12 @@ func (s *Server) quotas(w http.ResponseWriter, r *http.Request) {
 }
 
 // quotasHistory is what was left of each account's windows over time, as
-// this magpie (and the computers sharing usage with it) read them (#651):
+// this fogway (and the computers sharing usage with it) read them (#651):
 // ?days= back (45 at most), ?provider= and ?user= to pick an account.
-// /v1/magpie/quotas stays the snapshot.
+// /v1/fogway/quotas stays the snapshot.
 func (s *Server) quotasHistory(w http.ResponseWriter, r *http.Request) {
 	if !local(r) && !sharedWith(r) {
-		writeError(w, provider.Chat, http.StatusForbidden, "magpie's quotas are told to another machine only when magpie is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
+		writeError(w, provider.Chat, http.StatusForbidden, "fogway's quotas are told to another machine only when fogway is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
 		return
 	}
 	if refuseHeld(w, r, heldRefused) {
@@ -592,7 +592,7 @@ func (s *Server) quotasHistory(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"object": "list", "data": provider.QuotaHistories(provider.QuotaHistorySince(q.Get("days"), time.Now()), q.Get("provider"), q.Get("user"))})
 }
 
-// remoteRefreshes is when another magpie last had each card read again
+// remoteRefreshes is when another fogway last had each card read again
 // here: one refreshed by hand is read at most once in remoteRefreshGap,
 // however often it is asked, so the vendor sees no more than this
 // computer's own refresh button would make it.
@@ -614,7 +614,7 @@ func modelObject(e provider.Entry) map[string]any {
 	m := map[string]any{"id": e.ID, "object": "model", "type": "model", "created": 0, "created_at": "2025-01-01T00:00:00Z",
 		"owned_by": e.Provider.ID, "display_name": e.PlainName(), "reasoning": e.Reasoning || len(levels) > 0, "supported_reasoning_levels": levels}
 	// the window, as the names clients read it by: a group's context
-	// (magpie group set … context=) included
+	// (fogway group set … context=) included
 	if e.Context > 0 {
 		m["context_window"], m["context_length"], m["max_input_tokens"] = e.Context, e.Context, e.Context
 	}
@@ -623,7 +623,7 @@ func modelObject(e provider.Entry) map[string]any {
 	if out := e.PublishedOutput(); out > 0 {
 		m["max_output_tokens"] = out
 	}
-	// for another magpie that has this one as its provider (remote-magpie):
+	// for another fogway that has this one as its provider (remote-fogway):
 	// the APIs a request for the model goes on as it is, so it sends each
 	// one on an API of these rather than having it translated twice, and
 	// whether it takes images
@@ -726,7 +726,7 @@ func (s *Server) models(w http.ResponseWriter, r *http.Request) {
 	} else {
 		labels := provider.Labels(shown)
 		// the tiers Codex here is offered on each model (#1234), for every
-		// client: another magpie offers them to its own Codex, and Cindy
+		// client: another fogway offers them to its own Codex, and Cindy
 		// shows its Fast switch on a model whose tiers hold priority
 		// (#1914). A model with none says nothing
 		tiers := codexTiers(shown)
@@ -753,7 +753,7 @@ func (s *Server) models(w http.ResponseWriter, r *http.Request) {
 			}
 			// its name as the agents' lists here call it, with its
 			// provider's after it unless the user wants it plain
-			m["magpie_label"] = labels[i]
+			m["fogway_label"] = labels[i]
 			if agentOf(r) == "cursor-local" {
 				cursorLocalModel(m, e)
 			}
@@ -799,12 +799,12 @@ func (s *Server) model(w http.ResponseWriter, r *http.Request) {
 	writeError(w, provider.Chat, 404, "unknown model "+id)
 }
 
-// unprefixed is the model magpie serves by an id Claude Desktop was given
-// for it (claudeLooking): anthropic/magpie-<number>, mythos-magpie-<number>,
-// magpie-<number>.anthropic.<Claude model>, or, as it listed them
-// before, "anthropic/" put in front of magpie's id — or by its flat
+// unprefixed is the model fogway serves by an id Claude Desktop was given
+// for it (claudeLooking): anthropic/fogway-<number>, mythos-fogway-<number>,
+// fogway-<number>.anthropic.<Claude model>, or, as it listed them
+// before, "anthropic/" put in front of fogway's id — or by its flat
 // spelling (unflat) or its Claude version dashed (provider.ClaudeUndashed).
-// An id that is magpie's as it stands (a provider named
+// An id that is fogway's as it stands (a provider named
 // anthropic) is left alone.
 func unprefixed(id string) string {
 	if real, ok := aliased(id); ok {
@@ -830,7 +830,7 @@ func unprefixed(id string) string {
 }
 
 // askedAt splits a model asked for at an effort of its own,
-// "<model>:<level>" (before a [1m] mark) — a Claude Code tier magpie set one
+// "<model>:<level>" (before a [1m] mark) — a Claude Code tier fogway set one
 // on (#536) — into the model and the level, "" for none. As a routing
 // group's member is read (#189), only a level's name after the last colon is
 // one, and a model a provider has by the whole id ("x:high") is taken whole.
@@ -1011,7 +1011,7 @@ func (s *Server) handle(from provider.Protocol) http.HandlerFunc {
 			writeError(w, from, 400, err.Error())
 			return
 		}
-		// Codex with magpie as its provider: spawn_agent names every
+		// Codex with fogway as its provider: spawn_agent names every
 		// model a subagent may be put on, not only Codex's first five
 		// (Gearclickist on Discord)
 		if from == provider.Responses && (fromCodex(r.Header) || agentOf(r) == "codex") {
@@ -1020,7 +1020,7 @@ func (s *Server) handle(from provider.Protocol) http.HandlerFunc {
 		if from == provider.Chat {
 			body = thinkingEffort(body)
 		}
-		// Codex with magpie as its provider asks for a thread's title
+		// Codex with fogway as its provider asks for a thread's title
 		// here (#743)
 		if from == provider.Responses {
 			if to := codexTitlesTo(r.Header, body, true); to != "" {
@@ -1037,8 +1037,8 @@ func (s *Server) handle(from provider.Protocol) http.HandlerFunc {
 			}
 			// Codex compacts remotely, a compaction_trigger here, on a
 			// provider table named "OpenAI" (CC Switch's relay tables,
-			// which magpie points here, #1301): the summary is magpie's to
-			// make, as on CodexPath, and magpie's summaries go back as text
+			// which fogway points here, #1301): the summary is fogway's to
+			// make, as on CodexPath, and fogway's summaries go back as text
 			if bytes.Contains(body, []byte(`"compaction`)) {
 				var compact bool
 				if body, compact = codexInput(body, true); compact {
@@ -1176,11 +1176,11 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	}
 	capture := &captureResponseWriter{ResponseWriter: w}
 	if wholeBodies {
-		capture.otel = &spool{limit: wholeBodyLimit, pattern: "magpie-otel-*"}
+		capture.otel = &spool{limit: wholeBodyLimit, pattern: "fogway-otel-*"}
 	}
 	w = capture
 	// the agent it is recorded as, the one on the computer it was passed
-	// on from for a remote magpie's request; agent the one that sent it,
+	// on from for a remote fogway's request; agent the one that sent it,
 	// which what is done with it goes by
 	who, agent := callerOf(r), agentOf(r)
 	metadata := requestSessionMetadata(r.Header, body)
@@ -1251,7 +1251,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			return id
 		}
 		if id, ok := provider.AutoStandIn(m); ok {
-			// a group magpie found, while the user has those off: its
+			// a group fogway found, while the user has those off: its
 			// model from one provider, rather than refused
 			return id
 		}
@@ -1260,7 +1260,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	if m := claudeTierStandIn(r, agent, asked); m != "" {
 		// Claude Code (or a wrapper, T3 Code) naming one of Anthropic's
 		// models by its full id: the model it is set to use for that tier,
-		// whether or not magpie serves the id too
+		// whether or not fogway serves the id too
 		asked = grouped(at(m))
 	} else if g := grouped(asked); g != asked {
 		asked = g
@@ -1309,7 +1309,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		msg := unknownModel(call.Model, "")
 		if g, ok := provider.DisabledGroup(asked); ok {
 			call.Error = "group switched off"
-			msg = fmt.Sprintf("the routing group %s is switched off in Magpie, so %q is not served; switch it on again on Magpie's Routing page to use it", g.Name, call.Model)
+			msg = fmt.Sprintf("the routing group %s is switched off in Fogway, so %q is not served; switch it on again on Fogway's Routing page to use it", g.Name, call.Model)
 		} else {
 			if g, ok := emptyGroup(asked); ok {
 				// a group of its own with nothing in it now — its patterns
@@ -1338,7 +1338,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	// group it doesn't name with one it may not use in it
 	keyWho, keyHeld := keyHolds(r)
 	_, accHeld := accountHolds(r)
-	chose, _ := r.Context().Value(magpieChoseKey{}).(bool)
+	chose, _ := r.Context().Value(fogwayChoseKey{}).(bool)
 	if keyHeld && (isGroup && !groupAllowed(keyWho, g, ms) || !isGroup && !modelAllowed(keyWho, p, model)) {
 		call.Status, call.Error = 403, "model not allowed for the gateway key"
 		writeError(w, from, 403, keyModelError(keyWho, call.Model))
@@ -1573,7 +1573,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		who := keyWho
 		var members map[string]bool
 		if chose {
-			// magpie's own call for the key — a web search, a picture
+			// fogway's own call for the key — a web search, a picture
 			// described, a Codex title: of the models the user picked, so
 			// the models don't hold it, but the spend lands on an account,
 			// and the accounts hold it too
@@ -1599,7 +1599,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		}
 		msg, back := cappedError(call.Model, held, time.Now())
 		if strictHeld != nil {
-			msg += ". The conversation stays strictly on that account (Stays: Strict), so magpie doesn't move it to another"
+			msg += ". The conversation stays strictly on that account (Stays: Strict), so fogway doesn't move it to another"
 		}
 		if d := time.Until(back); d > 0 {
 			w.Header().Set("Retry-After", strconv.Itoa(int(d.Seconds())+1))
@@ -1697,7 +1697,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	}
 	if isGroup && seenGroup == nil {
 		// without a model to describe it, a new image goes only to the
-		// members that see it (#756) — to members magpie knows nothing
+		// members that see it (#756) — to members fogway knows nothing
 		// of when none is known to see, as a model of its own would be
 		// sent it. With one, the members keep their order, a text-only
 		// one given it described.
@@ -1777,7 +1777,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	// what the tries' held streams sent the agent ahead of a reply (#751)
 	kept := &keptAlive{proto: from, told: start}
 	var sentMs int64 // ms from the request to its answering try going to the vendor
-	// of it, magpie's own, the tries that failed first and the wait for a
+	// of it, fogway's own, the tries that failed first and the wait for a
 	// slot (usage.Record.Own, Retried, Queued: #1532)
 	var ownMs, retriedMs, queuedMs int64
 	var firstBegan time.Time // when the first try began
@@ -1798,7 +1798,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	var waitFrom time.Time // when every member had first failed so
 	refusals := 0          // the tries the safety filter refused so
 	// ended is when the last try's reply ended: the request's ms end there,
-	// not after what magpie writes down of it once it has (#1939: sticks
+	// not after what fogway writes down of it once it has (#1939: sticks
 	// and the provider's last answer, saved to disk, took seconds on a busy
 	// disk, and the reply's speed counted them as its own)
 	var ended time.Time
@@ -1913,7 +1913,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		}
 		fixed := cmp.Or(c.effort, withinLevels(askedEffort, levels))
 		if fixed == "" && effort == "" && agentPick != "" && c.p.Thinks(c.model) {
-			// the effort picked in magpie for an agent whose config can't
+			// the effort picked in fogway for an agent whose config can't
 			// carry one (Cursor Private Inference, #1003), in place of the
 			// level it sent, on a model that reasons; a member fixed at
 			// one, a suffix and the turn's pick are more particular
@@ -2014,7 +2014,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			// when the request last went out to the vendor, its body
 			// written: what came after is the vendor's (Record.Sent).
 			// Before it, from when it began to go out, is connecting and
-			// sending the body, and before that magpie's (#1532)
+			// sending the body, and before that fogway's (#1532)
 			ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
 				GetConn: func(string) { asking.Store(time.Now().UnixNano()) },
 				WroteRequest: func(httptrace.WroteRequestInfo) {
@@ -2540,7 +2540,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		}
 		if !hw.passing && hw.code() == http.StatusTooManyRequests && hw.header.Get("Retry-After") == "" {
 			// the vendor said nothing of when: the agent is told when
-			// magpie asks again, the first of those it rested back
+			// fogway asks again, the first of those it rested back
 			if heldBack.IsZero() {
 				heldBack, _ = soonestBack(cands[:i+1])
 			}
@@ -2759,7 +2759,7 @@ func (s *Server) attempt(w http.ResponseWriter, r *http.Request, from provider.P
 	if relay && from != provider.Anthropic && p.OnMessages(model) && slices.Contains(s.usable(p, model), provider.Anthropic) {
 		relay = false
 	}
-	// a web search offered is done by the provider, or by magpie for it,
+	// a web search offered is done by the provider, or by fogway for it,
 	// which a relayed request can't. The request is translated on the
 	// client's own API all the same, not on Chat: Codex offers web_search
 	// on every turn, and on a provider serving Responses each went out as
@@ -2779,7 +2779,7 @@ func (s *Server) attempt(w http.ResponseWriter, r *http.Request, from provider.P
 	// (upstreamPath). A client that asked for one JSON body is translated,
 	// which reads that SSE and writes the JSON. Relaying it would hand the
 	// client the data: lines under a 200. Vertex AI answers generateContent
-	// whole, and a translation would drop what the client asked that magpie
+	// whole, and a translation would drop what the client asked that fogway
 	// doesn't read (its safetySettings, topK, schema, thinkingBudget 0)
 	if relay && from == provider.Gemini && !streamOf(body) && !p.IsVertex() {
 		relay = false
@@ -2789,7 +2789,7 @@ func (s *Server) attempt(w http.ResponseWriter, r *http.Request, from provider.P
 	// must be set to false for non-streaming calls". One asked for whole is
 	// asked streamed on Chat and given back whole, its thinking as the
 	// model would have done it (ZekeXiao on X: a group's classifier on the
-	// Qwen Token Plan, which magpie asks for one body)
+	// Qwen Token Plan, which fogway asks for one body)
 	if relay && from == provider.Chat && !streamOf(body) && dashScope(p) {
 		relay, ownAPI = false, true
 	}
@@ -2946,7 +2946,7 @@ func (s *Server) forwardOnce(ctx context.Context, p provider.Provider, to provid
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json, text/event-stream")
-	// magpie's, or the agent's own where the provider is set to pass it
+	// fogway's, or the agent's own where the provider is set to pass it
 	// on (#1851); a signed-in account's signing, a client the vendor
 	// serves (OpenCode's, Cline's, Kilo's) and the user's own header put
 	// theirs on after
@@ -2961,7 +2961,7 @@ func (s *Server) forwardOnce(ctx context.Context, p provider.Provider, to provid
 		if fromClaudeCode(in) {
 			// a relay that serves only Claude Code (#179: "only accessible
 			// via the official Claude CLI") knows it by its own headers,
-			// which go on as it sent them; its key to magpie never does.
+			// which go on as it sent them; its key to fogway never does.
 			// A test asked as Claude Code asks with them (provider.TestAs)
 			seen := http.Header{}
 			for k, vs := range in {
@@ -2983,7 +2983,7 @@ func (s *Server) forwardOnce(ctx context.Context, p provider.Provider, to provid
 		// allows Codex official clients") knows it by its User-Agent,
 		// originator and x-codex- headers, which go on as Codex sent them,
 		// as they do when Codex talks to the relay itself; its key to
-		// magpie never does. A test asked as Codex asks with them
+		// fogway never does. A test asked as Codex asks with them
 		// (provider.TestAs)
 		seen := http.Header{}
 		for k, vs := range in {
@@ -3141,7 +3141,7 @@ func (s *Server) passthrough(w http.ResponseWriter, r *http.Request, p provider.
 			body = withReasoningText(body)
 		} else {
 			if strings.HasSuffix(p.Host(), "openai.com") || p.IsAzure() || !s.fits(p.ID, bareReasoningRefused(model), proto) {
-				// reasoning magpie gave Codex, an id with nothing sealed in
+				// reasoning fogway gave Codex, an id with nothing sealed in
 				// it, which they'd look up and not find (#1008), nor does an
 				// upstream that has turned it away before (#1044)
 				body = withoutBareReasoning(body)
@@ -3877,7 +3877,7 @@ func (s *Server) forwardTranslated(ctx context.Context, p provider.Provider, to 
 		}
 		// the tier the client asked for goes to a provider the user added
 		// by its address as it was asked (Request.Tier), and to another
-		// magpie, which offered it and serves it as its own Codex would be
+		// fogway, which offered it and serves it as its own Codex would be
 		// (#1234)
 		if own := (p.Preset == "") && s.fits(p.ID, tierField, to); own != req.OwnTier {
 			r := *req
@@ -3918,16 +3918,16 @@ func (s *Server) forwardTranslated(ctx context.Context, p provider.Provider, to 
 			body = asCompletionTokens(body)
 		}
 
-		// the other magpie searches for it (search_remote.go)
+		// the other fogway searches for it (search_remote.go)
 
 		// the envelope is named in there, where the id it carries is
 		// known: on Antigravity that is the variant the effort picked,
-		// not the model magpie knows
+		// not the model fogway knows
 
 		if wire != model {
 			// the vendor's own name for the model goes in the model field
 			// and nowhere else: everything above shaped the request from
-			// the model magpie knows, which is what those decisions are
+			// the model fogway knows, which is what those decisions are
 			// about
 			body = rewriteModel(body, wire)
 		}
@@ -3989,7 +3989,7 @@ func (s *Server) forwardTranslated(ctx context.Context, p provider.Provider, to 
 		if req.endsWithAssistant() && refusesPrefill(res.StatusCode, b) {
 			// the model takes no prefill (#1447), remembered for it alone.
 			// A conversation the client ended with the assistant's message
-			// is asked again with a user turn after it; magpie's own
+			// is asked again with a user turn after it; fogway's own
 			// continuation of a cut reply isn't (streamTranslated)
 			s.markUnfit(p.ID, prefillRefused(model), to)
 			if req.LastIsTurn && !req.Resume {
@@ -4477,7 +4477,7 @@ func (s *Server) translate(w http.ResponseWriter, r *http.Request, p provider.Pr
 	}
 	if request.WebSearch {
 		// an API on which the provider searches by itself comes first;
-		// without one, its model is given magpie's search. A searcher
+		// without one, its model is given fogway's search. A searcher
 		// asked for another model goes there too: on its first API
 		// (DeepSeek's Chat) it had no search tool and answered from
 		// nothing (#669)
@@ -5007,14 +5007,14 @@ var sessionHeaders = []string{
 // SessionHeader names the session a call is part of, for the usage log to
 // tell several sessions on one model apart; without it, the session an
 // agent names itself in sessionHeaders is taken.
-const SessionHeader = "X-Magpie-Session"
+const SessionHeader = "X-Fogway-Session"
 
 // AccountHeader pins a request to one of a subscription's accounts, by its
 // user (an email, a login) or its id in the routing trace: only it is
 // tried, and when it can't take the request the caller is told why rather
 // than another account answering — a probe of one account needs that one.
-// It goes no further than magpie.
-const AccountHeader = "X-Magpie-Account"
+// It goes no further than fogway.
+const AccountHeader = "X-Fogway-Account"
 
 // sessionOf is the session a request names, "" when it names none.
 func sessionOf(in http.Header) string {
@@ -5043,7 +5043,7 @@ func subagentOf(in http.Header) (agent, parent string) {
 	return agent[:min(len(agent), 128)], parent[:min(len(parent), 128)]
 }
 
-// nativeSessionOf keeps the client session even when magpie's header overrides it.
+// nativeSessionOf keeps the client session even when fogway's header overrides it.
 func nativeSessionOf(in http.Header) string {
 	for _, h := range sessionHeaders {
 		if v := strings.TrimSpace(in.Get(h)); v != "" {
@@ -5096,7 +5096,7 @@ func conversationID(in http.Header, body []byte) string {
 		first = body
 	}
 	sum := sha256.Sum256(first)
-	return "magpie-" + hex.EncodeToString(sum[:12])
+	return "fogway-" + hex.EncodeToString(sum[:12])
 }
 
 // offEffort is an effort turning reasoning off, or as near off as asked.
@@ -5157,7 +5157,7 @@ func forcesTool(choice string) bool {
 // schema; and a vendor that holds the forced tool to strict mode instead
 // answers `tools.N.custom: For 'object' type, 'additionalProperties' must
 // be explicitly set to false` (#668), which Anthropic says only of a
-// strict tool, and magpie sends none.
+// strict tool, and fogway sends none.
 var toolChoiceRefused = regexp.MustCompile(`(?i)tool_choice\W+type\W+tool\W+and\W+any\W+are not supported|tools\.\d+\.custom\W+for\W+object\W+type\W+additionalProperties\W+must be explicitly set to false`)
 
 // unforced is req with its forced tool_choice left to the model: a named
@@ -5513,13 +5513,13 @@ func tooLong(status int, msg string) bool {
 var paceWords = regexp.MustCompile(`(?i)rate.?limit|per (minute|hour|day)|\bTP[MD]\b|please wait|try again later|throttl`)
 
 // splitSent tells what of sent, the ms from the request (start) to its
-// answering try's body written, was magpie's own work, the tries that
+// answering try's body written, was fogway's own work, the tries that
 // failed first with their pauses (from the first try's start to this
 // one's), and this try's wait for a slot (queued). asked is when the
 // request that went out began to (GetConn, UnixNano; 0 when unknown):
 // after it is connecting and sending the body, which is neither. #1532:
 // OpenCode Go held a try ~100 s before its 503, and the detail called the
-// whole of it magpie's.
+// whole of it fogway's.
 func splitSent(sent int64, start, firstBegan, began time.Time, asked, queued int64) (own, retried, waited int64) {
 	retried = min(max(began.Sub(firstBegan).Milliseconds(), 0), sent)
 	waited = min(max(queued, 0), sent-retried)

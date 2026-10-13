@@ -26,17 +26,17 @@ func TestEndpointAPIs(t *testing.T) {
 	}
 }
 
-// Another magpie's list tells each model's price (magpie_price), tiers
+// Another fogway's list tells each model's price (fogway_price), tiers
 // and all; one no vendor could charge is not taken, and a list without
 // one leaves the model unpriced.
-func TestLiveMagpiePrice(t *testing.T) {
+func TestLiveFogwayPrice(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"data":[
-			{"id":"a/priced","magpie_price":{"input":3,"output":12,"cache_read":0.3,"cache_write":3.75,"tiers":[{"above":200000,"input":6,"output":18,"cache_read":0.6,"cache_write":7.5}]}},
-			{"id":"a/free","magpie_price":{"input":0,"output":0,"cache_read":0,"cache_write":0}},
-			{"id":"a/negative","magpie_price":{"input":-1,"output":12,"cache_read":0,"cache_write":0}},
-			{"id":"a/sizeless","magpie_price":{"input":1,"output":2,"cache_read":0,"cache_write":0,"tiers":[{"above":0,"input":2,"output":4}]}},
-			{"id":"a/odd","magpie_price":"cheap"},
+			{"id":"a/priced","fogway_price":{"input":3,"output":12,"cache_read":0.3,"cache_write":3.75,"tiers":[{"above":200000,"input":6,"output":18,"cache_read":0.6,"cache_write":7.5}]}},
+			{"id":"a/free","fogway_price":{"input":0,"output":0,"cache_read":0,"cache_write":0}},
+			{"id":"a/negative","fogway_price":{"input":-1,"output":12,"cache_read":0,"cache_write":0}},
+			{"id":"a/sizeless","fogway_price":{"input":1,"output":2,"cache_read":0,"cache_write":0,"tiers":[{"above":0,"input":2,"output":4}]}},
+			{"id":"a/odd","fogway_price":"cheap"},
 			{"id":"a/none"}]}`)
 	}))
 	defer srv.Close()

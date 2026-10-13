@@ -72,7 +72,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, fixtures(Date.now())));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
 
       const claude = page.locator(".subscription-card", { hasText: "Claude Code" });
       const read = claude.locator(".quota-read");

@@ -1,6 +1,6 @@
 package provider
 
-// A key's balance over time (TJHHHH on Discord): each balance magpie reads
+// A key's balance over time (TJHHHH on Discord): each balance fogway reads
 // anyway (KeyBalances, a minute apart at most while something asks) is kept
 // as a point — when it was read and the amount — so the balance's card can
 // draw it, as the subscriptions' windows are (quota_history.go), and say

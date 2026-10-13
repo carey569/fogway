@@ -24,7 +24,7 @@ const found = [
   srv("node_repl", ["codex"], { own: true }),
 ];
 const lib = (foundServers) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex"), agent("gemini", "Gemini CLI"), agent("goose", "Goose")],
   instructions: { agents: [] }, servers: [], skills: [], foundSkills: [], projects: [], foundServers,
 });
@@ -56,26 +56,26 @@ function server(lang, posts) {
 const said = {
   en: {
     head: "Remove github?",
-    github: ["It is taken out of the MCP settings of Claude Code, Codex. Each file is copied to magpie's backups before it changes.", "Gemini CLI has another server by this name; that one stays."],
-    figma: ["It is taken out of the MCP settings of Goose. Each file is copied to magpie's backups before it changes."],
+    github: ["It is taken out of the MCP settings of Claude Code, Codex. Each file is copied to fogway's backups before it changes.", "Gemini CLI has another server by this name; that one stays."],
+    figma: ["It is taken out of the MCP settings of Goose. Each file is copied to fogway's backups before it changes."],
     removed: "github removed",
   },
   zh: {
     head: "移除 github？",
-    github: ["将从 Claude Code, Codex 的 MCP 配置中移除。每个文件改动前都会先复制到 magpie 的备份。", "Gemini CLI 中有另一个同名服务器，那个保持不动。"],
-    figma: ["将从 Goose 的 MCP 配置中移除。每个文件改动前都会先复制到 magpie 的备份。"],
+    github: ["将从 Claude Code, Codex 的 MCP 配置中移除。每个文件改动前都会先复制到 fogway 的备份。", "Gemini CLI 中有另一个同名服务器，那个保持不动。"],
+    figma: ["将从 Goose 的 MCP 配置中移除。每个文件改动前都会先复制到 fogway 的备份。"],
     removed: "已移除 github",
   },
   ja: {
     head: "github を削除しますか？",
-    github: ["Claude Code, Codex の MCP 設定から外されます。各ファイルは変更前に magpie のバックアップにコピーされます。", "Gemini CLI には同じ名前の別のサーバーがあり、そちらはそのまま残ります。"],
-    figma: ["Goose の MCP 設定から外されます。各ファイルは変更前に magpie のバックアップにコピーされます。"],
+    github: ["Claude Code, Codex の MCP 設定から外されます。各ファイルは変更前に fogway のバックアップにコピーされます。", "Gemini CLI には同じ名前の別のサーバーがあり、そちらはそのまま残ります。"],
+    figma: ["Goose の MCP 設定から外されます。各ファイルは変更前に fogway のバックアップにコピーされます。"],
     removed: "github を削除しました",
   },
   de: {
     head: "github entfernen?",
-    github: ["Er wird aus den MCP-Einstellungen von Claude Code, Codex entfernt. Jede Datei wird vorher in die Backups von magpie kopiert.", "Gemini CLI hat einen anderen Server mit diesem Namen; dieser bleibt."],
-    figma: ["Er wird aus den MCP-Einstellungen von Goose entfernt. Jede Datei wird vorher in die Backups von magpie kopiert."],
+    github: ["Er wird aus den MCP-Einstellungen von Claude Code, Codex entfernt. Jede Datei wird vorher in die Backups von fogway kopiert.", "Gemini CLI hat einen anderen Server mit diesem Namen; dieser bleibt."],
+    figma: ["Er wird aus den MCP-Einstellungen von Goose entfernt. Jede Datei wird vorher in die Backups von fogway kopiert."],
     removed: "github entfernt",
   },
 };
@@ -91,12 +91,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     });
     const open = async (lang, posts, width = 980) => {
       const ctx = await browser.newContext({ viewport: { width, height: 800 } });
-      await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+      await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
       return page;

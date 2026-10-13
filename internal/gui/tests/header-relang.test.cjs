@@ -1,15 +1,15 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // kiwiflysky on X: with a wide interface font, the macOS window's header fit
 // in Chinese, but switched to English, Japanese or German its tabs ran left
-// under the magpie and the traffic lights, and in German into the refresh
+// under the fogway and the traffic lights, and in German into the refresh
 // button and the gear. fitTop draws the header in when it doesn't fit, but
-// was only run again when the header, the magpie or the buttons changed size;
+// was only run again when the header, the fogway or the buttons changed size;
 // another language or font changes only the tabs. Here a macOS window opens
 // in Chinese, with the header's tabs picked over the sidebar, and is
 // switched to each other language from Settings at the reporter's width. In
 // English it takes a wide font (Menlo) at each width from 1000 to 640
 // pixels and must be fitted as a fresh fit fits it. Each language is then
-// swept from 1100 to 600 pixels, and the tabs keep 7.5px from the magpie
+// swept from 1100 to 600 pixels, and the tabs keep 7.5px from the fogway
 // (or the header's padding past the traffic lights) and from the buttons,
 // which stay inside the header; drawn in all the way, they scroll in the
 // room between. Chromium and WebKit; no backend, the API is faked here.
@@ -57,7 +57,7 @@ const header = (page) => page.evaluate(() => {
 // header's padding, which is past the traffic lights
 const check = (h, at) => {
   const room = h.packed ? 0 : 7.5;
-  assert(h.left >= room, "the tabs run under the magpie at " + at);
+  assert(h.left >= room, "the tabs run under the fogway at " + at);
   assert(h.right >= room, "the tabs run into the buttons at " + at);
   assert(h.out <= 0.5, "the buttons run off the header at " + at);
 };
@@ -76,12 +76,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       Object.defineProperty(Navigator.prototype, "platform", { get: () => "MacIntel" });
       // the header's tabs picked over the sidebar (the title bar's button), so
       // the tabs are in the header at every width swept, not only under 1024px
-      localStorage.setItem("magpie.navLayout", "top");
+      localStorage.setItem("fogway.navLayout", "top");
     });
     const page = await ctx.newPage();
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", server());
-    await page.goto("http://magpie.test/?mode=window");
+    await page.goto("http://fogway.test/?mode=window");
     await page.waitForSelector("#nav button.on");
     assert(await page.evaluate(() => document.body.classList.contains("mac") && document.body.classList.contains("window")), "not a macOS window");
     assert(await page.evaluate(() => !document.body.classList.contains("side-nav")), "the tabs aren't in the header");

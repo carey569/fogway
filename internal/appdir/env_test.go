@@ -25,8 +25,8 @@ func TestHomeRefusesEmptyOrRelative(t *testing.T) {
 	}
 }
 
-// A relative folder variable reads as unset inside magpie and stays in the
-// environment for the programs magpie starts; one a login shell lends later
+// A relative folder variable reads as unset inside fogway and stays in the
+// environment for the programs fogway starts; one a login shell lends later
 // (proc.UserPath sets it with os.Setenv) is read the same way.
 func TestRelativeFolderVariablesIgnoredNotUnset(t *testing.T) {
 	t.Setenv(homeVar(), t.TempDir())
@@ -36,19 +36,19 @@ func TestRelativeFolderVariablesIgnoredNotUnset(t *testing.T) {
 	t.Setenv("CODEX_HOME", "./codex")
 	t.Setenv("HANA_HOME", "~/.hanako")
 	t.Setenv("PI_PROFILE", "work")
-	t.Setenv("MAGPIE_ZED_CONFIG_DIR", "./zedg-config")
-	t.Setenv("MAGPIE_ZED_BIN", "zedg")
-	t.Setenv("MAGPIE_ZED_PROCESS_NAMES", "zedg,ZedG")
+	t.Setenv("FOGWAY_ZED_CONFIG_DIR", "./zedg-config")
+	t.Setenv("FOGWAY_ZED_BIN", "zedg")
+	t.Setenv("FOGWAY_ZED_PROCESS_NAMES", "zedg,ZedG")
 	t.Setenv("KIMI_SHARE_DIR", "")
 	ignored, err := CheckEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
 	slices.Sort(ignored)
-	if want := []string{"CODEX_HOME", "MAGPIE_ZED_CONFIG_DIR", "XDG_DATA_HOME"}; !slices.Equal(ignored, want) {
+	if want := []string{"CODEX_HOME", "FOGWAY_ZED_CONFIG_DIR", "XDG_DATA_HOME"}; !slices.Equal(ignored, want) {
 		t.Errorf("ignored %v, want %v", ignored, want)
 	}
-	for v, want := range map[string]string{"XDG_CONFIG_HOME": abs, "HANA_HOME": "~/.hanako", "PI_PROFILE": "work", "MAGPIE_ZED_CONFIG_DIR": "", "MAGPIE_ZED_BIN": "zedg", "MAGPIE_ZED_PROCESS_NAMES": "zedg,ZedG", "XDG_DATA_HOME": "", "CODEX_HOME": ""} {
+	for v, want := range map[string]string{"XDG_CONFIG_HOME": abs, "HANA_HOME": "~/.hanako", "PI_PROFILE": "work", "FOGWAY_ZED_CONFIG_DIR": "", "FOGWAY_ZED_BIN": "zedg", "FOGWAY_ZED_PROCESS_NAMES": "zedg,ZedG", "XDG_DATA_HOME": "", "CODEX_HOME": ""} {
 		if got := Getenv(v); got != want {
 			t.Errorf("Getenv(%s) = %q, want %q", v, got, want)
 		}
@@ -82,7 +82,7 @@ func TestTildeFolderVariables(t *testing.T) {
 		{"XDG_RUNTIME_DIR", "~/run", false},
 		{"APPDATA", "~/AppData/Roaming", false},
 		{"LOCALAPPDATA", "~/AppData/Local", false},
-		{"MAGPIE_BIN_DIR", "~/.local/bin", false},
+		{"FOGWAY_BIN_DIR", "~/.local/bin", false},
 		{"CODEX_HOME", "~/.codex", false},
 		{"OPENCODE_CONFIG_DIR", "~/opencode", false},
 		{"PI_CODING_AGENT_DIR", "~/pi", true},

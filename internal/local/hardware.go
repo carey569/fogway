@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/proc"
+	"github.com/fogway/fogway/internal/proc"
 )
 
 // Hardware is what this computer offers a local model: its memory, and a

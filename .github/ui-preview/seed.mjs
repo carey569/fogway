@@ -3,12 +3,12 @@
 // a subscription's quota or a relay's windows had nothing to draw (#937,
 // #977, #1004, #1018, #1019…). Made up, every bit of it, and never real:
 //
-//   node seed.mjs write   — before magpie starts: providers and a group
+//   node seed.mjs write   — before fogway starts: providers and a group
 //     beside DeepSeek, 30 days of requests (usage.jsonl), Claude Code and
 //     Codex session files (more than a page of them), two ChatGPT accounts
 //     signed in to Codex, the quota and balance history their charts and
 //     forecasts are drawn from, and skills in the library and the agents;
-//   node seed.mjs serve   — while magpie runs: the fake providers' API
+//   node seed.mjs serve   — while fogway runs: the fake providers' API
 //     (OpenAI and Anthropic shaped, each its own speed), a Sub2API relay's
 //     /v1/usage, and, as an HTTPS proxy, chatgpt.com's account usage under a
 //     certificate of our own (CA_CERT/CA_KEY, made by run.sh). Every other
@@ -26,7 +26,7 @@ import net from "node:net";
 import crypto from "node:crypto";
 
 const HOME = process.env.HOME;
-const CONFIG = path.join(process.env.XDG_CONFIG_HOME || path.join(HOME, ".config"), "magpie");
+const CONFIG = path.join(process.env.XDG_CONFIG_HOME || path.join(HOME, ".config"), "fogway");
 const MOCK = process.env.MOCK || "127.0.0.1:3440";
 const NOW = Date.now();
 const H = 3600e3, D = 24 * H;
@@ -187,7 +187,7 @@ function record(agent, req, session, t, route) {
 }
 
 // Claude Code's sessions: those the log has, and more besides, run without
-// magpie, so there are more than the 200 the list shows at first
+// fogway, so there are more than the 200 the list shows at first
 function claudeSessions(fromLog) {
   const extra = [];
   for (let i = 0; i < 230; i++) {
@@ -245,7 +245,7 @@ function codexSessions(fromLog) {
 }
 
 // two ChatGPT accounts: the one Codex is signed in to (auth.json), and one
-// saved in magpie beside it, both with tokens that are no JWT, so magpie
+// saved in fogway beside it, both with tokens that are no JWT, so fogway
 // never refreshes them, only asks chatgpt.com (this mock) for their usage
 function chatgpt() {
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");

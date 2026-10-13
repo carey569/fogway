@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func TestParseTokens(t *testing.T) {
@@ -136,7 +136,7 @@ func TestGroupRuleIntentCmd(t *testing.T) {
 			t.Errorf("%v taken", bad)
 		}
 	}
-	if err := ruleCmd([]string{"add", "opus", "use=gpt-5.5", "intent=  a quick   question ", "classifier=magpie/a/only-a"}); err != nil {
+	if err := ruleCmd([]string{"add", "opus", "use=gpt-5.5", "intent=  a quick   question ", "classifier=fogway/a/only-a"}); err != nil {
 		t.Fatal(err)
 	}
 	g := group()

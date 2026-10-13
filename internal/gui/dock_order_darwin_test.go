@@ -16,13 +16,13 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
-// magpie out of the Dock, activated by its quick panel, opens its window
+// fogway out of the Dock, activated by its quick panel, opens its window
 // and joins the Dock (Settings › Show in Dock › while the window is open): it leads
 // Command-Tab's order, so one Command-Tab away comes back to it (#1381). It
 // joined while active and stayed last, behind every app, though in front.
 // The order is the Mac's front-to-back list, which `lsappinfo` prints.
 func TestDockJoinLeadsCommandTab(t *testing.T) {
-	out, err := runAppKit(t, 30*time.Second, []string{"MAGPIE_TEST_DOCK_ORDER=1"})
+	out, err := runAppKit(t, 30*time.Second, []string{"FOGWAY_TEST_DOCK_ORDER=1"})
 	if strings.Contains(string(out), "dock order: skip") {
 		t.Skipf("this session can't bring an app to the front:\n%s", out)
 	}
@@ -50,23 +50,23 @@ func lsFirst(pid int) (first, front bool, out string) {
 }
 
 func init() {
-	if os.Getenv("MAGPIE_TEST_DOCK_ORDER") != "1" {
+	if os.Getenv("FOGWAY_TEST_DOCK_ORDER") != "1" {
 		return
 	}
 	app := application.New(application.Options{
-		Name: "magpie dock order regression",
+		Name: "fogway dock order regression",
 		Mac:  application.MacOptions{ActivationPolicy: application.ActivationPolicyAccessory},
 		Assets: application.AssetOptions{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<p>magpie</p>`)
+			fmt.Fprint(w, `<p>fogway</p>`)
 		})},
 	})
 	app.Event.OnApplicationEvent(events.Common.ApplicationStarted, func(*application.ApplicationEvent) {
 		go func() {
 			defer app.Quit()
-			// The quick panel's Focus activates magpie out of the Dock, and
+			// The quick panel's Focus activates fogway out of the Dock, and
 			// its Open (openMain) joins the Dock, then shows the window. The
-			// Mac makes magpie the front app at once, but NSApp says it is
+			// Mac makes fogway the front app at once, but NSApp says it is
 			// active only once the main thread has taken the activation in,
 			// which on a busy Mac can be after the join (#1651). Both are
 			// done in one turn of the main thread here, so the join always
@@ -98,7 +98,7 @@ func init() {
 				}
 			}
 			if !first {
-				fmt.Printf("dock order: magpie isn't first in Command-Tab's order: %s\n", got)
+				fmt.Printf("dock order: fogway isn't first in Command-Tab's order: %s\n", got)
 				return
 			}
 			fmt.Println("dock order: ok")

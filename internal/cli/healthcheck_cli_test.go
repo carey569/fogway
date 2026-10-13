@@ -10,26 +10,26 @@ import (
 	"testing"
 )
 
-// magpie healthcheck, a container's HEALTHCHECK, passes only while a
-// magpie gateway answers at MAGPIE_ADDR.
+// fogway healthcheck, a container's HEALTHCHECK, passes only while a
+// fogway gateway answers at FOGWAY_ADDR.
 func TestHealthcheck(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", os.Getenv("HOME"))
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	magpie := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"name":"magpie","version":"dev"}`))
+	fogway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"name":"fogway","version":"dev"}`))
 	}))
-	defer magpie.Close()
-	t.Setenv("MAGPIE_ADDR", strings.TrimPrefix(magpie.URL, "http://"))
+	defer fogway.Close()
+	t.Setenv("FOGWAY_ADDR", strings.TrimPrefix(fogway.URL, "http://"))
 	if err := run([]string{"healthcheck"}); err != nil {
-		t.Fatal("magpie answering:", err)
+		t.Fatal("fogway answering:", err)
 	}
 
 	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"name":"nginx"}`))
 	}))
 	defer other.Close()
-	t.Setenv("MAGPIE_ADDR", strings.TrimPrefix(other.URL, "http://"))
+	t.Setenv("FOGWAY_ADDR", strings.TrimPrefix(other.URL, "http://"))
 	if err := run([]string{"healthcheck"}); err == nil {
 		t.Error("something else answering passed")
 	}
@@ -40,20 +40,20 @@ func TestHealthcheck(t *testing.T) {
 	}
 	addr := ln.Addr().String()
 	ln.Close()
-	t.Setenv("MAGPIE_ADDR", addr)
+	t.Setenv("FOGWAY_ADDR", addr)
 	if err := run([]string{"healthcheck"}); err == nil {
 		t.Error("nothing listening passed")
 	}
 }
 
 // The Docker image sets HOME and the XDG folders inside its volume, which
-// a volume an older image made doesn't have yet: magpie makes them.
+// a volume an older image made doesn't have yet: fogway makes them.
 func TestMakeDirs(t *testing.T) {
 	vol := t.TempDir()
 	for k, d := range map[string]string{"HOME": "home", "XDG_CONFIG_HOME": "config", "XDG_CACHE_HOME": "cache", "XDG_DATA_HOME": "data", "XDG_STATE_HOME": "state"} {
 		t.Setenv(k, filepath.Join(vol, d))
 	}
-	t.Setenv("MAGPIE_ADDR", "127.0.0.1:1")
+	t.Setenv("FOGWAY_ADDR", "127.0.0.1:1")
 	if err := run([]string{"version"}); err != nil {
 		t.Fatal(err)
 	}

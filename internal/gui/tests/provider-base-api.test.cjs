@@ -53,7 +53,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const zh = lang === "zh";
       const L = {
         openai: zh ? "OpenAI 兼容" : "OpenAI compatible", responses: zh ? "OpenAI Responses" : "OpenAI Responses",

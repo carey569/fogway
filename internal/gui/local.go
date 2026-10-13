@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/local"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/local"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // localJSON is the Local page: the setup, what runs, this computer, the

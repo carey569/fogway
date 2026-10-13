@@ -86,7 +86,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", serve(lang, left));
 
         // the Routing page: the stage, and what each account did
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         const stage = (who) => page.locator("li", { has: page.locator(".who", { hasText: who }) }).first();
         await stage("李雷").locator("em").filter({ hasText: w.stage }).waitFor();
         assert.equal(squash(await stage("李雷").locator("em").textContent()), w.stage);
@@ -99,7 +99,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.ok(squash(await plain.locator(".st").textContent()).startsWith(w.plain), await plain.locator(".st").textContent());
 
         // the Usage page's card
-        await page.goto("http://magpie.test/?view=usage");
+        await page.goto("http://fogway.test/?view=usage");
         const card = page.locator(".subscription-card", { hasText: "WorkBuddy" });
         const n = card.locator(".quota-n").first();
         await n.waitFor();

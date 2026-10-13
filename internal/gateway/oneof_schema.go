@@ -3,8 +3,8 @@ package gateway
 import (
 	"bytes"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // toolOneOfAsAnyOf is body with every oneOf in its tools' schemas named

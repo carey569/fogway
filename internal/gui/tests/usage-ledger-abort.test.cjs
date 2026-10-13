@@ -8,7 +8,7 @@
 // page's and the heatmap's), and the page asked again while it is read (the
 // refresh button, the timer) waits for that read instead of sending another.
 // Checked in Chromium and WebKit, wide and narrow; no backend, every answer
-// held until the test lets it go. MAGPIE_ASSETS selects another assets
+// held until the test lets it go. FOGWAY_ASSETS selects another assets
 // directory to check the same cases against the code before the fix.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
@@ -17,7 +17,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 const { inView } = require("./reader.cjs");
 
-const assets = process.env.MAGPIE_ASSETS || path.resolve(__dirname, "../assets");
+const assets = process.env.FOGWAY_ASSETS || path.resolve(__dirname, "../assets");
 const now = Date.now();
 const ROW = (req) => ({ t: new Date(now - 60e3).toISOString(), agent: "codex", agentName: "Codex", icon: "codex-color", provider: "relay", providerName: "Relay", host: "team", req, model: "gpt-6-sol", in: 100, out: 10, ms: 900, status: 200, cost: 0.01, priced: true });
 
@@ -36,7 +36,7 @@ function server(lang, seen, held) {
       return json({ period: url.searchParams.get("period"), rows: [ROW("asked-" + (q || "none"))], offset: 0, total: 1, calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, cost: 0.01, unpriced: 0, bucket: "day", series: [], agents: [], providers: [] });
     }
     if (url.pathname === "/api/usage/quotas") return json([]);
-    if (url.pathname === "/api/usage") return json({ calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost: 0.01, bucket: "day", series: [], agents: [], models: [], path: "~/.config/magpie/usage.jsonl" });
+    if (url.pathname === "/api/usage") return json({ calls: 1, errors: 0, input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0, unpriced: 0, cost: 0.01, bucket: "day", series: [], agents: [], models: [], path: "~/.config/fogway/usage.jsonl" });
     if (url.pathname === "/api/gateway/trace") return json({ mine: false, seq: 0, routes: [], totals: { requests: 0, rerouted: 0, errors: 0 }, now: new Date().toISOString() });
     if (url.pathname === "/api/sessions") return json({ sessions: [], dirs: [] });
     if (url.pathname === "/api/sessions/stats") return json({ from: "", to: "", days: [], agents: {} });
@@ -63,7 +63,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("requestfailed", (r) => { if (/\/api\/usage\/(requests|heatmap)\?/.test(r.url())) failed.push(r.url()); });
       await page.route("**/*", server("en", seen, held));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('[data-view="usage"]').first().click();
       await page.locator(":is(#usageTab .opt, .nav-s):visible").nth(1).click();
       // the tab's opening reads, let go so the page is drawn

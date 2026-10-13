@@ -7,65 +7,65 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
-// A model's name and reasoning levels, from the terminal: magpie model.
+// A model's name and reasoning levels, from the terminal: fogway model.
 
 const modelUsage = `usage:
-  magpie model name <provider/model>             the name the model goes by
-  magpie model name <provider/model> <name>      name it so everywhere: in magpie, in the gateway's
-                                                 model list, and in the lists magpie writes into the agents
-  magpie model name <provider/model> --reset     give it back its own name
-  magpie model efforts <provider/model>          the reasoning levels it offers, and those it has
-  magpie model efforts <provider/model> <l>,<l>  offer only these of them, e.g. low,medium,high
-  magpie model efforts <provider/model> --reset  offer every level it has again
-  magpie model price <provider/model>            what the model costs you, and what you said it costs
-  magpie model price <provider/model> <in>,<out>,<cache read>,<cache write>
+  fogway model name <provider/model>             the name the model goes by
+  fogway model name <provider/model> <name>      name it so everywhere: in fogway, in the gateway's
+                                                 model list, and in the lists fogway writes into the agents
+  fogway model name <provider/model> --reset     give it back its own name
+  fogway model efforts <provider/model>          the reasoning levels it offers, and those it has
+  fogway model efforts <provider/model> <l>,<l>  offer only these of them, e.g. low,medium,high
+  fogway model efforts <provider/model> --reset  offer every level it has again
+  fogway model price <provider/model>            what the model costs you, and what you said it costs
+  fogway model price <provider/model> <in>,<out>,<cache read>,<cache write>
                                                  say what it costs, in USD per million tokens, all four parts as
                                                  0.12,1.20,0.01,0.15; 0 is a model served for nothing, which is
                                                  a price, not the absence of one; a fifth part is a 1-hour cache
                                                  write's (not given: a Claude model's is 2× input, any other's the 4th)
-  magpie model price <provider/model> <in>,<out>,<cache read>,<cache write> --tier 272k <in>,<out>,<cr>,<cw>
+  fogway model price <provider/model> <in>,<out>,<cache read>,<cache write> --tier 272k <in>,<out>,<cr>,<cw>
                                                  and what a request whose input, cached tokens included, is over
                                                  272K costs, the whole request; --tier may be given again
-  magpie model price <provider/model> --reset    take your price off this model
-  magpie model price <model> <in>,<out>,<cache read>,<cache write>
+  fogway model price <provider/model> --reset    take your price off this model
+  fogway model price <model> <in>,<out>,<cache read>,<cache write>
                                                  what the model costs from any provider you have not priced it
                                                  for, kept as '*/<model>': for usage whose provider is gone, or
                                                  a model models.dev doesn't price, e.g. gemini-3-pro-preview
-  magpie model prices                            the models you priced
-  magpie model context <provider/model>          how long a request it takes, and what you said it takes
-  magpie model context <provider/model> <n>      say how long, as 200000 or 1m; '<provider>/*' is every model
-  magpie model context <provider/model> --reset  take your limit off this model
-  magpie model output <provider/model>           the most a reply of it may hold, and what you said
-  magpie model output <provider/model> <n>       say the most, as 128000 or 128k; '<provider>/*' is every model
-  magpie model output <provider/model> --reset   take your limit off this model
-  magpie model wire <provider/model>             the name the vendor is asked for, and the one you gave
-  magpie model wire <provider/model> <name>      ask for the model by this name, for a relay that serves it
-  magpie model wire '<provider>/*' <name>        ask for every model of that provider by this name; a * in
+  fogway model prices                            the models you priced
+  fogway model context <provider/model>          how long a request it takes, and what you said it takes
+  fogway model context <provider/model> <n>      say how long, as 200000 or 1m; '<provider>/*' is every model
+  fogway model context <provider/model> --reset  take your limit off this model
+  fogway model output <provider/model>           the most a reply of it may hold, and what you said
+  fogway model output <provider/model> <n>       say the most, as 128000 or 128k; '<provider>/*' is every model
+  fogway model output <provider/model> --reset   take your limit off this model
+  fogway model wire <provider/model>             the name the vendor is asked for, and the one you gave
+  fogway model wire <provider/model> <name>      ask for the model by this name, for a relay that serves it
+  fogway model wire '<provider>/*' <name>        ask for every model of that provider by this name; a * in
                                                  it is the model, so vendor-c/* asks for model-3 as
                                                  vendor-c/model-3. Quote it: a shell reads a bare * as a glob
-  magpie model wire <provider/model> --reset     ask for it by the name magpie knows it by again, under an
+  fogway model wire <provider/model> --reset     ask for it by the name fogway knows it by again, under an
                                                  id of its own for a provider that has since been deleted,
                                                  and says when there was no name of its own to take away
-  magpie model wires                             the names your vendors are asked for models by
-  magpie model names                             the models you named or narrowed
-  magpie model disable <model> [<model>...]      turn models off for every request through magpie: each an id
+  fogway model wires                             the names your vendors are asked for models by
+  fogway model names                             the models you named or narrowed
+  fogway model disable <model> [<model>...]      turn models off for every request through fogway: each an id
                                                  (provider/model or a bare model id) or a glob, * any run of
                                                  characters and ? one, as '*fable*'. A disabled model leaves
                                                  every list and routing group, and the gateway refuses it on
                                                  every route (403). Quote a glob: a shell reads a bare *
-  magpie model enable <model> [<model>...]       take them off the disabled list, as written there
-  magpie model disabled                          the disabled list, and the models each one turns off now
-  magpie model suffix [on|own|off]               whether the agents' lists name each model with its provider
+  fogway model enable <model> [<model>...]       take them off the disabled list, as written there
+  fogway model disabled                          the disabled list, and the models each one turns off now
+  fogway model suffix [on|own|off]               whether the agents' lists name each model with its provider
                                                  (or "routing group") after it: on, as by default, "Sol · OpenAI";
                                                  own, a name you gave a model just as you wrote it, "Opus 5.5",
                                                  the others as on; off, "Sol" alone — but two a list would name
                                                  the same keep it
-  magpie model compact [on|off|<size>]           whether Codex and Claude Code compact a long conversation at
+  fogway model compact [on|off|<size>]           whether Codex and Claude Code compact a long conversation at
                                                  272K: on, as by default, for a model of a longer window (in
                                                  Claude Code, a Claude model runs to its own); off, at the
                                                  model's whole window, 1M for a [1m] one; a size such as 500k
@@ -84,10 +84,10 @@ const modelUsage = `usage:
   usage and session totals report, and nothing an agent can see, and it is saved without
   rewriting the model lists in the agents' own files.
 
-  e.g. magpie model name claude/claude-opus-5-5 "Opus 5.5"
-       magpie model efforts openai/gpt-6 low,medium,high
-       magpie model price relay-a/gpt-5.5 0.12,0.60,0.01,0.15
-       magpie model context relay-a/claude-opus-5-5 1m`
+  e.g. fogway model name claude/claude-opus-5-5 "Opus 5.5"
+       fogway model efforts openai/gpt-6 low,medium,high
+       fogway model price relay-a/gpt-5.5 0.12,0.60,0.01,0.15
+       fogway model context relay-a/claude-opus-5-5 1m`
 
 func modelCmd(args []string) error {
 	if len(args) == 0 {
@@ -147,10 +147,10 @@ func modelRef(s string) (*provider.Provider, string, error) {
 // able to name is one whose provider may be gone: the key a price is
 // stored at outlives the provider it was set for.
 func splitModelRef(s string) (string, string, error) {
-	ref := strings.TrimPrefix(strings.TrimSpace(s), "magpie/")
+	ref := strings.TrimPrefix(strings.TrimSpace(s), "fogway/")
 	pid, model, ok := strings.Cut(ref, "/")
 	if !ok || model == "" {
-		return "", "", fmt.Errorf("name a model as provider/model, not %q (magpie models lists them)", s)
+		return "", "", fmt.Errorf("name a model as provider/model, not %q (fogway models lists them)", s)
 	}
 	return pid, model, nil
 }
@@ -272,16 +272,16 @@ func modelPrice(args []string) error {
 	rest := args[1:]
 	// --reset comes before the provider is looked for, and works off the
 	// key the price is stored at: a price outlives the provider it was set
-	// for, and one whose provider is gone is still listed by `magpie model
+	// for, and one whose provider is gone is still listed by `fogway model
 	// prices` and still counted, so a reset that resolved the provider
 	// first could not take it away — and would take another provider's
 	// price away instead where the gone one's name has been given to one.
 	ref := args[0]
 	// a model named with no provider, or as */model, is that model from any
 	// provider: what prices a session's model whose provider is gone, or one
-	// that never went through magpie
+	// that never went through fogway
 	every := false
-	if r := strings.TrimPrefix(strings.TrimSpace(ref), "magpie/"); r != "" && !strings.Contains(r, "/") {
+	if r := strings.TrimPrefix(strings.TrimSpace(ref), "fogway/"); r != "" && !strings.Contains(r, "/") {
 		ref, every = settings.AnyProvider+r, true
 	} else {
 		every = strings.HasPrefix(r, settings.AnyProvider)
@@ -311,16 +311,16 @@ func modelPrice(args []string) error {
 		case "model":
 			fmt.Println(faint.Render("  · what you said this model costs · --reset takes that away"))
 		case "provider":
-			fmt.Println(faint.Render("  · what you said every model of this provider costs · magpie model price " +
+			fmt.Println(faint.Render("  · what you said every model of this provider costs · fogway model price " +
 				typedRef(p.ID+"/*") + " --reset takes that away"))
 		case "any":
-			fmt.Println(faint.Render("  · what you said this model costs from any provider · magpie model price " +
+			fmt.Println(faint.Render("  · what you said this model costs from any provider · fogway model price " +
 				typedRef(provider.AnyPriceKey(model)) + " --reset takes that away"))
 		case "ignored":
 			fmt.Println(faint.Render("  · a price you gave is not usable and is ignored"))
 		default:
 			from := "what its provider lists, else its maker's on models.dev"
-			fmt.Println(faint.Render("  · " + from + " · magpie model price " +
+			fmt.Println(faint.Render("  · " + from + " · fogway model price " +
 				typedRef(id) + " <in>,<out>,<cache read>,<cache write> to change it"))
 		}
 		return nil
@@ -434,7 +434,7 @@ func tokenSize(n int) string {
 // own applies — its provider gone, the model no longer listed by it, or a
 // model models.dev doesn't price.
 func anyModelPrice(ref string, rest []string) error {
-	key := provider.AnyPriceKey(strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(ref), "magpie/"), settings.AnyProvider))
+	key := provider.AnyPriceKey(strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(ref), "fogway/"), settings.AnyProvider))
 	if key == settings.AnyProvider || key == settings.AnyProvider+"*" {
 		return fmt.Errorf("name one model, such as %s", typedRef("*/claude-opus-4.6"))
 	}
@@ -448,7 +448,7 @@ func anyModelPrice(ref string, rest []string) error {
 			fmt.Println(faint.Render("  · what you said this model costs from any provider · --reset takes that away"))
 			return nil
 		}
-		fmt.Println(muted.Render(key), faint.Render("· no price of yours · magpie model price "+typedRef(key)+" <in>,<out>,<cache read>,<cache write>"))
+		fmt.Println(muted.Render(key), faint.Render("· no price of yours · fogway model price "+typedRef(key)+" <in>,<out>,<cache read>,<cache write>"))
 		return nil
 	}
 	pr, err := parsePrice(rest)
@@ -489,7 +489,7 @@ func resetModelPrice(ref string) error {
 	wid, _, _ := strings.Cut(key, "/")
 	if strings.HasPrefix(key, settings.AnyProvider) {
 		if !dropped {
-			return fmt.Errorf("%s has no price of yours to reset — magpie model prices lists the ones you set", key)
+			return fmt.Errorf("%s has no price of yours to reset — fogway model prices lists the ones you set", key)
 		}
 		fmt.Println(green.Render("✓"), key,
 			muted.Render("no longer has a price of yours; it is costed at what its provider lists, or its maker's on models.dev"))
@@ -497,10 +497,10 @@ func resetModelPrice(ref string) error {
 	}
 	if !dropped {
 		if _, wide := statedPrice(s.ModelPrices, wid+"/*"); wide {
-			return fmt.Errorf("%s has no price of its own; what it costs is what you set for every model of this provider, %s/*, which magpie model price %s --reset takes away",
+			return fmt.Errorf("%s has no price of its own; what it costs is what you set for every model of this provider, %s/*, which fogway model price %s --reset takes away",
 				key, wid, typedRef(wid+"/*"))
 		}
-		return fmt.Errorf("%s has no price of its own to reset — magpie model prices lists the ones you set", key)
+		return fmt.Errorf("%s has no price of its own to reset — fogway model prices lists the ones you set", key)
 	}
 	if !there {
 		fmt.Println(green.Render("✓"), key,
@@ -566,7 +566,7 @@ func modelPrices() error {
 	prices := settings.Load().ModelPrices
 	if len(prices) == 0 {
 		fmt.Println(muted.Render("no model is priced by you yet"))
-		fmt.Println(faint.Render("magpie model price <provider/model> <in>,<out>,<cache read>,<cache write>"))
+		fmt.Println(faint.Render("fogway model price <provider/model> <in>,<out>,<cache read>,<cache write>"))
 		return nil
 	}
 	for _, id := range slices.Sorted(maps.Keys(prices)) {
@@ -591,11 +591,11 @@ func modelSuffix(args []string) error {
 	if len(args) == 0 {
 		switch provider.SuffixMode() {
 		case provider.SuffixOff:
-			fmt.Println("off", muted.Render("· agents' lists name a model alone, \"Sol\" · magpie model suffix on|own"))
+			fmt.Println("off", muted.Render("· agents' lists name a model alone, \"Sol\" · fogway model suffix on|own"))
 		case provider.SuffixOwn:
-			fmt.Println("own", muted.Render("· a name you gave a model just as you wrote it, \"Opus 5.5\"; the others \"Sol · OpenAI\" · magpie model suffix on|off"))
+			fmt.Println("own", muted.Render("· a name you gave a model just as you wrote it, \"Opus 5.5\"; the others \"Sol · OpenAI\" · fogway model suffix on|off"))
 		default:
-			fmt.Println("on", muted.Render("· agents' lists name a model with its provider, \"Sol · OpenAI\" · magpie model suffix own|off"))
+			fmt.Println("on", muted.Render("· agents' lists name a model with its provider, \"Sol · OpenAI\" · fogway model suffix own|off"))
 		}
 		return nil
 	}
@@ -607,7 +607,7 @@ func modelSuffix(args []string) error {
 	case "off", "no", "false":
 		mode = provider.SuffixOff
 	default:
-		return fmt.Errorf("magpie model suffix on|own|off, not %q", args[0])
+		return fmt.Errorf("fogway model suffix on|own|off, not %q", args[0])
 	}
 	if err := provider.SetSuffixMode(mode); err != nil {
 		return err
@@ -630,9 +630,9 @@ func modelSuffix(args []string) error {
 func modelCompact(args []string) error {
 	if len(args) == 0 {
 		if s := settings.Load(); s.FullContext {
-			fmt.Println("off", muted.Render("· Codex and Claude Code run a conversation to the model's whole window · magpie model compact on"))
+			fmt.Println("off", muted.Render("· Codex and Claude Code run a conversation to the model's whole window · fogway model compact on"))
 		} else {
-			fmt.Println("on", muted.Render(fmt.Sprintf("· Codex and Claude Code compact at %dK on a longer window; in Claude Code a Claude model runs to its own · magpie model compact off", s.Compact()/1000)))
+			fmt.Println("on", muted.Render(fmt.Sprintf("· Codex and Claude Code compact at %dK on a longer window; in Claude Code a Claude model runs to its own · fogway model compact off", s.Compact()/1000)))
 		}
 		return nil
 	}
@@ -644,7 +644,7 @@ func modelCompact(args []string) error {
 	default:
 		n, err := provider.ParseTokens(args[0])
 		if err != nil || n <= 0 {
-			return fmt.Errorf("magpie model compact on|off|<size such as 500k>, not %q", args[0])
+			return fmt.Errorf("fogway model compact on|off|<size such as 500k>, not %q", args[0])
 		}
 		if err := provider.SetCompactAt(n); err != nil {
 			return err
@@ -673,7 +673,7 @@ func modelNames() error {
 	}
 	slices.Sort(keys)
 	if len(keys) == 0 {
-		fmt.Println(muted.Render("no model is named or narrowed yet · magpie model name <provider/model> <name>"))
+		fmt.Println(muted.Render("no model is named or narrowed yet · fogway model name <provider/model> <name>"))
 		return nil
 	}
 	w := 0
@@ -694,7 +694,7 @@ func modelNames() error {
 }
 
 // modelWires lists the names the user gave the vendors their models are asked
-// for, and which provider and model each is for. It is `magpie model prices`
+// for, and which provider and model each is for. It is `fogway model prices`
 // for the wire names: those are what a provider is asked for, and no other
 // command says what is kept for a provider as a whole, so a name given for
 // every model of one was written with no way to read it back.
@@ -706,7 +706,7 @@ func modelNames() error {
 //
 // A name that is only whitespace is no name and is not listed, as it is
 // nowhere else a name is read: UpstreamNames leaves it out and a request
-// under it goes out by the name magpie knows the model by. Listing it would
+// under it goes out by the name fogway knows the model by. Listing it would
 // print a line with nothing on it for a name no vendor is asked for, which
 // is the one thing a listing read back off the file must not say.
 func modelWires() error {
@@ -720,7 +720,7 @@ func modelWires() error {
 		}
 	}
 	if len(rows) == 0 {
-		fmt.Println(muted.Render("no vendor is asked for a model by another name yet · magpie model wire <provider/model> <name>"))
+		fmt.Println(muted.Render("no vendor is asked for a model by another name yet · fogway model wire <provider/model> <name>"))
 		return nil
 	}
 	for _, r := range rows {
@@ -748,7 +748,7 @@ func modelContext(args []string) error {
 			if n > 0 {
 				fmt.Println(faint.Render("  · what you said every model of this provider takes, unless that model has a window of its own"))
 			} else {
-				fmt.Println(faint.Render("  · what the vendor's list and models.dev say · magpie model context " + typedRef(id) + " <tokens> to say one for all of them"))
+				fmt.Println(faint.Render("  · what the vendor's list and models.dev say · fogway model context " + typedRef(id) + " <tokens> to say one for all of them"))
 			}
 			return nil
 		}
@@ -769,7 +769,7 @@ func modelContext(args []string) error {
 		case p.Contexts["*"] > 0:
 			fmt.Println(faint.Render("  · what you set for every model of this provider"))
 		default:
-			fmt.Println(faint.Render("  · what the vendor's list and models.dev say · magpie model context " + typedRef(id) + " <tokens> to change it"))
+			fmt.Println(faint.Render("  · what the vendor's list and models.dev say · fogway model context " + typedRef(id) + " <tokens> to change it"))
 		}
 		return nil
 	}
@@ -788,11 +788,11 @@ func modelContext(args []string) error {
 					id, p.ID+"/*", resetCommand("context", p.ID+"/*"))
 			}
 			if _, served := provider.ServedEntryOf(id); served {
-				return fmt.Errorf("%s has no window of its own to reset — magpie model context %s says what it takes now", id, typedRef(id))
+				return fmt.Errorf("%s has no window of its own to reset — fogway model context %s says what it takes now", id, typedRef(id))
 			}
 			return fmt.Errorf("%s has no window of its own to reset", id)
 		}
-		fmt.Println(green.Render("✓"), id, muted.Render("has no window of your own · magpie model context "+typedRef(id)+" says what it takes now"))
+		fmt.Println(green.Render("✓"), id, muted.Render("has no window of your own · fogway model context "+typedRef(id)+" says what it takes now"))
 		return nil
 	}
 	n, err := parseTokens(rest[0])
@@ -836,7 +836,7 @@ func modelOutput(args []string) error {
 					key, wid+"/*", resetCommand("output", wid+"/*"))
 			}
 			if _, served := provider.ServedEntryOf(key); served {
-				return fmt.Errorf("%s has no reply limit of its own to reset — magpie model output %s says what it answers with now", key, typedRef(key))
+				return fmt.Errorf("%s has no reply limit of its own to reset — fogway model output %s says what it answers with now", key, typedRef(key))
 			}
 			return fmt.Errorf("%s has no reply limit of its own to reset", key)
 		}
@@ -847,7 +847,7 @@ func modelOutput(args []string) error {
 		// provider's model instead of the one taken off here
 		line := "has no reply limit of your own"
 		if clearedEntryIs(key) {
-			line += " · magpie model output " + typedRef(key) + " says what it answers with now"
+			line += " · fogway model output " + typedRef(key) + " says what it answers with now"
 		}
 		fmt.Println(green.Render("✓"), key, muted.Render(line))
 		return nil
@@ -867,7 +867,7 @@ func modelOutput(args []string) error {
 			if n > 0 {
 				fmt.Println(faint.Render("  · what you said every model of this provider answers with, unless that model has a limit of its own"))
 			} else {
-				fmt.Println(faint.Render("  · what the vendor's list and models.dev say · magpie model output " + typedRef(id) + " <tokens> to say one for all of them"))
+				fmt.Println(faint.Render("  · what the vendor's list and models.dev say · fogway model output " + typedRef(id) + " <tokens> to say one for all of them"))
 			}
 			return nil
 		}
@@ -894,7 +894,7 @@ func modelOutput(args []string) error {
 		case s.ModelOutputs[p.ID+"/*"] > 0:
 			fmt.Println(faint.Render("  · what you set for every model of this provider"))
 		default:
-			fmt.Println(faint.Render("  · what the vendor's list and models.dev say · magpie model output " + typedRef(id) + " <tokens> to change it"))
+			fmt.Println(faint.Render("  · what the vendor's list and models.dev say · fogway model output " + typedRef(id) + " <tokens> to change it"))
 		}
 		return nil
 	}
@@ -915,8 +915,8 @@ func modelOutput(args []string) error {
 
 // typedRef is a provider/model spelled the way a command carrying it has to be
 // typed: a wildcard in it is quoted, as a shell reads a bare * as a glob of
-// the files in the directory the command runs in and never hands magpie the
-// name. Every command magpie prints is one the user is meant to paste, so
+// the files in the directory the command runs in and never hands fogway the
+// name. Every command fogway prints is one the user is meant to paste, so
 // every one of them goes through here.
 func typedRef(ref string) string {
 	if strings.Contains(ref, "*") {
@@ -927,7 +927,7 @@ func typedRef(ref string) string {
 
 // resetCommand is the command that takes a limit off, over the ref as typed.
 func resetCommand(verb, ref string) string {
-	return fmt.Sprintf("magpie model %s %s --reset", verb, typedRef(ref))
+	return fmt.Sprintf("fogway model %s %s --reset", verb, typedRef(ref))
 }
 
 // resetTakesOff is what the command taking a limit off would take off. The
@@ -1000,7 +1000,7 @@ func modelWire(args []string) error {
 			}
 			if dropped {
 				fmt.Println(green.Render("✓"), pid+"/"+model,
-					muted.Render("no longer has a name of its own; a provider taking that id later is asked for it by the name magpie knows it by"))
+					muted.Render("no longer has a name of its own; a provider taking that id later is asked for it by the name fogway knows it by"))
 				return nil
 			}
 			// no name is kept under that key, so the id is a mistyped one
@@ -1026,12 +1026,12 @@ func modelWire(args []string) error {
 		fmt.Println(bold.Render(asked), muted.Render("· what "+p.Name+" is asked for, for "+shown))
 		switch {
 		case asked == model:
-			fmt.Println(faint.Render("  · the same name magpie knows it by · magpie model wire " + shown + " <name> to change it"))
+			fmt.Println(faint.Render("  · the same name fogway knows it by · fogway model wire " + shown + " <name> to change it"))
 		case model == "*":
 			fmt.Println(faint.Render("  · " + exampleOf(p, asked)))
-			fmt.Println(faint.Render("  · --reset takes it away · magpie model wire " + p.ID + "/<model> <name> gives a single model one of its own"))
+			fmt.Println(faint.Render("  · --reset takes it away · fogway model wire " + p.ID + "/<model> <name> gives a single model one of its own"))
 		case own:
-			fmt.Println(faint.Render("  · magpie and the agents still know it as " + model + " · --reset asks for that again"))
+			fmt.Println(faint.Render("  · fogway and the agents still know it as " + model + " · --reset asks for that again"))
 		case one:
 			fmt.Println(faint.Render("  · from the name given for every model of " + p.Name + " (" + every + " " + names["*"] + ")" +
 				" · --reset on it leaves that one in force"))
@@ -1045,13 +1045,13 @@ func modelWire(args []string) error {
 	// A blank name is a removal, --reset or a name of only whitespace
 	// alike, and it is DropUpstreamName that makes it: it says whether
 	// there was a name there to take away, which with the provider's own
-	// list is what tells a model already asked for by the name magpie
+	// list is what tells a model already asked for by the name fogway
 	// knows it by from one the provider does not serve at all, for which
 	// no name could have been kept. A ✓ over a key holding no name would
 	// read as a name being gone that never was there, and under a
 	// provider-wide name as the model's own name being the one in force,
 	// which it is not. So the removal is asked for rather than made blind,
-	// the way `magpie model price --reset` asks DropModelPrice.
+	// the way `fogway model price --reset` asks DropModelPrice.
 	if strings.TrimSpace(name) == "" {
 		return resetWireName(*p, model, id, shown)
 	}
@@ -1078,7 +1078,7 @@ func modelWire(args []string) error {
 		return nil
 	}
 	fmt.Println(green.Render("✓"), shown, muted.Render("is asked for as"), bold.Render(now),
-		faint.Render("· magpie and the agents still know it as "+model))
+		faint.Render("· fogway and the agents still know it as "+model))
 	return nil
 }
 
@@ -1088,7 +1088,7 @@ func modelWire(args []string) error {
 //
 // A key holding no name is an error rather than a tick, as it is for a price:
 // a removal over a name that is not there has taken nothing away, and the
-// tick would say the model is asked for by the name magpie knows it by — a
+// tick would say the model is asked for by the name fogway knows it by — a
 // claim nothing stands behind, and one that is false wherever a name given
 // for the whole provider is in force. So there are three answers, as there
 // are for a price: the model is not one the provider serves, so none could
@@ -1105,13 +1105,13 @@ func resetWireName(p provider.Provider, model, id, shown string) error {
 		if model != "*" && !provider.ServesModel(p, model) {
 			// none was kept and none could have been: a model the
 			// provider has nothing like is never asked for by any name,
-			// so naming the one in force would claim a request magpie
+			// so naming the one in force would claim a request fogway
 			// does not make
-			return fmt.Errorf("%s is not a model of %s magpie knows of, so there is nothing to take away and none in force: a name is only kept for a model the provider serves, and this one is asked for by no name", id, p.Name)
+			return fmt.Errorf("%s is not a model of %s fogway knows of, so there is nothing to take away and none in force: a name is only kept for a model the provider serves, and this one is asked for by no name", id, p.Name)
 		}
 		every := "'" + p.ID + "/*'"
 		if provider.HasUpstreamName(p.ID + "/*") {
-			return fmt.Errorf("%s has no name of its own; what it is asked for is %s, the name given for every model of %s, which magpie model wire %s --reset takes away",
+			return fmt.Errorf("%s has no name of its own; what it is asked for is %s, the name given for every model of %s, which fogway model wire %s --reset takes away",
 				id, now, p.Name, every)
 		}
 		if model == "*" {
@@ -1123,7 +1123,7 @@ func resetWireName(p provider.Provider, model, id, shown string) error {
 			if kept := ownKeptSaid(&p); kept != "" {
 				return fmt.Errorf("%s has no name of its own to reset, so there was nothing to take away: %s", id, kept)
 			}
-			return fmt.Errorf("%s has no name of its own to reset, so there was nothing to take away: every model of %s is already asked for by the name magpie knows it by", id, p.Name)
+			return fmt.Errorf("%s has no name of its own to reset, so there was nothing to take away: every model of %s is already asked for by the name fogway knows it by", id, p.Name)
 		}
 		return fmt.Errorf("%s has no name of its own to reset, so there was nothing to take away: it is already asked for as %s", id, now)
 	}
@@ -1136,13 +1136,13 @@ func resetWireName(p provider.Provider, model, id, shown string) error {
 		// the provider's own name is gone, but a model's own beats it
 		// while it is there, so the models that keep one are still asked
 		// for by it — and saying every model of the provider is asked
-		// for by the name magpie knows it by is false the moment one
+		// for by the name fogway knows it by is false the moment one
 		// does, so they are named instead
 		if kept := ownKeptSaid(&p); kept != "" {
 			fmt.Println(green.Render("✓"), shown, muted.Render("has no name of its own again ·"), kept)
 			return nil
 		}
-		fmt.Println(green.Render("✓"), shown, muted.Render("· every model of "+p.Name+" is asked for by the name magpie knows it by again"))
+		fmt.Println(green.Render("✓"), shown, muted.Render("· every model of "+p.Name+" is asked for by the name fogway knows it by again"))
 		return nil
 	}
 	fmt.Println(green.Render("✓"), shown, muted.Render("is asked for as"), bold.Render(model), muted.Render("again"))
@@ -1160,7 +1160,7 @@ func resetWireName(p provider.Provider, model, id, shown string) error {
 // does not reach.
 //
 // A name kept for a model the provider does not serve is not one of these:
-// magpie asks for no such a model, so nothing goes out under that name, and
+// fogway asks for no such a model, so nothing goes out under that name, and
 // saying it did would claim a request that is not made.
 func ownKept(p *provider.Provider) []string {
 	names := p.UpstreamNames()
@@ -1178,7 +1178,7 @@ func ownKept(p *provider.Provider) []string {
 // A model is named with the name it goes out under, not with the one as it
 // is stored: a star in a model's own name is that model, as it is in one
 // given for every model of a provider (UpstreamNameIn), so it is the model
-// magpie knows the model by that stands there. The whole claim of the
+// fogway knows the model by that stands there. The whole claim of the
 // sentence is that this is the name in force, so a star left standing in it
 // would name an id no vendor is ever asked for.
 func ownKeptSaid(p *provider.Provider) string {
@@ -1232,7 +1232,7 @@ func exampleOf(p *provider.Provider, name string) string {
 	if !strings.Contains(name, "*") {
 		return p.Name + " is asked for every one of its models as " + name
 	}
-	const star = " · * is the model magpie knows each of them by"
+	const star = " · * is the model fogway knows each of them by"
 	names := p.UpstreamNames()
 	model := ""
 	for _, m := range p.Exposed() {
@@ -1250,7 +1250,7 @@ func exampleOf(p *provider.Provider, name string) string {
 // modelDisable adds models, by id or glob, to the disabled list (#1867).
 func modelDisable(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("name the models to disable, by id or glob: magpie model disable '*fable*'")
+		return fmt.Errorf("name the models to disable, by id or glob: fogway model disable '*fable*'")
 	}
 	if err := provider.DisableModels(args...); err != nil {
 		return err
@@ -1260,20 +1260,20 @@ func modelDisable(args []string) error {
 			continue
 		}
 		hits := provider.DisabledHits(pat)
-		note := "· no model magpie serves matches it now; one that does later is disabled too"
+		note := "· no model fogway serves matches it now; one that does later is disabled too"
 		if len(hits) > 0 {
 			note = "· " + strings.Join(hits, ", ")
 		}
 		fmt.Println(green.Render("✓"), bold.Render(pat), muted.Render("is disabled "+note))
 	}
-	fmt.Println(muted.Render("  only requests through magpie are refused; magpie model enable <model> takes it back"))
+	fmt.Println(muted.Render("  only requests through fogway are refused; fogway model enable <model> takes it back"))
 	return nil
 }
 
 // modelEnable takes models off the disabled list.
 func modelEnable(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("name the models to enable, as magpie model disabled lists them")
+		return fmt.Errorf("name the models to enable, as fogway model disabled lists them")
 	}
 	missing, err := provider.EnableModels(args...)
 	if err != nil {
@@ -1284,7 +1284,7 @@ func modelEnable(args []string) error {
 			continue
 		}
 		if slices.Contains(missing, pat) {
-			fmt.Println(muted.Render("· " + pat + " was not on the disabled list (magpie model disabled lists it)"))
+			fmt.Println(muted.Render("· " + pat + " was not on the disabled list (fogway model disabled lists it)"))
 			continue
 		}
 		fmt.Println(green.Render("✓"), bold.Render(pat), muted.Render("is enabled again"))
@@ -1296,12 +1296,12 @@ func modelEnable(args []string) error {
 func modelDisabled() error {
 	list := provider.DisabledModels()
 	if len(list) == 0 {
-		fmt.Println(muted.Render("no model is disabled · magpie model disable <model> turns one off"))
+		fmt.Println(muted.Render("no model is disabled · fogway model disable <model> turns one off"))
 		return nil
 	}
 	for _, pat := range list {
 		hits := provider.DisabledHits(pat)
-		note := "matches no model magpie serves now"
+		note := "matches no model fogway serves now"
 		if len(hits) > 0 {
 			note = strings.Join(hits, ", ")
 		}

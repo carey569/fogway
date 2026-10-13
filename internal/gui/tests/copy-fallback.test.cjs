@@ -1,9 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// A copy magpie couldn't make (#1881, BabyLy233: on KDE Plasma Wayland the
-// app said "copied" and the clipboard stayed empty). magpie now refuses a
+// A copy fogway couldn't make (#1881, BabyLy233: on KDE Plasma Wayland the
+// app said "copied" and the clipboard stayed empty). fogway now refuses a
 // copy it couldn't read back (/api/copy answers 501), and the page tries the
 // clipboard API, then the copy command, and says it failed only when none
-// copied, with the text to copy by hand. A copy magpie made is not copied
+// copied, with the text to copy by hand. A copy fogway made is not copied
 // again. Every language, Chromium and WebKit; no backend, the API is faked.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
@@ -14,7 +14,7 @@ const { chromium, webkit } = require("playwright");
 const assets = path.resolve(__dirname, "../assets");
 const LINK = "https://factory.example/device?code=WDJB-MJHT&state=" + "x".repeat(40);
 
-function server(lang, magpieCopies) {
+function server(lang, fogwayCopies) {
   return async (route) => {
     const url = new URL(route.request().url());
     const json = (data) => route.fulfill({ json: data });
@@ -27,7 +27,7 @@ function server(lang, magpieCopies) {
     if (url.pathname === "/api/gateway/trace") return json({ routes: [] });
     const signing = { id: "s1", agent: "factory", state: "waiting", url: LINK, code: "WDJB-MJHT" };
     if (url.pathname === "/api/signin" || url.pathname.startsWith("/api/signin/")) return json(signing);
-    if (url.pathname === "/api/copy") return route.fulfill({ status: magpieCopies ? 204 : 501, body: "" });
+    if (url.pathname === "/api/copy") return route.fulfill({ status: fogwayCopies ? 204 : 501, body: "" });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
@@ -43,13 +43,13 @@ const W = {
   de: { anyway: "Trotzdem anmelden", copied: "Anmeldelink kopiert", failed: "Kopieren fehlgeschlagen. Hier markieren und selbst kopieren: " + LINK },
 };
 
-// magpie: /api/copy copies; api: the clipboard API copies; command: the
+// fogway: /api/copy copies; api: the clipboard API copies; command: the
 // copy command copies; none: nothing does
 const CASES = [
-  { name: "magpie copies", magpie: true, api: true, command: true, want: "copied", writes: [], commands: [] },
-  { name: "magpie refuses, the clipboard API copies", magpie: false, api: true, command: true, want: "copied", writes: [LINK], commands: [] },
-  { name: "magpie and the clipboard API refuse, the copy command copies", magpie: false, api: false, command: true, want: "copied", writes: [LINK], commands: [LINK] },
-  { name: "nothing copies", magpie: false, api: false, command: false, want: "failed", writes: [LINK], commands: [LINK] },
+  { name: "fogway copies", fogway: true, api: true, command: true, want: "copied", writes: [], commands: [] },
+  { name: "fogway refuses, the clipboard API copies", fogway: false, api: true, command: true, want: "copied", writes: [LINK], commands: [] },
+  { name: "fogway and the clipboard API refuse, the copy command copies", fogway: false, api: false, command: true, want: "copied", writes: [LINK], commands: [LINK] },
+  { name: "nothing copies", fogway: false, api: false, command: false, want: "failed", writes: [LINK], commands: [LINK] },
 ];
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -77,8 +77,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         }, { api: c.api, command: c.command });
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.route("**/*", server(lang, c.magpie));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.route("**/*", server(lang, c.fogway));
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#addProvider").click();
         const sheet = page.locator("#addSheet");
         await sheet.locator('.tile[data-pick="Factory"]').click();

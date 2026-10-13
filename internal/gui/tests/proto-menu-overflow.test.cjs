@@ -30,7 +30,7 @@ function server(lang, posts) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsages: [], trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -77,7 +77,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator("#prefs").click();
       await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").click();
       const pill = page.locator("#trayUsagePick button");
@@ -88,7 +88,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const menu = page.locator(".proto-menu");
       const items = page.locator(".proto-menu .pm-item");
       await items.first().waitFor();
-      assert.equal(await items.count(), N + 4, "off, the account in use, each account, then magpie's own two totals (#1984)");
+      assert.equal(await items.count(), N + 4, "off, the account in use, each account, then fogway's own two totals (#1984)");
 
       // the menu is clamped to the viewport, not grown past its bottom edge.
       const box = await menu.boundingBox();

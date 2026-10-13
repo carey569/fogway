@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/fonts"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/fonts"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 func TestFontDiscoveryCacheAndFailure(t *testing.T) {

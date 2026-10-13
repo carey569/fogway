@@ -54,7 +54,7 @@ async function open(engine, lang, web, posted, st, t) {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.route("**/*", serve(lang, web, posted, st));
   await watchSettingsReads(page);
-  await page.goto("http://magpie.test/?view=settings&tab=general");
+  await page.goto("http://fogway.test/?view=settings&tab=general");
   await settingsDrawn(page); // rows found are the ones that stay (#1659)
   await page.locator("#setPage-general .row.pref").first().waitFor();
   return { page, errors };

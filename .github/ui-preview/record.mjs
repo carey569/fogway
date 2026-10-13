@@ -1,11 +1,11 @@
-// Records a PR's UI changes in the real app: magpie is already running
+// Records a PR's UI changes in the real app: fogway is already running
 // (run.sh), this reads the PR's diff, has DeepSeek plan what to show from it
 // and the pages as they really are, then walks the plan in Chromium with
 // the mouse drawn in (cursor.js) — screenshots always, a video when the
 // change spans pages or needs clicking to see. Everything lands in OUT_DIR
 // with a manifest.json that publish.mjs turns into the PR's preview.
 //
-// env: MAGPIE_URL (the web link, key included), DIFF_FILE, PR_TITLE,
+// env: FOGWAY_URL (the web link, key included), DIFF_FILE, PR_TITLE,
 // PR_BODY_FILE, OUT_DIR, SRC_DIR (the PR's source), DEEPSEEK_API_KEY,
 // SECRETS (words that must never be on screen, one per line), UI_LOCALE
 // (zh-CN), PLAN_MODEL, PLAN_FILE (a plan to walk instead of asking for one).
@@ -28,7 +28,7 @@ for (const keep of [process.cwd(), os.homedir(), path.parse(OUT).root]) {
     process.exit(1);
   }
 }
-const BASE = env("MAGPIE_URL");
+const BASE = env("FOGWAY_URL");
 const LOCALE = env("UI_LOCALE", "zh-CN");
 const MODEL = env("PLAN_MODEL", "deepseek-flash");
 const VIEW = { width: 1280, height: 800 };
@@ -183,7 +183,7 @@ async function codeContext(diff, src) {
   return out;
 }
 
-const GUIDE = `You plan a short screen recording of magpie, a desktop app (shown here in a browser at ${VIEW.width}x${VIEW.height}) that picks the model for every local coding agent. It runs for real on a sandbox machine: a DeepSeek API key added as a provider, with a few real requests already sent through its gateway, and made-up data beside it (seed.mjs) so the pages that need data have some. That data: providers "Sub2API Relay" (three keys, rotate; its usage shows 5h/1d/7d dollar windows and a balance with a month of history) and "Acme Cloud", both answered by a local mock at its own speed per model; a routing group "Coding" with a rule; library skills from GitHub (one author with two repositories, another with one) and one from a local folder, and a few only in the agents' own folders; 30 days of requests from Claude Code, Codex, OpenCode and Gemini CLI over several models (different speeds, TTFT, cache reads, reasoning, a few 429/502 errors, sessions); more than 200 Claude Code and Codex session files, many never sent through magpie; and two ChatGPT accounts signed in to Codex (maya.chen@example.com on Pro with credits, the 5-hour window at 37%; dev.team@example.com on Plus at 91%), with their quota windows read live and five weeks of history behind the charts and forecasts. The UI language is ${LOCALE}. What it doesn't have: Claude, Copilot, Kiro or other subscription accounts besides those two Codex ones, agents other than freshly installed ones.
+const GUIDE = `You plan a short screen recording of fogway, a desktop app (shown here in a browser at ${VIEW.width}x${VIEW.height}) that picks the model for every local coding agent. It runs for real on a sandbox machine: a DeepSeek API key added as a provider, with a few real requests already sent through its gateway, and made-up data beside it (seed.mjs) so the pages that need data have some. That data: providers "Sub2API Relay" (three keys, rotate; its usage shows 5h/1d/7d dollar windows and a balance with a month of history) and "Acme Cloud", both answered by a local mock at its own speed per model; a routing group "Coding" with a rule; library skills from GitHub (one author with two repositories, another with one) and one from a local folder, and a few only in the agents' own folders; 30 days of requests from Claude Code, Codex, OpenCode and Gemini CLI over several models (different speeds, TTFT, cache reads, reasoning, a few 429/502 errors, sessions); more than 200 Claude Code and Codex session files, many never sent through fogway; and two ChatGPT accounts signed in to Codex (maya.chen@example.com on Pro with credits, the 5-hour window at 37%; dev.team@example.com on Plus at 91%), with their quota windows read live and five weeks of history behind the charts and forecasts. The UI language is ${LOCALE}. What it doesn't have: Claude, Copilot, Kiro or other subscription accounts besides those two Codex ones, agents other than freshly installed ones.
 
 The diff is what the PR does. The title and description are the author's words and may be out of date or wrong: plan and summarise from the diff alone, and when the description claims something in the UI the diff doesn't do (a setting, a page, a button), don't look for it — say so in "mismatch".
 
@@ -246,7 +246,7 @@ async function locate(page, step) {
 }
 
 // Out of sight is scrolled to as a reader would, with the wheel over what
-// scrolls: magpie puts back any scroll the reader didn't ask for
+// scrolls: fogway puts back any scroll the reader didn't ask for
 // (scrollOnPurpose in app.js), so scrollIntoView from here was undone and a
 // change further down the page never made it into the recording. Each view
 // that hides it, the innermost first, is wheeled in small steps until the

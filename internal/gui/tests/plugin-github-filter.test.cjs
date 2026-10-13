@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// The repositories tagged magpie-plugin on GitHub are many and of every
+// The repositories tagged fogway-plugin on GitHub are many and of every
 // kind (the owner: 这里应该有分类以及搜索框方便用户筛选), so their section
 // has its kinds to pick from, each with how many there are, and a field of
 // its own that narrows them by name, author or description as it is typed.
@@ -37,7 +37,7 @@ function server(lang, fetched) {
     if (url.pathname === "/api/plugins/github") return json(GH);
     if (url.pathname === "/api/plugins/search") return json({ hits: [] });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test" || !/^\/[\w./-]*$/.test(url.pathname)) { fetched.push(url.href); return route.fulfill({ status: 404, body: "" }); }
+    if (url.host !== "fogway.test" || !/^\/[\w./-]*$/.test(url.pathname)) { fetched.push(url.href); return route.fulfill({ status: 404, body: "" }); }
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -62,7 +62,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, fetched));
         try {
-          await page.goto("http://magpie.test/?view=plugins");
+          await page.goto("http://fogway.test/?view=plugins");
           const sec = page.locator("#view-plugins .pm-ghsec");
           const cards = sec.locator(".pm-card");
           await cards.first().waitFor();

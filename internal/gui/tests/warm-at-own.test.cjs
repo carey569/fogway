@@ -79,7 +79,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], asked = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, asked, ["a@example.com", "B@Example.com"]));
-        await page.goto("http://magpie.test/?view=settings&tab=usage");
+        await page.goto("http://fogway.test/?view=settings&tab=usage");
         const rows = page.locator("#codexWarmList .warm-own");
         await rows.first().waitFor();
         assert.deepEqual(await rows.evaluateAll((rs) => rs.map((r) => r.dataset.user)), ["a@example.com", "B@Example.com"]);
@@ -130,7 +130,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", serve("en", [], ["a@example.com"]));
-    await page.goto("http://magpie.test/?view=settings&tab=usage");
+    await page.goto("http://fogway.test/?view=settings&tab=usage");
     await page.locator("#warmAtSegs .opt").first().waitFor();
     assert.equal(await page.locator(".warm-own").count(), 0);
     assert.deepEqual(errors, []);

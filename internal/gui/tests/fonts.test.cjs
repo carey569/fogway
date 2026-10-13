@@ -5,7 +5,7 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 const { watchSettingsReads, settingsDrawn } = require("./reader.cjs");
-const assets = process.env.MAGPIE_FONT_ASSETS || path.resolve(__dirname, "../assets");
+const assets = process.env.FOGWAY_FONT_ASSETS || path.resolve(__dirname, "../assets");
 const face = (family, name = "Regular", weight = 400, style = "normal", stretch = 100) => ({ family, name, weight, style, stretch });
 const harmony = [face("HarmonyOS Sans SC"), face("HarmonyOS Sans SC", "Medium", 500), face("HarmonyOS Sans SC", "Bold", 700)];
 const mono = [face("Consolas"), face("Consolas", "Italic", 400, "italic")];
@@ -54,7 +54,7 @@ async function open(browser, lang = "en", options = {}) {
     catch { return route.fulfill({ status: 404, body: "not found" }); }
   });
   await watchSettingsReads(page);
-  await page.goto("http://magpie.test/?view=settings&tab=general");
+  await page.goto("http://fogway.test/?view=settings&tab=general");
   await settingsDrawn(page); // rows found are the ones that stay (#1659)
   await page.locator("#themeSegs .opt").first().waitFor({ state: "attached" });
   // A real assertion, also usable against the original assets, rather than

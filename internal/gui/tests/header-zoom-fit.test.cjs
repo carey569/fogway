@@ -38,7 +38,7 @@ function server(lang, size) {
   };
 }
 
-// a browser whose pages are zoomed by `zoom`, as the webview zooms magpie's
+// a browser whose pages are zoomed by `zoom`, as the webview zooms fogway's
 async function zoomed(engine, zoom, t) {
   const viewport = { width: 1300, height: 600 };
   if (engine === "webkit") {
@@ -46,7 +46,7 @@ async function zoomed(engine, zoom, t) {
     t.after(() => browser.close());
     return browser.newContext({ viewport, deviceScaleFactor: zoom });
   }
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "magpie-zoom-"));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "fogway-zoom-"));
   await fs.mkdir(path.join(dir, "Default"));
   await fs.writeFile(path.join(dir, "Default", "Preferences"), JSON.stringify({ partition: { default_zoom_level: { x: Math.log(zoom) / Math.log(1.2) } } }));
   const ctx = await chromium.launchPersistentContext(dir, { channel: "chromium", viewport });
@@ -68,7 +68,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, Math.round(zoom * 100)));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.waitForSelector("#nav button.on");
         await page.waitForFunction(() => !document.querySelector("#update").hidden);
         assert(Math.abs(await page.evaluate(() => devicePixelRatio) - zoom) < 0.01, "the page isn't zoomed");

@@ -30,8 +30,8 @@ func (systemd) logs() string { return "journalctl --user -u " + Name + " -f" }
 // unitText is the unit for exe, with env set in it.
 func unitText(exe string, env []string) string {
 	var b strings.Builder
-	b.WriteString("# Written by `magpie daemon install`; `magpie daemon uninstall` removes it.\n")
-	b.WriteString("[Unit]\nDescription=magpie gateway\nWants=network-online.target\nAfter=network-online.target\n\n")
+	b.WriteString("# Written by `fogway daemon install`; `fogway daemon uninstall` removes it.\n")
+	b.WriteString("[Unit]\nDescription=fogway gateway\nWants=network-online.target\nAfter=network-online.target\n\n")
 	b.WriteString("[Service]\nType=simple\n")
 	b.WriteString("ExecStart=" + unitQuote(exe) + " serve\n")
 	b.WriteString("Restart=on-failure\nRestartSec=5\n")
@@ -135,7 +135,7 @@ func (systemd) reachable() error {
 		return nil
 	}
 	if errors.Is(err, exec.ErrNotFound) {
-		advice := "this system has no systemd (systemctl isn't on PATH): run `magpie serve` under the service manager it has"
+		advice := "this system has no systemd (systemctl isn't on PATH): run `fogway serve` under the service manager it has"
 		if wsl() {
 			advice += "; on WSL, turn systemd on with [boot] systemd=true in /etc/wsl.conf, then `wsl --shutdown`"
 		}

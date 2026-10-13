@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// #750: Codex put on the group magpie found for gpt-6.1-sol
+// #750: Codex put on the group fogway found for gpt-6.1-sol
 // (group/auto-gpt-6-1-sol), and its config.toml then naming the model as
-// vendors spell it, gpt-6.1-sol, with openai_base_url still magpie's: the
+// vendors spell it, gpt-6.1-sol, with openai_base_url still fogway's: the
 // gateway takes gpt-6.1-sol as that same group, so Codex is connected, not
-// "switched off group/auto-gpt-6-1-sol outside magpie". A model of
+// "switched off group/auto-gpt-6-1-sol outside fogway". A model of
 // another group, or of none, is still drift.
 func TestCodexGroupByItsModelName(t *testing.T) {
 	for _, auth := range []string{`{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, ""} {
@@ -49,12 +49,12 @@ func TestCodexGroupByItsModelName(t *testing.T) {
 		if d := cx.Drift(); d != nil {
 			t.Errorf("auth %q: drift on gpt-6.1-sol, the same group: %+v", auth, d)
 		}
-		// with nothing sending it to magpie, gpt-6.1-sol goes to OpenAI
+		// with nothing sending it to fogway, gpt-6.1-sol goes to OpenAI
 		os.WriteFile(path, []byte("model = \"gpt-6.1-sol\"\n"), 0o644)
 		if cx.Wired() {
-			t.Errorf("auth %q: wired on gpt-6.1-sol with no route to magpie", auth)
+			t.Errorf("auth %q: wired on gpt-6.1-sol with no route to fogway", auth)
 		}
-		// another group's model is not what magpie set
+		// another group's model is not what fogway set
 		os.WriteFile(path, []byte(strings.Replace(cfg, `model = "group/auto-gpt-6-1-sol"`, `model = "gpt-6.1"`, 1)), 0o644)
 		if d := cx.Drift(); d == nil || d.Kind != "replaced" || d.Now != "gpt-6.1" {
 			t.Errorf("auth %q: gpt-6.1, another group: %+v", auth, d)

@@ -2,7 +2,7 @@
 // WorkBuddy's credits a day (#568): under the account's Credits meter, the
 // Usage page says how many credits it used in the period, and, over 7 or
 // 30 days, a bar a day, each day's figure in its tooltip; a day before
-// magpie began counting is an empty slot saying so, not a zero, and the
+// fogway began counting is an empty slot saying so, not a zero, and the
 // card says since when it counts. A card with no days counted has none of
 // it. English and Chinese; no backend, the API is faked here.
 const assert = require("node:assert/strict");
@@ -45,8 +45,8 @@ function serve(lang) {
 }
 
 const words = {
-  en: { head: "Credits used per day", today: "12.5 today", week: "102.75 in 7 days", day7: "7 days", day1: "Today", bar: /: 60 credits$/, unknown: /: not counted — magpie began counting on /, since: /^Counted since / },
-  zh: { head: "每天用掉的积分", today: "今天 12.5", week: "7 天共 102.75", day7: "7 天", day1: "今天", bar: /：60 积分$/, unknown: /：未统计，magpie 从 .+ 开始统计$/, since: /^从 .+ 开始统计$/ },
+  en: { head: "Credits used per day", today: "12.5 today", week: "102.75 in 7 days", day7: "7 days", day1: "Today", bar: /: 60 credits$/, unknown: /: not counted — fogway began counting on /, since: /^Counted since / },
+  zh: { head: "每天用掉的积分", today: "今天 12.5", week: "7 天共 102.75", day7: "7 天", day1: "今天", bar: /：60 积分$/, unknown: /：未统计，fogway 从 .+ 开始统计$/, since: /^从 .+ 开始统计$/ },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -66,7 +66,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
       const card = page.locator(".subscription-card", { hasText: "WorkBuddy" });
       await page.locator("#period .opt", { hasText: new RegExp("^" + w.day1 + "$") }).click();
       const box = card.locator(".credit-days");

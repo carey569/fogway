@@ -6,19 +6,19 @@ package agent
 // apiKey, provider, …}, provider being "anthropic" (Messages), "openai"
 // (Responses) or "generic-chat-completion-api" (Chat Completions); the
 // older ~/.factory/config.json custom_models is still read, merged under
-// settings.json, and magpie leaves it alone. A custom model is picked as
+// settings.json, and fogway leaves it alone. A custom model is picked as
 // "custom:<id>": its "id" when it has one, else its displayName with
 // whitespace as dashes and a count of the same names before it
 // ("custom:Kimi-K2-[Groq]-0"). The model sessions start on is
 // sessionDefaultSettings.model; a top-level "model", as the docs show it,
 // is moved there by droid when that is unset.
 //
-// magpie appends one entry per catalog model, id "custom:magpie/<ref>", so
+// fogway appends one entry per catalog model, id "custom:fogway/<ref>", so
 // the catalog joins droid's /model picker under Custom models, each on the
 // API its provider speaks natively so the gateway relays it as it is, and
 // sets sessionDefaultSettings.model; the user's entries stay as they were
 // and in front, so their own ids don't move, and the default they had is
-// stashed and put back when magpie steps out.
+// stashed and put back when fogway steps out.
 
 import (
 	"encoding/json"
@@ -31,18 +31,18 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/jsonc"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 const (
 	droidModels = "customModels"
 	droidModel  = "sessionDefaultSettings.model"
-	// droidID is how every id magpie gives a custom model begins
-	droidID = "custom:" + magpieID + "/"
+	// droidID is how every id fogway gives a custom model begins
+	droidID = "custom:" + fogwayID + "/"
 )
 
-// droidEntry is one custom model magpie writes, in droid's key order.
+// droidEntry is one custom model fogway writes, in droid's key order.
 type droidEntry struct {
 	Model           string `json:"model"`
 	ID              string `json:"id"`
@@ -60,7 +60,7 @@ type droidEntry struct {
 // droidEntriesAt are droidEntries for a droid reaching the gateway at gw.
 func droidEntriesAt(gw string) []droidEntry {
 	var out []droidEntry
-	for _, m := range magpieModels("droid") {
+	for _, m := range fogwayModels("droid") {
 		e := droidEntry{Model: m.ID, ID: droidID + m.ID, BaseURL: gw + "/v1", APIKey: keyAt(gw),
 			Provider: "generic-chat-completion-api", MaxContextLimit: m.Context, MaxOutputTokens: maxTokens(m), NoImageSupport: !m.Images}
 		switch {
@@ -146,16 +146,16 @@ func droidIn(at place) *Agent {
 		v, _ := edit.GetJSON(path, "model")
 		return v
 	}
-	// get spells magpie's custom models as the catalog does
+	// get spells fogway's custom models as the catalog does
 	get := func() string {
 		v := raw()
 		if ref, ok := strings.CutPrefix(v, droidID); ok {
-			return magpieID + "/" + ref
+			return fogwayID + "/" + ref
 		}
 		return v
 	}
 	// setModels writes customModels with the user's own and, when with,
-	// magpie's after them; none left takes the key out
+	// fogway's after them; none left takes the key out
 	setModels := func(with bool) error {
 		var ms []any
 		var had bool
@@ -191,7 +191,7 @@ func droidIn(at place) *Agent {
 		}
 		return nil
 	}
-	// mine finds a custom model of magpie's by id
+	// mine finds a custom model of fogway's by id
 	mine := func(id string) (droidCustom, bool) {
 		for _, c := range droidCustoms(path, droidModels) {
 			if c.id == id {
@@ -226,7 +226,7 @@ func droidIn(at place) *Agent {
 			}
 			c, ok := mine(v)
 			if !ok {
-				return "Droid's custom model " + v + " (settings.json) is gone, so it no longer reaches magpie"
+				return "Droid's custom model " + v + " (settings.json) is gone, so it no longer reaches fogway"
 			}
 			r := gjson.ParseBytes(c.raw)
 			base := at.v1()
@@ -242,7 +242,7 @@ func droidIn(at place) *Agent {
 			Set: func(v string) error {
 				cur := raw()
 				ours := strings.HasPrefix(cur, droidID)
-				if ref, ok := strings.CutPrefix(v, magpieID+"/"); ok && isMagpie(ref) {
+				if ref, ok := strings.CutPrefix(v, fogwayID+"/"); ok && isFogway(ref) {
 					if !ours {
 						if sd, ok := edit.GetJSON(path, droidModel); ok {
 							stash(map[string]string{key: sd})
@@ -278,10 +278,10 @@ func droidIn(at place) *Agent {
 					seen[c.id] = true
 					own = append(own, Option{Value: c.id, Label: c.name, Icon: modelIcon("", c.of)})
 				}
-				if c := cur["model"]; c != "" && !usesMagpie(c) && !seen[c] {
+				if c := cur["model"]; c != "" && !usesFogway(c) && !seen[c] {
 					own = append([]Option{{Value: c, Icon: modelIcon("", c)}}, own...)
 				}
-				return append(group("Droid", own), viaMagpie("droid", magpieID+"/")...)
+				return append(group("Droid", own), viaFogway("droid", fogwayID+"/")...)
 			},
 		}},
 	}

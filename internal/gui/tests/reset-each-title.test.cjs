@@ -132,10 +132,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       };
 
       for (const width of [900, 440]) {
-        const page = await open("http://magpie.test/?view=usage", { width, height: 800 });
+        const page = await open("http://fogway.test/?view=usage", { width, height: 800 });
         await check(page, ".quota-resets");
       }
-      const panel = await open("http://magpie.test/?mode=panel", { width: 440, height: 600 });
+      const panel = await open("http://fogway.test/?mode=panel", { width: 440, height: 600 });
       await panel.locator('#ptabs [data-ptab="usage"]').click();
       await check(panel, ".pq-resets");
       assert.deepEqual(errors, []);

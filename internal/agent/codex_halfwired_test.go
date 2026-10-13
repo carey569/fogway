@@ -5,42 +5,42 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // Tystem on Discord: Codex wouldn't load its config ("Model provider
-// `magpie` not found") with model_provider = "magpie" and model =
-// "deepseek-flash" left in config.toml and no [model_providers.magpie],
-// and magpie showed Codex as not connected. Codex refuses the whole config
+// `fogway` not found") with model_provider = "fogway" and model =
+// "deepseek-flash" left in config.toml and no [model_providers.fogway],
+// and fogway showed Codex as not connected. Codex refuses the whole config
 // so, not just an old thread: Check says so, and Sync writes the table
 // back, at the top and for a profile alike.
 func TestCodexProviderWithoutTable(t *testing.T) {
 	for _, tc := range []struct{ name, config string }{
-		{"top", "model_provider = \"magpie\"\nmodel = \"deepseek-flash\"\n"},
-		{"profile", "profile = \"ds\"\n\n[profiles.ds]\nmodel_provider = \"magpie\"\nmodel = \"deepseek-flash\"\n"},
+		{"top", "model_provider = \"fogway\"\nmodel = \"deepseek-flash\"\n"},
+		{"profile", "profile = \"ds\"\n\n[profiles.ds]\nmodel_provider = \"fogway\"\nmodel = \"deepseek-flash\"\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			home, read := codexHome(t, "", tc.config)
 			cx := codex(home)
-			if msg := cx.Check(); !strings.Contains(msg, "[model_providers.magpie]") {
+			if msg := cx.Check(); !strings.Contains(msg, "[model_providers.fogway]") {
 				t.Fatalf("check: %q", msg)
 			}
 			if err := cx.Sync(); err != nil {
 				t.Fatal(err)
 			}
-			tb, err := edit.GetTOMLTable(cx.Path, "model_providers.magpie")
+			tb, err := edit.GetTOMLTable(cx.Path, "model_providers.fogway")
 			if err != nil || tb["base_url"] != here(home).v1() || tb["wire_api"] != "responses" || tb["experimental_bearer_token"] == "" {
 				t.Fatalf("table %v %v:\n%s", tb, err, read())
 			}
-			if msg := cx.Check(); strings.Contains(msg, "[model_providers.magpie]") {
+			if msg := cx.Check(); strings.Contains(msg, "[model_providers.fogway]") {
 				t.Fatalf("check after sync: %q", msg)
 			}
 		})
 	}
 }
 
-// Every way magpie steps out as Codex's provider takes model_provider out
+// Every way fogway steps out as Codex's provider takes model_provider out
 // with it and leaves the table: never the half state above.
 func TestCodexSteppingOutLeavesNoHalfState(t *testing.T) {
 	for _, tc := range []struct {
@@ -60,17 +60,17 @@ func TestCodexSteppingOutLeavesNoHalfState(t *testing.T) {
 			if err := tc.out(cx); err != nil {
 				t.Fatal(err)
 			}
-			if p, _ := edit.GetTOMLTop(cx.Path, "model_provider"); p == magpieID {
+			if p, _ := edit.GetTOMLTop(cx.Path, "model_provider"); p == fogwayID {
 				t.Fatalf("model_provider left:\n%s", read())
 			}
-			if tb, _ := edit.GetTOMLTable(cx.Path, "model_providers.magpie"); tb == nil {
-				t.Fatalf("table gone, for the threads started on magpie:\n%s", read())
+			if tb, _ := edit.GetTOMLTable(cx.Path, "model_providers.fogway"); tb == nil {
+				t.Fatalf("table gone, for the threads started on fogway:\n%s", read())
 			}
 		})
 	}
 }
 
-// Connecting with no provider or subscription in magpie says what to do,
+// Connecting with no provider or subscription in fogway says what to do,
 // with a code the GUI says it by in the reader's language.
 func TestConnectWithNoModels(t *testing.T) {
 	home, _ := codexHome(t, "", "model = \"gpt-5.5\"\n")
@@ -79,7 +79,7 @@ func TestConnectWithNoModels(t *testing.T) {
 	}
 	_, err := codex(home).ConnectHow()
 	var nm *NoModelsError
-	if !errors.As(err, &nm) || nm.Agent != "Codex" || !strings.Contains(err.Error(), "Add a provider or subscription in magpie first, then connect Codex") {
+	if !errors.As(err, &nm) || nm.Agent != "Codex" || !strings.Contains(err.Error(), "Add a provider or subscription in fogway first, then connect Codex") {
 		t.Fatalf("%v", err)
 	}
 }

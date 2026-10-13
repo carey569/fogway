@@ -6,12 +6,12 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // What a model makes, as the user says it (shen-joe, #1399): a provider set
-// up with a base URL tells magpie its image and video models by its own
+// up with a base URL tells fogway its image and video models by its own
 // model list ("kind": "image" or "video") or, for images, by a model's name.
 // A relay whose list says neither — most don't — leaves a video model
 // making nothing, and an image model with an odd name drawing nothing. The
@@ -26,8 +26,8 @@ const (
 )
 
 // MarksKinds is whether p's models can be said to make images or videos: a
-// provider set up with a base URL, which magpie asks at the OpenAI-shaped
-// images and videos APIs under it. A subscription's account, another magpie
+// provider set up with a base URL, which fogway asks at the OpenAI-shaped
+// images and videos APIs under it. A subscription's account, another fogway
 // (whose own list says) and a decision API's can't.
 func (p Provider) MarksKinds() bool {
 	return (p.Base(Chat) != "" || p.Base(Responses) != "")
@@ -96,7 +96,7 @@ func setModelKind(ref, kind string) (bool, error) {
 			return false, errors.New(p.ID + " makes images and videos only as its own API does: none of its models can be said to make them")
 		}
 		if !p.hasKindable(model) {
-			return false, fmt.Errorf("%s has no model %s (magpie provider %s lists them)", p.ID, model, p.ID)
+			return false, fmt.Errorf("%s has no model %s (fogway provider %s lists them)", p.ID, model, p.ID)
 		}
 	}
 	s := settings.Load()

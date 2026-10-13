@@ -7,7 +7,7 @@ import (
 )
 
 // An empty folder is a new install; any one of ranBefore's files says a
-// magpie ran here before.
+// fogway ran here before.
 func TestRanBefore(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	if RanBefore() {

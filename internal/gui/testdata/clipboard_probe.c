@@ -1,8 +1,8 @@
 // clipboard_probe: a GTK 3 window that copies a text once it has the
 // focus, then reads the clipboard back through the compositor with
-// magpie_clipboard_read and prints what it read (TestClipboardReadBack).
-// "wails" copies as Wails v3 does (CLIPBOARD, then PRIMARY), "magpie" as
-// magpie does (magpie_clipboard_set).
+// fogway_clipboard_read and prints what it read (TestClipboardReadBack).
+// "wails" copies as Wails v3 does (CLIPBOARD, then PRIMARY), "fogway" as
+// fogway does (fogway_clipboard_set).
 #include "clipboard_gtk3.h"
 #include <stdio.h>
 
@@ -14,7 +14,7 @@ static int done;
 static gpointer reader(gpointer data) {
 	char *out = NULL;
 	size_t n = 0;
-	int r = magpie_clipboard_read(display, seat, 3000, &out, &n);
+	int r = fogway_clipboard_read(display, seat, 3000, &out, &n);
 	printf("read=%d len=%zu text=%s\n", r, n, out ? out : "");
 	fflush(stdout);
 	free(out);
@@ -34,9 +34,9 @@ static gboolean copy(gpointer data) {
 		gtk_clipboard_set_text(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD), text, -1);
 		gtk_clipboard_set_text(gtk_clipboard_get(GDK_SELECTION_PRIMARY), text, -1);
 	} else {
-		magpie_clipboard_set(text);
+		fogway_clipboard_set(text);
 	}
-	if (!magpie_clipboard_wayland(&display, &seat)) {
+	if (!fogway_clipboard_wayland(&display, &seat)) {
 		printf("read=-1 len=0 text= (not wayland)\n");
 		gtk_main_quit();
 		return G_SOURCE_REMOVE;
@@ -75,8 +75,8 @@ static gboolean focused(GtkWidget *w, GdkEvent *e, gpointer data) {
 int main(int argc, char **argv) {
 	gtk_init(&argc, &argv);
 	printf("primary=%d\n", primary());
-	mode = argc > 1 ? argv[1] : "magpie";
-	text = argc > 2 ? argv[2] : "magpie probe text";
+	mode = argc > 1 ? argv[1] : "fogway";
+	text = argc > 2 ? argv[2] : "fogway probe text";
 	GtkWidget *w = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(w), 200, 100);
 	g_signal_connect(w, "focus-in-event", G_CALLBACK(focused), NULL);

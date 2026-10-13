@@ -2,7 +2,7 @@
 // #1862 (WardLu): a group's chips and its rows' say the same thing of a
 // skill kept in ~/.agents/skills, which an agent (Codex here) reads itself
 // whatever is ticked. The group's chip counts, gives and takes only the
-// skills magpie decides for that agent: turned off, it isn't sent the one
+// skills fogway decides for that agent: turned off, it isn't sent the one
 // Codex reads itself, and says Codex still has it. The row's chip for that
 // one is lit with a lock, not greyed like a switch. A group whose skills
 // Codex reads every one of itself has a locked chip too, which sends
@@ -42,7 +42,7 @@ function server(lang, state, posts) {
     if (url.pathname === "/api/groups") return json({ groups: [], pools: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -59,7 +59,7 @@ const L = {
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
-  test(engine + ": a group's chips count only what magpie decides", async (t) => {
+  test(engine + ": a group's chips count only what fogway decides", async (t) => {
     assert(["chromium", "webkit"].includes(engine), "BROWSER must be chromium or webkit");
     const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "chromium" }));
     t.after(() => browser.close());
@@ -68,7 +68,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const w = L[lang];
         const state = {
           lib: {
-            dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+            dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
             agents: [agent("claude", "Claude Code", "claudecode-color"), agent("codex", "Codex", "openai")],
             instructions: { agents: [], sets: [] }, servers: [], foundServers: [], projects: [], foundSkills: [], problems: [],
             skills: [
@@ -80,13 +80,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         };
         const posts = [];
         const ctx = await browser.newContext({ viewport: { width, height: 760 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "skills"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "skills"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, state, posts));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const headOf = (repo) => page.locator("#view-library .lib-grouphead").filter({ has: page.locator(".name", { hasText: new RegExp("^" + repo.replace("/", "\\/") + "$") }) });
         const head = headOf("acme/kit");
@@ -96,7 +96,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
         // the heading says it before any click
         assert.match(await head.locator(".who .sub").textContent(), new RegExp(w.note.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")));
-        // Codex has the one magpie decides (cherry): lit, and its tip says
+        // Codex has the one fogway decides (cherry): lit, and its tip says
         // it reads the other itself
         assert.equal(await chip(head, "codex").getAttribute("aria-pressed"), "true");
         assert.equal(await chip(head, "codex").evaluate((c) => c.classList.contains("some")), false);

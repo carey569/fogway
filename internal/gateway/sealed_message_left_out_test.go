@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // sealedWorkerMessage is what Codex (codex-rs protocol.rs,
@@ -18,7 +18,7 @@ import (
 const sealedWorkerMessage = `{"type":"agent_message","author":"/root/worker","recipient":"/root","content":[{"type":"input_text","text":"Message Type: MESSAGE\nTask name: /root\nSender: /root/worker\nPayload:\n"},{"type":"encrypted_content","encrypted_content":"gAAAAATest_worker_message=="}]}`
 
 // plainTask is a lead's spawn_agent message as Codex hands it to a subagent
-// when magpie served the lead: plain text, encrypted_function_args [].
+// when fogway served the lead: plain text, encrypted_function_args [].
 const plainTask = `{"type":"agent_message","author":"/root","recipient":"/root/helper","content":[{"type":"input_text","text":"read the README"}]}`
 
 // chatRecorded is a Chat Completions provider (an API key on an

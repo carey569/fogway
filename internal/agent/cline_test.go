@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 func TestCline(t *testing.T) {
@@ -80,7 +80,7 @@ func TestCline(t *testing.T) {
 	if f.Get() != "claude-opus-5" || e.Get() != "high" {
 		t.Fatalf("get: %q %q", f.Get(), e.Get())
 	}
-	if err := f.Set("magpie/deepseek/pro"); err != nil {
+	if err := f.Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	c, raw := read()
@@ -88,16 +88,16 @@ func TestCline(t *testing.T) {
 	if c.LastUsed != "openai-compatible" || s["model"] != "deepseek/pro" || s["baseUrl"] != gatewayV1() || s["apiKey"] != gateway.Token ||
 		s["headers"].(map[string]any)["User-Agent"] != "cline" || s["reasoning"].(map[string]any)["effort"] != "high" ||
 		c.Providers["anthropic"].Settings["apiKey"] != "sk-a" {
-		t.Fatalf("magpie:\n%s", raw)
+		t.Fatalf("fogway:\n%s", raw)
 	}
-	// Cline's openai-compatible lists only gpt-4o: magpie's models take
+	// Cline's openai-compatible lists only gpt-4o: fogway's models take
 	// its place in models.json, the user's other entries kept
 	ml, mraw := models()
 	if m := ml["openai-compatible"]; m.Provider["baseUrl"] != gatewayV1() || m.Provider["defaultModelId"] != "deepseek/pro" ||
 		m.Models["deepseek/pro"] == nil || m.Models["deepseek/flash"] == nil || m.Models["mine"] != nil || ml["ollama"].Models["q"] == nil {
 		t.Fatalf("models:\n%s", mraw)
 	}
-	if f.Get() != "magpie/deepseek/pro" || e.Get() != "high" || a.Check() != "" {
+	if f.Get() != "fogway/deepseek/pro" || e.Get() != "high" || a.Check() != "" {
 		t.Fatalf("get: %q %q %q", f.Get(), e.Get(), a.Check())
 	}
 	st, sec := vscode()
@@ -106,9 +106,9 @@ func TestCline(t *testing.T) {
 		st["telemetrySetting"] != "disabled" || sec["openAiApiKey"] != gateway.Token || sec["anthropicApiKey"] != "sk-a" {
 		t.Fatalf("vscode: %v %v", st, sec)
 	}
-	// another magpie model keeps what was stashed first; the effort is set
-	// on magpie's provider
-	if err := f.Set("magpie/deepseek/flash"); err != nil {
+	// another fogway model keeps what was stashed first; the effort is set
+	// on fogway's provider
+	if err := f.Set("fogway/deepseek/flash"); err != nil {
 		t.Fatal(err)
 	}
 	if err := e.Set("low"); err != nil {
@@ -164,14 +164,14 @@ func TestCline(t *testing.T) {
 		t.Fatalf("vscode own: %v %v", st, sec)
 	}
 
-	// reset from magpie, with no Cline settings before it: nothing of
-	// magpie's is left
+	// reset from fogway, with no Cline settings before it: nothing of
+	// fogway's is left
 	os.Remove(path)
 	os.Remove(mpath)
 	if f.Get() != "" {
 		t.Fatalf("empty get: %q", f.Get())
 	}
-	if err := f.Set("magpie/deepseek/pro"); err != nil {
+	if err := f.Set("fogway/deepseek/pro"); err != nil {
 		t.Fatal(err)
 	}
 	c, raw = read()

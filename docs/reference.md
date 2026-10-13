@@ -1,6 +1,6 @@
-# magpie reference
+# fogway reference
 
-The full manual: every agent magpie wires, every provider option, the gateway, routing, plugins, the CLI, Docker, sync and the files magpie keeps. For the overview, see the [README](../README.md).
+The full manual: every agent fogway wires, every provider option, the gateway, routing, plugins, the CLI, Docker, sync and the files fogway keeps. For the overview, see the [README](../README.md).
 
 Renamed a project folder? See [relocating Claude Code sessions](session-relocation.md).
 
@@ -9,19 +9,19 @@ on Kimi, Gemini CLI on GLM, from the menu bar. [usemagpie.ai](https://usemagpie.
 
 [![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/vGSnD3ZKQF)
 
-`magpie` is a single screen that lists each AI agent on your machine and
+`fogway` is a single screen that lists each AI agent on your machine and
 the model it is set to. Click a value, pick a model. That is the whole app.
 
 It lives in the menu bar: click the icon and a panel drops down; the same
-screen also opens as a normal window (`magpie`, or *Open magpie* in the tray menu),
+screen also opens as a normal window (`fogway`, or *Open fogway* in the tray menu),
 which opens on the page you last left, as a Mac app comes back as it was,
-and there is a terminal version (`magpie tui`) and a plain CLI. The
-terminal version serves the gateway while it is open when no other magpie
-(the app, `magpie web`, `magpie serve`) does, and says so on its status
-line; agents connected to magpie lose it when it quits.
+and there is a terminal version (`fogway tui`) and a plain CLI. The
+terminal version serves the gateway while it is open when no other fogway
+(the app, `fogway web`, `fogway serve`) does, and says so on its status
+line; agents connected to fogway lose it when it quits.
 
 ```
-  ◉ magpie
+  ◉ fogway
 
   ▸ Claude Code   claude-fable-5-1[1m]                        ~/.claude/settings.json
     Codex         gpt-6-astra   effort medium
@@ -43,11 +43,11 @@ line; agents connected to magpie lose it when it quits.
 - **Edits config files surgically.** Only the one key you change is touched;
   comments, ordering and indentation in your `settings.json`, `config.toml`,
   `opencode.jsonc` or `config.yaml` survive intact. Writes are atomic.
-- **One endpoint for every agent.** magpie runs a local gateway that speaks
+- **One endpoint for every agent.** fogway runs a local gateway that speaks
   OpenAI chat completions, OpenAI Responses and the Anthropic Messages API,
   and forwards to whichever vendor serves the model. Codex, Claude Code,
-  OpenCode and the rest all point at `http://127.0.0.1:3425/v1` and pick
-  from one catalog; the translation between APIs happens in magpie, streaming
+  OpenCode and the rest all point at `http://127.0.0.1:3725/v1` and pick
+  from one catalog; the translation between APIs happens in fogway, streaming
   and tool calls included.
 - **Your subscriptions, shared.** Sign in to Claude Code, Codex (ChatGPT)
   or Copilot and that login shows up as a provider: every other agent can
@@ -57,9 +57,9 @@ line; agents connected to magpie lose it when it quits.
   DeepSeek, Kimi, GLM, MiniMax, StepFun, Qwen, Baidu Qianfan, Tencent Cloud Token Plan,
   Huawei Cloud MaaS, Volcengine Ark, Mistral, Groq, xAI, OpenRouter, Together,
   Fireworks, SiliconFlow, NVIDIA NIM, ModelScope, AiHubMix, PipeLLM, 302.AI, Ollama, LM Studio…),
-  paste a key, done. Custom vendors need a name and a base URL. magpie never
+  paste a key, done. Custom vendors need a name and a base URL. fogway never
   reads keys from your shell environment.
-- **Real model lists, nothing compiled in.** With a key in hand magpie asks
+- **Real model lists, nothing compiled in.** With a key in hand fogway asks
   the vendor which models it serves and offers exactly those; the
   [models.dev](https://models.dev) catalog fills in names, reasoning efforts
   and the list for vendors that have none (a model the vendor's own entry
@@ -76,12 +76,12 @@ line; agents connected to magpie lose it when it quits.
   "Only models I pick" switch turns the list around: the models ticked
   when it is switched on stay, and a model added later, of any provider,
   stays out of that agent's picker and its config until it is ticked
-  (`magpie visible <agent> --only-picked`, back with `--show-new`). A
+  (`fogway visible <agent> --only-picked`, back with `--show-new`). A
   model asked for by name still works either way.
 - **Profiles.** Snapshot every agent's settings under a name and switch all of
   them back in one move. The profile in use, the one applying would change
   nothing, is ticked, the tray panel's Profiles button shows its name, and
-  `magpie profiles` marks it ✓.
+  `fogway profiles` marks it ✓.
 - **Real logos, no framework.** Plain HTML over the system webview; brand
   icons from [lobehub/icons](https://github.com/lobehub/lobe-icons).
 
@@ -89,60 +89,60 @@ line; agents connected to magpie lose it when it quits.
 
 | Agent        | File                              | Fields          |
 | ------------ | --------------------------------- | --------------- |
-| Claude Code  | `~/.claude/settings.json`         | provider, model, opus/sonnet/haiku/fable, sign-in (through magpie) |
-| Claude Desktop | `Claude/` + `Claude-3p/configLibrary/` in `~/Library/Application Support` (`%LOCALAPPDATA%` on Windows, `~/.config` on Linux). A Desktop installed as an MSIX package on Windows keeps them in its package instead (`%LOCALAPPDATA%\Packages\Claude_<publisher>\LocalCache\Local`, or `AnthropicPBC.Claude_<publisher>` for the Store's package, its own data in `LocalCache\Roaming\Claude`). Desktop 2.31226 and later, packaged, reads the real `%LOCALAPPDATA%\Claude-3p` instead, so for a packaged Desktop magpie writes both ([`desktopdir`](../internal/desktopdir/desktopdir.go)) | provider (its third-party gateway mode: Code and Cowork on magpie, no Anthropic sign-in; restart Desktop) |
+| Claude Code  | `~/.claude/settings.json`         | provider, model, opus/sonnet/haiku/fable, sign-in (through fogway) |
+| Claude Desktop | `Claude/` + `Claude-3p/configLibrary/` in `~/Library/Application Support` (`%LOCALAPPDATA%` on Windows, `~/.config` on Linux). A Desktop installed as an MSIX package on Windows keeps them in its package instead (`%LOCALAPPDATA%\Packages\Claude_<publisher>\LocalCache\Local`, or `AnthropicPBC.Claude_<publisher>` for the Store's package, its own data in `LocalCache\Roaming\Claude`). Desktop 2.31226 and later, packaged, reads the real `%LOCALAPPDATA%\Claude-3p` instead, so for a packaged Desktop fogway writes both ([`desktopdir`](../internal/desktopdir/desktopdir.go)) | provider (its third-party gateway mode: Code and Cowork on fogway, no Anthropic sign-in; restart Desktop) |
 | Codex        | `~/.codex/config.toml`            | provider, model, effort |
 | Gemini CLI   | `~/.gemini/settings.json`, `~/.gemini/.env` | auth, model |
 | OpenCode     | `~/.config/opencode/opencode.json(c)` (`$OPENCODE_CONFIG_DIR`) | model, small |
-| OpenChamber  | `~/.config/openchamber/preferences.json` (`$OPENCHAMBER_DATA_DIR`; magpie's provider in OpenCode's config) | model, small (its own defaults, over OpenCode's) |
+| OpenChamber  | `~/.config/openchamber/preferences.json` (`$OPENCHAMBER_DATA_DIR`; fogway's provider in OpenCode's config) | model, small (its own defaults, over OpenCode's) |
 | MiMo Code    | `~/.config/mimocode/mimocode.json(c)` | model, small |
-| DevEco Code  | `~/.config/deveco/deveco.json(c)` (`$DEVECO_CONFIG_DIR`; its key is `magpie-deveco`, as parts of it send OpenCode's User-Agent) | model, small |
+| DevEco Code  | `~/.config/deveco/deveco.json(c)` (`$DEVECO_CONFIG_DIR`; its key is `fogway-deveco`, as parts of it send OpenCode's User-Agent) | model, small |
 | Pi           | `~/.pi/agent/settings.json`       | model           |
 | StepCode     | `~/.stepcode/config.toml` (+ `models.json`; `$STEP_CODING_AGENT_DIR`, `$STEPCODE_CONFIG_DIR`) | model |
-| Aside        | `~/.aside/u/0/settings.json` (+ `models.json`; the first account, the only one magpie wires) | model, effort, fast, standard, deep, visual, image |
+| Aside        | `~/.aside/u/0/settings.json` (+ `models.json`; the first account, the only one fogway wires) | model, effort, fast, standard, deep, visual, image |
 | OmO (omo-ai) | `~/.omo/agent/settings.json` (+ `models.json`; `$OMO_CODING_AGENT_DIR`, `$SENPI_CODING_AGENT_DIR`) | model |
-| Prime Agent  | `~/.prime/agent/settings.json` (+ `models.json`; `$PRIME_AGENT_CODING_AGENT_DIR`) | model, thinking (Pi's fields; its key `magpie-prime-agent` names it, since its requests carry no User-Agent; the global settings alone, `allowedModels` and `subagentDefaultModel` left as they are) |
+| Prime Agent  | `~/.prime/agent/settings.json` (+ `models.json`; `$PRIME_AGENT_CODING_AGENT_DIR`) | model, thinking (Pi's fields; its key `fogway-prime-agent` names it, since its requests carry no User-Agent; the global settings alone, `allowedModels` and `subagentDefaultModel` left as they are) |
 | Goose        | `~/.config/goose/config.yaml`     | model           |
 | Cursor CLI   | `~/.cursor/cli-config.json`       | model           |
-| Zed          | `~/.config/zed/settings.json` (`$XDG_CONFIG_HOME` on Linux, `%APPDATA%\Zed` on Windows) | model (a `magpie` OpenAI-compatible provider; its catalog in Zed's picker) |
-| VS Code (Chat) | `~/Library/Application Support/Code/User/settings.json` + `chatLanguageModels.json` (`~/.config/Code/User` on Linux, `%APPDATA%\Code\User` on Windows) | model (`chat.defaultModel`; a `magpie` Custom Endpoint group, its catalog in Chat's model picker; VS Code 1.122+, no Copilot sign-in or key needed). Each profile's own pair under `User/profiles/<id>/` (listed in `globalStorage/storage.json`) gets the same, unless the profile uses the default's |
-| VS Code Insiders (Chat) | the same files under `Code - Insiders/User` in place of `Code/User` | as VS Code, a row of its own; its models send the token `magpie-vscode-insiders`, since its chat's User-Agent is VS Code's |
-| VSCodium (Chat) | the same files under `VSCodium/User` in place of `Code/User` | as VS Code, a row of its own; its models send the token `magpie-vscodium`, so Usage counts them as VSCodium; its Chat features must be turned on (`chat.disableAIFeatures=false`, and `defaultChatAgent` plus `trustedExtensionAuthAccess` for GitHub.copilot-chat in its product.json). With the Marketplace's GitHub Copilot Chat 0.48.1, which has no Custom Endpoint provider, the group is written for its OpenAI Compatible provider (`customoai`, the token sent as `x-api-key`), which lists models only while Copilot Chat is signed in to GitHub with a personal Copilot plan |
-| Copilot (JetBrains) | `byok.json` in `~/.config/github-copilot` (`$XDG_CONFIG_HOME/github-copilot` when set, `%USERPROFILE%\AppData\Local\github-copilot` on Windows), the Copilot language server's own file, which Xcode's and Eclipse's Copilot read too | provider (a `magpie` custom endpoint provider beside the user's: every magpie model at the gateway's `/v1/chat/completions`, sent with `magpie-copilot-jetbrains`; a model hidden in Manage Models stays hidden through a sync; off removes magpie's three keys alone). Found by the `github-copilot-intellij` plugin in a JetBrains IDE or Android Studio. Listed after the IDE restarts, and only while Copilot is signed in to GitHub on a plan with Bring Your Own Key (Free, Pro, Pro+; Business and Enterprise when the organisation allows it); the model is picked in Copilot Chat |
-| JetBrains Air | `acp.json` in `~/Library/Application Support/JetBrains/Air` (`~/.config/JetBrains/Air` on Linux, `%APPDATA%\JetBrains\Air` on Windows) + `magpie-opencode.json` beside it | model (a `Magpie` ACP agent: OpenCode's `opencode acp` on magpie's provider alone, its models and routing groups in Air's model menu; needs OpenCode installed) |
+| Zed          | `~/.config/zed/settings.json` (`$XDG_CONFIG_HOME` on Linux, `%APPDATA%\Zed` on Windows) | model (a `fogway` OpenAI-compatible provider; its catalog in Zed's picker) |
+| VS Code (Chat) | `~/Library/Application Support/Code/User/settings.json` + `chatLanguageModels.json` (`~/.config/Code/User` on Linux, `%APPDATA%\Code\User` on Windows) | model (`chat.defaultModel`; a `fogway` Custom Endpoint group, its catalog in Chat's model picker; VS Code 1.122+, no Copilot sign-in or key needed). Each profile's own pair under `User/profiles/<id>/` (listed in `globalStorage/storage.json`) gets the same, unless the profile uses the default's |
+| VS Code Insiders (Chat) | the same files under `Code - Insiders/User` in place of `Code/User` | as VS Code, a row of its own; its models send the token `fogway-vscode-insiders`, since its chat's User-Agent is VS Code's |
+| VSCodium (Chat) | the same files under `VSCodium/User` in place of `Code/User` | as VS Code, a row of its own; its models send the token `fogway-vscodium`, so Usage counts them as VSCodium; its Chat features must be turned on (`chat.disableAIFeatures=false`, and `defaultChatAgent` plus `trustedExtensionAuthAccess` for GitHub.copilot-chat in its product.json). With the Marketplace's GitHub Copilot Chat 0.48.1, which has no Custom Endpoint provider, the group is written for its OpenAI Compatible provider (`customoai`, the token sent as `x-api-key`), which lists models only while Copilot Chat is signed in to GitHub with a personal Copilot plan |
+| Copilot (JetBrains) | `byok.json` in `~/.config/github-copilot` (`$XDG_CONFIG_HOME/github-copilot` when set, `%USERPROFILE%\AppData\Local\github-copilot` on Windows), the Copilot language server's own file, which Xcode's and Eclipse's Copilot read too | provider (a `fogway` custom endpoint provider beside the user's: every fogway model at the gateway's `/v1/chat/completions`, sent with `fogway-copilot-jetbrains`; a model hidden in Manage Models stays hidden through a sync; off removes fogway's three keys alone). Found by the `github-copilot-intellij` plugin in a JetBrains IDE or Android Studio. Listed after the IDE restarts, and only while Copilot is signed in to GitHub on a plan with Bring Your Own Key (Free, Pro, Pro+; Business and Enterprise when the organisation allows it); the model is picked in Copilot Chat |
+| JetBrains Air | `acp.json` in `~/Library/Application Support/JetBrains/Air` (`~/.config/JetBrains/Air` on Linux, `%APPDATA%\JetBrains\Air` on Windows) + `fogway-opencode.json` beside it | model (a `Fogway` ACP agent: OpenCode's `opencode acp` on fogway's provider alone, its models and routing groups in Air's model menu; needs OpenCode installed) |
 | Copilot CLI  | `~/.copilot/settings.json`        | model           |
 | Crush        | `~/.config/crush/crush.json`      | large, small    |
-| DeepSeek Harness (dsh) | `~/.dsh/profiles/*/cordis.patch.yml` (`$DSH_HOME`; a custom provider, Magpie, its key `MAGPIE_GATEWAY_KEY` in `~/.dsh/.env` and dsh's own key store `~/.dsh/.credentials.yaml`, which the desktop app reads; on one of magpie's models its `web-search-deepseek` row also goes to the gateway, which searches with the model or Settings › Web search, unless dsh has a `DEEPSEEK_API_KEY` or a row of your own), or `~/.dsh/config.yaml` before dsh 0.1.5 | model, effort |
-| Reasonix Studio (2.x, or a native Go `reasonix` 2.x / 1.39.x CLI) | `~/.reasonix/config.toml` + `.env` (`%APPDATA%/reasonix` on Windows; `$REASONIX_HOME`) | model (Executor), planner (Plan), effort (a dedicated `magpie` provider, shared by Studio and the native CLI) |
+| DeepSeek Harness (dsh) | `~/.dsh/profiles/*/cordis.patch.yml` (`$DSH_HOME`; a custom provider, Fogway, its key `FOGWAY_GATEWAY_KEY` in `~/.dsh/.env` and dsh's own key store `~/.dsh/.credentials.yaml`, which the desktop app reads; on one of fogway's models its `web-search-deepseek` row also goes to the gateway, which searches with the model or Settings › Web search, unless dsh has a `DEEPSEEK_API_KEY` or a row of your own), or `~/.dsh/config.yaml` before dsh 0.1.5 | model, effort |
+| Reasonix Studio (2.x, or a native Go `reasonix` 2.x / 1.39.x CLI) | `~/.reasonix/config.toml` + `.env` (`%APPDATA%/reasonix` on Windows; `$REASONIX_HOME`) | model (Executor), planner (Plan), effort (a dedicated `fogway` provider, shared by Studio and the native CLI) |
 | Command Code | `~/.commandcode/settings.json` (+ `providers.json`) | model |
-| fx           | `~/.fx/settings.json`             | model (a keyless `magpie` provider) |
+| fx           | `~/.fx/settings.json`             | model (a keyless `fogway` provider) |
 | omp (oh-my-pi) | `~/.omp/agent/config.yml` (+ `models.yml`) | model |
 | Devin        | `~/.config/devin/config.json` (`%APPDATA%\devin\config.json` on Windows) | model |
 | Hermes Agent | `~/.hermes/config.yaml` (`%LOCALAPPDATA%\hermes` on Windows; `$HERMES_HOME`), and each profile's under `profiles/` | model |
 | Mister Morph | `~/.morph/config.yaml` (`$MISTER_MORPH_CONFIG`) | model, effort (`llm` on the gateway as `openai_response_compatible`, the Responses API; what it had comes back when you switch away) |
-| Kimi Code    | `~/.kimi/config.toml` (`$KIMI_SHARE_DIR`) | model (a `magpie` provider; magpie's models in Kimi's /model) |
-| Qwen Code    | `~/.qwen/settings.json` (`$QWEN_HOME`) | model (magpie's models as `modelProviders.openai` entries on a `MAGPIE_QWEN_API_KEY` env var; settings.model; `security.auth.selectedType` openai while wired) |
-| Muse Code    | `~/.config/muse/settings.json` (`$XDG_CONFIG_HOME`) | model (endpoint_transport to the gateway, auth none; magpie's models in Muse's list) |
-| Empryo       | `~/.empryo/config.json` | defaultModel (a `magpie` provider at the gateway in `providers`) |
-| Ante         | `~/.ante/catalog.json` and `settings.json` (`$ANTE_HOME`) | provider, model (a `magpie` provider on OpenAiCompatible, with no auth of magpie's: the gateway lets this machine in with any token and Ante counts a provider with none as authenticated; magpie's models in Ante's model picker, and Ante started on magpie, which is what its settings' `provider` decides) |
-| AstrBot      | `data/cmd_config.json` under `$ASTRBOT_ROOT`, else `~/.astrbot` (the desktop app's) | model (a `magpie` entry in `provider_sources` and magpie's models in `provider`, the user's own entries kept; the default chat model in `agent_runner.config.model.provider_id`, or `provider_settings.default_provider_id` on AstrBot before 4.28's agent runner; restart AstrBot after connecting; Docker installs aren't reached) |
-| jcode        | `config.toml` in `$JCODE_HOME`, else `~/.jcode` | model (a `[providers.magpie]` profile, `openai-compatible`, with magpie's models in it; `[provider] default_provider`/`default_model` set to it, what was there put back on Disconnect; the user's own keys in the profile, such as `headers` and a model's `reasoning_effort`, kept; restart open jcode sessions after connecting) |
-| MiniMax Code (mcode) | `~/.minimax/config.yaml` (`$MINIMAX_DATA_DIR`) | model (a `magpie` custom provider; magpie's models in its /model) |
-| Droid (Factory) | `~/.factory/settings.json` (`$FACTORY_HOME_OVERRIDE`) | model (magpie's models as BYOK `customModels`, in Droid's /model) |
-| Cline (CLI)  | `~/.cline/data/settings/providers.json` (`$CLINE_DIR`) | model, effort (magpie takes its openai-compatible provider) |
-| Qoder (CLI)  | `~/.qoder/settings.json` (`$QODER_CONFIG_DIR`) | model, effort (a `magpie` custom provider; needs a Qoder plan with BYOK) |
+| Kimi Code    | `~/.kimi/config.toml` (`$KIMI_SHARE_DIR`) | model (a `fogway` provider; fogway's models in Kimi's /model) |
+| Qwen Code    | `~/.qwen/settings.json` (`$QWEN_HOME`) | model (fogway's models as `modelProviders.openai` entries on a `FOGWAY_QWEN_API_KEY` env var; settings.model; `security.auth.selectedType` openai while wired) |
+| Muse Code    | `~/.config/muse/settings.json` (`$XDG_CONFIG_HOME`) | model (endpoint_transport to the gateway, auth none; fogway's models in Muse's list) |
+| Empryo       | `~/.empryo/config.json` | defaultModel (a `fogway` provider at the gateway in `providers`) |
+| Ante         | `~/.ante/catalog.json` and `settings.json` (`$ANTE_HOME`) | provider, model (a `fogway` provider on OpenAiCompatible, with no auth of fogway's: the gateway lets this machine in with any token and Ante counts a provider with none as authenticated; fogway's models in Ante's model picker, and Ante started on fogway, which is what its settings' `provider` decides) |
+| AstrBot      | `data/cmd_config.json` under `$ASTRBOT_ROOT`, else `~/.astrbot` (the desktop app's) | model (a `fogway` entry in `provider_sources` and fogway's models in `provider`, the user's own entries kept; the default chat model in `agent_runner.config.model.provider_id`, or `provider_settings.default_provider_id` on AstrBot before 4.28's agent runner; restart AstrBot after connecting; Docker installs aren't reached) |
+| jcode        | `config.toml` in `$JCODE_HOME`, else `~/.jcode` | model (a `[providers.fogway]` profile, `openai-compatible`, with fogway's models in it; `[provider] default_provider`/`default_model` set to it, what was there put back on Disconnect; the user's own keys in the profile, such as `headers` and a model's `reasoning_effort`, kept; restart open jcode sessions after connecting) |
+| MiniMax Code (mcode) | `~/.minimax/config.yaml` (`$MINIMAX_DATA_DIR`) | model (a `fogway` custom provider; fogway's models in its /model) |
+| Droid (Factory) | `~/.factory/settings.json` (`$FACTORY_HOME_OVERRIDE`) | model (fogway's models as BYOK `customModels`, in Droid's /model) |
+| Cline (CLI)  | `~/.cline/data/settings/providers.json` (`$CLINE_DIR`) | model, effort (fogway takes its openai-compatible provider) |
+| Qoder (CLI)  | `~/.qoder/settings.json` (`$QODER_CONFIG_DIR`) | model, effort (a `fogway` custom provider; needs a Qoder plan with BYOK) |
 | Qoder CN (CLI) | `~/.qoder-cn/settings.json` (`$QODERCN_CONFIG_DIR`) | model, effort (as Qoder; its own accounts, a Qoder CN plan with BYOK) |
 | Grok Build   | `~/.grok/config.toml` (`$GROK_HOME`) | model, effort |
-| Grok App     | `agent-home/config.toml` in its data folder (`$GROK_APP_HOME`, else `~/Library/Application Support/com.grokapp.grok-app`, `%APPDATA%\grokapp\grok-app\data`, `$XDG_DATA_HOME/grok-app`, or `~/.grok-app`) | model (a `[model.magpie]` custom provider under Accounts, with magpie's models and their effort levels in `app_models`; the route, `[models] default`, stays until the user presses Use on magpie there (one of the App's own routes picked in magpie is written as the route, and magpie's channel goes); a route an older magpie set to `magpie` is put back once; Disconnect drops the channel and puts the route back only if it is still `magpie`, else the one it was on before Connect if none is left; a model or default effort picked in the App kept; instructions, MCP and skills are the Library's Grok App row on agent-home; RTK has no hook for it or for Grok Build) |
-| ZCode        | `~/.zcode/v2/config.json`         | provider (magpie's models in ZCode's picker) |
-| WorkBuddy    | `~/.workbuddy/models.json` (`$WORKBUDDY_CONFIG_DIR`) | provider (magpie's models in WorkBuddy's picker) |
-| WorkBuddy AI | `~/.workbuddy-ai/models.json` (the international build) | provider (magpie's models in WorkBuddy AI's picker) |
-| CodeBuddy Code | `~/.codebuddy/models.json` (`$CODEBUDDY_CONFIG_DIR`), `settings.json` | model (magpie's models in its list; the session model) |
-| T3 Code      | `~/.t3/userdata/settings.json` (`$T3CODE_HOME/userdata`) | provider (a `magpie` provider instance on Claude Code, magpie's models as its custom models) |
-| OpenHanako   | `~/.hanako/provider-catalog.json` + `agents/<id>/config.yaml` (`$HANA_HOME`; its local API while it runs) | model (the primary agent's; magpie's models as a provider) |
-| AtomCode     | `~/.atomcode/config.toml` (`$ATOMCODE_HOME`) | model, effort (a `magpie` provider account, one model table per catalog model as its own sign-in writes) |
-| Snow CLI     | `~/.snow/profiles/magpie.json` (`$SNOW_CONFIG_DIR`), made the active profile and copied to `config.json` | model (the user's other profiles' models too; Snow App takes the profile in with "Sync Snow CLI API config") |
-| Alma         | Alma's local API (`localhost:23001`, while Alma runs; alma-server's data in `$ALMA_DATA_DIR`, `$XDG_DATA_HOME/alma` or `~/.local/share/alma` on Linux) | model (Alma's default; magpie's models as a provider), and Image Generation's model when it is Auto: the one magpie draws with |
+| Grok App     | `agent-home/config.toml` in its data folder (`$GROK_APP_HOME`, else `~/Library/Application Support/com.grokapp.grok-app`, `%APPDATA%\grokapp\grok-app\data`, `$XDG_DATA_HOME/grok-app`, or `~/.grok-app`) | model (a `[model.fogway]` custom provider under Accounts, with fogway's models and their effort levels in `app_models`; the route, `[models] default`, stays until the user presses Use on fogway there (one of the App's own routes picked in fogway is written as the route, and fogway's channel goes); a route an older fogway set to `fogway` is put back once; Disconnect drops the channel and puts the route back only if it is still `fogway`, else the one it was on before Connect if none is left; a model or default effort picked in the App kept; instructions, MCP and skills are the Library's Grok App row on agent-home; RTK has no hook for it or for Grok Build) |
+| ZCode        | `~/.zcode/v2/config.json`         | provider (fogway's models in ZCode's picker) |
+| WorkBuddy    | `~/.workbuddy/models.json` (`$WORKBUDDY_CONFIG_DIR`) | provider (fogway's models in WorkBuddy's picker) |
+| WorkBuddy AI | `~/.workbuddy-ai/models.json` (the international build) | provider (fogway's models in WorkBuddy AI's picker) |
+| CodeBuddy Code | `~/.codebuddy/models.json` (`$CODEBUDDY_CONFIG_DIR`), `settings.json` | model (fogway's models in its list; the session model) |
+| T3 Code      | `~/.t3/userdata/settings.json` (`$T3CODE_HOME/userdata`) | provider (a `fogway` provider instance on Claude Code, fogway's models as its custom models) |
+| OpenHanako   | `~/.hanako/provider-catalog.json` + `agents/<id>/config.yaml` (`$HANA_HOME`; its local API while it runs) | model (the primary agent's; fogway's models as a provider) |
+| AtomCode     | `~/.atomcode/config.toml` (`$ATOMCODE_HOME`) | model, effort (a `fogway` provider account, one model table per catalog model as its own sign-in writes) |
+| Snow CLI     | `~/.snow/profiles/fogway.json` (`$SNOW_CONFIG_DIR`), made the active profile and copied to `config.json` | model (the user's other profiles' models too; Snow App takes the profile in with "Sync Snow CLI API config") |
+| Alma         | Alma's local API (`localhost:23001`, while Alma runs; alma-server's data in `$ALMA_DATA_DIR`, `$XDG_DATA_HOME/alma` or `~/.local/share/alma` on Linux) | model (Alma's default; fogway's models as a provider), and Image Generation's model when it is Auto: the one fogway draws with |
 
 Provider-scoped agents (OpenCode, MiMo Code, DevEco Code, Pi, OmO, StepCode, Aside, Goose, Crush, omp, Hermes Agent) take `provider/model`.
 Only agents that are installed or configured are shown.
@@ -151,9 +151,9 @@ Only agents that are installed or configured are shown.
 
 #### StepCode
 
-StepCode is configured via [`stepcode.go`](../internal/agent/stepcode.go). Magpie manages global `defaultProvider` and `defaultModel` in `~/.stepcode/config.toml` (or the parent of an absolute `STEP_CODING_AGENT_DIR`) and writes its catalog into `~/.stepcode/models.json` using Pi's provider format. Magpie only manages model selection; StepCode controls thinking levels itself. Project-local `.stepcode/config.toml` overlays take precedence over global settings. Restart StepCode or begin a new session after changing models. Detection is strictly directory-based (`~/.stepcode`), so having Smallstep's unrelated `step` certificate CLI on `PATH` is never mistaken for StepCode.
+StepCode is configured via [`stepcode.go`](../internal/agent/stepcode.go). Fogway manages global `defaultProvider` and `defaultModel` in `~/.stepcode/config.toml` (or the parent of an absolute `STEP_CODING_AGENT_DIR`) and writes its catalog into `~/.stepcode/models.json` using Pi's provider format. Fogway only manages model selection; StepCode controls thinking levels itself. Project-local `.stepcode/config.toml` overlays take precedence over global settings. Restart StepCode or begin a new session after changing models. Detection is strictly directory-based (`~/.stepcode`), so having Smallstep's unrelated `step` certificate CLI on `PATH` is never mistaken for StepCode.
 
-The optional real CLI verification test is run with `MAGPIE_TEST_STEPCODE_BIN=/path/to/step go test ./internal/agent -run '^TestStepCodeRealCLISandbox$' -count=1`. It runs StepCode in an isolated temporary sandbox with telemetry disabled and without live credentials.
+The optional real CLI verification test is run with `FOGWAY_TEST_STEPCODE_BIN=/path/to/step go test ./internal/agent -run '^TestStepCodeRealCLISandbox$' -count=1`. It runs StepCode in an isolated temporary sandbox with telemetry disabled and without live credentials.
 
 #### Reasonix Studio
 
@@ -163,84 +163,84 @@ do not count. Tested with
 [Studio 2.24.0](https://github.com/esengine/DeepSeek-Reasonix/releases/tag/studio-v2.24.0).
 
 Pick the Executor model in the app, or use
-`magpie reasonix magpie/deepseek/deepseek-chat` (`magpie reasonix
-magpie/group/code` for a routing group). Select Plan independently with
-`magpie reasonix planner magpie/deepseek/deepseek-chat`, or use `magpie reasonix
-planner off` to disable the separate planner. `magpie reasonix effort high` sets
-an advertised Executor reasoning level. `magpie reasonix default` restores the
-previous Executor selection; `magpie reasonix planner default` restores Plan.
-Magpie's provider and private `.env` key are removed when neither role needs
+`fogway reasonix fogway/deepseek/deepseek-chat` (`fogway reasonix
+fogway/group/code` for a routing group). Select Plan independently with
+`fogway reasonix planner fogway/deepseek/deepseek-chat`, or use `fogway reasonix
+planner off` to disable the separate planner. `fogway reasonix effort high` sets
+an advertised Executor reasoning level. `fogway reasonix default` restores the
+previous Executor selection; `fogway reasonix planner default` restores Plan.
+Fogway's provider and private `.env` key are removed when neither role needs
 them. Restart Studio for new sessions; project/session overrides still take
 precedence. Other providers and credentials are preserved. A non-managed
-provider named `magpie` is a conflict, reported without overwriting it. Studio
+provider named `fogway` is a conflict, reported without overwriting it. Studio
 and the native CLI share these files, so updating only Studio does not isolate
 their settings.
 
 The released-client stream/tool contract test is run with
-`MAGPIE_TEST_REASONIX_CLI=/path/to/reasonix go test ./internal/agent -run
+`FOGWAY_TEST_REASONIX_CLI=/path/to/reasonix go test ./internal/agent -run
 '^TestReasonixStudioCLIIntegration$' -count=1`. It uses isolated settings and
 a local test upstream, with no vendor credentials.
 
 #### VSCodium Chat
 
 VSCodium's Chat features are disabled by default. To use the Chat model
-picker with magpie, set `"chat.disableAIFeatures": false` in VSCodium's
+picker with fogway, set `"chat.disableAIFeatures": false` in VSCodium's
 settings and add the `defaultChatAgent` and `trustedExtensionAuthAccess`
 entries required by [VSCodium's Copilot guide](https://github.com/VSCodium/vscodium/blob/master/docs/ext-github-copilot.md)
 to VSCodium's `product.json`. The guide also explains how to install a
 compatible GitHub Copilot Chat extension, since the Open VSX registry does
 not normally provide Microsoft's extension. Restart VSCodium, or run
-**Developer: Reload Window**, after changing these files. Magpie's models
-then appear under the `magpie` custom endpoint group.
+**Developer: Reload Window**, after changing these files. Fogway's models
+then appear under the `fogway` custom endpoint group.
 
 #### Zed-compatible Agent paths
 
-Magpie can use a Zed-compatible fork or installation whose executable or
+Fogway can use a Zed-compatible fork or installation whose executable or
 configuration directory is different from the upstream defaults. Set these
-variables before starting Magpie:
+variables before starting Fogway:
 
 ```sh
-export MAGPIE_ZED_BIN=/Applications/ZedG.app/Contents/MacOS/zedg
-export MAGPIE_ZED_CONFIG_DIR="$HOME/.config/zed"
-export MAGPIE_ZED_PROCESS_NAMES=zedg,ZedG
-magpie serve
+export FOGWAY_ZED_BIN=/Applications/ZedG.app/Contents/MacOS/zedg
+export FOGWAY_ZED_CONFIG_DIR="$HOME/.config/zed"
+export FOGWAY_ZED_PROCESS_NAMES=zedg,ZedG
+fogway serve
 ```
 
-`MAGPIE_ZED_BIN` controls installation detection, `MAGPIE_ZED_CONFIG_DIR`
+`FOGWAY_ZED_BIN` controls installation detection, `FOGWAY_ZED_CONFIG_DIR`
 selects the directory containing `settings.json`, and
-`MAGPIE_ZED_PROCESS_NAMES` supplies comma-separated process names used for
+`FOGWAY_ZED_PROCESS_NAMES` supplies comma-separated process names used for
 restart notices. The existing Zed configuration adapter is reused, so this is
 intended for forks that keep Zed's `settings.json` and Agent model schema, such
 as [ZedG](https://github.com/x6nux/zed-globalization). These variables affect
-the Magpie process in which they are set; put them in the service environment
-when running Magpie under systemd or Docker. They configure a Zed-compatible
-Agent on the same machine as Magpie; they do not discover or modify an Agent
+the Fogway process in which they are set; put them in the service environment
+when running Fogway under systemd or Docker. They configure a Zed-compatible
+Agent on the same machine as Fogway; they do not discover or modify an Agent
 running on another host. On macOS, if the configured binary does not resolve to
-a `.app` bundle, Magpie falls back to the standard Zed application locations
+a `.app` bundle, Fogway falls back to the standard Zed application locations
 when authorizing the gateway credential.
 
 ## Providers and the gateway
 
 Every model an agent can pick is spelled `provider/model` and served by
-magpie's gateway, so agents never hold vendor keys or vendor URLs. Add a
+fogway's gateway, so agents never hold vendor keys or vendor URLs. Add a
 provider, and its models appear in every agent's picker:
 
 ```sh
-magpie presets                          # the vendors magpie knows, grouped: vendors, relays, local
-magpie provider add deepseek sk-…       # a preset needs only the key
-magpie provider add ollama              # local servers need none
-magpie provider add "My Relay" url=https://relay.example.com/v1 key=sk-… models=gpt-5.5,claude-sonnet-5
-magpie providers                        # host, key, exposed models, who uses what
-magpie provider deepseek                # one provider in detail
-magpie provider models deepseek         # re-fetch the vendor's list (add ids to choose which to expose)
-magpie provider models deepseek +deepseek-v4 -deepseek-chat   # expose one more, take one out; the rest stay
-magpie provider models deepseek a b c   # the whole list of models to expose, replacing it (all: the default)
-magpie provider refresh deepseek        # re-fetch it, and drop picks it no longer has (the TUI: m)
-magpie provider test deepseek           # one tiny request per API, with latency
-magpie provider key deepseek sk-…       # replace the key
-magpie provider rm deepseek
-magpie models                           # the catalog agents see
-magpie claude deepseek/deepseek-chat    # use it
+fogway presets                          # the vendors fogway knows, grouped: vendors, relays, local
+fogway provider add deepseek sk-…       # a preset needs only the key
+fogway provider add ollama              # local servers need none
+fogway provider add "My Relay" url=https://relay.example.com/v1 key=sk-… models=gpt-5.5,claude-sonnet-5
+fogway providers                        # host, key, exposed models, who uses what
+fogway provider deepseek                # one provider in detail
+fogway provider models deepseek         # re-fetch the vendor's list (add ids to choose which to expose)
+fogway provider models deepseek +deepseek-v4 -deepseek-chat   # expose one more, take one out; the rest stay
+fogway provider models deepseek a b c   # the whole list of models to expose, replacing it (all: the default)
+fogway provider refresh deepseek        # re-fetch it, and drop picks it no longer has (the TUI: m)
+fogway provider test deepseek           # one tiny request per API, with latency
+fogway provider key deepseek sk-…       # replace the key
+fogway provider rm deepseek
+fogway models                           # the catalog agents see
+fogway claude deepseek/deepseek-chat    # use it
 ```
 
 Custom providers take `url=` (an OpenAI-compatible base), `anthropic=` (an
@@ -251,13 +251,13 @@ be overridden the same way.
 
 A model whose vendor answers that it is deprecated or retired (OpenCode
 Zen's 410 "Model exo-free has been deprecated.") leaves that provider's
-models in `magpie models`, `/v1/models` and every agent's list, even while
+models in `fogway models`, `/v1/models` and every agent's list, even while
 the vendor's own list still names it. It comes back once a request for it
 as `provider/model` is answered, or after a week.
 
-`magpie provider set <id> header.<Name>=<value>` sends a header of your own
+`fogway provider set <id> header.<Name>=<value>` sends a header of your own
 on every request to a key+URL provider (an empty value removes it; signed-in
-accounts ignore them). It replaces a header of the same name magpie would
+accounts ignore them). It replaces a header of the same name fogway would
 send, except `anthropic-beta`, which is a list: your betas are added after
 the ones the agent asked for that request (Claude Code's, its 1M context's
 `context-1m-2025-08-07` for a `[1m]` model, fast mode's), each once. A beta
@@ -267,20 +267,20 @@ agent's; any other of yours is always sent. The beta of the agent's own
 sign-in (`oauth-2025-04-20`, which Claude Code signed in to claude.ai asks)
 never goes, as the sign-in never does; one you set yourself does.
 
-Requests go to a vendor with magpie's own User-Agent (`magpie/<version>`).
+Requests go to a vendor with fogway's own User-Agent (`fogway/<version>`).
 A coding plan that serves only the agents it names knows them by theirs:
-`magpie provider set <id> user-agent=agent` (the editor's "Send the
+`fogway provider set <id> user-agent=agent` (the editor's "Send the
 agent's own User-Agent") sends a key+URL provider the User-Agent the agent
-sent magpie, as it sent it, on every API (chat, Anthropic, Responses,
+sent fogway, as it sent it, on every API (chat, Anthropic, Responses,
 Gemini, count_tokens, embeddings, images, videos). A request the agent
-sent without one, and magpie's own (its classifier's, the image tool's),
-still go as magpie. A `header.User-Agent` you set wins over both.
-`user-agent=magpie` turns it off again; off is the default. A signed-in
-account, a plugin's and a vendor whose own client magpie goes as
-(OpenCode, Cline, Kilo, another magpie) keep the User-Agent their sign-in
+sent without one, and fogway's own (its classifier's, the image tool's),
+still go as fogway. A `header.User-Agent` you set wins over both.
+`user-agent=fogway` turns it off again; off is the default. A signed-in
+account, a plugin's and a vendor whose own client fogway goes as
+(OpenCode, Cline, Kilo, another fogway) keep the User-Agent their sign-in
 sends, and don't take it.
 
-`magpie usage` also lists **upstream provider keys** to help check upstream bills.
+`fogway usage` also lists **upstream provider keys** to help check upstream bills.
 Each request records the fingerprint and saved name of the key that actually
 served it, including image calls and account/key failover. The CSV adds
 `provider_key_id` and `provider_key_name`. JSON uses `providerKeyId` and `providerKeyName`, distinct from gateway caller
@@ -289,7 +289,7 @@ in usage records.
 Rotating the provider's first key does not move old usage to its replacement;
 deleted keys keep their historical identity. Older records appear as
 **key not recorded**, never inferred from today's configured key.
-These are upstream credentials, not keys clients use to call Magpie.
+These are upstream credentials, not keys clients use to call Fogway.
 
 The CSV's `cache_write_tokens` is still every cache write; the two
 columns, `cache_write_5m_tokens` and `cache_write_1h_tokens`, split it by how
@@ -299,7 +299,7 @@ The app shows the split on a request's Cache and the usage tiles' tooltips.
 **Requests and failures** count requests, each once by how it ended: a
 request failed when the agent got an error. One that a later try answered
 (the next member of a group, another account) is not a failure; the Usage
-page, the Requests card, its rankings and group rows, and `magpie usage`
+page, the Requests card, its rankings and group rows, and `fogway usage`
 count it as answered on a retry (`retried` in the JSON). On the Requests
 card each count is a button for its requests in the list below (the
 Failed and Retried filters, `failed=1` and `retried=1`). A try a vendor
@@ -312,13 +312,13 @@ one that try went out at (a fast pick sends `priority`; Ultrafast becomes
 `priority` on an account whose plan doesn't offer it), and the one the
 vendor's reply said it ran at, empty when the reply doesn't say. The JSON
 log keeps them as `tier_asked`, `tier_sent` and `tier_served`, and each
-try in `/v1/magpie/route` has `tier` and `tier_served`. The last column,
+try in `/v1/fogway/route` has `tier` and `tier_served`. The last column,
 `upstream_stop`, is why the upstream said its reply ended, in its own
 words (`stop`, `tool_calls`, `end_turn`, a Responses reply's
 `completed`), empty when it said none. A request's row on the Requests
 page shows it as Upstream stop reason.
 
-**Output speed** (tok/s on the Usage and Routing pages, `magpie usage`) is
+**Output speed** (tok/s on the Usage and Routing pages, `fogway usage`) is
 output tokens over the time after the first token, summed per request: the
 tokens of every timed request over the sum of their windows, so concurrent
 subagents never add up. A reply that reasoned counts only its answer, from its
@@ -368,7 +368,7 @@ a whole time: 1,000 tokens or more over a second or more. Under that the
 wait is too much of the time to tell anything, so an 11-token answer in
 2.75 s shows none, as an 815-token Claude Code reply does. Gateway rows and other agents' keep their own
 speed. A floor never mixes into a measured speed: the Speed trend and
-`magpie usage` count timed calls only.
+`fogway usage` count timed calls only.
 
 A group's speed (a row of the Usage page's ranking, by model, provider or
 agent, its Output speed card, and the overview's lists) says how many
@@ -387,28 +387,28 @@ orders and bars a group by the figure it shows first (`usage.Totals`
 
 It lists **accounts** too: each Codex, Claude or other subscription account's
 tokens and cost, by the account that actually answered — the one that took
-over after a failover, the one `X-Magpie-Account` pinned. The account is named
+over after a failover, the one `X-Fogway-Account` pinned. The account is named
 as the Routing view names it (its email or login, never a token); the CSV
-adds `provider_account` (JSON `providerAccount`), `magpie usage --csv
+adds `provider_account` (JSON `providerAccount`), `fogway usage --csv
 --account <name>` keeps one account's calls, and the app's Usage page has an
 Accounts list and an Account filter on Requests. An older record names the
 account its call went out as when its host says so (`chatgpt.com as
 dee@example.com`); otherwise it appears as **account not recorded**, never
 inferred from today's sign-in. OTLP export never carries the account.
 
-One magpie can serve several computers (an office one, a personal one):
+One fogway can serve several computers (an office one, a personal one):
 share it on the network (Settings → Share on local network), and on each
-other computer add it as a **Remote magpie** — in the app's Add sheet, under
-its own heading, Another computer's magpie, after On this machine; on the
+other computer add it as a **Remote fogway** — in the app's Add sheet, under
+its own heading, Another computer's fogway, after On this machine; on the
 TUI's Providers page (`a`, then its address and key; `w` changes the address,
 `m` fetches its list again), or
-`magpie provider add remote-magpie sk-magpie-… url=http://192.168.1.20:3425 id=office`.
-Each computer's own magpie still wires its agents, while the providers,
+`fogway provider add remote-fogway sk-fogway-… url=http://192.168.1.20:3725 id=office`.
+Each computer's own fogway still wires its agents, while the providers,
 routing groups (`office/group/…`) and usage are the shared one's. A request
 goes on in the API the agent spoke — Anthropic Messages, Responses, Chat
-Completions, token counting — and a model the shared magpie's provider serves
+Completions, token counting — and a model the shared fogway's provider serves
 on another API only is turned into that API once, never on both computers.
-Its list is the models the shared magpie's agents are shown, each named with
+Its list is the models the shared fogway's agents are shown, each named with
 its provider there (`Claude Sonnet 5 · Relay A · office`) — the ids stay ids
 (`office/relay-a/claude-sonnet-5`), only these labels carry the names.
 Its image and video models are discovered automatically and served through
@@ -427,12 +427,12 @@ The remote must serve the requested API and model, and allow the supplied
 key to use them. Responses uses HTTP, including SSE, rather than WebSocket.
 An older remote without decision-model discovery still serves its existing
 APIs; update it and refresh the list to expose System One models here.
-Its quotas show too: the Usage page, the menu bar and `magpie quota` list the
-shared magpie's cards named with it (`Codex · office`, id `office/codex`), as
-that magpie last read them — only the computer holding the sign-ins asks the
-vendors, and it answers from what it has kept (`GET /v1/magpie/quotas/cards`).
+Its quotas show too: the Usage page, the menu bar and `fogway quota` list the
+shared fogway's cards named with it (`Codex · office`, id `office/codex`), as
+that fogway last read them — only the computer holding the sign-ins asks the
+vendors, and it answers from what it has kept (`GET /v1/fogway/quotas/cards`).
 A card's refresh here has it read that card once more
-(`POST /v1/magpie/quotas/refresh`, at most once in 30 seconds a card); until it
+(`POST /v1/fogway/quotas/refresh`, at most once in 30 seconds a card); until it
 has read anything, the remote's one card says so. Their history is shown with
 its own. A Codex reset or a check-in is pressed on that computer, not here.
 
@@ -441,13 +441,13 @@ turn for the requested image model. If that provider does not list the model,
 or the turn cannot be identified, it uses Settings → Images → Image generation
 (including Automatic). Off disables this fallback, not a matching model on the
 turn's provider. An explicit `provider/model` keeps its destination; an upstream
-image error does not retry through the setting. Magpie Image MCP is not required.
+image error does not retry through the setting. Fogway Image MCP is not required.
 
 WorkBuddy (China)'s daily check-in (签到) is pressed from the app's Usage card
-(*Check in now*), `magpie accounts checkin`, or `c` on the TUI's Usage page,
+(*Check in now*), `fogway accounts checkin`, or `c` on the TUI's Usage page,
 which checks in every account signed in on this computer at once; its
-WorkBuddy lines say how today's went. A shared magpie's accounts are checked
-in on that magpie, from its own app, TUI or CLI.
+WorkBuddy lines say how today's went. A shared fogway's accounts are checked
+in on that fogway, from its own app, TUI or CLI.
 
 A vendor with two or more accounts lists each under its Daily check-in in
 **Settings → Usage**, with its own Off/On (#1902). An account turned off is
@@ -461,7 +461,7 @@ says its auto check-in is off. The choice is kept in `checkinOff` in
 A plugin whose `auth` hook has `checkin` checks its own accounts in the same
 way: once a day while its switch under **Settings → Usage → Plugins** is on,
 with the result on each account's Usage card. A check-in the vendor wants a
-captcha for is shown as such (check in in the vendor's app); magpie never
+captcha for is shown as such (check in in the vendor's app); fogway never
 solves captchas. See [provider-plugins.md](subsystems/provider-plugins.md#a-plugins-daily-check-in).
 
 The gateway issues **gateway keys** for clients, separate from a provider's
@@ -470,7 +470,7 @@ upstream API keys. Turn on **Settings → Share on local network**, then open
 sharing is on. Create a named key for each client and copy it from its row.
 To move from another gateway without touching its clients, enter the key they
 already send in **Your own key (optional)** (8–256 characters, no spaces, not
-starting with `sk-magpie-`, unlike any other key); left empty, magpie makes
+starting with `sk-fogway-`, unlike any other key); left empty, fogway makes
 one. The list shows only its last four characters, and it is counted,
 limited and restricted as any other key, from this computer too.
 Rename, disable, rotate or remove keys independently; rotation and removal
@@ -478,26 +478,26 @@ ask for confirmation. Rotation keeps the name, enabled state and usage
 history; other keys are unchanged. While sharing is on, **Gateway → Connect**
 offers loopback and shared addresses, plus enabled gateway keys, for all
 connection examples. With sharing off, Connect keeps the original **API key**
-field and local `magpie` token, without a gateway-key picker. Its arbitrary
-local option is **This computer**, distinct from the named **Magpie** key.
+field and local `fogway` token, without a gateway-key picker. Its arbitrary
+local option is **This computer**, distinct from the named **Fogway** key.
 
 For a headless gateway, use the CLI before exposing the port:
 
 ```sh
-magpie gateway-key add "Remote laptop" # prints the new credential once
-magpie gateway-key add Family --key -  # keeps a key clients already send, read from stdin
-magpie gateway-key list                # ids, names, enabled state and masked keys
-magpie gateway-key rotate <id>         # prints the replacement; identity stays the same
-magpie gateway-key remove <id>         # revokes remote access
-magpie gateway-key limit <id> week --tokens 2m --cost 5   # its own limit
-magpie gateway-key limit <id>          # limit, used, left and reset
-magpie gateway-key limit <id> 10d --tokens 5m   # every 10 days, from now
-magpie gateway-key limit <id> reset    # count its usage from 0 again
-magpie gateway-key limit <id> off      # no limit
-magpie gateway-key models <id> openai/gpt-5 anthropic/*   # only these models
-magpie gateway-key models <id> all     # every model
-magpie gateway-key accounts <id> codex/me@example.com   # only these accounts
-magpie gateway-key accounts <id> all    # every account
+fogway gateway-key add "Remote laptop" # prints the new credential once
+fogway gateway-key add Family --key -  # keeps a key clients already send, read from stdin
+fogway gateway-key list                # ids, names, enabled state and masked keys
+fogway gateway-key rotate <id>         # prints the replacement; identity stays the same
+fogway gateway-key remove <id>         # revokes remote access
+fogway gateway-key limit <id> week --tokens 2m --cost 5   # its own limit
+fogway gateway-key limit <id>          # limit, used, left and reset
+fogway gateway-key limit <id> 10d --tokens 5m   # every 10 days, from now
+fogway gateway-key limit <id> reset    # count its usage from 0 again
+fogway gateway-key limit <id> off      # no limit
+fogway gateway-key models <id> openai/gpt-5 anthropic/*   # only these models
+fogway gateway-key models <id> all     # every model
+fogway gateway-key accounts <id> codex/me@example.com   # only these accounts
+fogway gateway-key accounts <id> all    # every account
 ```
 
 Each gateway key can have its own **limit**: a token total, an estimated
@@ -508,7 +508,7 @@ N×24 hours, then the next one starts where it ended, so a restart, a
 time-zone change or a daylight-saving shift doesn't move it. Changing only
 the caps or **Count cache reads too** keeps the cycle; changing N or the
 period, or turning the limit on, starts a new one then. Set it with **Limit** on
-the key's row (saved with Save) or `magpie gateway-key limit`; the row shows
+the key's row (saved with Save) or `fogway gateway-key limit`; the row shows
 what the key has used, what is left and when it resets. Tokens counted are a
 call's uncached input, output and cache writes, plus cache reads when **Count
 cache reads too** is on. Cost is an estimate at the Usage page's prices; a
@@ -520,23 +520,23 @@ counts are read from the usage log, so they survive a restart. A request in
 flight holds a reservation (its body's size in tokens plus the key's mean
 output per call), so requests sent at once overshoot by about one call; a
 streamed reply is settled when it ends with the usage its vendor reported.
-**Reset usage** in the key's limit editor (or `magpie gateway-key limit
+**Reset usage** in the key's limit editor (or `fogway gateway-key limit
 <id> reset`) counts the key's tokens and cost from 0 together, from now. An
 N-day key starts a new N-day cycle then. A day, week or month key keeps
 its window's end (midnight, Monday, the 1st): only the calls before the
 reset stop counting, so it doesn't drift off the calendar. The reset is
-stored with the key (`since` in caller-keys.json, magpie's own: a value a
+stored with the key (`since` in caller-keys.json, fogway's own: a value a
 client sends is ignored), so it survives a restart; the usage log itself is
 untouched. Keys saved before keep their JSON as it was.
-A key can read its own status with `GET /v1/magpie/limit`; it is told its
-own and no other key's, whatever the request names. A magpie that has this
-one as a Remote magpie provider shows each of its keys' limits on its
+A key can read its own status with `GET /v1/fogway/limit`; it is told its
+own and no other key's, whatever the request names. A fogway that has this
+one as a Remote fogway provider shows each of its keys' limits on its
 Usage page this way (#1547). Requests from
 this computer that send no gateway key are not limited; a gateway key used
 from this computer is.
 
 A gateway key can also be held to some **models** (#882): pick them with the
-**All models** badge on the key's row, or run `magpie gateway-key models <id>
+**All models** badge on the key's row, or run `fogway gateway-key models <id>
 openai/gpt-5 anthropic/*` (`all` takes the restriction off). A pattern is
 `<provider>/<model>` or `<provider>/*`, matched against the provider that
 serves the call, so a bare model name is resolved first, or a routing group,
@@ -552,7 +552,7 @@ A gateway key can also be held to some **accounts** (#905): the accounts
 and keys its requests may use, picked in the same menu right after their
 provider's models — an account by who is signed in, a key by its
 fingerprint — or with
-`magpie gateway-key accounts <id> codex/me@example.com openai/<key id>`
+`fogway gateway-key accounts <id> codex/me@example.com openai/<key id>`
 (`all` takes the restriction off). The list holds a key to some accounts
 **of the providers it names**: a provider it names no account of, the key
 uses as it always did. The list keeps an account by its stable id, kept
@@ -561,7 +561,7 @@ rotated, an account signed out, an account of an agent that keeps no
 logins renamed — is kept as it is, matching nothing, so the key is held
 closer, never wider. A routing group the key names is its members'
 through the accounts it may use only: naming a group is not naming its
-accounts, and magpie's own calls for the key — a web search, a picture
+accounts, and fogway's own calls for the key — a web search, a picture
 described, a Codex title — are of the models the user picked, but their
 spend lands on an account, so the accounts hold them too. When every
 account or key behind a model is one the key may not use, the request is
@@ -572,7 +572,7 @@ key only the models an account or key it may use serves, the Routing
 view's left-out list marking what the key held out. A key with no
 accounts listed may use every account, as keys always did.
 
-While LAN sharing is enabled, or `MAGPIE_ADDR` puts the gateway on the
+While LAN sharing is enabled, or `FOGWAY_ADDR` puts the gateway on the
 network (a host other than loopback or `localhost`: `0.0.0.0` in the Docker
 image, a server's address), remote requests require an enabled gateway key
 sent as Bearer, `x-api-key`, `x-goog-api-key` or `?key=`; one without gets
@@ -581,43 +581,43 @@ Docker's port publishing (the peer is the bridge, not the host's loopback)
 and a WSL distro under NAT. Loopback remains permissive: any token works,
 including a stale or disabled gateway key. Only a valid, enabled key is
 attributed to its named identity. Neither shared nor on the network, a
-remote request is refused (403). A `MAGPIE_ADDR` pinned to one interface's
+remote request is refused (403). A `FOGWAY_ADDR` pinned to one interface's
 address asks a key even of this computer's agents calling that address;
 `0.0.0.0` with agents on `127.0.0.1` doesn't. The Claude subscription's
-own tool calls back to magpie are let in there by their run's one-time
+own tool calls back to fogway are let in there by their run's one-time
 token, without a key (#1546).
-Sharing listens on every interface, unless `MAGPIE_ADDR` names a host of its
-own: `MAGPIE_ADDR=127.0.0.1:3425` behind Tailscale Serve, or one interface's
+Sharing listens on every interface, unless `FOGWAY_ADDR` names a host of its
+own: `FOGWAY_ADDR=127.0.0.1:3725` behind Tailscale Serve, or one interface's
 address, stays where it is while shared, and what reaches it from elsewhere
 still needs an enabled gateway key (#1112).
 
-**Codex on another computer** (#1281) can name the shared magpie its model
-provider, with a gateway key, and read magpie's models in Codex's own
+**Codex on another computer** (#1281) can name the shared fogway its model
+provider, with a gateway key, and read fogway's models in Codex's own
 catalog shape from `GET /v1/codex/models`. `/v1/models` is OpenAI's list,
 which Codex can't read, and `/backend-api/codex/models` is the ChatGPT
 backend's, for a Codex signed in to ChatGPT on the gateway's own computer;
 a gateway key gets a 401 there.
 
 ```toml
-model_provider = "magpie"
+model_provider = "fogway"
 model = "provider/model"
 
-[model_providers.magpie]
-name = "magpie"
-base_url = "http://192.168.1.20:3425/v1"
-model_catalog_url = "http://192.168.1.20:3425/v1/codex/models"
-env_key = "MAGPIE_API_KEY"   # the gateway key
+[model_providers.fogway]
+name = "fogway"
+base_url = "http://192.168.1.20:3725/v1"
+model_catalog_url = "http://192.168.1.20:3725/v1/codex/models"
+env_key = "FOGWAY_API_KEY"   # the gateway key
 wire_api = "responses"
 supports_websockets = false
 ```
 
-The list is the models the shared magpie shows Codex (its Agents page
-picks), each as the `model_catalog_json` magpie writes for a Codex on its
+The list is the models the shared fogway shows Codex (its Agents page
+picks), each as the `model_catalog_json` fogway writes for a Codex on its
 own computer describes it, and only the models the key may use. Codex 0.161
 reads it by default; 0.160 needs `[features] api_key_model_discovery = true`.
 Codex reads at most 1 MiB of a catalog, and every entry carries Codex's
 prompt, so past about 125 models the list keeps the first that fit and the
-answer's `X-Magpie-Left-Out` header says how many it left out: pick fewer
+answer's `X-Fogway-Left-Out` header says how many it left out: pick fewer
 for Codex, or hold the key to fewer.
 
 A request that reaches loopback through a proxy or tunnel on this computer
@@ -626,40 +626,40 @@ HTTP proxy, Caddy, nginx) is someone else's, and is answered as one from
 another machine (#1022): it carries a forwarding header (`Forwarded`,
 `X-Forwarded-For`, `X-Real-IP`, `Cf-Connecting-IP`, `True-Client-IP`,
 `Tailscale-User-Login`), which no agent sends. Without sharing it is refused;
-with sharing, or a `MAGPIE_ADDR` on the network, it needs an enabled gateway
+with sharing, or a `FOGWAY_ADDR` on the network, it needs an enabled gateway
 key, as from the network. This
-covers every route: the model APIs, quotas, MCP sign-ins. To serve magpie
+covers every route: the model APIs, quotas, MCP sign-ins. To serve fogway
 through a Cloudflare Tunnel, turn on **Settings → Share on local network**,
 add a gateway key for each client, point the tunnel's service at
-`http://127.0.0.1:3425`, and give clients the tunnel's address with that key.
+`http://127.0.0.1:3725`, and give clients the tunnel's address with that key.
 A tunnel that forwards bare TCP (frp's `tcp`, `ssh -R`, socat) adds no header
 and can't be told from an agent here: point it at this computer's LAN
 address with sharing on, not at loopback. A proxy here that signs its
-clients in itself can be trusted with `MAGPIE_TRUST_PROXY=1`, which keeps
+clients in itself can be trusted with `FOGWAY_TRUST_PROXY=1`, which keeps
 what it forwards local, as before.
 
 To let other computers in only from some addresses, list them as IPs and
 CIDR ranges in **Settings → Network and sharing → Allowed addresses**, or in
-`MAGPIE_ALLOW_IPS` (`203.0.113.7,10.0.0.0/8,2001:db8::/32`), which comes
+`FOGWAY_ALLOW_IPS` (`203.0.113.7,10.0.0.0/8,2001:db8::/32`), which comes
 first. A request from any other address is refused 403, even with an
 enabled gateway key, and the refusal names the address it came from. This
 computer is always let in. The address is the connection's own, never a
 forwarding header, so behind a proxy or tunnel every client has the proxy's
-address: limit them at the proxy. A mistyped entry in `MAGPIE_ALLOW_IPS`
+address: limit them at the proxy. A mistyped entry in `FOGWAY_ALLOW_IPS`
 lets nothing in rather than everything. When settings.json can't be read, or
 doesn't parse and has no good backup, the list read last stays in force; if
-none was read since magpie started, only this computer is let in until the
-file is repaired. `magpie web`'s page honours the same list.
+none was read since fogway started, only this computer is let in until the
+file is repaired. `fogway web`'s page honours the same list.
 
 **Usage → Overview → Gateway keys** groups calls by the client's key, never
 the provider's credential. **Usage → Requests** offers the same filter;
 CSV includes `caller_key_id` and `caller_key_name`. Deleted keys keep their
-history. The usual local `magpie` token and older records stay unattributed.
+history. The usual local `fogway` token and older records stay unattributed.
 Caller attribution includes chat, images, video creation and System One.
 Provider attribution stays independent; CSV puts `provider_key_*` before
 `caller_key_*`.
-An existing LAN key becomes **Magpie** without changing the credential.
-`lanKey` remains in settings for older Magpie versions. Disabling or removing
+An existing LAN key becomes **Fogway** without changing the credential.
+`lanKey` remains in settings for older Fogway versions. Disabling or removing
 the default key replaces that mirror with a random non-empty revoked value;
 rotation does not re-enable it. Turning sharing off and on again neither
 re-enables a disabled default key nor makes a removed one again; only
@@ -670,14 +670,14 @@ CLI key management, or the Settings and key-list pages from opening.
 If settings are read-only, changing the default key fails without changing
 it: make `settings.json` writable and retry so older versions cannot keep
 accepting its old credential. Independent named keys remain manageable.
-Gateway credentials stay in `~/.config/magpie/caller-keys.json` (XDG-aware,
+Gateway credentials stay in `~/.config/fogway/caller-keys.json` (XDG-aware,
 mode `0600`), never in usage records or list responses.
 
 Baidu Qianfan's [Token Plans](https://cloud.baidu.com/doc/qianfan/s/Dmrabu8b6)
 are available as `baidu-qianfan`: a personal (个人版) and an enterprise (企业版)
 plan and pay as you go, each with its own Chat Completions, Responses and
 Anthropic Messages endpoints, and a key that works only on its own plan. Add
-it with `magpie provider add baidu-qianfan <api-key>` — the id it carried its
+it with `fogway provider add baidu-qianfan <api-key>` — the id it carried its
 first day, `qianfan-token-plan`, is taken too. The plans serve no model list,
 so the preset carries their documented models; pay as you go serves its own
 at `/v2/models`.
@@ -694,7 +694,7 @@ with the same key, so a routing group can pick it as its classifier. The
 same model on the Qwen AI platform's pay as you go is `qwen-decision`
 (`maas.qianwenaiapi.com`), and on a Bailian workspace `bailian-decision`.
 Neither plan has an API for its credits: the console's subscription page
-shows them, so magpie shows no plan usage for these keys.
+shows them, so fogway shows no plan usage for these keys.
 
 ### Google Vertex AI
 
@@ -706,15 +706,15 @@ on the Agent Platform API (`aiplatform.googleapis.com`) in the project (billing
 has to be on there), then sign in with `gcloud auth application-default login`
 or have a service account's key file
 ([Google's guide](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/start/gcp-auth)).
-[Where magpie looks for the credentials, and the kinds it reads](subsystems/providers-accounts.md#responsibilities-and-sources-of-truth).
+[Where fogway looks for the credentials, and the kinds it reads](subsystems/providers-accounts.md#responsibilities-and-sources-of-truth).
 
 ```sh
-magpie provider add google-vertex project=my-project
-magpie provider set google-vertex location=us-central1        # global (the default), us, eu or a region
-magpie provider set google-vertex credentials=~/keys/vertex.json
-magpie provider set google-vertex impersonate=vertex@my-project.iam.gserviceaccount.com
-magpie provider set google-vertex impersonate=                # empty clears it
-magpie provider test google-vertex
+fogway provider add google-vertex project=my-project
+fogway provider set google-vertex location=us-central1        # global (the default), us, eu or a region
+fogway provider set google-vertex credentials=~/keys/vertex.json
+fogway provider set google-vertex impersonate=vertex@my-project.iam.gserviceaccount.com
+fogway provider set google-vertex impersonate=                # empty clears it
+fogway provider test google-vertex
 ```
 
 `project=` is the project's id. `location=` is `global` (the default, and what
@@ -731,7 +731,7 @@ its token is sent to. Adding, listing and showing it ask Google nothing; the
 credentials are read when a request is signed.
 
 Each location serves models of its own, and Vertex AI has no list to ask which,
-so magpie gives each location the models it answered with on 2026-10-06:
+so fogway gives each location the models it answered with on 2026-10-06:
 
 | Location | Models |
 | --- | --- |
@@ -743,11 +743,11 @@ A region that serves one more, as asia-northeast1 serves `gemini-3.5-flash`,
 has it typed in with the rest you want:
 
 ```sh
-magpie provider models google-vertex gemini-2.5-pro gemini-2.5-flash gemini-2.5-flash-lite gemini-3.5-flash
-magpie provider models google-vertex all     # back to the location's list
+fogway provider models google-vertex gemini-2.5-pro gemini-2.5-flash gemini-2.5-flash-lite gemini-3.5-flash
+fogway provider models google-vertex all     # back to the location's list
 ```
 
-`magpie provider set google-vertex location=…` keeps the models picked, so pick
+`fogway provider set google-vertex location=…` keeps the models picked, so pick
 again after a move.
 
 Google's [Priority PayGo](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/priority-paygo)
@@ -755,7 +755,7 @@ and [Flex PayGo](https://docs.cloud.google.com/gemini-enterprise-agent-platform/
 are asked for with request headers. The editor's **Headers** offers both,
 `X-Vertex-AI-LLM-Request-Type` and `X-Vertex-AI-LLM-Shared-Request-Type`, to
 add; their values are the ones Google's pages give. From the CLI:
-`magpie provider set google-vertex header.<Name>=<value>`. [What was seen of
+`fogway provider set google-vertex header.<Name>=<value>`. [What was seen of
 Priority PayGo](subsystems/providers-accounts.md#constraints-and-failure-behavior).
 
 When a request fails:
@@ -766,7 +766,7 @@ When a request fails:
   or set `credentials=`.
 - `GOOGLE_APPLICATION_CREDENTIALS names <file>, which isn't there`, or
   `GOOGLE_APPLICATION_CREDENTIALS is "…", not a full path` (`CLOUDSDK_CONFIG`
-  too): the variable names no file magpie can read, and gcloud's own isn't
+  too): the variable names no file fogway can read, and gcloud's own isn't
   read in its place. Give the whole path (a `~/` at its start is the home),
   unset it, or set `credentials=`.
 - `the Google credentials in <file>: the sign-in was refused`, with the advice
@@ -787,25 +787,25 @@ When a request fails:
 
 ### Plugins
 
-A subscription magpie doesn't sign in to itself can come from an
+A subscription fogway doesn't sign in to itself can come from an
 [OpenCode](https://opencode.ai) provider plugin or a
 [pi](https://github.com/earendil-works/pi) package: the npm packages OpenCode
 users install to sign in to a plan (their `auth` hook), and the pi packages
-that register a provider (`pi.registerProvider`), work in magpie as they do
-there. magpie runs them on [Bun](https://bun.sh), downloaded the first
+that register a provider (`pi.registerProvider`), work in fogway as they do
+there. fogway runs them on [Bun](https://bun.sh), downloaded the first
 time a plugin needs it, and the plugin signs in, lists the models and makes
-each request; magpie serves them to agents like any provider's.
+each request; fogway serves them to agents like any provider's.
 
 ```sh
-magpie plugin add opencode-gemini-auth   # an npm package, or a path to a plugin of your own
-magpie plugin add pi-antigravity         # a pi package, the same way
-magpie plugin                           # the plugins, what each signs in to, and whether you are
-magpie plugin login google-plugin       # its sign-in: the method, its questions, the browser or a key
-magpie plugin logout google-plugin
-magpie plugin off opencode-gemini-auth  # on brings it back; rm removes it; update updates them all
+fogway plugin add opencode-gemini-auth   # an npm package, or a path to a plugin of your own
+fogway plugin add pi-antigravity         # a pi package, the same way
+fogway plugin                           # the plugins, what each signs in to, and whether you are
+fogway plugin login google-plugin       # its sign-in: the method, its questions, the browser or a key
+fogway plugin logout google-plugin
+fogway plugin off opencode-gemini-auth  # on brings it back; rm removes it; update updates them all
 ```
 
-A provider id magpie already has (google, openai, anthropic) is
+A provider id fogway already has (google, openai, anthropic) is
 `<id>-plugin`. In the app, Settings → Plugins adds and removes them, and
 the providers they sign in to are in Add provider → From plugins.
 
@@ -814,10 +814,10 @@ example a third-party plugin and your own copy of it. One of them serves
 that id: the one you picked, or else the one added last. Both plugins stay
 listed, and each row in Plugins › Installed says which one serves the
 provider. The other row has **Use for <provider>**, which switches the
-provider to it. `magpie plugin` prints the same thing, and
+provider to it. `fogway plugin` prints the same thing, and
 
 ```sh
-magpie plugin use ~/dev/my-acme-auth acme   # this plugin serves acme from now on
+fogway plugin use ~/dev/my-acme-auth acme   # this plugin serves acme from now on
 ```
 
 makes the pick. Each plugin can still be switched off or removed on its
@@ -825,37 +825,37 @@ own.
 
 A package is pi's when its `package.json` has a `pi` manifest, the
 `pi-package` keyword, or depends on `@earendil-works/pi-coding-agent`.
-magpie installs pi beside it and loads it with pi's own loader; the
-providers it registers are what magpie uses, and its commands, tools and
+fogway installs pi beside it and loads it with pi's own loader; the
+providers it registers are what fogway uses, and its commands, tools and
 renderers are left alone. Its sign-in runs as in pi: an OAuth login's
 questions and pages, and the dialogs and pickers it shows (`ctx.ui`, its
-terminal components too), are asked in magpie's sign-in; an API key works
+terminal components too), are asked in fogway's sign-in; an API key works
 as well. pi's own files (its `auth.json` and what a package keeps) are in
-`pi/` under magpie's config directory, not your `~/.pi`, unless
+`pi/` under fogway's config directory, not your `~/.pi`, unless
 `PI_CODING_AGENT_DIR` says otherwise. Requests reach the package as pi
 sends them, and its replies keep their thinking and tool calls.
 
 #### For plugin authors
 
-A plugin is an OpenCode plugin or a pi package; nothing magpie-specific is
-needed. For an OpenCode plugin magpie reads a few more fields, which
+A plugin is an OpenCode plugin or a pi package; nothing fogway-specific is
+needed. For an OpenCode plugin fogway reads a few more fields, which
 OpenCode ignores:
 
-- **The provider's icon**: `icon` on the `auth` hook, or `"magpie": {
+- **The provider's icon**: `icon` on the `auth` hook, or `"fogway": {
   "icon": "…" }` in the plugin's `package.json` (for every provider it
   signs in to that names none). An `https://` URL of a picture on a public
-  host, which magpie fetches once and keeps, or a `data:image/…` URI;
+  host, which fogway fetches once and keeps, or a `data:image/…` URI;
   PNG, JPEG, GIF, WebP, ICO or SVG, at most 1 MB. Anything else is ignored,
   and the icon the plugin market lists for the plugin is shown instead.
   The `package.json` icon is also the card's picture under Discover →
-  Unofficial, on GitHub for a repository tagged `magpie-plugin`.
+  Unofficial, on GitHub for a repository tagged `fogway-plugin`.
 - **An API key's field**: a `type: "api"` method's `label` titles the key's
   field, as OpenCode's dialog does (one that only says "API key" reads
   "<provider> API key"), and its `placeholder` is the hint inside the field
-  (and after the question in `magpie plugin login`). The method's `prompts`
+  (and after the question in `fogway plugin login`). The method's `prompts`
   are asked first, as in OpenCode, and reach `authorize(inputs)`. A prompt of
-  `type: "password"` (magpie's own; OpenCode has `text` and `select`) is typed unseen:
-  a masked field in the app, no echo in `magpie plugin login` (#1982).
+  `type: "password"` (fogway's own; OpenCode has `text` and `select`) is typed unseen:
+  a masked field in the app, no echo in `fogway plugin login` (#1982).
 
 ```js
 export const LemonPlugin = async () => ({
@@ -880,11 +880,11 @@ event of a streamed reply and `onResponse(body, ctx)` a whole one, all in
 the agent's own API. A hook returns the changed object, or nothing to
 leave it; `onEvent` returns `null` to drop an event, and
 `ctx.reject(status, message)` turns a request away. Declare it with
-`"magpie": { "middleware": "./mw.js" }` in `package.json`, or add a single
+`"fogway": { "middleware": "./mw.js" }` in `package.json`, or add a single
 `*.middleware.js` file:
 
 ```js
-// alias.middleware.js — magpie plugin add ./alias.middleware.js
+// alias.middleware.js — fogway plugin add ./alias.middleware.js
 export const events = ["message_start"]
 export function onRequest(body, ctx) {
   ctx.state.asked = body.model
@@ -909,13 +909,13 @@ has the rest.
 them with its **Options** button in Plugins › Installed, or
 
 ```sh
-magpie plugin options model-map '{"mapping": {"fast": "deepseek/deepseek-chat"}}'
-magpie plugin options model-map off   # clears them
+fogway plugin options model-map '{"mapping": {"fast": "deepseek/deepseek-chat"}}'
+fogway plugin options model-map off   # clears them
 ```
 
 The name can be a package's short name (`model-map` for
 `@magpie-community/middleware-model-map`). A package's
-`"magpie": { "options": {…} }` is the example the editor starts from.
+`"fogway": { "options": {…} }` is the example the editor starts from.
 
 Ready-made middleware, under Plugins › Discover › Gateway middleware
 (`@magpie-community/middleware-<name>`), mostly New API's channel settings
@@ -927,8 +927,8 @@ middleware's entry in the community `registry.json` has
 
 #### Agent plugins
 
-A plugin can add an agent magpie has no setup of its own for. Its
-`package.json` names the module (`"magpie": { "agent": "./agent.js" }`), or
+A plugin can add an agent fogway has no setup of its own for. Its
+`package.json` names the module (`"fogway": { "agent": "./agent.js" }`), or
 it is a single `*.agent.js` file:
 
 ```js
@@ -936,7 +936,7 @@ export const agent = {
   id: "aider", name: "Aider", bin: "aider",
   config: "~/.aider.conf.yml",   // json, yaml or env
   model: "model",                // the key of the model
-  prefix: "openai/",             // written before magpie's model id
+  prefix: "openai/",             // written before fogway's model id
   ua: ["aider", "litellm"],
 }
 export function connect({ gateway, model, models }) {
@@ -944,10 +944,10 @@ export function connect({ gateway, model, models }) {
 }
 ```
 
-It is then on the Agents page like magpie's own: picking one of magpie's
+It is then on the Agents page like fogway's own: picking one of fogway's
 models writes the model and what `connect` returns, and its own model or
 Disconnect puts every key back as it was. It runs in moejs like middleware.
-An id magpie's own agents use is refused. In the market an agent's entry has
+An id fogway's own agents use is refused. In the market an agent's entry has
 `"kind": "agent"` (`@magpie-community/agent-<name>`). The full reference is
 on the site's Plugins page, under Agent plugins.
 
@@ -962,10 +962,10 @@ is counted at whatever the model's maker charges. Say what a provider
 actually charges, and the usage ledger and the session totals use that:
 
 ```sh
-magpie model price relay-a/gpt-5.5                        # what it is counted at, and where that came from
-magpie model price relay-a/gpt-5.5 0.12,0.60,0.01,0.15   # input,output,cache read,cache write
-magpie model price relay-a/gpt-5.5 --reset                # take your price off this model
-magpie model prices                                       # every model you priced
+fogway model price relay-a/gpt-5.5                        # what it is counted at, and where that came from
+fogway model price relay-a/gpt-5.5 0.12,0.60,0.01,0.15   # input,output,cache read,cache write
+fogway model price relay-a/gpt-5.5 --reset                # take your price off this model
+fogway model prices                                       # every model you priced
 ```
 
 The four numbers are USD per million tokens. All four are asked for, because
@@ -982,17 +982,17 @@ own, `0` included, keeps it whatever its reply says.
 A call with no price at all is left out of a total's cost, never counted as
 free: the Usage page's sum says how many calls it couldn't price beside it
 ("≈$1.20+", then "3 calls unpriced"; Sessions, which prices by model, says how
-many models), and `magpie usage` and the terminal app's Usage page say the
-same after their totals. magpie doesn't guess a variant's price from a
+many models), and `fogway usage` and the terminal app's Usage page say the
+same after their totals. fogway doesn't guess a variant's price from a
 similar name (`-auto`, `-max`, `-fast` can each cost differently); give it
-one with `magpie model price`, or in the provider's editor under the model.
+one with `fogway model price`, or in the provider's editor under the model.
 
 A **Kimi Code** membership's models are counted at the Kimi API model each
 one is, not at the $0 models.dev lists them at for the plan: `k3` and
 `k3-256k` at `kimi-k3`, `kimi-for-coding-highspeed` at
 `kimi-k2.7-code-highspeed`. `kimi-for-coding` is K2.8 Preview, which the API
 doesn't sell, so it has no price until you give it one
-(`magpie model price kimi-code/kimi-for-coding …`).
+(`fogway model price kimi-code/kimi-for-coding …`).
 
 A **fifth number** is a 1-hour cache write's price. Anthropic bills a cache
 write kept for 5 minutes at 1.25× input and one kept for an hour at 2× input,
@@ -1001,9 +1001,9 @@ and its usage says which were which (`cache_creation.ephemeral_5m_input_tokens`
 transcripts). The fourth number is the 5-minute price; the fifth, when not
 given, is 2× input for a Claude model — Anthropic's rule. Any other model has
 no 1-hour price unless you give one: a 1-hour write it reports is counted at
-the 5-minute price, and neither `magpie model price` nor the app's boxes show
+the 5-minute price, and neither `fogway model price` nor the app's boxes show
 a 1-hour price for it. A call recorded
-before magpie kept the split counts all its writes at the 5-minute price, as
+before fogway kept the split counts all its writes at the 5-minute price, as
 it did.
 
 A **long-context price** is what the whole request costs once its prompt is
@@ -1011,7 +1011,7 @@ over a size, as OpenAI bills gpt-6-astra, gpt-6.1-sol and gpt-6-luna over
 272K input (2× input and cache, 1.5× output):
 
 ```sh
-magpie model price openai/gpt-6-astra 10,50,1,12.5 --tier 272k 20,75,2,25
+fogway model price openai/gpt-6-astra 10,50,1,12.5 --tier 272k 20,75,2,25
 ```
 
 The size counts the prompt the way OpenAI does: uncached input + cache reads
@@ -1048,14 +1048,14 @@ single provider-wide price.
 ### What a model takes
 
 A provider that serves a model models.dev does not list, or lists at the
-wrong size, has a window and a reply limit magpie cannot know. Say what they
+wrong size, has a window and a reply limit fogway cannot know. Say what they
 are:
 
 ```sh
-magpie model context relay-a/gpt-5.5 262144    # the window a request may hold, or 1m
-magpie model output  relay-a/gpt-5.5 131072    # the most a reply may hold, or 128k
-magpie model context "relay-a/*" 200000        # every model of that provider
-magpie model output  relay-a/gpt-5.5 --reset   # take your limit off this model
+fogway model context relay-a/gpt-5.5 262144    # the window a request may hold, or 1m
+fogway model output  relay-a/gpt-5.5 131072    # the most a reply may hold, or 128k
+fogway model context "relay-a/*" 200000        # every model of that provider
+fogway model output  relay-a/gpt-5.5 --reset   # take your limit off this model
 ```
 
 The `*` is quoted because zsh treats a name it cannot expand as a command
@@ -1079,7 +1079,7 @@ told it. Only a model whose limit nobody knows goes at 16384. A reply that
 runs into it ends with `stop_reason: max_tokens`, which a Responses client
 reads as `incomplete_details.reason: "max_output_tokens"` (#1792).
 
-Saving a window or a reply limit writes that number into the model lists magpie
+Saving a window or a reply limit writes that number into the model lists fogway
 keeps in the agents' own files — Pi's `contextWindow` and `maxTokens`, OpenCode's
 `limit`, and Crush's, droid's, Cline's, Qoder's and Zcode's — which an agent reads
 at start-up. A session already running therefore keeps the window it began with,
@@ -1093,11 +1093,11 @@ with, a dated name, a `-latest` that is not what models.dev calls it. Say
 which name to ask for:
 
 ```sh
-magpie model wire relay-b/model-2                           # what the vendor is asked for
-magpie model wire relay-b/model-2 vendor-c/model-2-preview  # ask for it by this
-magpie model wire 'relay-b/*' 'vendor-c/*'                  # every model, * being the model
-magpie model wire relay-b/model-2 --reset                   # ask for it by its own name again
-magpie model wires                                          # every name your vendors are asked for models by
+fogway model wire relay-b/model-2                           # what the vendor is asked for
+fogway model wire relay-b/model-2 vendor-c/model-2-preview  # ask for it by this
+fogway model wire 'relay-b/*' 'vendor-c/*'                  # every model, * being the model
+fogway model wire relay-b/model-2 --reset                   # ask for it by its own name again
+fogway model wires                                          # every name your vendors are asked for models by
 ```
 
 Quote the arguments with a `*` in them: zsh reads a bare `*` as a glob and
@@ -1116,16 +1116,16 @@ removal that took nothing away.
 
 Only the request that goes out carries that name, in the model field of a
 chat, Responses or Anthropic Messages request and of an Anthropic token
-count; image requests are left with the name magpie knows the model by.
+count; image requests are left with the name fogway knows the model by.
 Gemini CLI and Antigravity sign-ins go on Code Assist, and there the model
-an effort picks is a variant of the model magpie knows — `gemini-3.7-flash`
+an effort picks is a variant of the model fogway knows — `gemini-3.7-flash`
 at `high` is sent as `gemini-3.7-flash-high` — so a `*` in the name is that
 variant: `'antigravity/*' 'vendor-c/*'` asks for `vendor-c/gemini-3.7-flash-high`
 and `vendor-c/gemini-3.7-flash-low` each by its own, as it does everywhere
 else. A name with no `*` in it, or one given for `antigravity/gemini-3.7-flash`
 itself, is that one name at every level.
 
-Everything else keeps the name magpie knows the model by: the catalog agents
+Everything else keeps the name fogway knows the model by: the catalog agents
 pick from, the routing groups' membership, `GET /models`, and what a call is
 recorded and priced as. What the vendor's own reply said answered is kept
 beside that, in the ledger's `served_model`, which is what it is for, and it
@@ -1135,21 +1135,21 @@ in force when the ledger is read, since a record keeps what the vendor
 answered and not the name the request went out under: naming a model after
 the call re-judges that call, which is then left reading as a swap. What a
 provider *supports* — whether it takes a temperature, which reasoning levels
-fit — is still asked about the model magpie knows, so a rename upstream does
-not change how magpie behaves towards the model.
+fit — is still asked about the model fogway knows, so a rename upstream does
+not change how fogway behaves towards the model.
 
 An upstream name is **one provider's**, not the model's: another provider
 serving the same id is asked for it under its own name, or this one. The
 model it is given for has to be one that provider serves — `<provider>/*`
-is the way to say one for every model — because a name for a model magpie
+is the way to say one for every model — because a name for a model fogway
 would never ask the provider for is not a name of its own: the model is
-asked for by the name magpie knows it by, and nothing anywhere would say the
+asked for by the name fogway knows it by, and nothing anywhere would say the
 name given for it is not the one in force. A relay that serves a model under
 an id of its own *and* lists it does get the name; what is refused is a
 model the provider's list does not have at all. The model test uses the name
 too, so a relay that only knows its own ids does not report a working model
 as broken. An image model is the exception that follows the rule above: it is
-tested by the name magpie knows it by, on the images API and on the chat it
+tested by the name fogway knows it by, on the images API and on the chat it
 falls back to, because that is how a drawing is asked for.
 
 ### Routing groups
@@ -1158,18 +1158,18 @@ A routing group is several models, from one provider or many, that an agent
 picks as one: `group/<id>`. The gateway routes each request over every
 member's keys and accounts together. A model two of your providers serve
 under the same name becomes a group on its own; the Routing view in the app
-and `magpie group` make any other:
+and `fogway group` make any other:
 
 ```sh
-magpie groups                           # yours, then those magpie found
-magpie group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=order stays=session
-magpie group opus-anywhere              # one group, its models in order
-magpie group set opus-anywhere models+=openrouter/anthropic/claude-opus-5.5 routing=usage
-magpie group set opus-anywhere models-=copilot/claude-opus-5.5
-magpie group set opus-anywhere routing=weight weight=claude/claude-opus-5-5=3,copilot/claude-opus-5.5=1
-magpie group copy opus-anywhere "Opus test"  # the same models, routing and rules, to change on its own
-magpie group rm opus-anywhere           # one magpie found is hidden; magpie group restore <id> brings it back
-magpie claude group/opus-anywhere       # use it
+fogway groups                           # yours, then those fogway found
+fogway group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=order stays=session
+fogway group opus-anywhere              # one group, its models in order
+fogway group set opus-anywhere models+=openrouter/anthropic/claude-opus-5.5 routing=usage
+fogway group set opus-anywhere models-=copilot/claude-opus-5.5
+fogway group set opus-anywhere routing=weight weight=claude/claude-opus-5-5=3,copilot/claude-opus-5.5=1
+fogway group copy opus-anywhere "Opus test"  # the same models, routing and rules, to change on its own
+fogway group rm opus-anywhere           # one fogway found is hidden; fogway group restore <id> brings it back
+fogway claude group/opus-anywhere       # use it
 ```
 
 `routing=` is `smart` (the default: of the subscriptions with quota to
@@ -1182,7 +1182,7 @@ requests by its weight, smoothly interleaved: `weight=claude/claude-opus-5-5=3`
 gives it three requests for every one a model left at weight 1 takes; a
 weight is 1 to 1000, `weight=` alone clears them all, and a group in the
 group counts as one member, `weight=group/fast=2`). A key has no allowance to weigh, so it goes by its
-order or by what magpie sent it lately — except a sub2api key its owner gave
+order or by what fogway sent it lately — except a sub2api key its owner gave
 a 5-hour, day or 7-day limit: with the provider's Balance URL set to the
 relay's `/v1/usage`, its card shows those windows and routing weighs it by
 them as it does a subscription, resting it till the window renews once the
@@ -1199,7 +1199,7 @@ its errors go to the agent).
 one provider serves it.
 
 `listed=no` (the group editor's **Model lists: The group alone**) keeps the
-models a group names, and those its patterns match, out of `magpie models`,
+models a group names, and those its patterns match, out of `fogway models`,
 `/v1/models` and every agent's list, so a client offers the group alone.
 They are still served: the group routes over them, and a request naming one
 as `provider/model` is answered. A group in it keeps its own setting, and a
@@ -1218,8 +1218,8 @@ key) rests and the next is asked, and the Routing page's Requests list shows
 every try. It takes no patterns, rules, classifier, effort or fast mode.
 
 ```sh
-magpie group add Jevs models=typesafe/jev-latest,bailian-token-plan/decision-model-preview routing=order
-curl -s localhost:3425/v1/systemone -H 'Authorization: Bearer magpie' \
+fogway group add Jevs models=typesafe/jev-latest,bailian-token-plan/decision-model-preview routing=order
+curl -s localhost:3725/v1/systemone -H 'Authorization: Bearer fogway' \
   -d '{"model":"group/jevs","state":{"message":"fix the login bug"},"questions":{"intent":{"type":"choice","choices":["bug","feature"]}}}'
 ```
 
@@ -1250,7 +1250,7 @@ the offered configurations on this device across window restarts; new or changed
 configurations can be offered again. **Add provider → Import…** still includes ignored configurations.
 Discovery runs in the background, at most once a minute when opening or
 refreshing the page, and refreshes after an import. Configurations already in
-magpie, entries that cannot be imported, providers turned off in their source
+fogway, entries that cannot be imported, providers turned off in their source
 app, and ID collisions that cannot join as another key are excluded from the
 hint. The latter two remain available through manual import. Counts refer to
 configurations in source apps, which may include the same provider
@@ -1259,15 +1259,15 @@ reach the automatic hint; ignored fingerprints are kept in local browser storage
 
 The app's Import from other apps dialog can copy providers from Claude Code's
 `settings.json` (`CLAUDE_CONFIG_DIR` when set) and Codex's `config.toml`
-(`CODEX_HOME` when set) into magpie. Codex imports custom
+(`CODEX_HOME` when set) into fogway. Codex imports custom
 `[model_providers.*]` entries with an inline `experimental_bearer_token`,
 including fixed headers for custom providers in
 `[model_providers.*.http_headers]` and models from
 `[profiles.*]` or `model_catalog_json`. Review the entries before importing;
-subsequent changes to agent settings are not automatically copied to magpie.
-Entries that point back to magpie or only name an `env_key` are skipped.
+subsequent changes to agent settings are not automatically copied to fogway.
+Entries that point back to fogway or only name an `env_key` are skipped.
 
-### How magpie picks an account
+### How fogway picks an account
 
 When a subscription has several accounts on (Claude Code's or Codex's
 saved accounts, say), or a routing group has several members, the gateway
@@ -1321,7 +1321,7 @@ each of these groups ordered by the share used.
   when they run out: of several WorkBuddy accounts, the one whose credits
   left end first goes first. The daily Free Plan credits aren't counted,
   since they end at the same midnight on every account. A Claude account
-  magpie knows nothing of yet goes first once, to learn what it has left
+  fogway knows nothing of yet goes first once, to learn what it has left
   from the answer; any other unknown account goes after those known.
   An account with a month beside its week (Factory) goes by its month:
   when the month holds less than its weeks add up to (Factory's, by
@@ -1336,7 +1336,7 @@ each of these groups ordered by the share used.
   conversation goes to the account the fewest other conversations of the
   last 30 minutes are on.
 - **Least used first**: the lowest share used first; then the account
-  magpie sent the fewest tokens lately (half of them stop counting after an
+  fogway sent the fewest tokens lately (half of them stop counting after an
   hour). An account not known counts as unused.
 - **Weekly pace**: the account with the highest pace first. Pace is the
   share of the week left divided by the hours until the week renews (at
@@ -1344,7 +1344,7 @@ each of these groups ordered by the share used.
   windows that count the model (Opus's own and the general one), the lower
   pace counts. An account with no week goes by its 5 hours. Accounts whose
   pace is within a tenth of the highest in their band count as alike, and
-  among them the one magpie sent the fewest tokens lately goes first. A
+  among them the one fogway sent the fewest tokens lately goes first. A
   Claude account not known goes first once, as in Smart; another unknown
   account counts as a fresh week.
 
@@ -1357,7 +1357,7 @@ depends on the routing:
 | In turn | Where the rotation goes next. |
 | Smart | Only between accounts whose windows all renew in the same hours, or whose shares used are equal. |
 | Least used first | Only between accounts with the same share used and the same tokens sent lately. |
-| Weekly pace | Only between accounts in the same pace band that magpie sent the same tokens lately, in practice none since magpie started. |
+| Weekly pace | Only between accounts in the same pace band that fogway sent the same tokens lately, in practice none since fogway started. |
 
 For Claude Code and Codex, *Make first* also signs the agent in to that
 account, because the account the agent is signed in to is first. With
@@ -1369,7 +1369,7 @@ rests the account until it is back, and the same request goes to the next
 candidate at once, as long as none of the reply has been sent. How long it
 rests comes from the first of these that is known: the reset time in the
 refusal (Claude Code's `usage limit reached|<time>`, ChatGPT's
-`resets_at`), the reset of a window magpie last read as used up (98%, 100%
+`resets_at`), the reset of a window fogway last read as used up (98%, 100%
 In order), the vendor's `Retry-After` or rate-limit reset header (an hour
 at most), else 15 minutes. It is never longer than 8 days. The account's
 windows are read again right away, and once a reading finds the window it
@@ -1396,32 +1396,32 @@ API. Codex and Chat clients get a 400 saying the model refused the request,
 which they don't ask again for. Any other 400 is never asked again.
 
 **Through the gateway, or on its own.** Everything above is the gateway's,
-for requests sent through magpie. Claude Code or Codex used on its own
+for requests sent through fogway. Claude Code or Codex used on its own
 talks to the vendor with the account it is signed in to, and routing
-never sees it. For that, magpie looks at the account the agent is signed
+never sees it. For that, fogway looks at the account the agent is signed
 in to a minute after it starts and every 5 minutes after: once it has used
-98% of a window (100% In order), or reached its usage cap, magpie signs
+98% of a window (100% In order), or reached its usage cap, fogway signs
 the agent in to the next ticked account, in their order, whose allowance
-is known and under that share. A saved Claude account magpie knows
+is known and under that share. A saved Claude account fogway knows
 nothing of yet (see below) is not moved to. Once the account it moved the
 agent off has every window under 90% again, it signs the agent back in to
 it. *Keep … signed in to* turns this off: the agent stays on the first
 account, or on the account you picked, whatever it has left. It changes nothing in the gateway's routing.
 
-With more than one Codex account on, magpie also sets `openai_base_url`
+With more than one Codex account on, fogway also sets `openai_base_url`
 in Codex's config.toml, so a request the signed-in account has no
 allowance for goes on to the others through the gateway. *Only switch
-Codex's sign-in* under Providers › Codex (or `magpie accounts switch-only
-codex on`) leaves that out: magpie only moves Codex's own sign-in
+Codex's sign-in* under Providers › Codex (or `fogway accounts switch-only
+codex on`) leaves that out: fogway only moves Codex's own sign-in
 (`auth.json`) as above, and Codex's requests go straight to OpenAI, never
-through magpie (#1907). An `openai_base_url` you wrote yourself stays. The
+through fogway (#1907). An `openai_base_url` you wrote yourself stays. The
 Codex app and a running `codex app-server` read the sign-in when they
 start, so one already open stays on its account until it is opened again;
-a new `codex` session takes the new one. Connected to magpie, Codex's
+a new `codex` session takes the new one. Connected to fogway, Codex's
 requests go through it as before.
 
 **How often an allowance is read.** Routing uses what was read last and
-never waits for a reading, except the first one after magpie starts (3
+never waits for a reading, except the first one after fogway starts (3
 seconds at most). A reading over a minute old is read again in the
 background as a request is routed, and an account that fails for its
 quota is read again at once; if a reading was already under way as it
@@ -1429,21 +1429,21 @@ failed, the account is read again as soon as that reading is back. A
 reading the Usage page made counts as one, its age from when it was made.
 Codex and most other subscriptions read every
 account from the vendor this way. A Codex account is also known from each
-reply ChatGPT sends magpie for it, which says what the account has used:
+reply ChatGPT sends fogway for it, which says what the account has used:
 an account near its usage cap is held from the next turn on (#1295). A
 usage cap is set on the account's row for each of its windows, and a
 window can have one of its own, set from its meter: a five-hour window at
 50% and a weekly one at 40%, or no cap on one window. The account is held
 while any window is past its own. A
-usage cap is still a stop on what magpie has read, not a guarantee: a turn
+usage cap is still a stop on what fogway has read, not a guarantee: a turn
 already under way can take an account past it, so a 99% cap doesn't
-promise 1% is left. Claude is different: magpie never asks
+promise 1% is left. Claude is different: fogway never asks
 Anthropic itself. It reads only the account Claude Code is signed in to,
 by running Claude Code's `/usage`:
 
-- once after magpie starts;
+- once after fogway starts;
 - when you open or refresh the Usage page (in the app or the TUI), or run
-  `magpie quota` or `magpie accounts`, at most every 30 seconds;
+  `fogway quota` or `fogway accounts`, at most every 30 seconds;
 - otherwise again after 5 to 15 minutes (drawn at random each time), and
   only if Claude Code was used since.
 
@@ -1456,27 +1456,27 @@ whose reset has passed counts as empty again.
 ### Signed-in agents as providers
 
 An agent you have signed in to is a subscription with models behind it, so
-magpie offers it as a provider too. Claude Code (an OAuth login in the macOS
+fogway offers it as a provider too. Claude Code (an OAuth login in the macOS
 Keychain or `~/.claude/.credentials.json`), Codex (a ChatGPT login in
 `~/.codex/auth.json`), Copilot (a GitHub login in
 `~/.config/github-copilot/apps.json`), Devin (`devin auth login`, kept in
-`~/.local/share/devin/credentials.toml`) and Qoder (signed in from magpie with
-its OAuth device flow, kept in magpie's own config; Qoder CN is its own
+`~/.local/share/devin/credentials.toml`) and Qoder (signed in from fogway with
+its OAuth device flow, kept in fogway's own config; Qoder CN is its own
 subscription beside it, for accounts on qoder.cn made with an Alibaba Cloud
-account or a phone number, which can't sign in on qoder.com) appear in `magpie providers` and in
+account or a phone number, which can't sign in on qoder.com) appear in `fogway providers` and in
 the Providers tab as *signed in as …*, with their models spelled
 `claude/claude-sonnet-5`, `codex/gpt-5.5`, `copilot/claude-sonnet-4.5` or
-`devin/swe-2-max` in every other agent's picker. magpie reads the agent's own credentials each
+`devin/swe-2-max` in every other agent's picker. fogway reads the agent's own credentials each
 time, refreshes tokens the way the agent does — writing a rotated token
 back where the agent will find it — and stores nothing but your model
 picks; sign out of the agent and the provider is gone. The model list is
-the vendor's own too: magpie asks Anthropic's, Copilot's or Codex's API with
+the vendor's own too: fogway asks Anthropic's, Copilot's or Codex's API with
 that same sign-in, so a model added upstream appears on the next refresh.
-The ChatGPT backend only streams and rejects a few parameters, so magpie
+The ChatGPT backend only streams and rejects a few parameters, so fogway
 translates non-streaming requests and drops what it would refuse.
 Claude subscriptions are different: Anthropic classifies another agent's
 system prompt as third-party traffic even when the OAuth request otherwise
-looks like Claude Code. magpie therefore drives the genuine local `claude`
+looks like Claude Code. fogway therefore drives the genuine local `claude`
 binary for every Claude subscription generation. The caller's tools are
 bridged into that live turn over MCP, and tool results resume the same Claude
 Code process; Pi, OpenCode and every other agent use this path automatically.
@@ -1489,59 +1489,59 @@ devin CLI uses, and a Cursor subscription to the agent API cursor-agent
 uses, each with the CLI's sign-in and the caller's tools passed through
 (Cursor's model calls them as MCP tools; none of Cursor's own tools run).
 Google sign-ins — Gemini CLI's and Antigravity's — talk to Google's Code
-Assist API directly: magpie reads Gemini CLI's own login from `~/.gemini` or
+Assist API directly: fogway reads Gemini CLI's own login from `~/.gemini` or
 signs one in itself, and refreshes the token in memory. Google no longer
 serves Gemini CLI's sign-in to individual accounts, only to Gemini Code
 Assist Standard and Enterprise, which need a Google Cloud project named
-(`magpie accounts project gemini <email> <project-id>`, or
+(`fogway accounts project gemini <email> <project-id>`, or
 `GOOGLE_CLOUD_PROJECT` in `~/.gemini/.env`). Google may suspend an
-Antigravity account it sees used outside Antigravity, so magpie asks before
+Antigravity account it sees used outside Antigravity, so fogway asks before
 adding one; use an account you can afford to lose.
 
 Accounts signed in elsewhere can be imported from their files instead of
 signed in again: *Import accounts from a file…* under a subscription's
-accounts, or `magpie accounts import <codex|claude|antigravity|factory>
+accounts, or `fogway accounts import <codex|claude|antigravity|factory>
 <file>... [--yes]`. For ChatGPT that takes Codex's `auth.json`, codexbar's
 `~/.codexbar/config.json` (every ChatGPT account it switches between) and
 the exports of Cockpit Tools, CLIProxyAPI and Sub2API, as many files as
 you like. Each ChatGPT sign-in is refreshed before it is added, which
-checks it and makes magpie its only holder: the tool the file came from
+checks it and makes fogway its only holder: the tool the file came from
 (Codex on another computer, codexbar, Cockpit Tools, CLIProxyAPI) is
 signed out of that account and has to sign in again. A backup carries no
 sign-in, so this is also how accounts move to a new computer: import the
 file from the old one there. The files are only read. An account
-magpie has already is left as it is, two Team seats of one email stay two
+fogway has already is left as it is, two Team seats of one email stay two
 accounts, and an entry with only an access token (a ChatGPT web session)
 is refused, since it would stop working within days with nothing to renew
 it.
 
 ### Connecting anything else
 
-The gateway listens on `127.0.0.1:3425` (`MAGPIE_ADDR` changes it) and starts
-with the app; `magpie serve` runs it alone. For reverse-proxied or container
-deployments, set `MAGPIE_PUBLIC_URL=https://magpie.example.com` to the base
+The gateway listens on `127.0.0.1:3725` (`FOGWAY_ADDR` changes it) and starts
+with the app; `fogway serve` runs it alone. For reverse-proxied or container
+deployments, set `FOGWAY_PUBLIC_URL=https://fogway.example.com` to the base
 URL shown in the console and CLI, including connection examples. While
-other machines are let in (Share on local network, or a `MAGPIE_ADDR` on
+other machines are let in (Share on local network, or a `FOGWAY_ADDR` on
 the network), the Gateway page's Connect starts at it until you pick
 another address there, Settings › About lists it beside the local URL, and
-`magpie web` shows it as the gateway's address. Local agent configs still
+`fogway web` shows it as the gateway's address. Local agent configs still
 use the local gateway address.
 
-Building an app or agent that should use magpie, or get a row on the
+Building an app or agent that should use fogway, or get a row on the
 Agents page: see [Integrating your app or agent](integrating.md).
 
 External clients behind a reverse proxy need an enabled gateway key
 (Gateway → Gateway keys): with Settings → Share on local network on, or a
-`MAGPIE_ADDR` on the network, magpie asks for one; otherwise it refuses
+`FOGWAY_ADDR` on the network, fogway asks for one; otherwise it refuses
 them, unless the proxy authenticates its clients itself
-(`MAGPIE_TRUST_PROXY=1`, below). A public URL with no port of
-its own — a reverse proxy's `https://magpie.example.com` — is the address
-`magpie web` prints for its own page too, so the proxy must forward `/v1`
+(`FOGWAY_TRUST_PROXY=1`, below). A public URL with no port of
+its own — a reverse proxy's `https://fogway.example.com` — is the address
+`fogway web` prints for its own page too, so the proxy must forward `/v1`
 and `/v1beta` to the gateway's port and the rest to the page's. When the
-proxy and magpie run on the same machine, a request it forwards over
+proxy and fogway run on the same machine, a request it forwards over
 loopback carries a forwarding header and needs a gateway key as one from
 the network does (see [Providers and the gateway](#providers-and-the-gateway)); a proxy that
-authenticates its clients itself can be trusted with `MAGPIE_TRUST_PROXY=1`.
+authenticates its clients itself can be trusted with `FOGWAY_TRUST_PROXY=1`.
 
 It exposes:
 
@@ -1559,7 +1559,7 @@ Each `/v1/models` entry includes `reasoning` and `supported_reasoning_levels`
 (`[{"effort":"low"}, ...]`). A routing group is marked `reasoning` when any
 member thinks, even where it offers no levels to pick from (a member known
 to take none still leaves the group none); `supported_reasoning_levels`
-lists only the levels every member supports, as before. A member magpie
+lists only the levels every member supports, as before. A member fogway
 knows does not think is sent no reasoning ask when the group routes to it,
 so the effort the group is asked for reaches the members that take it and
 doesn't turn a vendor away as a 400; a member nothing speaks for is sent
@@ -1570,35 +1570,35 @@ request to which is translated anyway.
 
 Requests pass straight through when the vendor speaks the agent's API and
 are translated otherwise, streaming, tool calls and reasoning included. The
-key is `magpie` (any value works; the gateway only listens on loopback), and
+key is `fogway` (any value works; the gateway only listens on loopback), and
 models are named `provider/model`.
 
 - A routing group is asked by its id (`group/<id>`) or its name.
 - A bare model id (`glm-5.3`) works too. When several providers serve it,
-  it goes to the routing group magpie found for it, which asks them in the
+  it goes to the routing group fogway found for it, which asks them in the
   order of the Providers page and falls over to the next. With found
   groups off, it goes to the first of them in that order alone.
-- Every reply names who answered in `X-Magpie-Provider` (the provider)
-  and `X-Magpie-Model` (`provider/model`), and so does the usage log.
+- Every reply names who answered in `X-Fogway-Provider` (the provider)
+  and `X-Fogway-Model` (`provider/model`), and so does the usage log.
 
 Anything with a base-URL setting can use it:
 
 | Tool speaks | Base URL                   | Environment                                   |
 | ----------- | -------------------------- | --------------------------------------------- |
-| OpenAI      | `http://127.0.0.1:3425/v1` | `OPENAI_BASE_URL`, `OPENAI_API_KEY=magpie`      |
-| Anthropic   | `http://127.0.0.1:3425`    | `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY=magpie` |
-| Gemini      | `http://127.0.0.1:3425`    | `GOOGLE_GEMINI_BASE_URL`, `GEMINI_API_KEY=magpie` |
+| OpenAI      | `http://127.0.0.1:3725/v1` | `OPENAI_BASE_URL`, `OPENAI_API_KEY=fogway`      |
+| Anthropic   | `http://127.0.0.1:3725`    | `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY=fogway` |
+| Gemini      | `http://127.0.0.1:3725`    | `GOOGLE_GEMINI_BASE_URL`, `GEMINI_API_KEY=fogway` |
 
-An optional `X-Magpie-Account: <account>` header (the account's email
+An optional `X-Fogway-Account: <account>` header (the account's email
 or login, or its id on the Routing page) pins a request to one account of a
 subscription with several: only it is tried, and an unknown account, one
 whose plan lacks the model, or one resting is an error rather than another
 account's reply. The header is not sent on to the vendor.
 
 A status bar can show where a turn went before its first token arrives:
-send `X-Magpie-Session: <id>` with the requests (an agent's own session
+send `X-Fogway-Session: <id>` with the requests (an agent's own session
 header, such as Pi's or Claude Code's, works too) and read
-`GET /v1/magpie/route?session=<id>`. It answers the session's latest
+`GET /v1/fogway/route?session=<id>`. It answers the session's latest
 request as routing has it so far — `asked` (the model the agent named),
 `group`, `rule` (the group's rule that matched, and `rule.pick`, the
 effort its decision model picked), `model` and `effort` (the member being
@@ -1609,45 +1609,45 @@ tried now, as `provider/model`, and the reasoning it was sent at), and
 decided, before the vendor is asked. `after=<seq>&wait=<seconds>` (up to 60)
 holds the answer until the route changes past the `seq` of the last one,
 so a UI can follow a turn with one request at a time. Only the session
-named is told; like `/v1/magpie/quotas`, it answers this machine, and
+named is told; like `/v1/fogway/quotas`, it answers this machine, and
 another only with the key of a gateway shared on the local network. A key
 held to a budget, to some models or to some accounts is told the routes of
 its own requests alone: another key's session answers `route: null`.
 
-To show the one in use without a session, `GET /v1/magpie/quotas` (and
-`magpie quota --json`, the same list) has `lastServedAt` on each
+To show the one in use without a session, `GET /v1/fogway/quotas` (and
+`fogway quota --json`, the same list) has `lastServedAt` on each
 subscription account, plan and key that answered a request through the
 gateway in the last 30 days, and `last: true` on the latest. It is kept
 in `served.json` beside `providers.json`, so a restart keeps it.
 
 A gateway key held to a budget, to some models or to some accounts is told
-none of this magpie's accounts (#1981): `/v1/magpie/quotas`,
-`/v1/magpie/quotas/history`, `/v1/magpie/quotas/cards`,
-`POST /v1/magpie/quotas/refresh` and `/v1/magpie/concurrency` answer it
+none of this fogway's accounts (#1981): `/v1/fogway/quotas`,
+`/v1/fogway/quotas/history`, `/v1/fogway/quotas/cards`,
+`POST /v1/fogway/quotas/refresh` and `/v1/fogway/concurrency` answer it
 403 with `"code": "gateway_key_held"`, from this machine or another. It
-reads its own limit from `GET /v1/magpie/limit`. Another magpie that uses
+reads its own limit from `GET /v1/fogway/limit`. Another fogway that uses
 such a key shows only that key's own card.
 
 An app of your own can read the Usage page's numbers too.
-`GET /v1/magpie/usage?period=<today|week|month|all>` is the page's summary,
+`GET /v1/fogway/usage?period=<today|week|month|all>` is the page's summary,
 the same JSON as the window's `/api/usage` (`path` is left out for another
 machine), with every session in `sessions` where the window's lists the
-top 100 by tokens; `sessionCount` is how many there are. `GET /v1/magpie/usage/requests` is its requests a page at a time
+top 100 by tokens; `sessionCount` is how many there are. `GET /v1/fogway/usage/requests` is its requests a page at a time
 (`offset`, `limit` up to 500), with the same filters as the Requests log:
 `period`, `day`, `agent`, `provider`, `model`, `account`, `callerKey`,
 `purpose`, `failed`, `retried`, `q`, `via`, `computer`. What was said in a call is not
-in either. Like `/v1/magpie/quotas`, they answer this machine, and another
+in either. Like `/v1/fogway/quotas`, they answer this machine, and another
 only with a gateway key. A key held to a budget, to some models or to some
-accounts is told its own calls alone: `/v1/magpie/usage` refuses it with a
-403, and `/v1/magpie/usage/requests` keeps only its rows and filter lists.
+accounts is told its own calls alone: `/v1/fogway/usage` refuses it with a
+403, and `/v1/fogway/usage/requests` keeps only its rows and filter lists.
 
-An app that calls its vendor itself, not through magpie, can report those
-calls so the Usage page counts them: `POST /v1/magpie/usage/requests` with
+An app that calls its vendor itself, not through fogway, can report those
+calls so the Usage page counts them: `POST /v1/fogway/usage/requests` with
 `Content-Type: application/json`. The body is one record or an array of up
 to 5000 (32 MiB at most), shaped like a `usage.jsonl` line:
 
 ```sh
-curl -s http://127.0.0.1:3425/v1/magpie/usage/requests \
+curl -s http://127.0.0.1:3725/v1/fogway/usage/requests \
   -H 'Content-Type: application/json' \
   -d '[{"t":"2026-10-13T08:00:00Z","agent":"my-app","provider":"anthropic",
         "model":"claude-sonnet-4-6","in":1200,"out":340,"cache_read":9000,
@@ -1658,7 +1658,7 @@ curl -s http://127.0.0.1:3425/v1/magpie/usage/requests \
   required. `in`, `out`, `cache_read`, `cache_write`, `cache_write_1h`,
   `reasoning`, `ms`, `ttft_ms`, `status`, `cost` (USD), `effort`,
   `session` and `err` may be left out.
-- **Pricing:** a record without `cost` is priced at magpie's prices for
+- **Pricing:** a record without `cost` is priced at fogway's prices for
   its provider and model.
 - **Past times:** `t` is taken as given, however far back, so a history
   can be backfilled; it may not be before 2000-01-01T00:00:00Z or more
@@ -1687,13 +1687,13 @@ conversation did.
 Records written before these fields came have neither. Codex's sub-agents are told
 apart by `kind` only.
 
-`magpie quota wait <provider|account>` blocks until that subscription (any
-of its accounts magpie has on) or that one account has allowance again — no
+`fogway quota wait <provider|account>` blocks until that subscription (any
+of its accounts fogway has on) or that one account has allowance again — no
 window that stops it used up — then exits 0, so a long task stopped by its
 limit can go on unattended:
 
 ```sh
-until codex exec "…"; do magpie quota wait codex || break; done
+until codex exec "…"; do fogway quota wait codex || break; done
 ```
 
 It reads the vendors itself, whether or not the gateway runs, and again
@@ -1706,25 +1706,25 @@ unknown name exits 2 and Ctrl+C 130.
 
 A ChatGPT account that holds credits keeps answering once a usage window is
 used up: the vendor spends the credits, so a task goes on. That is the
-default. `magpie quota credits <account> off` (or *Use credits* on the
-account's Usage card) turns it off for that account: once magpie's latest
+default. `fogway quota credits <account> off` (or *Use credits* on the
+account's Usage card) turns it off for that account: once fogway's latest
 reading of its windows, refreshed about every minute, shows one used up,
 the gateway holds it as used up till the window renews, and requests go to
 the other accounts, groups and fallbacks; with none left, the request gets a
 429 saying why, unless the account spends its resets by itself and its week
-is used up, when a reset is spent first. `magpie quota credits` lists the
-accounts set not to spend them, `magpie quota credits <account>` says one's.
+is used up, when a reset is spent first. `fogway quota credits` lists the
+accounts set not to spend them, `fogway quota credits <account>` says one's.
 It changes the gateway's routing only, never the account Codex is signed in
-to. The credits an account holds show beside its windows in `magpie quota`,
-`magpie accounts`, the Usage page and the menu bar panel.
+to. The credits an account holds show beside its windows in `fogway quota`,
+`fogway accounts`, the Usage page and the menu bar panel.
 
 An account can have a name of your own, for telling apart seats the vendor
 names alike (a team's GLM seats under masked emails): click the account's
-name in its provider's editor, or `magpie accounts alias <agent> <email>
-<name>` (`--clear` takes it off). The name is magpie's, kept in
+name in its provider's editor, or `fogway accounts alias <agent> <email>
+<name>` (`--clear` takes it off). The name is fogway's, kept in
 providers.json; the vendor's or plugin's sign-in is never written to. It
-shows on the account's Usage card, in the menu bar, in `magpie accounts`,
-`magpie quota` and `GET /v1/magpie/quotas` (`alias`). A GLM Coding Plan
+shows on the account's Usage card, in the menu bar, in `fogway accounts`,
+`fogway quota` and `GET /v1/fogway/quotas` (`alias`). A GLM Coding Plan
 seat added both as a key and as a signed-in ZCode account is shown once, on
 the account's card (two cards would count its allowance twice); that card
 is then named for the key's provider until you name it yourself, and says
@@ -1739,7 +1739,7 @@ same *Arrange* hides a subscription from the panel's tab (*Hide*, *Show*
 puts it back), and the tab's foot says how many are hidden. Hiding is the
 panel's only: routing, caps, the Usage page and the menu bar's own cells
 still have it, and a menu bar cell for it still opens its card. Both are
-kept in magpie's settings (`usageOrder`, `panelUsageHidden`). Which
+kept in fogway's settings (`usageOrder`, `panelUsageHidden`). Which
 allowances the menu bar itself shows beside its icon is picked in Settings.
 The same list has *Tokens and cost today* and *Tokens and cost, last 7
 days*: every agent's requests as the Usage page's Overview sums them, the
@@ -1748,42 +1748,42 @@ tokens over the cost in your currency (`usage:today`, `usage:7d` in
 
 The *Gateway* tab in the app has this as copy buttons and ready-made
 snippets (shell, curl, Python, Node) for each API, the list of model ids,
-and the recent calls; `MAGPIE_DEBUG=1` logs every call to the terminal.
+and the recent calls; `FOGWAY_DEBUG=1` logs every call to the terminal.
 
 **Claude Code** gets `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN` and the
 model variables in the `env` block of `settings.json`; picking a native
 model (`opus`, `sonnet`…) removes them and restores whatever was there.
 A key in `ANTHROPIC_AUTH_TOKEN` signs Claude Code out of claude.ai while it
-runs through magpie: claude.ai's plan limits in `/usage`, its connectors,
+runs through fogway: claude.ai's plan limits in `/usage`, its connectors,
 voice and `/teleport` are off. Set its sign-in to claude.ai to keep that
-login: magpie writes the token empty, Claude Code sends magpie its claude.ai
-sign-in, and magpie never passes it on (nor its `oauth-2025-04-20` beta). A
-provider that refuses magpie's own key is then reported to Claude Code as
+login: fogway writes the token empty, Claude Code sends fogway its claude.ai
+sign-in, and fogway never passes it on (nor its `oauth-2025-04-20` beta). A
+provider that refuses fogway's own key is then reported to Claude Code as
 a 502, not as its sign-in refused, so Claude Code doesn't log out. Remote
 Control and ultrareview stay off: Claude Code has them only on Anthropic's
 own address. The choice is offered where the gateway takes any key, so not
-from a WSL distro under NAT while magpie is shared on the network.
+from a WSL distro under NAT while fogway is shared on the network.
 
-**Codex** gets a `[model_providers.magpie]` table, `model_catalog_json`
-pointing at `~/.codex/magpie-models.json` (written from the catalog, so the
+**Codex** gets a `[model_providers.fogway]` table, `model_catalog_json`
+pointing at `~/.codex/fogway-models.json` (written from the catalog, so the
 models show in Codex's own list) and a valid `model`/`effort`; picking a
 native model or disconnecting removes `model_provider` and the catalog. The
-`[model_providers.magpie]` table stays, so a thread started on magpie can
+`[model_providers.fogway]` table stays, so a thread started on fogway can
 still be opened. Codex won't load its config at all when `model_provider =
-"magpie"` has no table ("Model provider `magpie` not found"). If another
-tool leaves that state behind, magpie writes the table back the next time
+"fogway"` has no table ("Model provider `fogway` not found"). If another
+tool leaves that state behind, fogway writes the table back the next time
 it syncs. Signed in to ChatGPT (the sign-in field's default), Codex keeps
-its own provider and sign-in, and magpie's models join its list through
-`openai_base_url`. magpie becomes Codex's provider then only while the
+its own provider and sign-in, and fogway's models join its list through
+`openai_base_url`. fogway becomes Codex's provider then only while the
 Codex app holds the account: OpenAI no longer allows it and it has no
 credits left, except a workspace account still within its overage. The
-app sends nothing for a held account, so magpie steps in, and it steps
+app sends nothing for a held account, so fogway steps in, and it steps
 back once the account has room again. A window at 100% with credits left
 doesn't count: Codex stays signed in and keeps sending on those. Your
 ChatGPT sign-in is never touched.
 Codex reads its model list at start-up, so restart it after a switch.
 
-**OpenCode, Pi, Crush** get a `magpie` provider entry and `magpie/provider/model`.
+**OpenCode, Pi, Crush** get a `fogway` provider entry and `fogway/provider/model`.
 
 **Gemini CLI** switches `auth` between API key, Google account and Vertex;
 the API key goes to `~/.gemini/.env`. Picking a catalog model points
@@ -1796,17 +1796,17 @@ the API key goes to `~/.gemini/.env`. Picking a catalog model points
 A vendor or relay can hand its users a ready-made provider as a link:
 
 ```
-magpie://import?preset=deepseek&key=sk-…
-magpie://import?name=Acme%20Relay&chat=https://api.acme.example/v1&anthropic=https://api.acme.example&key=sk-…&models=gpt-5.5,claude-sonnet-5
+fogway://import?preset=deepseek&key=sk-…
+fogway://import?name=Acme%20Relay&chat=https://api.acme.example/v1&anthropic=https://api.acme.example&key=sk-…&models=gpt-5.5,claude-sonnet-5
 ```
 
-Opening one brings up magpie with what the link would add: the name, the
+Opening one brings up fogway with what the link would add: the name, the
 hosts your prompts and key would go to, the models. Nothing is saved until
-you press *Add*. `magpie import <link>` does the same in a terminal.
+you press *Add*. `fogway import <link>` does the same in a terminal.
 
 | Parameter   | Meaning                                                            |
 | ----------- | ------------------------------------------------------------------ |
-| `preset`    | a preset id (`magpie presets`); its endpoints are used. Not `google-vertex`, which is asked at your own Google Cloud project |
+| `preset`    | a preset id (`fogway presets`); its endpoints are used. Not `google-vertex`, which is asked at your own Google Cloud project |
 | `region`    | with a preset that has regions, which one                          |
 | `name`      | the provider's name; required without a preset                     |
 | `id`        | its id; derived from the name when absent                          |
@@ -1817,12 +1817,12 @@ you press *Add*. `magpie import <link>` does the same in a terminal.
 | `models`    | model ids to expose, comma separated                               |
 | `catalog`   | models.dev provider id, for model names and reasoning levels       |
 | `website`, `keys` | the vendor's site and its API-key page (https)               |
-| `icon`      | an https picture of the vendor's own (PNG, JPEG, GIF, WebP, ICO, SVG, at most 1 MB). magpie downloads it once, after you confirm the import, into its icons folder; without one it falls back to the catalog's logo or a plain mark |
+| `icon`      | an https picture of the vendor's own (PNG, JPEG, GIF, WebP, ICO, SVG, at most 1 MB). fogway downloads it once, after you confirm the import, into its icons folder; without one it falls back to the catalog's logo or a plain mark |
 
 Base URLs must be https (plain http only to this machine or the local
 network). Web pages and GitHub don't link custom schemes reliably, so link
 to `https://usemagpie.ai/import#<same parameters>` instead: it opens
-magpie, and offers the download when it is not installed. The parameters
+fogway, and offers the download when it is not installed. The parameters
 stay in the fragment, which browsers never send to a server. The full guide,
 with a link builder: <https://usemagpie.ai/docs/import>.
 
@@ -1838,15 +1838,15 @@ curl -fsSL https://usemagpie.ai/install.sh | sh
 ```
 
 Behind a firewall, or without access to GitHub, both the installer and
-`magpie update` take `--proxy <url>` (http, https, socks5, socks5h; or
-`MAGPIE_PROXY`, and `HTTPS_PROXY` / `ALL_PROXY` as usual) and
+`fogway update` take `--proxy <url>` (http, https, socks5, socks5h; or
+`FOGWAY_PROXY`, and `HTTPS_PROXY` / `ALL_PROXY` as usual) and
 `--mirror <prefix>`, a GitHub download mirror of your choosing put before
-the release's github.com URL (or `MAGPIE_MIRROR`; `magpie update mirror
+the release's github.com URL (or `FOGWAY_MIRROR`; `fogway update mirror
 <prefix>|off` keeps one for every update, the app's too):
 
 ```sh
 curl -fsSL https://usemagpie.ai/install.sh | sh -s -- --proxy http://127.0.0.1:7890
-magpie update --mirror https://mirror.example/
+fogway update --mirror https://mirror.example/
 ```
 
 No mirror is used unless you give one, and the SHA-256 every download is
@@ -1856,21 +1856,21 @@ Mac releases are signed and notarised; the Windows and Linux builds are not
 signed yet (Windows SmartScreen may ask before the first run). Every build
 keeps itself current: the app
 downloads a new version in the background and installs it when you restart
-(*Restart to Update* in the menu) or quit; `magpie update` does the same from
+(*Restart to Update* in the menu) or quit; `fogway update` does the same from
 a terminal. Every release is on
-[yetone/magpie-releases](https://github.com/yetone/magpie-releases/releases).
+[yetone/magpie-releases](https://github.com/fogway/fogway/releases).
 
 From source:
 
 ```sh
-go install github.com/yetone/magpie@latest
+go install github.com/fogway/fogway@latest
 ```
 
 or build locally:
 
 ```sh
-make build            # ./magpie with the desktop app (needs cgo + the platform webview)
-make app              # macOS: magpie.app, a menu bar app with no Dock icon
+make build            # ./fogway with the desktop app (needs cgo + the platform webview)
+make app              # macOS: fogway.app, a menu bar app with no Dock icon
 make cli              # terminal-only build, no cgo, cross-compiles anywhere
 make release          # dist/: native app build + cli builds for every platform
 make release-windows  # dist/: the Windows app, amd64 and arm64 (cross-compiles)
@@ -1883,45 +1883,45 @@ Windows uses the WebView2 runtime that ships with the OS.
 
 Termux uses the Android terminal build: the installer puts it in
 `$PREFIX/bin`, and `make build` selects it automatically. With plain
-`go build` or `go install`, pass `-tags nogui`; use `magpie web` or
-`magpie tui` for the interface. `magpie autostart on` requires Termux:Boot.
+`go build` or `go install`, pass `-tags nogui`; use `fogway web` or
+`fogway tui` for the interface. `fogway autostart on` requires Termux:Boot.
 
 ### As a background service
 
-`magpie daemon install` runs `magpie serve` as a service of your own, with
+`fogway daemon install` runs `fogway serve` as a service of your own, with
 no window and no desktop session: a server, or a machine you reach over
 SSH. The system starts it at login (and at boot, see below) and starts it
 again when it stops with a failure.
 
 ```sh
-magpie daemon install    # write the service and start it; again, to take a new PATH or proxy
-magpie daemon status     # running or not, its pid, file and logs, whether the gateway answers
-magpie daemon restart    # after updating magpie
-magpie daemon stop|start
-magpie daemon uninstall  # stop it and remove the file
+fogway daemon install    # write the service and start it; again, to take a new PATH or proxy
+fogway daemon status     # running or not, its pid, file and logs, whether the gateway answers
+fogway daemon restart    # after updating fogway
+fogway daemon stop|start
+fogway daemon uninstall  # stop it and remove the file
 ```
 
-- **Linux:** a systemd user unit, `~/.config/systemd/user/magpie.service`
+- **Linux:** a systemd user unit, `~/.config/systemd/user/fogway.service`
   (`$XDG_CONFIG_HOME/systemd/user` when set), run with `systemctl --user`,
-  no root. Its log: `journalctl --user -u magpie -f`. systemd starts a
+  no root. Its log: `journalctl --user -u fogway -f`. systemd starts a
   user's units at their first login and stops them at their last, so for
   the gateway to run from boot with no one logged in, run
-  `sudo loginctl enable-linger $USER` once; `magpie daemon status` says so
+  `sudo loginctl enable-linger $USER` once; `fogway daemon status` says so
   when it isn't on. From `su` or `sudo -u`, `systemctl --user` can't reach
   your session: log in as the user, or set
   `XDG_RUNTIME_DIR=/run/user/$(id -u)`. On WSL, turn systemd on first
   (`[boot] systemd=true` in `/etc/wsl.conf`). A system without systemd is
-  told so; run `magpie serve` under the manager it has.
-- **macOS:** a launch agent, `~/Library/LaunchAgents/com.yetone.magpie.serve.plist`,
+  told so; run `fogway serve` under the manager it has.
+- **macOS:** a launch agent, `~/Library/LaunchAgents/com.yetone.fogway.serve.plist`,
   loaded with `launchctl bootstrap gui/$UID`. Its log:
-  `~/Library/Logs/magpie/serve.log`.
-- **Windows:** not a service; `magpie autostart on` opens magpie, which
-  serves the gateway, when you log in. Inside WSL, `magpie daemon` works as
+  `~/Library/Logs/fogway/serve.log`.
+- **Windows:** not a service; `fogway autostart on` opens fogway, which
+  serves the gateway, when you log in. Inside WSL, `fogway daemon` works as
   on Linux.
 
-The service gets the environment `magpie daemon install` ran in: `PATH`
-(where it finds the agents' CLIs and bun), the proxy variables, `MAGPIE_*`
-settings such as `MAGPIE_ADDR`, the XDG folders and the agents' own folder
+The service gets the environment `fogway daemon install` ran in: `PATH`
+(where it finds the agents' CLIs and bun), the proxy variables, `FOGWAY_*`
+settings such as `FOGWAY_ADDR`, the XDG folders and the agents' own folder
 variables (`CODEX_HOME`, `CLAUDE_CONFIG_DIR`…). To that `PATH` it adds
 what a terminal of yours has and the shell may not: nvm's default Node
 (not its newest), the other version managers' and npm's folders, and your
@@ -1929,9 +1929,9 @@ login shell's own `PATH`, so plugins and the MCP servers they start find
 `node` with nvm loaded lazily or over SSH. When no `node` is found even
 then, the install says so. The file is readable by you
 alone, since a proxy's address can hold a password. Run the install again
-after changing any of them. It runs magpie by the name it has on `PATH`
+after changing any of them. It runs fogway by the name it has on `PATH`
 when that is the same file (Homebrew's link stays right across updates),
-and refuses a `go run` build. It is refused while `magpie autostart` is on:
+and refuses a `go run` build. It is refused while `fogway autostart` is on:
 the app opened at login serves the gateway too, and the two would take
 turns failing on the port. The app opened by hand while the service runs
 uses the service's gateway.
@@ -1940,68 +1940,68 @@ uses the service's gateway.
 
 `docker build` makes a server image: the terminal-only binary on
 distroless (`cc`, for the glibc the plugins' Bun needs) with bash and
-busybox for a terminal in the container (`docker exec -it magpie bash`, or a
-NAS panel's terminal; `magpie` is on its PATH), run as nonroot,
-with everything it keeps in a volume at `/config`: magpie's own files
-(`/config/magpie`), the sign-ins kept where their agent keeps them (HOME is
+busybox for a terminal in the container (`docker exec -it fogway bash`, or a
+NAS panel's terminal; `fogway` is on its PATH), run as nonroot,
+with everything it keeps in a volume at `/config`: fogway's own files
+(`/config/fogway`), the sign-ins kept where their agent keeps them (HOME is
 `/config/home`, so `~/.codex`, `~/.claude`… are in it) and the cache with the
 Bun plugins run on (`/config/cache`, downloaded once). A volume made by an
-older image keeps working: magpie adds these folders to it on start, and only
+older image keeps working: fogway adds these folders to it on start, and only
 sign-ins made with that older image, which lived outside the volume, have to
 be made again.
 
 ```sh
-docker build -t magpie .
-docker run -d --name magpie -p 127.0.0.1:3425:3425 -p 127.0.0.1:3430:3430 -v magpie-config:/config magpie
+docker build -t fogway .
+docker run -d --name fogway -p 127.0.0.1:3725:3725 -p 127.0.0.1:3730:3730 -v fogway-config:/config fogway
 ```
 
-3425 is the gateway for agents. Inside the container it takes any key; a
+3725 is the gateway for agents. Inside the container it takes any key; a
 request from outside it, the host's own included, must carry an enabled
 gateway key as its API key, and one without gets 401. Make one in the
 browser UI (Gateway → Gateway keys) or with
-`docker exec magpie magpie gateway-key add "Docker client"`. Sharing
+`docker exec fogway fogway gateway-key add "Docker client"`. Sharing
 (Settings → Share on local network) isn't needed for this; turning it on
-also creates a key named **Magpie**. The ports above are published on the
-host's loopback; Docker's `-p 3425:3425` puts the gateway on every interface
+also creates a key named **Fogway**. The ports above are published on the
+host's loopback; Docker's `-p 3725:3725` puts the gateway on every interface
 of the host, for other machines to reach. Upgrading from an earlier image:
-an agent outside the container that sends `magpie`, or another key that
+an agent outside the container that sends `fogway`, or another key that
 isn't an enabled gateway key, now gets 401 ("the API key sent is not an
-enabled magpie gateway key"); give it a gateway key.
+enabled fogway gateway key"); give it a gateway key.
 Inside the container
-magpie only sees the container's own address (Docker's 172.17.x), so set
-`-e MAGPIE_PUBLIC_URL=http://<the host's or NAS's address>:3425` (the port
+fogway only sees the container's own address (Docker's 172.17.x), so set
+`-e FOGWAY_PUBLIC_URL=http://<the host's or NAS's address>:3725` (the port
 published on the host) for the address it shows and prints to be the one
 other machines use; behind a reverse proxy, set it to that external base URL
 and follow the [authentication requirements above](#connecting-anything-else),
-especially when the proxy reaches magpie over loopback.
+especially when the proxy reaches fogway over loopback.
 
-For the browser UI run the image with `magpie web --addr 0.0.0.0:3430 --no-open`
+For the browser UI run the image with `fogway web --addr 0.0.0.0:3730 --no-open`
 in place of the default `serve`, and open
-`http://localhost:3430/?k=<key from docker logs magpie>` (set `MAGPIE_WEB_KEY`
+`http://localhost:3730/?k=<key from docker logs fogway>` (set `FOGWAY_WEB_KEY`
 to keep one key across restarts). There you add providers, sign in to
 subscriptions and import sign-ins from a file. The vendor sends a sign-in's
 browser back to `localhost` (ChatGPT to `http://localhost:1455/auth/callback?code=…`),
 which is your own machine, not the container, so that page won't load: copy
 its whole address from the address bar and paste it into the sign-in's
-*Callback URL* field. `docker exec -it magpie /magpie accounts add codex`
+*Callback URL* field. `docker exec -it fogway /fogway accounts add codex`
 does the same in a terminal: open the link it prints, then paste the address
 the browser ended on. Keys, sign-ins and plugins live in the volume, so a
 restart, or a new container on the same volume, keeps them.
 
-The image has a `HEALTHCHECK`: `magpie healthcheck` exits 0 while the gateway
-answers on `MAGPIE_ADDR`, under `serve` and `web` alike, so `docker ps` shows
+The image has a `HEALTHCHECK`: `fogway healthcheck` exits 0 while the gateway
+answers on `FOGWAY_ADDR`, under `serve` and `web` alike, so `docker ps` shows
 the container as healthy (Compose: `depends_on: condition: service_healthy`)
 with no curl in the image. Bind-mounting a folder at `/config` in place of a
 named volume works too; it has to be writable by uid 65532.
 
 #### NAS with agents on other machines
 
-Magpie can run on a headless NAS as a shared gateway even when the agents that
+Fogway can run on a headless NAS as a shared gateway even when the agents that
 use it (Claude Code, Codex, OpenCode, and so on) run on other computers. The
 container does not discover agent installations on the NAS host or on remote
 machines: configure those agents to use the NAS address and an enabled gateway
 key. See [Connecting anything else](#connecting-anything-else) for the
-protocol-specific base URLs. Keep `3425` behind a firewall or VPN and do not
+protocol-specific base URLs. Keep `3725` behind a firewall or VPN and do not
 expose it publicly without gateway-key authentication.
 
 Such a page is in **gateway mode**: it shows Providers, Gateway, Routing,
@@ -2009,9 +2009,9 @@ Usage, Plugins and Settings, with no Agents, Sessions or Library tab, and
 Settings leaves out what is written into this machine's agents (provider in
 model names, Codex subagents, long conversations, Codex thread titles,
 Codex thread descriptions, Codex composer predictions) and
-the desktop's alerts and tray. `magpie web` is in it by itself when it finds
+the desktop's alerts and tray. `fogway web` is in it by itself when it finds
 no agents on its machine, as in the container, and with
-`magpie web --gateway`. *Settings › General › Gateway mode* picks Automatic,
+`fogway web --gateway`. *Settings › General › Gateway mode* picks Automatic,
 On or Off for this machine (it wins over both); Off brings every page back.
 The app's own window is never in gateway mode.
 
@@ -2019,36 +2019,36 @@ For a bind-mounted configuration directory, the directory must be writable by
 the non-root container user (uid 65532):
 
 ```sh
-sudo chown -R 65532:65532 /volume1/docker/magpie/config
+sudo chown -R 65532:65532 /volume1/docker/fogway/config
 ```
 
 An example Docker Compose project is:
 
 ```yaml
 services:
-  magpie:
-    image: ghcr.io/yetone/magpie:latest
+  fogway:
+    image: ghcr.io/fogway/fogway:latest
     restart: unless-stopped
     ports:
       # 127.0.0.1: the host alone; every caller outside the container needs a gateway key.
-      - "127.0.0.1:3425:3425"
-      - "127.0.0.1:3430:3430"
+      - "127.0.0.1:3725:3725"
+      - "127.0.0.1:3730:3730"
     environment:
-      MAGPIE_ADDR: 0.0.0.0:3425
-      MAGPIE_PUBLIC_URL: http://<nas-address>:3425
-      MAGPIE_WEB_KEY: <random-key>
+      FOGWAY_ADDR: 0.0.0.0:3725
+      FOGWAY_PUBLIC_URL: http://<nas-address>:3725
+      FOGWAY_WEB_KEY: <random-key>
     volumes:
       - ./config:/config
-    command: [web, --addr, 0.0.0.0:3430, --no-open]
+    command: [web, --addr, 0.0.0.0:3730, --no-open]
 ```
 
-Open `http://127.0.0.1:3430/?k=<random-key>` through an SSH tunnel to
+Open `http://127.0.0.1:3730/?k=<random-key>` through an SSH tunnel to
 configure providers, then create a gateway key for each remote agent host.
-To let remote agents reach it, change the gateway mapping to `3425:3425` (or
+To let remote agents reach it, change the gateway mapping to `3725:3725` (or
 bind it only to the NAS interface or VPN address) and recreate the
 container. For Internet access, prefer a
 VPN such as Tailscale or WireGuard; a reverse proxy or tunnel forwarding to
-Magpie over loopback needs a gateway key from its clients, as the network does.
+Fogway over loopback needs a gateway key from its clients, as the network does.
 
 ### Developing
 
@@ -2060,51 +2060,51 @@ builds with `-tags dev` and opens the app with the UI served straight from
 `internal/gui/assets`: save `app.css`, `app.js` or `index.html` and the window
 reloads itself. With `fswatch` installed (`brew install fswatch`), a change to a
 Go file rebuilds and relaunches the app too. The dev build uses its own gateway
-port (`DEV_ADDR`, default 127.0.0.1:3426), so a magpie you already run keeps
+port (`DEV_ADDR`, default 127.0.0.1:3726), so a fogway you already run keeps
 serving your agents. Point it at a scratch home to keep your real agent
 configs out of it:
 
 ```sh
-HOME=/tmp/magpie-home XDG_CONFIG_HOME=/tmp/magpie-home/.config make dev
+HOME=/tmp/fogway-home XDG_CONFIG_HOME=/tmp/fogway-home/.config make dev
 ```
 
-`MAGPIE_THEME=light|dark` forces the palette and `MAGPIE_DEBUG=1` prints what the
+`FOGWAY_THEME=light|dark` forces the palette and `FOGWAY_DEBUG=1` prints what the
 gateway translates.
 
 ## Use
 
 ```sh
-magpie                          # open the app: a window plus the menu bar icon
-magpie tray                     # menu bar icon only (use this in your login items)
-magpie tui                      # the same thing, in the terminal; serves the gateway while open when no other magpie does
-magpie web                      # the app's window in a browser (WSL, a server over SSH); --lan, --addr, --no-open, --gateway
-                                # (a new key each run; MAGPIE_WEB_KEY keeps one, for a page run as a service)
-                                # (behind a reverse proxy, MAGPIE_WEB_URL=https://<the page there> prints the link through it)
-magpie ls                       # list every agent and its current settings
-magpie claude opus              # set a model (agent names accept prefixes: cc, oc, gem …)
-magpie codex gpt-5.6-sol
-magpie codex effort high        # other fields
-magpie codex effort             # one field, as it is now
-magpie codex xhigh              # bare effort levels are recognised too
-magpie codex deepseek/deepseek-chat   # any catalog model, through the gateway
-magpie claude moonshot/kimi-k2.5
-magpie claude haiku deepseek/deepseek-v4-flash   # one tier on its own model
-magpie claude haiku ""          # back to the main model
-magpie gemini auth api-key
-magpie opencode anthropic/claude-sonnet-5
-magpie oc small anthropic/claude-haiku-4-5
-magpie mimo anthropic/claude-sonnet-5
+fogway                          # open the app: a window plus the menu bar icon
+fogway tray                     # menu bar icon only (use this in your login items)
+fogway tui                      # the same thing, in the terminal; serves the gateway while open when no other fogway does
+fogway web                      # the app's window in a browser (WSL, a server over SSH); --lan, --addr, --no-open, --gateway
+                                # (a new key each run; FOGWAY_WEB_KEY keeps one, for a page run as a service)
+                                # (behind a reverse proxy, FOGWAY_WEB_URL=https://<the page there> prints the link through it)
+fogway ls                       # list every agent and its current settings
+fogway claude opus              # set a model (agent names accept prefixes: cc, oc, gem …)
+fogway codex gpt-5.6-sol
+fogway codex effort high        # other fields
+fogway codex effort             # one field, as it is now
+fogway codex xhigh              # bare effort levels are recognised too
+fogway codex deepseek/deepseek-chat   # any catalog model, through the gateway
+fogway claude moonshot/kimi-k2.5
+fogway claude haiku deepseek/deepseek-v4-flash   # one tier on its own model
+fogway claude haiku ""          # back to the main model
+fogway gemini auth api-key
+fogway opencode anthropic/claude-sonnet-5
+fogway oc small anthropic/claude-haiku-4-5
+fogway mimo anthropic/claude-sonnet-5
 
-magpie save work                # snapshot everything as a profile
-magpie use work                 # switch back
-magpie profiles
-magpie rm work
+fogway save work                # snapshot everything as a profile
+fogway use work                 # switch back
+fogway profiles
+fogway rm work
 
-magpie sync                     # refresh the models.dev catalog and every live model list
+fogway sync                     # refresh the models.dev catalog and every live model list
 
-magpie quota                    # what is left of every subscription, plan and key balance
-magpie quota wait codex         # block until a Codex account has allowance again
-magpie quota credits me@example.com off   # hold a ChatGPT account at its limit instead of spending credits
+fogway quota                    # what is left of every subscription, plan and key balance
+fogway quota wait codex         # block until a Codex account has allowance again
+fogway quota credits me@example.com off   # hold a ChatGPT account at its limit instead of spending credits
 ```
 
 In the app, click any value to open a filtered list; type to search or to
@@ -2122,7 +2122,7 @@ again to return to the whole period. Changing the period clears the selection.
 On macOS, *Settings → Preferences → Session terminal* chooses which installed
 app opens a session from the terminal button in *Usage → Sessions*. The list
 contains apps registered to open `.command` files, with the current system
-default listed once. With no saved choice, magpie follows that default, or
+default listed once. With no saved choice, fogway follows that default, or
 Terminal when the default is not a terminal. The *Resume* button still copies
 the command.
 
@@ -2145,11 +2145,11 @@ until you start a new one.
 ### Moving to another machine
 
 ```sh
-magpie backup                   # writes magpie.magpie-backup, asks for a passphrase twice
-magpie backup --no-keys ~/b.magpie-backup   # the same with no API keys in it
-magpie restore magpie.magpie-backup         # on the other machine
-magpie restore --no-agents b.magpie-backup  # providers, settings, profiles; agents left as they are
-magpie restore --no-library b.magpie-backup # the library here left as it is
+fogway backup                   # writes fogway.fogway-backup, asks for a passphrase twice
+fogway backup --no-keys ~/b.fogway-backup   # the same with no API keys in it
+fogway restore fogway.fogway-backup         # on the other machine
+fogway restore --no-agents b.fogway-backup  # providers, settings, profiles; agents left as they are
+fogway restore --no-library b.fogway-backup # the library here left as it is
 ```
 
 A backup holds your providers (with their keys, unless `--no-keys`), the
@@ -2193,7 +2193,7 @@ the gateway runs. Choose one of these:
 - **GitHub**: an existing repository, using a fine-grained token
   with Contents read and write permission. The repository must be private:
   sync refuses a public one, whose history would give anyone every sealed version.
-  The address can include a folder, such as `github://owner/repo/magpie-sync`.
+  The address can include a folder, such as `github://owner/repo/fogway-sync`.
   Each update is a commit to that branch, so the repository also provides a
   history of the encrypted backup.
 
@@ -2203,12 +2203,12 @@ conditional write), so an update that another machine made in between is
 merged rather than lost.
 
 ```sh
-magpie webdav on https://dav.jianguoyun.com/dav/ user=me@example.com
-magpie s3 on s3://my-bucket/magpie endpoint=https://<account>.r2.cloudflarestorage.com access-key-id=…
-magpie s3 on s3://backups endpoint=http://nas.local:9000 path-style=yes access-key-id=…
-magpie s3                       # where it syncs to and how the last sync went; magpie s3 now, off
-magpie github on github://owner/private-backups/settings branch=main
-magpie github                   # where it syncs to and how the last sync went; magpie github now, off
+fogway webdav on https://dav.jianguoyun.com/dav/ user=me@example.com
+fogway s3 on s3://my-bucket/fogway endpoint=https://<account>.r2.cloudflarestorage.com access-key-id=…
+fogway s3 on s3://backups endpoint=http://nas.local:9000 path-style=yes access-key-id=…
+fogway s3                       # where it syncs to and how the last sync went; fogway s3 now, off
+fogway github on github://owner/private-backups/settings branch=main
+fogway github                   # where it syncs to and how the last sync went; fogway github now, off
 ```
 
 For S3:
@@ -2220,9 +2220,9 @@ For S3:
 - The secret is asked for and saved like the WebDAV password. It is used only
   with the endpoint and access key it was given for.
 - The bucket must already exist.
-- The access key needs to read and write `<prefix>/magpie/`. On AWS it also
+- The access key needs to read and write `<prefix>/fogway/`. On AWS it also
   needs to list the bucket.
-- A server without conditional writes is supported. There magpie checks the
+- A server without conditional writes is supported. There fogway checks the
   object's ETag just before each write. Two computers that write in the
   same moment can both pass that check (Aliyun OSS, #1776), and the later
   write is the one kept. The other computer notices at its next sync, a
@@ -2243,7 +2243,7 @@ For GitHub:
 - Give a fine-grained token access to this repository with Contents read and
   write permission. It is asked for by the CLI, never accepted in a command
   line, and is saved separately from the library's GitHub token.
-- Folder is optional. Files go in `<folder>/magpie/`; every changed backup
+- Folder is optional. Files go in `<folder>/fogway/`; every changed backup
   creates a commit. Unchanged setup creates no backup commit.
 - Use the same encryption passphrase on every computer. It must differ from
   the GitHub token. The token and sync connection settings stay on each computer.
@@ -2260,22 +2260,22 @@ headers, then enable **OTLP export**. **Export metrics** is separately off by
 default; enable it for a collector that accepts duration and token histograms.
 No restart is needed for saved settings.
 
-For `magpie serve`, environment variables override the saved preferences:
+For `fogway serve`, environment variables override the saved preferences:
 
 ```sh
-MAGPIE_OTEL_ENABLED=true MAGPIE_OTEL_ENDPOINT=http://localhost:4318 magpie serve
+FOGWAY_OTEL_ENABLED=true FOGWAY_OTEL_ENDPOINT=http://localhost:4318 fogway serve
 ```
 
-- `MAGPIE_OTEL_ENABLED`: `true` or `false`; an endpoint alone does not enable export.
-- `MAGPIE_OTEL_ENDPOINT`: an HTTP(S) base URL; `/v1/traces` and `/v1/metrics` are appended.
-- `MAGPIE_OTEL_HEADERS`: comma-separated `name=value` pairs, for example
+- `FOGWAY_OTEL_ENABLED`: `true` or `false`; an endpoint alone does not enable export.
+- `FOGWAY_OTEL_ENDPOINT`: an HTTP(S) base URL; `/v1/traces` and `/v1/metrics` are appended.
+- `FOGWAY_OTEL_HEADERS`: comma-separated `name=value` pairs, for example
   `Authorization=Bearer%20token`. Percent-encode spaces and commas in values.
-- `MAGPIE_OTEL_METRICS`: `true` or `false`, off by default.
-- `MAGPIE_OTEL_SESSIONS`: `true` or `false`, off by default; trace supported local
+- `FOGWAY_OTEL_METRICS`: `true` or `false`, off by default.
+- `FOGWAY_OTEL_SESSIONS`: `true` or `false`, off by default; trace supported local
   agent interactions from newly recorded session events.
-- `MAGPIE_OTEL_BODIES`: `true` or `false`, off by default; sends each call's
+- `FOGWAY_OTEL_BODIES`: `true` or `false`, off by default; sends each call's
   request and reply as the trace's Langfuse input and output.
-- `MAGPIE_OTEL_BODIES_WHOLE`: `true` or `false`, off by default; with bodies on,
+- `FOGWAY_OTEL_BODIES_WHOLE`: `true` or `false`, off by default; with bodies on,
   keeps them entire rather than cut at 256 KB. A long reply is written to a
   temporary file; a body too large for the collector is still refused.
 
@@ -2297,7 +2297,7 @@ Tool execution inside the caller is outside the gateway's trace.
 
 Model-call spans also send estimated USD input, output and total costs to
 Langfuse via `langfuse.observation.cost_details`, using the same effective
-prices as Magpie's usage ledger (custom prices first, then catalog prices).
+prices as Fogway's usage ledger (custom prices first, then catalog prices).
 Input cost includes cache reads and writes; reasoning tokens are already
 included in output cost. Explicit zero prices are exported too. Unknown
 prices are omitted so Langfuse can use its own model pricing. Parent and tool
@@ -2319,7 +2319,7 @@ scan; other unresolved concurrent requests retain gateway traces without waiting
 Polling reuses headers by path, size and mtime.
 Other adapters still use recent observations (five minutes).
 Only loopback requests without a gateway key can be deduplicated. The native
-client session ID takes precedence over a Magpie routing override; unknown
+client session ID takes precedence over a Fogway routing override; unknown
 sessions retain gateway traces, including WSL mirrored and Docker Desktop
 clients whose sessions are not visible locally. Requests without a session ID
 fall back to recent observations for that agent.
@@ -2339,7 +2339,7 @@ includes Codex calls with an explicit kind (subagent, review, memgen, title or
 compact): even if a child has a readable rollout, these can appear twice. Only
 its unclassified calls use local-session deduplication; a rollout alone does not
 prove every auxiliary request was recorded. Keyed and non-loopback clients
-always retain gateway traces. Magpie reads new events from local session stores
+always retain gateway traces. Fogway reads new events from local session stores
 every two seconds; it does not upload
 completed history when enabled. Restarting or changing the destination starts
 an observation window. Span IDs remain stable across repeated records.
@@ -2381,7 +2381,7 @@ Gemini snapshot reads cap at 32 MiB; Gemini retains the current prompt plus
 Completed observations are deduplicated with bounded metadata. Claude's final
 response and Gemini's final token records may take one extra poll to settle.
 
-Inferred timings carry `magpie.timing.source=inferred`. Tool arguments/results
+Inferred timings carry `fogway.timing.source=inferred`. Tool arguments/results
 and user input/output follow **Include request and response bodies**, masking
 secrets and respecting the whole-body preference. Session directory/title
 metadata, credentials and account names are not exported.
@@ -2391,11 +2391,11 @@ clients to avoid duplicate token usage. Unsupported clients and remote
 forwarded requests retain gateway tracing; the local usage ledger is unchanged.
 This mode shows agent activity rather than gateway retries or provider-routing
 details. It reads this computer's local sessions, including calls made without
-Magpie as the proxy.
+Fogway as the proxy.
 
 Metrics group duration and input/output token histograms by agent, provider,
 model, operation and error status. Prompt/reply text is exported only when
-**Include request and response bodies** is enabled (`MAGPIE_OTEL_BODIES=true`);
+**Include request and response bodies** is enabled (`FOGWAY_OTEL_BODIES=true`);
 secrets are masked and each body is limited to 256 KiB unless **Include the
 whole bodies** is enabled. Conversation IDs are exported only with
 conversation tracing; provider account names/keys are never exported.
@@ -2413,10 +2413,10 @@ are retried up to two times, with retry delays capped at 60 seconds; other
 errors and partial rejection are logged
 without the collector's response body. Each HTTP attempt times out after
 three seconds. Graceful gateway shutdown allows at most three seconds to
-drain; `magpie serve` currently exits on SIGTERM without draining, so its last
+drain; `fogway serve` currently exits on SIGTERM without draining, so its last
 batch may be lost. This is best-effort export; local usage records remain
 available if it fails.
-Requests follow magpie's proxy setting, with loopback collectors going direct.
+Requests follow fogway's proxy setting, with loopback collectors going direct.
 Queued records are discarded if export is disabled or the destination or
 credentials change before sending. Redirects are not followed.
 Backups without keys omit OTLP headers; restoring one preserves this machine's
@@ -2437,14 +2437,14 @@ unless `BUN_CONFIG_REGISTRY` or `NPM_CONFIG_REGISTRY` names a registry
 already. The switch never sends anything through a proxy such as
 gh-proxy.
 
-Mirror fallback is off by default. Set `MAGPIE_MIRRORS=on` to use it. When
+Mirror fallback is off by default. Set `FOGWAY_MIRRORS=on` to use it. When
 it is on, the official source is tried first; a mirror is only tried after
 a network error, HTTP 429, HTTP 5xx, or GitHub's rate-limit 403. The
 defaults are `registry.npmmirror.com` for npm and `gh-proxy.com` for
-GitHub. `MAGPIE_NPM_REGISTRY` and `MAGPIE_GITHUB_MIRROR` replace them.
+GitHub. `FOGWAY_NPM_REGISTRY` and `FOGWAY_GITHUB_MIRROR` replace them.
 
 Only two downloads are checked against a checksum that does not come from
-the mirror: Magpie's own update assets (their SHA-256 comes from the
+the mirror: Fogway's own update assets (their SHA-256 comes from the
 unmirrored update feed) and Bun's zip. Bun's default version carries its
 SHA-256s in the code, so it can be downloaded through a mirror even when
 Bun's official `SHASUMS256.txt` is unreachable; a newer Bun still needs
@@ -2461,44 +2461,44 @@ API key, or URL userinfo/query token, never use a mirror; they go to the
 official source alone.
 
 ```sh
-MAGPIE_MIRRORS=on \
-MAGPIE_NPM_REGISTRY=https://registry.example.com \
-MAGPIE_GITHUB_MIRROR=https://gh.example magpie serve
+FOGWAY_MIRRORS=on \
+FOGWAY_NPM_REGISTRY=https://registry.example.com \
+FOGWAY_GITHUB_MIRROR=https://gh.example fogway serve
 ```
 
 ## Files
 
-- `~/.config/magpie/profiles.json` — saved profiles
-- `~/.config/magpie/providers.json` — your providers, keys included (0600)
-- `~/.config/magpie/stash.json` — values magpie replaced, restored on switch-back
-- `~/.config/magpie/plugins.json`, `plugins/` — the plugins added, and their packages
-- `~/.config/magpie/plugin-auth.json` — the plugins' sign-ins (0600)
-- `~/.config/magpie/install-id`, `stats-sent` — the [user count](#counting-users)'s
+- `~/.config/fogway/profiles.json` — saved profiles
+- `~/.config/fogway/providers.json` — your providers, keys included (0600)
+- `~/.config/fogway/stash.json` — values fogway replaced, restored on switch-back
+- `~/.config/fogway/plugins.json`, `plugins/` — the plugins added, and their packages
+- `~/.config/fogway/plugin-auth.json` — the plugins' sign-ins (0600)
+- `~/.config/fogway/install-id`, `stats-sent` — the [user count](#counting-users)'s
   random id and the last day it went
-- `~/.cache/magpie/bun/<version>/magpie-bun` — the Bun plugins run on, named
-  so that a proxy app's PROCESS-NAME rule can match it (`magpie-bun.exe` on
+- `~/.cache/fogway/bun/<version>/fogway-bun` — the Bun plugins run on, named
+  so that a proxy app's PROCESS-NAME rule can match it (`fogway-bun.exe` on
   Windows)
-- `~/.cache/magpie/models.json` — models.dev catalog (OpenCode's cache at
+- `~/.cache/fogway/models.json` — models.dev catalog (OpenCode's cache at
   `~/.cache/opencode/models.json` is used when present)
-- `~/.cache/magpie/models/<provider>.json` — model lists fetched from vendors
-- `~/.cache/magpie/partner-counts.json` — partner counts not yet sent (at most
+- `~/.cache/fogway/models/<provider>.json` — model lists fetched from vendors
+- `~/.cache/fogway/partner-counts.json` — partner counts not yet sent (at most
   14 days)
 
 `XDG_CONFIG_HOME` and `XDG_CACHE_HOME` are respected.
 
 ## Counting users
 
-Once a day, a running magpie (the app, or `magpie serve`) sends one event to
+Once a day, a running fogway (the app, or `fogway serve`) sends one event to
 PostHog so we know how many people use it: a random id made up on your
-computer (`~/.config/magpie/install-id`, made the first time the event is
-sent), magpie's version, and your system and architecture. The day it last
-went is in `~/.config/magpie/stats-sent`, so a day is sent once; the
+computer (`~/.config/fogway/install-id`, made the first time the event is
+sent), fogway's version, and your system and architecture. The day it last
+went is in `~/.config/fogway/stats-sent`, so a day is sent once; the
 event is tried at start and then every hour.
 
-With it goes what magpie is used with, so we know which agents, providers
-and models to look after first, by magpie's own ids only:
+With it goes what fogway is used with, so we know which agents, providers
+and models to look after first, by fogway's own ids only:
 
-- the agents connected to magpie (`claude`, `codex`); an omp profile is
+- the agents connected to fogway (`claude`, `codex`); an omp profile is
   only `omp`;
 - the providers that are on: a preset's id (`deepseek`), a subscription's
   (`codex`, `copilot`), a community plugin's (`plugin:kiro`); a provider you
@@ -2512,31 +2512,31 @@ and models to look after first, by magpie's own ids only:
 - for each partner (a sponsor listed first in the add sheet), by its id, how
   many times a day the add sheet showed it, its row was opened, its key
   page was opened and a provider was added from it (at most 20 of each,
-  5 adds), kept in `~/.cache/magpie/partner-counts.json` for at most 14
-  days and sent the day after as `magpie partner` events.
+  5 adds), kept in `~/.cache/fogway/partner-counts.json` for at most 14
+  days and sent the day after as `fogway partner` events.
 
 No names, base URLs, accounts, keys, prompts or usage go. Turn that part off
 in Settings → Privacy → Share the agents, providers and models I use; the
 day's event then has the id, version and system only. Turn it all off in
 Settings → Privacy → Count me as a user, or with `DO_NOT_TRACK=1` or
-`MAGPIE_NO_STATS=1`. Builds from source never send it. The code is
+`FOGWAY_NO_STATS=1`. Builds from source never send it. The code is
 [internal/stats](../internal/stats/stats.go). Deleting `install-id` makes a
 new one at the next send. The [Privacy page](https://usemagpie.ai/docs/privacy)
-shows a whole batch and everything else magpie sends by itself.
+shows a whole batch and everything else fogway sends by itself.
 
 Partners are also counted where usemagpie.ai sees them, whatever these
 settings say, as any website sees its visits. The partner list
 (`/api/partners`) gives each partner's website and key page as a
 `https://usemagpie.ai/go/<id>/site|keys[/<region>]` link, which sends a
-`magpie partner go` event (the partner, which link, the region, and the
+`fogway partner go` event (the partner, which link, the region, and the
 country Cloudflare gives) before sending the browser on; and one in ten
-fetches of the list sends a `magpie partners fetch` event with weight 10
+fetches of the list sends a `fogway partners fetch` event with weight 10
 and the country, while a partner is listed. Each event has an id of its
 own: no install id, address or account goes with it. The code is
 [site/worker.js](../site/worker.js).
 
 A plugin's, an import link's and the library's icons sit on hosts their
-authors picked. magpie fetches each through
+authors picked. fogway fetches each through
 `https://usemagpie.ai/api/icon?url=<https URL>`, so the host sees
 Cloudflare's address and never the user's. The worker sends only
 `Accept: image/*` and its own User-Agent, passes on a PNG, JPEG, GIF, WebP,
@@ -2547,7 +2547,7 @@ and `icon` in [site/worker.js](../site/worker.js).
 ## Community
 
 Questions, setups worth sharing, ideas, bugs: come talk to us and other
-magpie users on [Discord](https://discord.gg/vGSnD3ZKQF). Issues and pull
+fogway users on [Discord](https://discord.gg/vGSnD3ZKQF). Issues and pull
 requests are welcome here too.
 
 ## License

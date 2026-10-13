@@ -25,7 +25,7 @@ function server(lang, ctl) {
     const json = (data) => route.fulfill({ json: data });
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:false};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
-    const settings = { theme: "light", lang, version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425", fx: { rate: 7.2, at: new Date().toISOString() } };
+    const settings = { theme: "light", lang, version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725", fx: { rate: 7.2, at: new Date().toISOString() } };
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings });
     if (url.pathname === "/api/settings") return json(settings);
     if (url.pathname === "/api/update") return json({ state: "ready", current: "0.1.400", latest: "0.1.402", notes: "- Two: the pill asks first", url: "https://example.test/v0.1.402" });
@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, ctl));
-      await page.goto("http://magpie.test/?view=agents");
+      await page.goto("http://fogway.test/?view=agents");
       const pill = page.locator("#update");
       await pill.waitFor({ state: "visible" });
       const before = await scrolls(page);
@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(await scrolls(page), before, "no click moves the page");
 
       // Settings › About's Restart to update asks the same
-      await page.goto("http://magpie.test/?view=settings&tab=about");
+      await page.goto("http://fogway.test/?view=settings&tab=about");
       const row = page.locator("#about .row.pref", { has: page.locator(".name", { hasText: w.version }) }).first();
       await row.locator("button", { hasText: w.restart }).click();
       await ask.waitFor();
@@ -121,7 +121,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, ctl));
-      await page.goto("http://magpie.test/?view=agents");
+      await page.goto("http://fogway.test/?view=agents");
       const pill = page.locator("#update");
       await pill.waitFor({ state: "visible" });
       await pill.click();

@@ -13,7 +13,7 @@ const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/aimer";
 const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json` });
 const base = () => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("codex", "Codex"), agent("pi", "Pi"), agent("dsh", "DeepSeek Harness")],
   instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [],
   skills: [{ name: "grilling", description: "Grill a plan", kind: "folder", agents: ["codex"], source: `${HOME}/skills/grilling` }],
@@ -67,12 +67,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await t.test(lang + " " + tab, async () => {
           const w = words[lang];
           const ctx = await browser.newContext({ viewport: { width: 980, height: 800 } });
-          await ctx.addInitScript((tab) => { try { localStorage.setItem("magpie.libTab", tab); } catch {} }, tab);
+          await ctx.addInitScript((tab) => { try { localStorage.setItem("fogway.libTab", tab); } catch {} }, tab);
           const page = await ctx.newPage();
           page.setDefaultTimeout(5000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", server(lang));
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator('button[data-view="library"]').click();
           const chip = (id) => page.locator(`#view-library .lib-row .lib-ag[data-agent="${id}"]`);
           await chip("dsh").waitFor();

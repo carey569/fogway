@@ -68,7 +68,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, posted));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const sheet = page.locator("#addSheet");
         const ed = page.locator(".editor.new");
         const open = async (name) => {
@@ -117,7 +117,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await ed.locator("label", { hasText: lang === "zh" ? /^Jev 端点$/ : /^Jev endpoint$/ }).count(), 1);
 
         // a custom System One: probed at its address, saved as decide
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#addProvider").click();
         await sheet.locator(".custom-foot .custom").click();
         await ed.waitFor();

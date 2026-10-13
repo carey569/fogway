@@ -4,7 +4,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { test } = require('node:test');
 const { chromium, webkit } = require('playwright');
-const assets = process.env.MAGPIE_AGENT_ASSETS || path.resolve(__dirname, '../assets');
+const assets = process.env.FOGWAY_AGENT_ASSETS || path.resolve(__dirname, '../assets');
 const names = {
   en: ['Manage agents', 'Hide selected', 'Unhide selected', 'Select search results', 'Invert search selection', 'Select unconnected agents', 'Clear selection'],
   zh: ['批量管理', '隐藏所选', '取消隐藏所选', '全选搜索结果', '反选搜索结果', '选择未接入项', '清空选择'],
@@ -49,7 +49,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ['chromium', 
         try { return await route.fulfill({ body: await fs.readFile(file), contentType: {'.js':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml'}[path.extname(file)] }); }
         catch { return route.fulfill({ status: 404, body: '' }); }
       });
-      await page.goto('http://magpie.test/');
+      await page.goto('http://fogway.test/');
       const [manage, hide, show, all, invert, unconnected, clear] = names[lang];
       const footer = page.locator('#agents > .ag-manage-bar');
       await footer.waitFor();

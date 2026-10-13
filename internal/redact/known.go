@@ -14,7 +14,7 @@ import (
 // matches it. Matched as known, it goes as the same placeholder again.
 //
 // What is known is what values holds (in memory only, bounded by
-// maxValues): the values of the placeholders made since magpie started,
+// maxValues): the values of the placeholders made since fogway started,
 // for every request alike, since a placeholder is the same for the same
 // value whichever conversation it is in.
 

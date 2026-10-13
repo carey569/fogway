@@ -3,7 +3,7 @@
 // 的过程中经常自动关闭了. Settings → General has a "Prevent sleep" row
 // (named so by 1ooogle on X), off by default: On and Off are saved as keepAwake true and
 // false, the click moving nothing; another setting saved keeps it; a
-// browser's page (magpie web, the gateway's own computer) shows it too.
+// browser's page (fogway web, the gateway's own computer) shows it too.
 // #975 (Hu9956: an agent recording the screen found it locked): a third
 // choice keeps the display on too, saved as keepAwakeDisplay, its line
 // saying so, and another setting's save keeps it. In every language, at
@@ -17,10 +17,10 @@ const { watchSettingsReads, settingsDrawn } = require("./reader.cjs");
 
 const assets = path.resolve(__dirname, "../assets");
 const words = {
-  en: { name: "Prevent sleep", sub: "Keeps this computer awake while magpie runs tasks", on: "On", off: "Off", display: "Screen on too", displaySub: "Keeps this computer and its screen awake while magpie runs tasks" },
-  zh: { name: "防止休眠", sub: "在 magpie 运行任务时，让电脑保持唤醒状态", on: "开启", off: "关闭", display: "屏幕也常亮", displaySub: "在 magpie 运行任务时，让电脑和屏幕保持唤醒状态" },
-  ja: { name: "スリープを防ぐ", sub: "magpie がタスクを実行している間、このコンピューターをスリープさせません", on: "オン", off: "オフ", display: "画面もオン", displaySub: "magpie がタスクを実行している間、このコンピューターと画面をスリープさせません" },
-  de: { name: "Ruhezustand verhindern", sub: "Hält diesen Computer wach, während magpie Aufgaben ausführt", on: "An", off: "Aus", display: "Bildschirm auch an", displaySub: "Hält diesen Computer und den Bildschirm wach, während magpie Aufgaben ausführt" },
+  en: { name: "Prevent sleep", sub: "Keeps this computer awake while fogway runs tasks", on: "On", off: "Off", display: "Screen on too", displaySub: "Keeps this computer and its screen awake while fogway runs tasks" },
+  zh: { name: "防止休眠", sub: "在 fogway 运行任务时，让电脑保持唤醒状态", on: "开启", off: "关闭", display: "屏幕也常亮", displaySub: "在 fogway 运行任务时，让电脑和屏幕保持唤醒状态" },
+  ja: { name: "スリープを防ぐ", sub: "fogway がタスクを実行している間、このコンピューターをスリープさせません", on: "オン", off: "オフ", display: "画面もオン", displaySub: "fogway がタスクを実行している間、このコンピューターと画面をスリープさせません" },
+  de: { name: "Ruhezustand verhindern", sub: "Hält diesen Computer wach, während fogway Aufgaben ausführt", on: "An", off: "Aus", display: "Bildschirm auch an", displaySub: "Hält diesen Computer und den Bildschirm wach, während fogway Aufgaben ausführt" },
 };
 
 function serve(lang, web, posted, st) {
@@ -59,7 +59,7 @@ async function open(engine, lang, web, posted, st, t, width = 900) {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.route("**/*", serve(lang, web, posted, st));
   await watchSettingsReads(page);
-  await page.goto("http://magpie.test/?view=settings&tab=general");
+  await page.goto("http://fogway.test/?view=settings&tab=general");
   await settingsDrawn(page); // rows found are the ones that stay (#1659)
   await page.locator("#setPage-general .row.pref").first().waitFor();
   return { page, errors };

@@ -9,17 +9,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/redact"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/redact"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/usage"
 )
 
 const conversationBodyMax = 8 << 20
 
 // withGatewaySession tells the client the session its conversation is
-// recorded under. Only a session the client named is recorded: magpie never
+// recorded under. Only a session the client named is recorded: fogway never
 // makes one up, as text under an id nothing lists can't be read (#1355).
 func withGatewaySession(w http.ResponseWriter, r *http.Request) {
 	if id := sessionOf(r.Header); id != "" {
@@ -67,7 +67,7 @@ func recordConversation(w http.ResponseWriter, r *http.Request, proto provider.P
 	at := time.Now()
 	input := append([]byte(nil), body[:min(len(body), conversationBodyMax)]...)
 	sink := &conversationWriter{captureResponseWriter: &captureResponseWriter{
-		ResponseWriter: w, full: &spool{limit: conversationBodyMax, pattern: "magpie-conversation-*"},
+		ResponseWriter: w, full: &spool{limit: conversationBodyMax, pattern: "fogway-conversation-*"},
 	}}
 	return sink, func() {
 		defer sink.full.discard()

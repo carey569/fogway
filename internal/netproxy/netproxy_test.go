@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 func TestParseScutil(t *testing.T) {
@@ -95,12 +95,12 @@ func TestFor(t *testing.T) {
 	if p, _ := For(corp); p != nil {
 		t.Fatalf("bypass: %v", p)
 	}
-	local := &http.Request{URL: &url.URL{Scheme: "http", Host: "127.0.0.1:3425"}}
+	local := &http.Request{URL: &url.URL{Scheme: "http", Host: "127.0.0.1:3725"}}
 	if p, _ := Func(local); p != nil {
 		t.Fatalf("loopback: %v", p)
 	}
 
-	// magpie's own setting wins; "direct" turns it off
+	// fogway's own setting wins; "direct" turns it off
 	settings.Save(settings.Settings{Proxy: "socks5://127.0.0.1:1080"})
 	if p, _ := For(u); p == nil || p.String() != "socks5://127.0.0.1:1080" {
 		t.Fatalf("setting: %v", p)
@@ -112,7 +112,7 @@ func TestFor(t *testing.T) {
 	if err := settings.Save(settings.Settings{Proxy: "ftp://x"}); err == nil {
 		t.Fatal("ftp proxy accepted")
 	}
-	if settings.Save(settings.Settings{Proxy: "127.0.0.1:7890"}) != nil || filepath.Dir(settings.Path()) != filepath.Join(dir, "magpie") {
+	if settings.Save(settings.Settings{Proxy: "127.0.0.1:7890"}) != nil || filepath.Dir(settings.Path()) != filepath.Join(dir, "fogway") {
 		t.Fatal("host:port proxy refused")
 	}
 }
@@ -142,7 +142,7 @@ func TestEnv(t *testing.T) {
 	if len(env) != 2 || get(env, "https_proxy") != "http://10.0.0.1:1" {
 		t.Fatalf("environment: %v", env)
 	}
-	// magpie's own replaces the environment's
+	// fogway's own replaces the environment's
 	settings.Save(settings.Settings{Proxy: "127.0.0.1:6152"})
 	env = Env([]string{"HTTPS_PROXY=http://10.0.0.1:1", "PATH=/bin"})
 	if get(env, "HTTPS_PROXY") != "http://127.0.0.1:6152" || get(env, "http_proxy") != "http://127.0.0.1:6152" ||

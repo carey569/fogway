@@ -78,7 +78,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
             const errors = [];
             page.on("pageerror", (e) => errors.push(e.message));
             await page.route("**/*", serve(lang, []));
-            await page.goto("http://magpie.test/?view=routing");
+            await page.goto("http://fogway.test/?view=routing");
             const seat = (who) => page.locator(".rt-accts li", { has: page.locator(".who", { hasText: who }) }).first();
             const want = ["claude", ...words[lang]].join("\n");
             await page.waitForFunction(([want]) => [...document.querySelectorAll(".rt-accts li")].some((li) => li.title === want), [want]);

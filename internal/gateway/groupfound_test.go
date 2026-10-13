@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// An agent left on a group magpie found, or a session begun on one, keeps
+// An agent left on a group fogway found, or a session begun on one, keeps
 // working once the user turns found groups off (蓝猫 on Discord): its
 // request goes to the model from the first provider that serves it, as a
-// model of one provider — not refused as a model magpie doesn't know.
+// model of one provider — not refused as a model fogway doesn't know.
 func TestFoundGroupOff(t *testing.T) {
 	fresh(t)
 	a, b := &keyed{}, &keyed{}

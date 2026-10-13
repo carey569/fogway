@@ -21,7 +21,7 @@ const agent = (id, name, more = {}) => ({ id, name, icon: "", skills: `${HOME}/.
 const sk = (name, agents) => ({ name, description: name, kind: "folder", agents });
 const sv = (name, transport, agents) => ({ name, transport, command: transport === "stdio" ? name : "", url: transport === "stdio" ? "" : "http://localhost:9/" + name, agents });
 const lib = (skills, servers) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex", { noSSE: true }), agent("copilot", "Copilot CLI"), agent("goose", "Goose", { skills: "" })],
   instructions: { agents: [] }, servers, skills, foundServers: [], projects: [], foundSkills: [],
 });
@@ -94,13 +94,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     });
     const open = async (lang, posts, tab) => {
       const ctx = await browser.newContext({ viewport: { width: 860, height: 700 } });
-      await ctx.addInitScript((tab) => { try { localStorage.setItem("magpie.libTab", tab); } catch {} }, tab);
+      await ctx.addInitScript((tab) => { try { localStorage.setItem("fogway.libTab", tab); } catch {} }, tab);
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("dialog", (d) => { errors.push("a browser dialog: " + d.message()); d.dismiss(); });
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       await page.locator("#view-library .lib-body:not(.lib-skel) .lib-row").first().waitFor();
       return page;

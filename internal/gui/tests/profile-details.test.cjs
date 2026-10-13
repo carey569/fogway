@@ -26,15 +26,15 @@ const work = {
   library: { servers: 1, skills: 1, instructions: true },
   agents: [
     { id: "claude", name: "Claude Code", fields: [
-      { key: "model", label: "model", value: "magpie/a/main" },
+      { key: "model", label: "model", value: "fogway/a/main" },
       { key: "opus", label: "opus", value: "", follows: "model" },
-      { key: "sonnet", label: "sonnet", value: "magpie/a/s" },
+      { key: "sonnet", label: "sonnet", value: "fogway/a/s" },
       { key: "haiku", label: "haiku", value: "", follows: "model" },
       { key: "fable", label: "fable", value: "", follows: "model" },
       { key: "subagent", label: "subagents", value: "" },
     ], servers: ["github"], skills: ["review"], models: { hidden: 0 } },
     { id: "codex", name: "Codex", fields: [
-      { key: "model", label: "model", value: "magpie/openai/gpt-5" },
+      { key: "model", label: "model", value: "fogway/openai/gpt-5" },
       { key: "effort", label: "effort", value: "high" },
       { key: "token", label: "token", value: "", hidden: true },
     ], instructions: true, models: { hidden: 8 } },
@@ -69,8 +69,8 @@ function server(lang, calls, count) {
 }
 
 const words = {
-  en: { model: "model", effort: "effort", high: "high", def: "agent default", follows: "follows the main model (magpie/a/main)", subagents: "subagents", servers: "MCP servers", skills: "Skills", instructions: "Instructions", on: "on", apply: "Apply", list: "Model list", all: "every model shown", hidden8: "8 hidden", picked3: "only the 3 picked" },
-  zh: { model: "模型", effort: "推理强度", high: "高", def: "Agent 默认值", follows: "跟随主模型（magpie/a/main）", subagents: "子代理", servers: "MCP 服务器", skills: "技能", instructions: "指令", on: "开启", apply: "应用", list: "模型列表", all: "全部显示", hidden8: "已隐藏 8 个", picked3: "仅显示所选的 3 个" },
+  en: { model: "model", effort: "effort", high: "high", def: "agent default", follows: "follows the main model (fogway/a/main)", subagents: "subagents", servers: "MCP servers", skills: "Skills", instructions: "Instructions", on: "on", apply: "Apply", list: "Model list", all: "every model shown", hidden8: "8 hidden", picked3: "only the 3 picked" },
+  zh: { model: "模型", effort: "推理强度", high: "高", def: "Agent 默认值", follows: "跟随主模型（fogway/a/main）", subagents: "子代理", servers: "MCP 服务器", skills: "技能", instructions: "指令", on: "开启", apply: "应用", list: "模型列表", all: "全部显示", hidden8: "已隐藏 8 个", picked3: "仅显示所选的 3 个" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -94,7 +94,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, calls, panel ? 30 : 3));
-        await page.goto("http://magpie.test/" + (panel ? "?mode=panel" : ""));
+        await page.goto("http://fogway.test/" + (panel ? "?mode=panel" : ""));
         const chip = page.locator("#profiles .chip", { hasText: /^work/ });
         await chip.waitFor({ state: "attached" });
         if (panel) {
@@ -137,8 +137,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(read.apply, w.apply);
         assert(read.inView, "the details must be drawn");
         assert.deepEqual(read.groups, [
-          { name: "Claude Code", rows: [`${w.model}=magpie/a/main`, `opus=${w.follows}`, "sonnet=magpie/a/s", `haiku=${w.follows}`, `fable=${w.follows}`, `${w.subagents}=${w.def}`, `${w.list}=${w.all}`, `${w.servers}=github`, `${w.skills}=review`] },
-          { name: "Codex", rows: [`${w.model}=magpie/openai/gpt-5`, `${w.effort}=${w.high}`, "token=••••••", `${w.list}=${w.hidden8}`, `${w.instructions}=${w.on}`] },
+          { name: "Claude Code", rows: [`${w.model}=fogway/a/main`, `opus=${w.follows}`, "sonnet=fogway/a/s", `haiku=${w.follows}`, `fable=${w.follows}`, `${w.subagents}=${w.def}`, `${w.list}=${w.all}`, `${w.servers}=github`, `${w.skills}=review`] },
+          { name: "Codex", rows: [`${w.model}=fogway/openai/gpt-5`, `${w.effort}=${w.high}`, "token=••••••", `${w.list}=${w.hidden8}`, `${w.instructions}=${w.on}`] },
           { name: "OpenCode", rows: [`${w.list}=${w.picked3}`] },
         ]);
 
@@ -173,7 +173,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, [], 3));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         const chip = page.locator("#profiles .chip", { hasText: /^work/ });
         await chip.waitFor({ state: "attached" });
         await chip.scrollIntoViewIfNeeded();

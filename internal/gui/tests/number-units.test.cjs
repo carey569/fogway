@@ -156,7 +156,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         };
 
         // by default Chinese says K/M/B, as English does
-        await p.goto("http://magpie.test/");
+        await p.goto("http://fogway.test/");
         await requests();
         await check(p, ".led-trend", true, lang + " default");
         assert.equal(await kpi(p, "#ledKpi"), "1.54B");
@@ -192,7 +192,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.equal((await p.locator("#ledKpi .blk .k").nth(1).textContent()).trim(), "请求", "the page stays Chinese");
           await rest(p, false, "zh 万/亿");
 
-          // and after a reload, from the settings magpie keeps
+          // and after a reload, from the settings fogway keeps
           await p.reload();
           await requests();
           await check(p, ".led-trend", false, "zh 万/亿, reloaded");
@@ -206,7 +206,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         pp.setDefaultTimeout(5000);
         pp.on("pageerror", (e) => errors.push(e.message));
         await pp.route("**/*", serve(lang, store, true));
-        await pp.goto("http://magpie.test/?mode=panel");
+        await pp.goto("http://fogway.test/?mode=panel");
         await pp.locator('[data-ptab="stats"]').click();
         await pp.locator("#panelUsage .pu-card .led-chart svg").waitFor();
         const wan = lang === "zh";

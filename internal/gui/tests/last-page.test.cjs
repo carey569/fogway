@@ -15,7 +15,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const BASE = "http://magpie.test/";
+const BASE = "http://fogway.test/";
 
 function server({ web = false, gateway = false } = {}) {
   return async (route) => {
@@ -24,7 +24,7 @@ function server({ web = false, gateway = false } = {}) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"en",theme:"light",web:${web}${gateway ? ",gateway:true" : ""}};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang: "en", theme: "light" } });
-    if (url.pathname === "/api/settings") return json({ theme: "light", lang: "en", version: "0.1.400", gateway: "http://127.0.0.1:3425", web, gatewayOn: web && gateway, visionModels: [], imageGenModels: [], lanURLs: [] });
+    if (url.pathname === "/api/settings") return json({ theme: "light", lang: "en", version: "0.1.400", gateway: "http://127.0.0.1:3725", web, gatewayOn: web && gateway, visionModels: [], imageGenModels: [], lanURLs: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true, window: true } });
     if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
@@ -52,7 +52,7 @@ async function open(page, url, want, where) {
   assert.deepEqual(await shown(page), { views: [want], on: want, scrolled: false }, where);
 }
 
-const keep = (page, v) => page.evaluate((x) => localStorage.setItem("magpie.lastView", x), v);
+const keep = (page, v) => page.evaluate((x) => localStorage.setItem("fogway.lastView", x), v);
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   test(`${engine}: the window opens on the page last left`, async (t) => {
@@ -99,7 +99,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, [], where);
       await context.close();
 
-      // magpie web in gateway mode: Agents and Library aren't there
+      // fogway web in gateway mode: Agents and Library aren't there
       const gw = await browser.newContext({ viewport: { width, height: 640 }, reducedMotion: "reduce" });
       const gp = await gw.newPage();
       gp.setDefaultTimeout(5000);

@@ -102,7 +102,7 @@ const words = {
 const keys = [
   "Use credits", "Use credits:", "when its windows run out, so a task goes on", "no — held when a window runs out",
   "On: once one of this account's windows is used up, ChatGPT answers on the account's credits, if it holds any, so a task goes on. Click to turn it off.",
-  "Off: once one of this account's windows is used up, by magpie's latest reading (refreshed about every minute), magpie holds it till the window renews, and requests go to your other accounts, groups and fallbacks rather than spending its credits. With none of them left, a request is refused with why, unless Auto-use resets is on and its week is used up: then a reset is used first.",
+  "Off: once one of this account's windows is used up, by fogway's latest reading (refreshed about every minute), fogway holds it till the window renews, and requests go to your other accounts, groups and fallbacks rather than spending its credits. With none of them left, a request is refused with why, unless Auto-use resets is on and its week is used up: then a reset is used first.",
   "{who} no longer spends its credits: held when a window runs out", "{who} spends its credits when its windows run out",
   "held: its allowance used up, set not to spend credits",
   "{who} is left out: a usage window is used up, and the account is set not to spend its credits, so it counts as used up until that window renews.",
@@ -164,7 +164,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       for (const width of [900, 440]) {
         const posts = [];
-        const page = await open("http://magpie.test/?view=usage", { width, height: 760 }, posts);
+        const page = await open("http://fogway.test/?view=usage", { width, height: 760 }, posts);
         const me = '.quota-credits[data-user="Me@example.com"]';
         await page.locator(me).waitFor();
         assert.equal(await page.locator(".quota-credits").count(), 1, "only Codex's own named accounts in full have the say; the GLM team's and the plugin's don't");
@@ -193,7 +193,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // the menu bar panel's card, at its own width and narrower
       for (const width of [440, 360]) {
         const posts = [];
-        const panel = await open("http://magpie.test/?mode=panel", { width, height: 640 }, posts);
+        const panel = await open("http://fogway.test/?mode=panel", { width, height: 640 }, posts);
         const psel = '.pq-credits[data-user="Me@example.com"]';
         await panel.locator('#ptabs [data-ptab="usage"]').click();
         await panel.locator(psel).waitFor();
@@ -208,7 +208,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       }
 
       // the Routing page says why an account held for its credits was left out
-      const routing = await open("http://magpie.test/?view=routing", { width: 1100, height: 760 }, []);
+      const routing = await open("http://fogway.test/?view=routing", { width: 1100, height: 760 }, []);
       await routing.locator(".rt-days .rt-day").nth(1).click();
       await routing.locator(".rt-req").first().click();
       await routing.waitForTimeout(300);

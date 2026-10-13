@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/local"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/local"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// magpie local names the catalog, picks a model of it or of the user's
+// fogway local names the catalog, picks a model of it or of the user's
 // own, switches it on and off, and switches the edge-cloud group's masking
 // once there is one.
 func TestLocalCLI(t *testing.T) {
@@ -23,7 +23,9 @@ func TestLocalCLI(t *testing.T) {
 	if c, _ := local.Load(); c.Model.ID() != "qwen3.5-4b" || c.On {
 		t.Fatalf("use: %+v", c)
 	}
-	if _, err := stdoutOf(t, func() error { return localCmd([]string{"local", "use", "Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"}) }); err != nil {
+	if _, err := stdoutOf(t, func() error {
+		return localCmd([]string{"local", "use", "Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"})
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if c, _ := local.Load(); c.Model.Repo != "Qwen/Qwen3-0.6B-GGUF" {

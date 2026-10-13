@@ -9,11 +9,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// uaVendor is a key+URL vendor on every API magpie forwards to one: it
+// uaVendor is a key+URL vendor on every API fogway forwards to one: it
 // keeps the User-Agent each path was asked with, and answers each as its
 // API does.
 type uaVendor struct {
@@ -57,7 +57,7 @@ func (v *uaVendor) sent(path string) (string, bool) {
 }
 
 // uaRoutes are the routes a request reaches a key+URL provider by: what an
-// agent posts magpie, and the path the vendor is asked at.
+// agent posts fogway, and the path the vendor is asked at.
 var uaRoutes = []struct{ name, path, body, upstream string }{
 	{"anthropic", "/v1/messages", `{"model":"ua/m1","max_tokens":8,"messages":[{"role":"user","content":"hi"}]}`, "/v1/messages"},
 	{"count_tokens", "/v1/messages/count_tokens", `{"model":"ua/m1","messages":[{"role":"user","content":"hi"}]}`, "/v1/messages/count_tokens"},
@@ -65,7 +65,7 @@ var uaRoutes = []struct{ name, path, body, upstream string }{
 	{"responses", "/v1/responses", `{"model":"ua/m1","input":"hi"}`, "/v1/responses"},
 	{"gemini", "/v1beta/models/ug/m1:generateContent", `{"contents":[{"role":"user","parts":[{"text":"hi"}]}]}`, "/v1beta/models/m1:streamGenerateContent"},
 	{"embeddings", "/v1/embeddings", `{"model":"ua/embed-1","input":"hi"}`, "/v1/embeddings"},
-	{"images", "/v1/images/generations", `{"model":"ua/gpt-image-1","prompt":"a magpie"}`, "/v1/images/generations"},
+	{"images", "/v1/images/generations", `{"model":"ua/gpt-image-1","prompt":"a fogway"}`, "/v1/images/generations"},
 }
 
 // uaSetup saves a key+URL provider "ua" on every API, at a uaVendor, with

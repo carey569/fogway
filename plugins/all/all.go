@@ -1,8 +1,8 @@
-// Package all registers every built-in plugin. Only magpie's main imports
+// Package all registers every built-in plugin. Only fogway's main imports
 // it: core never imports a plugin, and a plugin never imports another.
 package all
 
 import (
-	_ "github.com/yetone/magpie/plugins/groups"
-	_ "github.com/yetone/magpie/plugins/sessions"
+	_ "github.com/fogway/fogway/plugins/groups"
+	_ "github.com/fogway/fogway/plugins/sessions"
 )

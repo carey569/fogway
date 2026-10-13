@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/update"
 )
 
 // Before an update is put in, the page asks what changed (Hu9956, #844):
@@ -29,8 +29,8 @@ func TestUpdateNotesRoute(t *testing.T) {
 		}})
 	}))
 	defer feed.Close()
-	t.Setenv("MAGPIE_NOTES_FEED", feed.URL)
-	t.Setenv("MAGPIE_UPDATE_FEED", "http://127.0.0.1:1/")
+	t.Setenv("FOGWAY_NOTES_FEED", feed.URL)
+	t.Setenv("FOGWAY_UPDATE_FEED", "http://127.0.0.1:1/")
 	oldV, oldState, oldLatest, oldIn := Version, updates.state, updates.latest, updates.notesIn
 	defer func() { Version, updates.state, updates.latest, updates.notesIn = oldV, oldState, oldLatest, oldIn }()
 	Version = "0.1.604"
@@ -61,7 +61,7 @@ func TestUpdateNotesRoute(t *testing.T) {
 	}
 
 	// the site's list out of reach: the update's own notes
-	t.Setenv("MAGPIE_NOTES_FEED", "http://127.0.0.1:1/")
+	t.Setenv("FOGWAY_NOTES_FEED", "http://127.0.0.1:1/")
 	if j := get(); len(j.Releases) != 1 || j.Releases[0].Version != "0.1.607" || j.Releases[0].Notes != "- seven only" {
 		t.Fatalf("fallback: %+v", j)
 	}
@@ -95,8 +95,8 @@ func TestUpdateNotesAskTheFeedAgain(t *testing.T) {
 		json.NewEncoder(w).Encode(map[string]any{"releases": all})
 	}))
 	defer notes.Close()
-	t.Setenv("MAGPIE_UPDATE_FEED", feed.URL)
-	t.Setenv("MAGPIE_NOTES_FEED", notes.URL)
+	t.Setenv("FOGWAY_UPDATE_FEED", feed.URL)
+	t.Setenv("FOGWAY_NOTES_FEED", notes.URL)
 	updates.mu.Lock()
 	oldState, oldStaged, oldIn, oldLatest, oldAsked, oldV := updates.state, updates.staged, updates.notesIn, updates.latest, updates.asked, Version
 	Version = "0.1.1010"
@@ -145,7 +145,7 @@ func TestUpdateRecheckTakesNotesLate(t *testing.T) {
 		json.NewEncoder(w).Encode(update.Release{Version: "0.1.1224", Notes: notes})
 	}))
 	defer feed.Close()
-	t.Setenv("MAGPIE_UPDATE_FEED", feed.URL)
+	t.Setenv("FOGWAY_UPDATE_FEED", feed.URL)
 	updates.mu.Lock()
 	oldState, oldStaged, oldIn, oldLatest, oldAsked, oldLang, oldV := updates.state, updates.staged, updates.notesIn, updates.latest, updates.asked, updates.lang, Version
 	Version = "0.1.1223"

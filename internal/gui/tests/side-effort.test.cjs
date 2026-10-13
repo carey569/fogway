@@ -1,10 +1,10 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// How hard the models magpie asks on its own think (MOMO on Discord,
+// How hard the models fogway asks on its own think (MOMO on Discord,
 // "外置模型能不能提供思考深度选项"): Settings › Models has, beside Image
 // recognition's model and the searcher's, a chip that opens the app's menu
 // (no native select) with Default and only the levels that model has. A
 // level picked is saved as visionEffort / searcherEffort and shown on the
-// chip; Default saves "" (nothing sent beyond magpie's own choice). Another
+// chip; Default saves "" (nothing sent beyond fogway's own choice). Another
 // setting saved keeps both (prefsKeep). A model whose levels aren't known,
 // or a row turned off, has no chip. No click moves the page, and both chips
 // fit their row at 1100 and 420. Every language, Chromium and WebKit, with
@@ -91,7 +91,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       for (const width of [1100, 420]) {
         await page.mouse.move(0, 0);
         await page.setViewportSize({ width, height: 900 });
-        await page.goto("http://magpie.test/?view=settings&tab=models");
+        await page.goto("http://fogway.test/?view=settings&tab=models");
         await settingsDrawn(page);
         const tr = (k) => page.evaluate((k) => t(k), k);
         for (const row of rows) {
@@ -161,7 +161,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // levels not known, or the row off: no chip
       st.visionLevels = undefined;
       st.searcher = "off";
-      await page.goto("http://magpie.test/?view=settings&tab=models");
+      await page.goto("http://fogway.test/?view=settings&tab=models");
       await settingsDrawn(page);
       await page.locator("#searchList button.searcher-pick").waitFor();
       assert.equal(await page.locator("#imagesList button.vision-effort, #searchList button.searcher-effort").count(), 0);

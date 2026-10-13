@@ -5,7 +5,7 @@ import (
 	"slices"
 )
 
-// A preset is a vendor magpie already knows: adding one only asks for the key.
+// A preset is a vendor fogway already knows: adding one only asks for the key.
 
 // Kind groups presets in the picker.
 type Kind string
@@ -14,7 +14,7 @@ const (
 	KindVendor Kind = "vendor" // the model's own maker
 	KindRelay  Kind = "relay"  // an aggregator / API relay reselling many vendors
 	KindLocal  Kind = "local"  // something running on this machine
-	// KindRemote is another computer's magpie: not a relay, so the add
+	// KindRemote is another computer's fogway: not a relay, so the add
 	// lists give it a heading of its own, after this machine's
 	KindRemote Kind = "remote"
 )
@@ -387,7 +387,7 @@ var presets = []PresetDef{
 	{ID: AzurePreset, Name: "Azure OpenAI", Icon: "azure-color", Kind: KindVendor, Catalog: "azure, openai", Hosts: true,
 		Note:         "your resource's endpoint and key",
 		Endpoint:     "https://<resource>.openai.azure.com",
-		EndpointHint: "Your resource's endpoint, from Keys and Endpoint in the Azure portal. magpie asks its v1 API; the model ids are your deployments' names.",
+		EndpointHint: "Your resource's endpoint, from Keys and Endpoint in the Azure portal. fogway asks its v1 API; the model ids are your deployments' names.",
 		Website:      "https://ai.azure.com", KeysURL: "https://portal.azure.com/#view/Microsoft_Azure_ProjectOxford/CognitiveServicesHub/~/OpenAI"},
 	// Ollama's own hosted models: the local server's API, at ollama.com with a key
 	{ID: "ollama-cloud", Name: "Ollama Cloud", Icon: "ollama", Kind: KindVendor, Catalog: "ollama-cloud", Hosts: true,
@@ -427,7 +427,7 @@ var presets = []PresetDef{
 		// docs' model table says (packages/web/src/content/docs/zen.mdx),
 		// so it routes groups like TypeSafe's own (#609's mixed provider)
 		// its free models (-free, big-pickle) are served to OpenCode
-		// alone, which magpie asks them as (OpenCodeFree)
+		// alone, which fogway asks them as (OpenCodeFree)
 		Website: "https://opencode.ai/docs/zen", KeysURL: "https://opencode.ai/auth"},
 	// Kilo Code's gateway, at the OpenRouter-style API its own clients use
 	// (kilo.go): its free models (isFree, ":free") are served with no key,
@@ -551,7 +551,7 @@ func Preset(id string) *PresetDef {
 	return nil
 }
 
-// builtinPreset is the preset of that id built into magpie, partners'
+// builtinPreset is the preset of that id built into fogway, partners'
 // aside.
 func builtinPreset(id string) *PresetDef {
 	if a, ok := presetAliases[id]; ok {
@@ -570,7 +570,7 @@ func builtinPreset(id string) *PresetDef {
 func FromPreset(id string) (Provider, error) {
 	pr := Preset(id)
 	if pr == nil {
-		return Provider{}, errorf("no preset %q — magpie presets lists them", id)
+		return Provider{}, errorf("no preset %q — fogway presets lists them", id)
 	}
 	p := Provider{
 		ID: pr.ID, Name: pr.Name, Icon: pr.Icon, Preset: pr.ID,

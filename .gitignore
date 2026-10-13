@@ -1,8 +1,8 @@
-/magpie
-/magpie.exe
-/magpie.app/
+/fogway
+/fogway.exe
+/fogway.app/
 /dist/
-/magpie-dev
+/fogway-dev
 /rsrc_windows_*.syso
-/magpie-dev-backend
-/magpie-dev.new
+/fogway-dev-backend
+/fogway-dev.new

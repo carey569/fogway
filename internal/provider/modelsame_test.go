@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// The groups magpie finds merge a model however a vendor spells its id:
+// The groups fogway finds merge a model however a vendor spells its id:
 // Volcengine Ark's dated deepseek-v4-1-flash-260910 is ali's
 // deepseek-v4.1-flash (kyzhouxu, #583). Models that differ stay apart.
 func TestSameModelVendorSpellings(t *testing.T) {

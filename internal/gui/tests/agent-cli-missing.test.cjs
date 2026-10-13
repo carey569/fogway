@@ -57,7 +57,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator(`${row("crush")} .ag-ver`).waitFor();
         // the row stays, its settings kept, and says its CLI isn't found
         const tag = page.locator(`${row("dsh")} .ag-missing`);

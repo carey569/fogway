@@ -4,6 +4,6 @@
 dist
 site
 build
-magpie.app
+fogway.app
 /*.md
 .DS_Store

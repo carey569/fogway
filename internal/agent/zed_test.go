@@ -21,9 +21,9 @@ func TestZedXDGPath(t *testing.T) {
 func TestZedCustomPaths(t *testing.T) {
 	home := t.TempDir()
 	config := filepath.Join(home, "zedg-config")
-	t.Setenv("MAGPIE_ZED_BIN", "/opt/zedg/bin/zedg")
-	t.Setenv("MAGPIE_ZED_CONFIG_DIR", config)
-	t.Setenv("MAGPIE_ZED_PROCESS_NAMES", "zedg,ZedG")
+	t.Setenv("FOGWAY_ZED_BIN", "/opt/zedg/bin/zedg")
+	t.Setenv("FOGWAY_ZED_CONFIG_DIR", config)
+	t.Setenv("FOGWAY_ZED_PROCESS_NAMES", "zedg,ZedG")
 	a := zed(home, filepath.Join(home, ".config"))
 	want := filepath.Join(config, "settings.json")
 	if a.Bin != "/opt/zedg/bin/zedg" {
@@ -35,9 +35,9 @@ func TestZedCustomPaths(t *testing.T) {
 }
 
 func TestZedDefaultsStayStable(t *testing.T) {
-	t.Setenv("MAGPIE_ZED_BIN", "")
-	t.Setenv("MAGPIE_ZED_CONFIG_DIR", "")
-	t.Setenv("MAGPIE_ZED_PROCESS_NAMES", "")
+	t.Setenv("FOGWAY_ZED_BIN", "")
+	t.Setenv("FOGWAY_ZED_CONFIG_DIR", "")
+	t.Setenv("FOGWAY_ZED_PROCESS_NAMES", "")
 	a := zed(t.TempDir(), filepath.Join(t.TempDir(), ".config"))
 	if a.Bin != "zed" {
 		t.Fatalf("default binary: %q", a.Bin)
@@ -49,7 +49,7 @@ func TestZedDefaultsStayStable(t *testing.T) {
 }
 
 func TestZedCustomProcessNames(t *testing.T) {
-	t.Setenv("MAGPIE_ZED_PROCESS_NAMES", "zedg,ZedG")
+	t.Setenv("FOGWAY_ZED_PROCESS_NAMES", "zedg,ZedG")
 	want := []string{`(^|/)zedg( |$)`, `(^|/)ZedG( |$)`}
 	if got := zedProcessNames(); strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("custom process names: %#v", got)
@@ -60,7 +60,7 @@ func TestZedRelativeConfigDirUsesDefault(t *testing.T) {
 	home := t.TempDir()
 	cfg := filepath.Join(home, ".config")
 	t.Setenv("APPDATA", filepath.Join(home, "AppData", "Roaming"))
-	t.Setenv("MAGPIE_ZED_CONFIG_DIR", "zedg-config")
+	t.Setenv("FOGWAY_ZED_CONFIG_DIR", "zedg-config")
 	a := zed(home, cfg)
 	want := filepath.Join(cfg, "zed", "settings.json")
 	if runtime.GOOS == "windows" {

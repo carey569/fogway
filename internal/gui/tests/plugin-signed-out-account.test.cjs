@@ -80,7 +80,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           const errors = [];
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang, login, usage, posts));
-          await page.goto("http://magpie.test/?view=providers");
+          await page.goto("http://fogway.test/?view=providers");
           await page.locator(".row.provider", { hasText: "Grok" }).click();
           const row = page.locator(".accts .acc", { hasText: USER });
           await row.waitFor();

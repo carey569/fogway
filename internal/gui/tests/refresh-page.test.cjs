@@ -3,8 +3,8 @@
 // draws. On Agents it looks for the agents on this computer again (one just
 // installed shows, and leaves Install another agent); on Usage it reads the
 // usage and the allowances now; on Providers it refreshes the model lists.
-// It never looks for a newer magpie (that is Settings › About's Check, and
-// magpie's own timer), its tooltip says what it reads on the page shown, and
+// It never looks for a newer fogway (that is Settings › About's Check, and
+// fogway's own timer), its tooltip says what it reads on the page shown, and
 // a click doesn't move the page. The panel's does the same for its tabs.
 // English and Chinese; no backend, the API is faked here.
 const assert = require("node:assert/strict");
@@ -89,7 +89,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, ctl));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         const sync = page.locator("#sync");
         await page.locator('.row.agent[data-id="codex"]').waitFor();
         await page.waitForTimeout(300);
@@ -130,9 +130,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.addInitScript(() => { try { localStorage.setItem("magpie.panelTab", "agents"); } catch {} });
+        await page.addInitScript(() => { try { localStorage.setItem("fogway.panelTab", "agents"); } catch {} });
         await page.route("**/*", server(lang, ctl));
-        await page.goto("http://magpie.test/?mode=panel");
+        await page.goto("http://fogway.test/?mode=panel");
         const sync = page.locator("#sync");
         await page.locator('.row.agent[data-id="codex"]').waitFor();
         assert.equal(await sync.getAttribute("title"), words[lang].agents);

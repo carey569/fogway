@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // What was left over time (#651): under an account's meters on the Usage
-// page, a line a window from magpie's readings — broken where the 5-hour
+// page, a line a window from fogway's readings — broken where the 5-hour
 // window started again — a dashed even burn from each window's start to its
 // reset, and an upright line at now. One pick in the allowances' head, the
 // app's own menu, turns every card at once: "2 days" / "Cycle", or "Off"
@@ -99,7 +99,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       const strokes = {};
       for (const theme of ["light", "dark"]) {
-        const page = await open(theme, "http://magpie.test/?view=usage", theme, { width: 900, height: 620 });
+        const page = await open(theme, "http://fogway.test/?view=usage", theme, { width: 900, height: 620 });
         const card = page.locator(".subscription-card", { hasText: "Codex" });
         const curve = card.locator(".quota-curve").first();
         await curve.waitFor();
@@ -154,7 +154,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.notEqual(await curve.locator('path.qc-line[data-name="5 hours"]').getAttribute("d"), five);
           assert.equal(await curve.locator("line.qc-even").count(), 2, "over two days the 5-hour window has its even burn");
           assert.equal(await page.evaluate(() => document.scrollingElement.scrollTop), scroller, "the click moved the page");
-          assert.equal(await page.evaluate(() => localStorage.getItem("magpie.quotaRange")), "2d");
+          assert.equal(await page.evaluate(() => localStorage.getItem("fogway.quotaRange")), "2d");
           // Off: no card draws a curve, the pick stays where it was, kept
           // across a reload; back on, the curves come back
           const at = (await pick.boundingBox()).y;
@@ -163,20 +163,20 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.equal(await pick.textContent(), w.trend(w.off));
           assert.equal((await pick.boundingBox()).y, at, "the pick moved");
           assert.equal(await page.evaluate(() => document.scrollingElement.scrollTop), scroller, "the click moved the page");
-          assert.equal(await page.evaluate(() => localStorage.getItem("magpie.quotaRange")), "off");
+          assert.equal(await page.evaluate(() => localStorage.getItem("fogway.quotaRange")), "off");
           await page.reload();
           await page.locator(".subscription-card", { hasText: "Codex" }).locator(".quota-windows").first().waitFor();
           assert.equal(await page.locator(".quota-curve").count(), 0, "Off is kept across a restart");
           assert.equal(await pick.textContent(), w.trend(w.off));
           await choose(w.cycle);
           await curve.waitFor();
-          assert.equal(await page.evaluate(() => localStorage.getItem("magpie.quotaRange")), "cycle");
+          assert.equal(await page.evaluate(() => localStorage.getItem("fogway.quotaRange")), "cycle");
         }
       }
       assert.notEqual(strokes.light, strokes.dark, "dark has its own line colour");
 
       // the tray: a thin line of the 5-hour window's cycle, across the card
-      const panel = await open("panel", "http://magpie.test/?mode=panel", "dark", { width: 440, height: 640 });
+      const panel = await open("panel", "http://fogway.test/?mode=panel", "dark", { width: 440, height: 640 });
       await panel.locator('#ptabs [data-ptab="usage"]').click();
       const pcard = panel.locator(".pq-card", { hasText: "a@x.com" });
       const spark = pcard.locator(".pq-spark");
@@ -212,11 +212,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // turned off in the window, the tray's line goes too, and stays gone
       const win = await panel.context().newPage();
       await win.route("**/*", serve(lang, "dark", false, data));
-      // a page of magpie's origin, only for its storage: served as a 404
+      // a page of fogway's origin, only for its storage: served as a 404
       // with no body, Chromium refused to open it (ERR_HTTP_RESPONSE_CODE_FAILURE)
-      await win.route("http://magpie.test/blank", (r) => r.fulfill({ contentType: "text/html", body: "<!doctype html><title>blank</title>" }));
-      await win.goto("http://magpie.test/blank");
-      await win.evaluate(() => localStorage.setItem("magpie.quotaRange", "off"));
+      await win.route("http://fogway.test/blank", (r) => r.fulfill({ contentType: "text/html", body: "<!doctype html><title>blank</title>" }));
+      await win.goto("http://fogway.test/blank");
+      await win.evaluate(() => localStorage.setItem("fogway.quotaRange", "off"));
       await panel.waitForFunction(() => !document.querySelector(".pq-spark"));
       assert.ok(await pcard.locator(".pq-dial").count() > 0, "the card is still there");
       await panel.reload();

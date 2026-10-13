@@ -13,21 +13,21 @@ func TestSpell(t *testing.T) {
 	}
 	get := func() string { return "" }
 	bare := &Agent{Fields: []Field{{Key: "model", Get: get, Options: opts("")}}}
-	prefixed := &Agent{Fields: []Field{{Key: "model", Get: get, Options: opts("magpie/")}}}
+	prefixed := &Agent{Fields: []Field{{Key: "model", Get: get, Options: opts("fogway/")}}}
 	for _, c := range []struct {
 		a       *Agent
 		in, out string
 		err     bool
 	}{
 		{bare, "copilot/gpt-6-sol", "copilot/gpt-6-sol", false},
-		{bare, "magpie/copilot/gpt-6-sol", "copilot/gpt-6-sol", false},
-		{prefixed, "copilot/gpt-6-sol", "magpie/copilot/gpt-6-sol", false},
-		{prefixed, "magpie/copilot/gpt-6-sol", "magpie/copilot/gpt-6-sol", false},
+		{bare, "fogway/copilot/gpt-6-sol", "copilot/gpt-6-sol", false},
+		{prefixed, "copilot/gpt-6-sol", "fogway/copilot/gpt-6-sol", false},
+		{prefixed, "fogway/copilot/gpt-6-sol", "fogway/copilot/gpt-6-sol", false},
 		{bare, "gpt-6", "gpt-6", false},
 		{bare, "some-unlisted-model", "some-unlisted-model", false},
 		{bare, "", "", false},
-		{bare, "magpie/copilot/nope", "", true},
-		{prefixed, "magpie/copilot/nope", "", true},
+		{bare, "fogway/copilot/nope", "", true},
+		{prefixed, "fogway/copilot/nope", "", true},
 	} {
 		got, err := c.a.Spell("model", c.in)
 		if got != c.out || (err != nil) != c.err {

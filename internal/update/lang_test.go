@@ -45,8 +45,8 @@ func TestFeedsAskInLang(t *testing.T) {
 		json.NewEncoder(w).Encode(Release{Version: "0.1.604", Notes: twoNotes})
 	}))
 	defer srv.Close()
-	t.Setenv("MAGPIE_UPDATE_FEED", srv.URL+"/latest")
-	t.Setenv("MAGPIE_NOTES_FEED", srv.URL+"/notes")
+	t.Setenv("FOGWAY_UPDATE_FEED", srv.URL+"/latest")
+	t.Setenv("FOGWAY_NOTES_FEED", srv.URL+"/notes")
 	ctx := context.Background()
 
 	rel, err := LatestIn(ctx, "zh")

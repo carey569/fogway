@@ -1,6 +1,6 @@
 # Plugin runtime
 
-magpie's built-in plugins are the parts of magpie not everyone needs, each
+fogway's built-in plugins are the parts of fogway not everyone needs, each
 one a package under `plugins/` that the user can switch off. The runtime in
 `internal/pluginrt` keeps their registry, applies the ones that are on in the
 order their services make, and disposes of what each registered when it is
@@ -39,25 +39,25 @@ remembering its layer (`Source`):
    since off its things would go on working with nowhere to see them. An
    `InUse` error counts as in use.
 
-`Composed.Chosen` is plugins.yml's say before step 4. `magpie plugin dump`
+`Composed.Chosen` is plugins.yml's say before step 4. `fogway plugin dump`
 (`--json`) prints the composed list with each plugin's state and why.
 
 ## Runtime paths
 
 - **Start** (`internal/cli/main.go`, after `settings.Migrate`):
   `pluginrt.Settle(!settings.RanBefore())` writes a first plugins.yml when
-  there is none: `essentials` on a new install, `all` on a magpie that ran
+  there is none: `essentials` on a new install, `all` on a fogway that ran
   here before (one of `settings.ranBefore`'s files is there; one that can't
   be looked at counts as there), so an existing user keeps everything. Then
   `pluginrt.Refresh` makes the process's runtime and reconciles it. An error
-  is printed and magpie starts.
+  is printed and fogway starts.
 - **Every read**: `Refresh` loads plugins.yml again, composes it and
   reconciles. The window's `/api/state`, `/api/plugins/builtin` and boot.js
   each call it (`builtinsState`), so a change made by the CLI shows on the
   next read.
-- **Switch**: `Set(id, on)` (`POST /api/plugins/builtin`, `magpie plugin
+- **Switch**: `Set(id, on)` (`POST /api/plugins/builtin`, `fogway plugin
   builtin on|off <id>`) writes the user's row; `SetPreset` the preset
-  (`magpie plugin preset essentials|all`). Off is refused while the plugin
+  (`fogway plugin preset essentials|all`). Off is refused while the plugin
   is in use.
 - **The window**: see [GUI app shell](gui-shell.md), "Built-in plugins".
 
@@ -69,7 +69,7 @@ remembering its layer (`Source`):
   before plugins existed. `Set` and `SetPreset` refuse to write over it, the
   window says it above the list and disables every switch, and the CLI exits
   with it. The user fixes the file or removes it.
-- Writes hold `filelock.Mutex` (`plugins.yml.lock`) against other magpies
+- Writes hold `filelock.Mutex` (`plugins.yml.lock`) against other fogways
   and a mutex in the process, are written whole (temp file, sync, rename),
   and keep the file they replace as `plugins.yml.bak`.
 - A plugin written for another major API, or a newer minor, is `failed`
@@ -87,5 +87,5 @@ remembering its layer (`Source`):
 - `go test ./internal/gui/ -run 'TestBuiltin|TestBootSaysBuiltinsOff'`.
 - `internal/gui/tests/builtins.test.cjs` in Chromium and WebKit, every
   language, 1100, 800 and 420 points.
-- By hand, under a sandbox HOME: `magpie plugin builtin`, `magpie plugin
-  builtin on groups`, `magpie plugin dump`, and a plugins.yml broken by hand.
+- By hand, under a sandbox HOME: `fogway plugin builtin`, `fogway plugin
+  builtin on groups`, `fogway plugin dump`, and a plugins.yml broken by hand.

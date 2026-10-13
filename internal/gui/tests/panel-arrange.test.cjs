@@ -55,7 +55,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [], posts = [], fail = { next: false };
       const context = await browser.newContext({ viewport: { width: 440, height: 300 }, reducedMotion: "reduce" });
       await context.addInitScript(() => {
-        try { localStorage.setItem("magpie.panelTab", "usage"); } catch {}
+        try { localStorage.setItem("fogway.panelTab", "usage"); } catch {}
         window.__scrolled = 0;
         const scroll = Element.prototype.scrollIntoView;
         Element.prototype.scrollIntoView = function (o) { window.__scrolled++; scroll.call(this, o); };
@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts, fail));
-      await page.goto("http://magpie.test/?mode=panel");
+      await page.goto("http://fogway.test/?mode=panel");
       await page.waitForFunction(() => document.querySelectorAll("#panelQuota .pq-card").length >= 3);
       const tr = (s, v) => page.evaluate(([s, v]) => t(s, v), [s, v]);
       const cards = () => page.evaluate(() => [...document.querySelectorAll("#panelQuota .pq-card")].map((c) => c.dataset.card));
@@ -185,12 +185,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.waitForFunction(() => !document.querySelector('#panelQuota .pq-card[data-card="deepseek"]'));
 
       // the Usage page keeps every card, in the shared order. The window reads
-      // the settings saved above from magpie, as it does: set into state by hand,
+      // the settings saved above from fogway, as it does: set into state by hand,
       // its own load could answer after and put the first order back
       const win = await context.newPage();
       win.on("pageerror", (e) => errors.push(e.message));
       await win.route("**/*", serve(lang, [], {}, { usageOrder: ["deepseek", "codex", "claude", "kimi"], panelUsageHidden: ["deepseek"] }));
-      await win.goto("http://magpie.test/?view=usage&tab=usage");
+      await win.goto("http://fogway.test/?view=usage&tab=usage");
       await win.waitForFunction(() => document.querySelectorAll("#subscriptionUsage > [data-key]").length >= 4);
       assert.deepEqual(await win.evaluate(() => [...new Set([...document.querySelectorAll("#subscriptionUsage > [data-key]")].map((c) => c.dataset.key))]), ["deepseek", "codex", "claude", "kimi"]);
 

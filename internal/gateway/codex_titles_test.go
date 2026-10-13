@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // codexTitleRequest is a title request as Codex's TUI sends one on its own
@@ -56,9 +56,9 @@ func outputText(t *testing.T, body string) (string, int) {
 }
 
 // codexProviderTitle is a title request as Codex's TUI sends one with
-// magpie as its model provider (model_provider = "magpie", #743): to
-// magpie's own /v1/responses, on the conversation's model, a magpie id —
-// or, with backend, to the ChatGPT backend path on that magpie model.
+// fogway as its model provider (model_provider = "fogway", #743): to
+// fogway's own /v1/responses, on the conversation's model, a fogway id —
+// or, with backend, to the ChatGPT backend path on that fogway model.
 func codexProviderTitle(t *testing.T, s *Server, backend bool) *httptest.ResponseRecorder {
 	t.Helper()
 	body := `{"model":"fake/m1","stream":true,"reasoning":{"effort":"low"},"input":[{"type":"message","role":"user","content":[{"type":"input_text","text":"Generate a concise title. User prompt:\nfix the login bug"}]}],` +
@@ -130,7 +130,7 @@ func codexDescriptionRequest(t *testing.T, s *Server) *httptest.ResponseRecorder
 	return rec
 }
 
-func TestCodexDescriptionFallbackOnMagpie(t *testing.T) {
+func TestCodexDescriptionFallbackOnFogway(t *testing.T) {
 	for _, path := range []string{"/v1/responses", "/backend-api/codex/responses"} {
 		t.Run(path, func(t *testing.T) {
 			f := &fake{t: t, reply: sse(

@@ -1,4 +1,4 @@
-// Package cli is magpie's command line: every command, and the app, tray
+// Package cli is fogway's command line: every command, and the app, tray
 // and TUI it opens (the root's main.go only calls Main).
 package cli
 
@@ -13,98 +13,103 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/yetone/magpie/internal/agent"
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/pluginrt"
-	"github.com/yetone/magpie/internal/proc"
-	"github.com/yetone/magpie/internal/profile"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/tui"
-	"github.com/yetone/magpie/internal/update"
+	"github.com/fogway/fogway/internal/agent"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/fogway/fogway/internal/pluginrt"
+	"github.com/fogway/fogway/internal/proc"
+	"github.com/fogway/fogway/internal/profile"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/sessions"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/tui"
+	"github.com/fogway/fogway/internal/update"
 )
 
 // version is the root main package's, set at build time
 // (-ldflags "-X main.version=…") and handed over by Main.
 var version = "dev"
 
-const usage = `magpie — one place to pick every agent's model
+const usage = `fogway — the edge-cloud model gateway for every agent
 
-  magpie                          open the app: a window plus a menu bar icon
-  magpie tray                     start in the menu bar only
-  magpie panel                    open the menu bar icon's quick panel, or close it
-  magpie autostart [on|off]       open magpie (in the menu bar) when you log in, or say whether it does
-  magpie tui                      the same thing, in the terminal (serves the gateway while open when no magpie does)
-  magpie web [--addr host:port] [--lan] [--no-open] [--gateway]
+  fogway                          open the app: a window plus a menu bar icon
+  fogway tray                     start in the menu bar only
+  fogway panel                    open the menu bar icon's quick panel, or close it
+  fogway autostart [on|off]       open fogway (in the menu bar) when you log in, or say whether it does
+  fogway tui                      the same thing, in the terminal (serves the gateway while open when no fogway does)
+  fogway web [--addr host:port] [--lan] [--no-open] [--gateway]
                                   the app's window in a browser, with the gateway (no desktop needed: WSL, a server over SSH)
-                                  a new key each run; MAGPIE_WEB_KEY (16+ letters, digits, - . _ ~) keeps one, signed in for 400 days
-                                  behind a reverse proxy, MAGPIE_WEB_URL=https://<the page there> prints the link through it
-                                  --gateway: gateway mode, no Agents, Sessions or Library (on by itself with no agents here; Settings › General turns it off)
-  magpie ls                       list detected agents and their settings
-  magpie <agent>                  show one agent
-  magpie <agent> <model>          set an agent's model   e.g. magpie claude deepseek/deepseek-chat
-  magpie <agent> <field>          show one field   e.g. magpie codex effort
-  magpie <agent> <field> <value>  set another field   e.g. magpie codex effort high
-  magpie <agent> default          take magpie out: the agent back on what it had before
-  magpie <agent> <field> default  that field back to the agent's own default
-  magpie <command> --help         what a command or an agent takes; -h or --help anywhere does nothing else
+                                  a new key each run; FOGWAY_WEB_KEY (16+ letters, digits, - . _ ~) keeps one, signed in for 400 days
+                                  behind a reverse proxy, FOGWAY_WEB_URL=https://<the page there> prints the link through it
+                                  --gateway: gateway mode, no Agents or Sessions (on by itself with no agents here; Settings › General turns it off)
+  fogway ls                       list detected agents and their settings
+  fogway <agent>                  show one agent
+  fogway <agent> <model>          set an agent's model   e.g. fogway claude deepseek/deepseek-chat
+  fogway <agent> <field>          show one field   e.g. fogway codex effort
+  fogway <agent> <field> <value>  set another field   e.g. fogway codex effort high
+  fogway <agent> default          take fogway out: the agent back on what it had before
+  fogway <agent> <field> default  that field back to the agent's own default
+  fogway <command> --help         what a command or an agent takes; -h or --help anywhere does nothing else
 
-  magpie save <name>              snapshot every agent's settings as a profile
-  magpie use <name>               apply a profile
-  magpie profiles                 list profiles
-  magpie rm <name>                delete a profile
+  fogway local [status]           the model on this computer: llama.cpp running a GGUF model from Hugging Face
+  fogway local setup [<model>]    download llama.cpp and the model now, and turn it on (fogway local models lists them)
+  fogway local use|on|off|mask    pick another model, switch it, or mask what group/auto sends the cloud
+                                  group/auto: the local model judges each turn, keeps what it can do, sends the rest to the cloud
+
+  fogway save <name>              snapshot every agent's settings as a profile
+  fogway use <name>               apply a profile
+  fogway profiles                 list profiles
+  fogway rm <name>                delete a profile
 
 
 
-  magpie providers                list your providers: host, key, models, who uses them
-  magpie presets                  the vendors magpie knows: add one with just a key
-  magpie provider add <preset> <key>   e.g. magpie provider add deepseek sk-…
-  magpie provider add <name> k=v…      a custom vendor (magpie provider for the fields)
-  magpie provider key|models|test|rm <id>
-  magpie provider fallback <id> <provider/model>…   use these when it's out of quota or down
-  magpie import [-y] <link>       add the provider a magpie://import?… link describes
-  magpie models [<agent>]         every model agents can pick, as provider/model; an agent's, and why others aren't
-  magpie model name <provider/model> <name>|--reset       the name a model goes by, everywhere
-  magpie model efforts <provider/model> <l>,<l>|--reset   the reasoning levels a model offers (magpie model help)
-  magpie visible [<agent> <family|provider|group>,… | all | --only-picked | --show-new]
-                                  which models an agent is shown: families (magpie provider/group set <id> family=…),
+  fogway providers                list your providers: host, key, models, who uses them
+  fogway presets                  the vendors fogway knows: add one with just a key
+  fogway provider add <preset> <key>   e.g. fogway provider add deepseek sk-…
+  fogway provider add <name> k=v…      a custom vendor (fogway provider for the fields)
+  fogway provider key|models|test|rm <id>
+  fogway provider fallback <id> <provider/model>…   use these when it's out of quota or down
+  fogway import [-y] <link>       add the provider a fogway://import?… link describes
+  fogway models [<agent>]         every model agents can pick, as provider/model; an agent's, and why others aren't
+  fogway model name <provider/model> <name>|--reset       the name a model goes by, everywhere
+  fogway model efforts <provider/model> <l>,<l>|--reset   the reasoning levels a model offers (fogway model help)
+  fogway visible [<agent> <family|provider|group>,… | all | --only-picked | --show-new]
+                                  which models an agent is shown: families (fogway provider/group set <id> family=…),
                                   or only the models ticked for it, a new one off until it is ticked
-  magpie search [add <api> <key>|rm <api>]   Tavily, Brave, Exa, Firecrawl, You.com or SearXNG for web search when no provider can search
-  magpie groups                   routing groups: several models agents pick as one, group/<id>
-  magpie group add <name> models=<m1>,<m2> [routing=smart|order|rotate|usage|pace] [stays=auto|session|turn|off]
-  magpie group <id> | set <id> k=v… | rm <id>   show, change or remove one (magpie group help for more)
+  fogway search [add <api> <key>|rm <api>]   Tavily, Brave, Exa, Firecrawl, You.com or SearXNG for web search when no provider can search
+  fogway groups                   routing groups: several models agents pick as one, group/<id>
+  fogway group add <name> models=<m1>,<m2> [routing=smart|order|rotate|usage|pace] [stays=auto|session|turn|off]
+  fogway group <id> | set <id> k=v… | rm <id>   show, change or remove one (fogway group help for more)
 
-  magpie serve                    run the gateway alone (the app runs it too)
-  magpie daemon [install|uninstall|start|stop|restart|status]
-                                  magpie serve as a service of yours, from boot or login and started again when it stops (systemd --user on Linux, launchd on the Mac)
-  magpie healthcheck              exit 0 when the gateway answers (a container's HEALTHCHECK)
-  magpie gateway-key list|add <name>|rotate <id>|remove <id>   manage the keys clients use to call a shared gateway
-  magpie gateway-key limit <id> [off|reset|day|week|month|<N>d --tokens N --cost USD --cache-reads]   a key's own limit, and what it used
-  magpie gateway-key models <id> [all|<provider>/<model>|<provider>/* ...]   the models a key may use, every one unless it names some
-  magpie usage [today|7d|30d|all] tokens and cost per agent, model and subscription account (30d)
-  magpie usage --csv [--account <name>] [today|7d|30d|all]   every request as CSV (or one account's): the model asked for, sent and served, tokens, cost, time, status, account
-  magpie sessions [--model <m>] [--folder <f>] [--json]   the latest Claude Code, Codex, OpenCode and Pi sessions, with what each cost
-  magpie sessions --days N|today|all [--model <m>] [--folder <f>] [--json]
+  fogway serve                    run the gateway alone (the app runs it too)
+  fogway daemon [install|uninstall|start|stop|restart|status]
+                                  fogway serve as a service of yours, from boot or login and started again when it stops (systemd --user on Linux, launchd on the Mac)
+  fogway healthcheck              exit 0 when the gateway answers (a container's HEALTHCHECK)
+  fogway gateway-key list|add <name>|rotate <id>|remove <id>   manage the keys clients use to call a shared gateway
+  fogway gateway-key limit <id> [off|reset|day|week|month|<N>d --tokens N --cost USD --cache-reads]   a key's own limit, and what it used
+  fogway gateway-key models <id> [all|<provider>/<model>|<provider>/* ...]   the models a key may use, every one unless it names some
+  fogway usage [today|7d|30d|all] tokens and cost per agent, model and key (30d)
+  fogway usage --csv [--account <name>] [today|7d|30d|all]   every request as CSV (or one account's): the model asked for, sent and served, tokens, cost, time, status, account
+  fogway sessions [--model <m>] [--folder <f>] [--json]   the latest Claude Code, Codex, OpenCode and Pi sessions, with what each cost
+  fogway sessions --days N|today|all [--model <m>] [--folder <f>] [--json]
                                   what every session spent, day by day, with the top models and folders (7 days)
-  magpie quota [<provider>] [--json]  what is left of every subscription, plan and key balance
-  magpie quota wait <provider|account> [--timeout <d>] [--quiet]
-                                  block until that subscription (any of its accounts) or account has allowance again
-  magpie quota history [<provider|account>] [--days N] [--json]
+  fogway quota [<provider>] [--json]  what is left of every plan and key balance
+  fogway quota wait <provider|account> [--timeout <d>] [--quiet]
+                                  block until that provider or key has allowance again
+  fogway quota history [<provider|account>] [--days N] [--json]
                                   each window's readings over time, kept 45 days
-  magpie sync                     refresh the model catalog and vendor model lists
-  magpie agents                   list every supported agent
-  magpie update [check] [--proxy <url>] [--mirror <prefix>]
+  fogway sync                     refresh the model catalog and vendor model lists
+  fogway agents                   list every supported agent
+  fogway update [check] [--proxy <url>] [--mirror <prefix>]
                                   install the newest release (check: only say if there is one); --proxy: an
                                   http(s):// or socks5:// proxy for it; --mirror: a GitHub download mirror put
-                                  before the github.com URL (none unless given; still checked against usemagpie.ai's SHA-256)
-  magpie update mirror [<prefix>|off]  the mirror every update, the app's own too, is downloaded through
-  magpie update auto [on|off] [30m|1h|6h|24h]  whether the app looks for updates by itself, and how often (6h)
+                                  before the github.com URL (none unless given; still checked against the update feed's SHA-256)
+  fogway update mirror [<prefix>|off]  the mirror every update, the app's own too, is downloaded through
+  fogway update auto [on|off] [30m|1h|6h|24h]  whether the app looks for updates by itself, and how often (6h)
 
-agents: claude (cc), codex, gemini, opencode (oc), mimocode, deveco, pi, goose, cursor, zed, copilot, crush, aside
+agents: claude (cc), codex, gemini, opencode (oc), pi, omp, dsh, goose, cursor, zed, vscode, copilot, crush, kimi, qwen, droid, cline
 `
 
 var (
@@ -114,31 +119,31 @@ var (
 	green = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#0F9D58", Dark: "#7EE2A8"})
 )
 
-// Main runs magpie with os.Args, at the version the build was stamped with.
+// Main runs fogway with os.Args, at the version the build was stamped with.
 func Main(v string) {
 	version = v
 	// before anything reads or writes a file: no home, or a relative one,
-	// would put the agents' configs and magpie's keys under the working
-	// folder. What needs no file still answers (magpie version in a
-	// container or a script without HOME): run makes magpie's folders first.
+	// would put the agents' configs and fogway's keys under the working
+	// folder. What needs no file still answers (fogway version in a
+	// container or a script without HOME): run makes fogway's folders first.
 	ignored, err := appdir.CheckEnv()
 	if err != nil {
 		if len(os.Args) > 1 {
 			switch os.Args[1] {
 			case "-v", "--version", "version":
-				fmt.Println("magpie", version)
+				fmt.Println("fogway", version)
 				return
 			case "-h", "--help", "help":
 				fmt.Print(usage)
 				return
 			}
 		}
-		fmt.Fprintln(os.Stderr, "magpie:", err)
+		fmt.Fprintln(os.Stderr, "fogway:", err)
 		os.Exit(1)
 	}
 	slices.Sort(ignored)
 	for _, v := range ignored {
-		fmt.Fprintf(os.Stderr, "magpie: ignoring %s: not an absolute path (the programs magpie starts still get it)\n", v)
+		fmt.Fprintf(os.Stderr, "fogway: ignoring %s: not an absolute path (the programs fogway starts still get it)\n", v)
 	}
 	endProbesOnSignal()
 	gateway.Version = version
@@ -155,7 +160,7 @@ func Main(v string) {
 			code = e.code
 		}
 		if msg := err.Error(); msg != "" {
-			fmt.Fprintln(os.Stderr, "magpie:", msg)
+			fmt.Fprintln(os.Stderr, "fogway:", msg)
 		}
 		os.Exit(code)
 	}
@@ -186,19 +191,19 @@ func run(args []string) error {
 		// (agent.DisconnectPreview)
 		return agent.DryRun(args[1])
 	}
-	// started by an update, the magpie it replaces goes first: the moves
+	// started by an update, the fogway it replaces goes first: the moves
 	// below write the files it may still be writing
 	update.AwaitPredecessor()
 	makeDirs()
 	settings.Migrate()
 	// a new install starts with the Essentials preset of built-in plugins
 	// (plugins.yml), one that ran before with all of them, told by no file
-	// of a magpie run before: so before anything below writes one
+	// of a fogway run before: so before anything below writes one
 	if _, err := pluginrt.Settle(!settings.RanBefore()); err != nil {
-		fmt.Fprintf(os.Stderr, "magpie: plugins.yml: %v\n", err)
+		fmt.Fprintf(os.Stderr, "fogway: plugins.yml: %v\n", err)
 	}
 	if _, err := pluginrt.Refresh(); err != nil {
-		fmt.Fprintf(os.Stderr, "magpie: plugins.yml: %v\n", err)
+		fmt.Fprintf(os.Stderr, "fogway: plugins.yml: %v\n", err)
 	}
 	// the providers and settings read once for every agent's fields, which
 	// the moves below look at (a write among them reads them again)
@@ -209,12 +214,12 @@ func run(args []string) error {
 	// a provider added, edited or removed, or a list fetched anew, reaches
 	// the model lists agents keep in files of their own
 	catalog.Changed = agent.SyncCatalog
-	// a model Claude Code names that magpie doesn't serve goes to the one
+	// a model Claude Code names that fogway doesn't serve goes to the one
 	// it is set to use for that tier
 	gateway.StandIn = agent.StandIn
 	// and dsh's patch lists, which dsh reads live: a route left behind by
 	// something else writing the file fails every session there until
-	// magpie writes its own list again
+	// fogway writes its own list again
 	gateway.WhileServing = append(gateway.WhileServing, agent.KeepDshWired)
 	if len(args) == 0 {
 		if hasGUI {
@@ -222,9 +227,9 @@ func run(args []string) error {
 		}
 		return runTUI()
 	}
-	// a magpie:// link the system handed over (Windows, Linux): the app
+	// a fogway:// link the system handed over (Windows, Linux): the app
 	// opens it for the user to confirm
-	if strings.HasPrefix(strings.ToLower(args[0]), "magpie:") {
+	if strings.HasPrefix(strings.ToLower(args[0]), "fogway:") {
 		if !hasGUI {
 			return importCmd(args)
 		}
@@ -236,7 +241,7 @@ func run(args []string) error {
 	case "web":
 		return webCmd(args[1:])
 	case "app", "gui":
-		// `magpie gui settings`: the window on that tab, as a restart to
+		// `fogway gui settings`: the window on that tab, as a restart to
 		// update from it comes back (update.RelaunchArgs)
 		if len(args) > 1 {
 			return runWindow(args[1])
@@ -245,7 +250,7 @@ func run(args []string) error {
 	case "tray":
 		return runGUI(false, "")
 	case "-Embedding":
-		// Windows starting magpie for a click on one of its notifications
+		// Windows starting fogway for a click on one of its notifications
 		// (a usage alert, #368) left in the Action Center after it quit:
 		// the window, on the Usage page
 		return runWindow("usage")
@@ -259,7 +264,7 @@ func run(args []string) error {
 		fmt.Print(usage)
 		return nil
 	case "-v", "--version", "version":
-		fmt.Println("magpie", version)
+		fmt.Println("fogway", version)
 		return nil
 	case "ls", "list":
 		// in the order the app lists them; those hidden there come last, dimmed
@@ -321,16 +326,16 @@ func run(args []string) error {
 		return err
 	}
 	// no agent form takes a flag: one is never set as a model or a value
-	// (`magpie snow --verbose` would take magpie out of Snow, #1457)
+	// (`fogway snow --verbose` would take fogway out of Snow, #1457)
 	if f := flagArg(args[1:]); f != "" {
 		return fmt.Errorf("unknown flag %s: nothing was changed\n\n%s", f, strings.TrimRight(agentHelp(a), "\n"))
 	}
 	if len(a.Fields) == 0 && a.Import != nil {
-		// `magpie cindy`: it takes magpie through its own link, confirmed there
+		// `fogway cindy`: it takes fogway through its own link, confirmed there
 		if len(args) > 1 {
 			link := a.Import()
 			openInBrowser(link)
-			fmt.Println(green.Render("✓"), bold.Render(a.Name), muted.Render("opened to add magpie — confirm it there"))
+			fmt.Println(green.Render("✓"), bold.Render(a.Name), muted.Render("opened to add fogway — confirm it there"))
 			fmt.Println(muted.Render("  " + link))
 			return nil
 		}
@@ -339,21 +344,21 @@ func run(args []string) error {
 	case 1:
 		return list([]*agent.Agent{a}, true, -1)
 	case 2:
-		// default is magpie's word in any case, as an agent's name and a
-		// field's are: magpie codex DEFAULT wrote model = "DEFAULT"
+		// default is fogway's word in any case, as an agent's name and a
+		// field's are: fogway codex DEFAULT wrote model = "DEFAULT"
 		if strings.EqualFold(args[1], "default") {
 			if a.Wired() {
 				return disconnect(a)
 			}
 			return set(a, a.Fields[0].Key, "")
 		}
-		// `magpie codex model`: a field's name alone asks what it is set to,
+		// `fogway codex model`: a field's name alone asks what it is set to,
 		// where it was set as the model (model = "model"). Claude Code's
 		// opus is a model's name as well as a tier's, and stays the model
 		if f := a.Field(args[1]); f != nil && !modelAlias(a, args[1]) {
 			return showField(a, f)
 		}
-		// `magpie codex xhigh`: a bare value that belongs to a non-model field
+		// `fogway codex xhigh`: a bare value that belongs to a non-model field
 		// (effort levels, for instance) is routed there; anything else is a model.
 		if f := fieldForValue(a, args[1]); f != nil {
 			return set(a, f.Key, args[1])
@@ -378,7 +383,7 @@ func set(a *agent.Agent, key, value string) error {
 		}
 		return fmt.Errorf("%s has no field %q (fields: %s)", a.Name, key, strings.Join(keys, ", "))
 	}
-	// a field's name is no value: magpie codex subagent effort ran Codex's
+	// a field's name is no value: fogway codex subagent effort ran Codex's
 	// subagents on a model called effort. Claude Code's opus is a model's
 	// name as well as a tier's
 	if g := a.Field(value); value != "" && g != nil && !modelAlias(a, value) {
@@ -393,7 +398,7 @@ func set(a *agent.Agent, key, value string) error {
 		return err
 	}
 	// what the config reads now, not what was asked: an agent may name the
-	// model under a provider of its own (OpenCode's magpie-relay/…), and a
+	// model under a provider of its own (OpenCode's fogway-relay/…), and a
 	// value it had already is said to be so
 	now := f.Get()
 	shown := now
@@ -419,24 +424,24 @@ func modelAlias(a *agent.Agent, w string) bool {
 }
 
 // fieldAsValue refuses field g's name given as field f's value, for what
-// was meant: two words that are one field's label (magpie codex subagent
+// was meant: two words that are one field's label (fogway codex subagent
 // effort), a switch, which is turned on (Claude Code's ultracode), or the
 // field, which its name alone shows.
 func fieldAsValue(a *agent.Agent, f, g *agent.Field, value string) error {
 	for _, name := range []string{f.Key + " " + value, f.Key + "_" + value} {
 		if h := a.Field(name); h != nil {
-			return fmt.Errorf("%q is one field of %s's: magpie %s %s shows it", h.Label, a.Name, a.ID, h.Key)
+			return fmt.Errorf("%q is one field of %s's: fogway %s %s shows it", h.Label, a.Name, a.ID, h.Key)
 		}
 	}
 	if g.Options != nil {
 		if o := g.Options(a.Values()); len(o) == 1 && o[0].Value == "on" {
-			return fmt.Errorf("%q is a switch of %s's, not a value for its %s: magpie %s %s on", value, a.Name, f.Label, a.ID, g.Key)
+			return fmt.Errorf("%q is a switch of %s's, not a value for its %s: fogway %s %s on", value, a.Name, f.Label, a.ID, g.Key)
 		}
 	}
-	return fmt.Errorf("%q is a field of %s's, not a value for its %s: magpie %s %s shows it", value, a.Name, f.Label, a.ID, g.Key)
+	return fmt.Errorf("%q is a field of %s's, not a value for its %s: fogway %s %s shows it", value, a.Name, f.Label, a.ID, g.Key)
 }
 
-// showField is `magpie <agent> <field>`: what the field is set to, as set
+// showField is `fogway <agent> <field>`: what the field is set to, as set
 // prints it
 func showField(a *agent.Agent, f *agent.Field) error {
 	v := f.Get()
@@ -447,11 +452,11 @@ func showField(a *agent.Agent, f *agent.Field) error {
 	return nil
 }
 
-// disconnect is `magpie <agent> default` on an agent magpie is wired into:
+// disconnect is `fogway <agent> default` on an agent fogway is wired into:
 // the Agents page's Disconnect, which puts back what the user had before
-// magpie — Claude Code's own model, its endpoint — where a field's default
-// leaves the agent as installed (__jingling on X: magpie claude default
-// took the model they had set away with magpie's)
+// fogway — Claude Code's own model, its endpoint — where a field's default
+// leaves the agent as installed (__jingling on X: fogway claude default
+// took the model they had set away with fogway's)
 func disconnect(a *agent.Agent) error {
 	before := a.Values()
 	if err := a.Disconnect(); err != nil {
@@ -468,7 +473,7 @@ func disconnect(a *agent.Agent) error {
 		}
 		fmt.Println(green.Render("✓"), bold.Render(a.Name), muted.Render(f.Label), shown)
 	}
-	fmt.Println(muted.Render("  disconnected from magpie, back to what it had before"))
+	fmt.Println(muted.Render("  disconnected from fogway, back to what it had before"))
 	if a.Notice != nil {
 		if n := a.Notice(); n != "" {
 			fmt.Println(muted.Render("  ↻ " + n))
@@ -550,15 +555,15 @@ func list(agents []*agent.Agent, detectedOnly bool, dimFrom int) error {
 				r.name = faint.Render(a.Name) + " " + faint.Render("hidden")
 			}
 			r.vals = strings.Join(parts, label.Render("  ·  "))
-			// through magpie for account failover while not connected (#1385)
+			// through fogway for account failover while not connected (#1385)
 			if said := a.FailoverSaid(); said != "" {
 				r.vals += label.Render("  ·  " + said)
 			}
 			if a.Import != nil {
 				if a.Added != nil && a.Added() {
-					r.vals = value.Render("magpie added")
+					r.vals = value.Render("fogway added")
 				} else {
-					r.vals = label.Render("magpie "+a.ID+" add") + faint.Render("  to add magpie")
+					r.vals = label.Render("fogway "+a.ID+" add") + faint.Render("  to add fogway")
 				}
 			}
 		}
@@ -587,7 +592,7 @@ func profiles(args []string) error {
 			return err
 		}
 		if len(ps) == 0 {
-			fmt.Println(muted.Render("no profiles yet · magpie save <name>"))
+			fmt.Println(muted.Render("no profiles yet · fogway save <name>"))
 			return nil
 		}
 		detected := agent.Detected()
@@ -602,7 +607,7 @@ func profiles(args []string) error {
 		return nil
 	case "save":
 		if len(args) < 2 {
-			return fmt.Errorf("usage: magpie save <name>")
+			return fmt.Errorf("usage: fogway save <name>")
 		}
 		p, err := profile.Snapshot()
 		if err != nil {
@@ -615,7 +620,7 @@ func profiles(args []string) error {
 		return nil
 	case "use":
 		if len(args) < 2 {
-			return fmt.Errorf("usage: magpie use <name>")
+			return fmt.Errorf("usage: fogway use <name>")
 		}
 		ps, err := profile.Load()
 		if err != nil {
@@ -636,7 +641,7 @@ func profiles(args []string) error {
 		return nil
 	case "rm":
 		if len(args) < 2 {
-			return fmt.Errorf("usage: magpie rm <name>")
+			return fmt.Errorf("usage: fogway rm <name>")
 		}
 		if err := profile.Delete(args[1]); err != nil {
 			return err

@@ -144,8 +144,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], asked = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, asked));
-        await page.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("magpie.usageTab", "context"); sessionStorage.setItem("set", "1"); } } catch {} });
-        await page.goto("http://magpie.test/?view=usage");
+        await page.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("fogway.usageTab", "context"); sessionStorage.setItem("set", "1"); } } catch {} });
+        await page.goto("http://fogway.test/?view=usage");
         const row = page.locator(".ctx-sess-row", { hasText: "Port the parser" });
         await row.waitFor();
         await wheelTo(page, row);

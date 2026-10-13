@@ -81,12 +81,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
       await page.route("**/*", serve(lang));
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       await page.locator(".rt-req").nth(routes.length - 1).waitFor();
       const sealed = lang === "zh" ? /任务已加密.*只能使用 ChatGPT/ : /task is encrypted.*Only ChatGPT/;
       const excluded = lang === "zh" ? /其他供应商（如 Claude）不参与选择/ : /other providers \(such as Claude\) are excluded/;
       const parent = lang === "zh" ? /回答了主代理/ : /answered the parent agent/;
-      const selected = lang === "zh" ? /由 magpie 在此路由组内选择模型/ : /magpie selects its model/;
+      const selected = lang === "zh" ? /由 fogway 在此路由组内选择模型/ : /fogway selects its model/;
       const allowance = lang === "zh" ? /剩余额度 ÷ 距重置小时数/ : /remaining allowance per hour/;
 
       const story = () => page.locator(".rt-steps").textContent();
@@ -113,12 +113,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.doesNotMatch(await story(), lang === "zh" ? /周剩余额度/ : /its week left/);
 
       await page.locator(".rt-req").nth(3).click();
-      await page.waitForFunction(() => !document.querySelector(".rt-steps li.kind").textContent.includes("magpie"));
+      await page.waitForFunction(() => !document.querySelector(".rt-steps li.kind").textContent.includes("fogway"));
       assert.doesNotMatch(await story(), selected);
       assert.doesNotMatch(await story(), sealed);
 
       await page.locator(".rt-req").nth(4).click();
-      await page.waitForFunction(() => document.querySelector(".rt-steps li.kind").textContent.includes("magpie"));
+      await page.waitForFunction(() => document.querySelector(".rt-steps li.kind").textContent.includes("fogway"));
       assert.doesNotMatch(await story(), sealed);
       assert.doesNotMatch(await story(), parent);
       await page.locator(".rt-req").nth(5).click();

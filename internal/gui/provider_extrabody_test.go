@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A provider's extra body fields (#1604) are saved from the editor, shown
 // back to it, kept by a save that doesn't send them, cleared by {}, and a
-// save naming a field magpie sets itself is refused with why.
+// save naming a field fogway sets itself is refused with why.
 func TestProviderExtraBodySaved(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", os.Getenv("HOME"))

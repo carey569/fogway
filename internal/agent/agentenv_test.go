@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agentenv"
+	"github.com/fogway/fogway/internal/agentenv"
 )
 
 // readsEnv matches the two ways these packages name a variable they read to
@@ -21,13 +21,13 @@ var readsEnv = regexp.MustCompile(`(?:Getenv|LookupEnv|getenv)\("([A-Z][A-Z_0-9]
 var notAnAgent = map[string]string{
 	"APPDATA":               "Windows' own folder, which a sandbox sets to one of its own rather than clears",
 	"LOCALAPPDATA":          "the same",
-	"XDG_CONFIG_HOME":       "magpie's own folder's, which appdir decides",
+	"XDG_CONFIG_HOME":       "fogway's own folder's, which appdir decides",
 	"XDG_DATA_HOME":         "the same",
-	"MAGPIE_ADDR":           "magpie's own",
-	"MAGPIE_DEBUG":          "magpie's own debug flag",
-	"MAGPIE_PUBLIC_URL":     "magpie's own public URL",
-	"MAGPIE_TRUST_PROXY":    "magpie's own: a proxy here signs its clients in (#1022)",
-	"MAGPIE_EFFORT_UPDATES": "magpie's own switch for effort updates (#617)",
+	"FOGWAY_ADDR":           "fogway's own",
+	"FOGWAY_DEBUG":          "fogway's own debug flag",
+	"FOGWAY_PUBLIC_URL":     "fogway's own public URL",
+	"FOGWAY_TRUST_PROXY":    "fogway's own: a proxy here signs its clients in (#1022)",
+	"FOGWAY_EFFORT_UPDATES": "fogway's own switch for effort updates (#617)",
 }
 
 // TestFolderVarsAreListed says every variable the packages that find an
@@ -38,8 +38,8 @@ var notAnAgent = map[string]string{
 //
 // The four packages are this one, sessions, provider and gateway,
 // with appdir's codex.go, where CODEX_HOME is read for all of them:
-// every agent's folder variable magpie reads is read in one of them, and the
-// rest of the repository reads only magpie's own variables, the process' and
+// every agent's folder variable fogway reads is read in one of them, and the
+// rest of the repository reads only fogway's own variables, the process' and
 // the desktop's. Their sources are read as files rather than imported, since a
 // test in sessions or provider cannot import this package, which imports
 // them; what the walk looks at is what they say, not what they do.

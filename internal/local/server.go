@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/proc"
+	"github.com/fogway/fogway/internal/proc"
 )
 
 // Phase is where the local model is: off, getting ready, or serving.
@@ -185,7 +185,7 @@ func buildOf(bin string) string {
 func serve(ctx context.Context, c Config, bin, model string, m Model) error {
 	port := c.Port
 	if port == 0 {
-		port = freePort(3431)
+		port = freePort(3731)
 	}
 	ngl := "999" // every layer the GPU takes
 	if c.GPULayers > 0 {
@@ -203,7 +203,11 @@ func serve(ctx context.Context, c Config, bin, model string, m Model) error {
 		"-fa", "auto", // flash attention where the backend has it
 		"--no-webui",      // the gateway is what agents talk to
 		"--parallel", "2", // a turn and the router's question at once
+		// the two share the window: each request may take all of it, as
+		// the provider says it does, rather than half each
+		"--kv-unified",
 		"--reasoning-format", "deepseek", // thinking apart, as reasoning_content
+		"--reasoning", reasoning(c),
 	}
 	cmd := proc.Command(bin, args...)
 	cmd.Dir = filepath.Dir(bin)
@@ -217,12 +221,14 @@ func serve(ctx context.Context, c Config, bin, model string, m Model) error {
 	set(func(s *Status) {
 		s.Phase, s.Port, s.URL, s.Error, s.Progress, s.Since = Starting, port, fmt.Sprintf("http://127.0.0.1:%d/v1", port), "", nil, time.Now()
 	})
+	reapStale()
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting llama-server: %w", err)
 	}
+	os.WriteFile(pidPath(), []byte(fmt.Sprintf("%d %d\n", cmd.Process.Pid, os.Getpid())), 0o600)
 	var exitErr error
 	exited := make(chan struct{}) // closed once it has exited, exitErr why
-	go func() { exitErr = cmd.Wait(); close(exited) }()
+	go func() { exitErr = cmd.Wait(); os.Remove(pidPath()); close(exited) }()
 	ready := make(chan struct{})
 	go func() {
 		if waitHealthy(ctx, port, exited) {
@@ -320,7 +326,7 @@ var ErrOff = errors.New("the local model is off")
 
 // Prepare downloads what c runs when it isn't here yet — llama.cpp's build
 // for this computer and the model — without starting it, and returns the
-// model's path. magpie local setup runs it in the terminal; Start does the
+// model's path. fogway local setup runs it in the terminal; Start does the
 // same in the background.
 func Prepare(ctx context.Context, c Config, tell func(Progress)) (string, error) {
 	h := Detect()
@@ -337,4 +343,64 @@ func Prepare(ctx context.Context, c Config, tell func(Progress)) (string, error)
 		}
 	}
 	return pullModel(ctx, c, c.Picked(h), tell)
+}
+
+// reasoning is llama-server's --reasoning: off unless Think, as the turns
+// the local model is sent are the small ones, answered at once; a model
+// that thinks by default (Qwen3.5) spent an agent's short budget thinking
+// and answered nothing.
+func reasoning(c Config) string {
+	if c.Think {
+		return "auto"
+	}
+	return "off"
+}
+
+// pidPath keeps the pid of the llama-server running, and of the fogway
+// that runs it, so one left behind by a fogway that ended without stopping
+// it (killed, crashed) is ended when the next starts its own.
+func pidPath() string { return filepath.Join(Dir(), "llama-server.pid") }
+
+// reapStale ends the llama-server pidPath names when the fogway that ran it
+// is gone and it is still a program of Dir()'s: one another fogway runs now
+// is left to it.
+func reapStale() {
+	b, err := os.ReadFile(pidPath())
+	if err != nil {
+		return
+	}
+	var pid, owner int
+	if n, _ := fmt.Sscan(string(b), &pid, &owner); n != 2 || pid <= 0 {
+		os.Remove(pidPath())
+		return
+	}
+	if exe, err := proc.Executable(owner); err == nil && owner != os.Getpid() && proc.IsFogway(exe) {
+		return // its fogway still runs it
+	}
+	os.Remove(pidPath())
+	exe, err := proc.Executable(pid)
+	if err != nil || !within(exe, Dir()) {
+		return
+	}
+	log.Printf("local model: ending the llama-server (pid %d) a fogway before this one left running", pid)
+	proc.Terminate(pid)
+	for range 50 {
+		if _, err := proc.Executable(pid); err != nil {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	proc.Kill(pid)
+}
+
+// within says path is a file under dir, symlinks in either resolved.
+func within(path, dir string) bool {
+	if d, err := filepath.EvalSymlinks(dir); err == nil {
+		dir = d
+	}
+	if p, err := filepath.EvalSymlinks(path); err == nil {
+		path = p
+	}
+	rel, err := filepath.Rel(dir, path)
+	return err == nil && rel != "." && !strings.HasPrefix(rel, "..")
 }

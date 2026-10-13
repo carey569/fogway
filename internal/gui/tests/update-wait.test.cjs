@@ -23,18 +23,18 @@ const words = {
     busy: "0.1.401 is downloaded · 2 in flight · 1 awaiting tool results",
     waiting: "0.1.401 is downloaded · restarts once the gateway is idle · 2 in flight · 1 awaiting tool results",
     waitingLess: "0.1.401 is downloaded · restarts once the gateway is idle · 1 in flight",
-    gaveUp: "0.1.401 is downloaded · the gateway stayed busy for an hour, so magpie didn't restart; it updates when you restart or quit it",
+    gaveUp: "0.1.401 is downloaded · the gateway stayed busy for an hour, so fogway didn't restart; it updates when you restart or quit it",
     pill: "Update", pillWaiting: "Waiting to update",
-    pillTitle: "magpie restarts to update to 0.1.401 once the agents' requests through the gateway have finished: 2 in flight · 1 awaiting tool results. Click to restart now.",
+    pillTitle: "fogway restarts to update to 0.1.401 once the agents' requests through the gateway have finished: 2 in flight · 1 awaiting tool results. Click to restart now.",
   },
   zh: {
     version: "版本", restart: "重启以更新", now: "立即重启", cancel: "取消", restarting: "正在重启…",
     busy: "0.1.401 已下载 · 2 个请求进行中 · 1 个工具调用待返回",
     waiting: "0.1.401 已下载 · 网关空闲后自动重启 · 2 个请求进行中 · 1 个工具调用待返回",
     waitingLess: "0.1.401 已下载 · 网关空闲后自动重启 · 1 个请求进行中",
-    gaveUp: "0.1.401 已下载 · 网关忙碌了一小时，magpie 未重启；重启或退出 magpie 时完成更新",
+    gaveUp: "0.1.401 已下载 · 网关忙碌了一小时，fogway 未重启；重启或退出 fogway 时完成更新",
     pill: "更新", pillWaiting: "等待更新",
-    pillTitle: "网关中 Agent 的请求结束后，magpie 将重启以更新到 0.1.401：2 个请求进行中 · 1 个工具调用待返回。点击立即重启。",
+    pillTitle: "网关中 Agent 的请求结束后，fogway 将重启以更新到 0.1.401：2 个请求进行中 · 1 个工具调用待返回。点击立即重启。",
   },
 };
 
@@ -44,7 +44,7 @@ function settingsPayload(lang) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
@@ -106,7 +106,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, ctl));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/" + query);
+      await page.goto("http://fogway.test/" + query);
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       return { page, errors };
     };

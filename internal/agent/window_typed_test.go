@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A window the user typed is the one Codex and Claude Code run to (#1809,
 // a DeepSeek V4.1 Flash group set to 500K): a routing group's own size, or
-// one set on the provider for a model, isn't cut to magpie's default
+// one set on the provider for a model, isn't cut to fogway's default
 // working window (272K, which Codex ran to 95% of: ~258K). Codex is told
 // it as its context_window, on disk and in the gateway's list, with no
 // max_context_window; Claude Code is handed no CLAUDE_CODE_AUTO_COMPACT_
@@ -45,7 +45,7 @@ func TestTypedWindowReachesCodexAndClaudeCode(t *testing.T) {
 				Max     int    `json:"max_context_window"`
 			} `json:"models"`
 		}
-		raw := readFile(filepath.Join(home, ".codex", "magpie-models.json"))
+		raw := readFile(filepath.Join(home, ".codex", "fogway-models.json"))
 		if err := json.Unmarshal([]byte(raw), &got); err != nil {
 			t.Fatalf("%v: %s", err, raw)
 		}

@@ -1,5 +1,5 @@
 // Package catalog knows which models exist. It reads the models.dev catalog
-// (from magpie's own cache or OpenCode's), Codex's model cache, and falls back
+// (from fogway's own cache or OpenCode's), Codex's model cache, and falls back
 // to a small built-in list so the picker is never empty.
 package catalog
 
@@ -18,8 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/filememo"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/filememo"
 )
 
 // Model is one entry the picker can offer.
@@ -61,9 +61,9 @@ type Model struct {
 	// provider.CompactFor): the window it is told when Context is longer.
 	// 0 is none set, for the one for every model (settings.Compact).
 	Compact int `json:",omitempty"`
-	// Plain, on a model of another magpie's list, is its name there alone
-	// (display_name), when Name is its label there, with that magpie's
-	// provider after it (magpie_label): the name Provider in model names
+	// Plain, on a model of another fogway's list, is its name there alone
+	// (display_name), when Name is its label there, with that fogway's
+	// provider after it (fogway_label): the name Provider in model names
 	// Off has here (ARNO on Discord).
 	Plain string `json:",omitempty"`
 	// Fast is set on a model Codex may ask for priority processing (its
@@ -71,7 +71,7 @@ type Model struct {
 	Fast bool `json:",omitempty"`
 	// Tiers, in one ChatGPT account's own model list, are the service
 	// tiers its plan offers on the model ("priority", "ultrafast"); in
-	// another magpie's, the tiers it offers its Codex on the model
+	// another fogway's, the tiers it offers its Codex on the model
 	// (#1234).
 	Tiers []string `json:",omitempty"`
 	// OwnTier is set on a model of a provider the user added by its
@@ -87,11 +87,11 @@ type Model struct {
 	// a relay's flux): kept with the list for Settings → Images, never
 	// offered to agents as a model to talk to.
 	Draws bool `json:",omitempty"`
-	// Films is set on a model another magpie lists as one it makes videos
-	// with (a Remote magpie's Grok Imagine Video): kept with the list for
+	// Films is set on a model another fogway lists as one it makes videos
+	// with (a Remote fogway's Grok Imagine Video): kept with the list for
 	// its videos API, never offered as a model to talk to or draw with.
 	Films bool `json:",omitempty"`
-	// Decides marks a decision model another magpie explicitly lists,
+	// Decides marks a decision model another fogway explicitly lists,
 	// including models whose ids don't name Jev.
 	Decides bool `json:",omitempty"`
 	// Free is set on a model a subscription serves at no cost to its
@@ -107,9 +107,9 @@ type Model struct {
 	// Reasoning is set on a model that thinks, whether or not it takes
 	// levels: mimo-v2.6-flash thinks with a switch alone (#402).
 	Reasoning bool `json:",omitempty"`
-	// WebSearch is how another magpie (a Remote magpie) searches the web
+	// WebSearch is how another fogway (a Remote fogway) searches the web
 	// for the model when a web search tool is offered: "native", its own
-	// provider by itself, or "magpie", with that magpie's searcher; "" it
+	// provider by itself, or "fogway", with that fogway's searcher; "" it
 	// doesn't, or didn't say.
 	WebSearch string `json:",omitempty"`
 }
@@ -153,7 +153,7 @@ type Tier struct {
 	CacheWrite1h float64 `json:"cache_write_1h,omitempty"`
 }
 
-// UnmarshalJSON reads a price as magpie writes it, and as models.dev does,
+// UnmarshalJSON reads a price as fogway writes it, and as models.dev does,
 // whose tiers name their size as {"tier": {"type": "context", "size": N}}
 // and may leave a part out, which is then the base price's. A tier of
 // another type, or of no size, is left out.
@@ -432,7 +432,7 @@ var (
 	syncMu sync.Mutex
 )
 
-// CachePath is where `magpie sync` stores the models.dev catalog.
+// CachePath is where `fogway sync` stores the models.dev catalog.
 func CachePath() string { return filepath.Join(appdir.Cache(), "models.json") }
 
 func opencodeCache() string {
@@ -597,7 +597,7 @@ func Sync(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "magpie")
+	req.Header.Set("User-Agent", "fogway")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -1337,7 +1337,7 @@ func parseCodex(b []byte) ([]Model, error) {
 	sort.SliceStable(cache.Models, func(i, j int) bool { return cache.Models[i].Priority < cache.Models[j].Priority })
 	var out []Model
 	for _, m := range cache.Models {
-		if m.Visibility == "hide" || MagpieAdded(cache.ETag, m.Slug, m.Description) {
+		if m.Visibility == "hide" || FogwayAdded(cache.ETag, m.Slug, m.Description) {
 			continue
 		}
 		mm := Model{ID: m.Slug, Name: m.DisplayName, Provider: "openai", ImageInput: imageInput(m.Input)}
@@ -1355,15 +1355,15 @@ func parseCodex(b []byte) ([]Model, error) {
 	return out, nil
 }
 
-// MagpieAdded reports whether an entry of Codex's models_cache.json is one
-// of magpie's, not Codex's own: the list Codex keeps is the one it was last
-// handed, and handed through the gateway it has magpie's models in it too
-// ("group/semantic", "deepseek/deepseek-v4", "codex/gpt-5.5" — magpie's ids,
+// FogwayAdded reports whether an entry of Codex's models_cache.json is one
+// of fogway's, not Codex's own: the list Codex keeps is the one it was last
+// handed, and handed through the gateway it has fogway's models in it too
+// ("group/semantic", "deepseek/deepseek-v4", "codex/gpt-5.5" — fogway's ids,
 // which Codex's slugs never look like). Read back as Codex's own, they were
 // listed under OpenAI, and kept there after Codex was routed elsewhere.
-func MagpieAdded(etag, slug, description string) bool {
-	return strings.HasSuffix(description, " via magpie") ||
-		strings.Contains(etag, "+magpie-") && strings.Contains(slug, "/")
+func FogwayAdded(etag, slug, description string) bool {
+	return strings.HasSuffix(description, " via fogway") ||
+		strings.Contains(etag, "+fogway-") && strings.Contains(slug, "/")
 }
 
 // EffortRank orders the reasoning levels agents and vendors name, weakest

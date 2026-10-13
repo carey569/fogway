@@ -18,7 +18,7 @@ const UPGRADE = "winget upgrade --id rtk-ai.rtk --exact --silent --accept-packag
 const WHY = "winget failed (exit code 0x8A150101): RTK is in use — close the agents running it and try again";
 const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json` });
 const lib = () => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("codex", "Codex")],
   instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], skills: [], servers: [],
 });
@@ -72,12 +72,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         let open;
         const state = { version: "0.43.0", fail: true, reads: 0, gate: new Promise((r) => { open = r; }) };
         const ctx = await browser.newContext({ viewport: { width: 980, height: 800 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "rtk"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "rtk"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, state));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         const button = v.locator(".lib-cardhead button");
@@ -153,13 +153,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const w = waitWords[lang];
         const state = { reads: 0, checked: false, wingetHas: false };
         const ctx = await browser.newContext({ viewport: { width: 440, height: 800 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "rtk"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "rtk"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", waitServer(lang, state));
         const open = async () => {
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator('button[data-view="library"]').click();
           await page.locator("#view-library .lib-cardhead .lib-tag").waitFor();
         };

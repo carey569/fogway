@@ -17,7 +17,7 @@ const HOME = "C:/Users/aimer";
 const WHY = "rtk gain: Error: Failed to initialize tracking database";
 const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json` });
 const lib = () => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("codex", "Codex")],
   instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], skills: [], servers: [],
 });
@@ -50,14 +50,14 @@ function server(lang, state) {
 
 const words = {
   en: {
-    failed: `magpie couldn't read what RTK saved: ${WHY}`,
+    failed: `fogway couldn't read what RTK saved: ${WHY}`,
     scope: "RTK's own count (rtk gain): every command run through RTK on this computer, from any agent or terminal.",
     sandbox: "Codex runs its commands in its Windows sandbox, as its own sandbox account: RTK keeps what it saves there in that account's history, not yours, so it isn't counted here.",
     saved: "8.0k tokens saved over 42 commands — 89% on average",
     skills: "Skills",
   },
   zh: {
-    failed: `magpie 读不到 RTK 的节省记录：${WHY}`,
+    failed: `fogway 读不到 RTK 的节省记录：${WHY}`,
     scope: "来自 RTK 自身的统计（rtk gain）：本机经过 RTK 的所有命令，不分 Agent 和终端。",
     sandbox: "Codex 在 Windows 沙箱中以沙箱专用账户运行命令：RTK 的节省记录存在该账户下而非你的账户，此处无法统计。",
     saved: "42 条命令共节省 8.0k token，平均省 89%",
@@ -78,12 +78,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await t.test(lang, async () => {
         const w = words[lang], state = { reads: 0 };
         const ctx = await browser.newContext({ viewport: { width: 980, height: 800 } });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "rtk"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "rtk"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, state));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         const gain = v.locator(".lib-rtk-gain");

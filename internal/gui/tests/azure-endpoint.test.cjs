@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Azure OpenAI's editor asks for the resource's endpoint (no host magpie
+// Azure OpenAI's editor asks for the resource's endpoint (no host fogway
 // knows serves it): a field above the key, focused first, with the portal's
 // shape as its placeholder and a hint on where to find it and that the
 // model ids are the deployments' names. Adding without one says so and
@@ -18,7 +18,7 @@ const presets = [
   { id: "openai", name: "OpenAI", icon: "openai", kind: "vendor", chat: "https://api.openai.com/v1", added: false },
   { id: "azure", name: "Azure OpenAI", icon: "azure-color", kind: "vendor", added: false, catalog: "azure, openai",
     note: "your resource's endpoint and key", endpoint: "https://<resource>.openai.azure.com",
-    endpointHint: "Your resource's endpoint, from Keys and Endpoint in the Azure portal. magpie asks its v1 API; the model ids are your deployments' names." },
+    endpointHint: "Your resource's endpoint, from Keys and Endpoint in the Azure portal. fogway asks its v1 API; the model ids are your deployments' names." },
 ];
 const providers = [{ id: "openrouter", name: "OpenRouter", icon: "openai", preset: "openrouter", models: [], agents: [], key: { set: true, masked: "sk-…ab12" } }];
 
@@ -61,7 +61,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, saves));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#addProvider").click();
         const sheet = page.locator("#addSheet");
         await sheet.locator(".tile .n", { hasText: /^Azure OpenAI$/ }).click();

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // servedBy is a vendor that answers in its protocol, streamed when asked,
@@ -92,7 +92,7 @@ func TestSwappedModel(t *testing.T) {
 		{"us.anthropic.claude-sonnet-4-20250514-v1:0", "claude-sonnet-4-20250514", false},
 		{"auto", "gpt-5-mini", false}, // Copilot's Auto, Cursor's: the vendor was asked to pick
 		{"copilot/auto", "claude-sonnet-5", false},
-		// a remote magpie's routing group, answered by the member it routed to
+		// a remote fogway's routing group, answered by the member it routed to
 		{"group/auto-deepseek-v4-1-flash", "deepseek/deepseek-v4.1-flash", false},
 		{"group/fast", "luna", false},
 		{"sol", "", false},

@@ -37,7 +37,7 @@ import (
 const (
 	// sigMark begins the signature in an id: __ts<n>__ for the signature's
 	// own bytes, __tsr<n>__ for one that isn't canonical base64, its text.
-	// Ids magpie gave before #1536 have no n (__ts__, __tsr__); they are
+	// Ids fogway gave before #1536 have no n (__ts__, __tsr__); they are
 	// still read, with nothing to check them by.
 	sigMark = "__ts"
 	sigRaw  = "r"

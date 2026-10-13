@@ -19,7 +19,7 @@ function serve(lang, reads) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:false};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/providers") { reads.push(performance.now()); return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3425", running: true, window: true } }); }
+    if (url.pathname === "/api/providers") { reads.push(performance.now()); return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3725", running: true, window: true } }); }
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
@@ -51,7 +51,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, reads));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
 
       // at 1024 points the pages are down the left, in their groups
@@ -89,7 +89,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the gateway's address at the foot, read once the window has settled
       await page.locator("#sideGw").waitFor();
-      assert.match(await page.locator("#sideGw").textContent(), /127\.0\.0\.1:3425/);
+      assert.match(await page.locator("#sideGw").textContent(), /127\.0\.0\.1:3725/);
       assert.ok(await page.locator("#sideGw span").evaluate((s) => s.scrollWidth <= s.clientWidth), "the address is read whole");
       assert.equal(reads.length, 1, "read once for the sidebar");
 
@@ -156,7 +156,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const context = await browser.newContext({ viewport: { width: 900, height: 700 }, reducedMotion: "reduce" });
       const page = await context.newPage();
       await page.route("**/*", serve("en", reads));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       await page.waitForTimeout(2000);
       assert.equal(reads.length, 0, "no read with no sidebar to show it");
@@ -171,7 +171,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const context = await browser.newContext({ viewport: { width: 1200, height: 760 } });
       const page = await context.newPage();
       await page.route("**/*", serve("en", []));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       await page.locator("#prefs").click();
       const box = page.locator("#side .nav-sub").first();

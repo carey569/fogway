@@ -1,7 +1,7 @@
 // Package awake keeps the computer from going to sleep by itself while
-// agents work through magpie's gateway (xiao_wang24004 on X: the computer
+// agents work through fogway's gateway (xiao_wang24004 on X: the computer
 // went to sleep in the middle of an agent's task). With settings.KeepAwake
-// on, the magpie serving the gateway holds the system's sleep off while a
+// on, the fogway serving the gateway holds the system's sleep off while a
 // request is in flight, a Claude Code turn waits on its tool results, or a
 // request ended less than Grace ago — an agent running a build or the tests
 // between one request and the next — and lets go once it is idle. Only the

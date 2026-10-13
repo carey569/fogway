@@ -28,9 +28,9 @@ const fresh = () => ({
   // isn't id "claude": that row's opened view moves the subagents square into
   // a tiers line of its own.
   agents: [codexRow("codex"), codexRow("codex@wsl:Ubuntu"), {
-    id: "cc-magpie", name: "Claude Code", path: "/test/settings.json", icon: "claudecode-color", wired: true,
-    fields: [{ key: "model", label: "model", value: "magpie/deepseek/pro", options: [{ value: "magpie/deepseek/pro" }] },
-      { key: "subagent", label: "subagents", value: "", options: [{ value: "magpie/deepseek/flash", label: "DeepSeek Flash", ref: "deepseek/flash" }] }],
+    id: "cc-fogway", name: "Claude Code", path: "/test/settings.json", icon: "claudecode-color", wired: true,
+    fields: [{ key: "model", label: "model", value: "fogway/deepseek/pro", options: [{ value: "fogway/deepseek/pro" }] },
+      { key: "subagent", label: "subagents", value: "", options: [{ value: "fogway/deepseek/flash", label: "DeepSeek Flash", ref: "deepseek/flash" }] }],
   }],
   profiles: [],
 });
@@ -104,7 +104,7 @@ for (const engine of engines) {
           }
           await browser.close();
         });
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         // a row's squares are in the row opened, one row open at a time
         const open = async (id) => {
           const row = `.row.agent[data-id="${id}"]`;
@@ -114,8 +114,8 @@ for (const engine of engines) {
         await open("codex@wsl:Ubuntu");
         assert.equal(await page.locator(square("codex@wsl:Ubuntu")).getAttribute("aria-label"), w.lead + "\n" + w.hint);
         // Claude Code's subagents follow the model as before
-        await open("cc-magpie");
-        assert.equal(await page.locator(square("cc-magpie")).getAttribute("aria-label"), w.same);
+        await open("cc-fogway");
+        assert.equal(await page.locator(square("cc-fogway")).getAttribute("aria-label"), w.same);
         await open("codex");
 
         const sq = page.locator(square("codex"));
@@ -146,8 +146,8 @@ for (const engine of engines) {
         assert.deepEqual(sets.at(-1), { agent: "codex", field: "subagent", value: "" });
 
         // Claude Code's picker still opens on Same as model
-        await open("cc-magpie");
-        await page.locator(square("cc-magpie")).click();
+        await open("cc-fogway");
+        await page.locator(square("cc-fogway")).click();
         await page.locator("#pop:not([hidden]) #list li").first().waitFor();
         const cc = await page.locator("#pop #list li").first().innerText();
         assert(!cc.includes(w.pick), cc);

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/netproxy"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/netproxy"
 )
 
 // proxyAs has codexProxyFor read env, sys and goos, and proxyProbe answer
@@ -33,11 +33,11 @@ func proxyAs(t *testing.T, env map[string]string, sys netproxy.Proxy, goos strin
 	})
 }
 
-// Which proxy Codex sends a request for magpie's 127.0.0.1 through, the way
+// Which proxy Codex sends a request for fogway's 127.0.0.1 through, the way
 // its reqwest does (hyper-util's Matcher::from_system) and, with
 // respect_system_proxy on, the way codex-rs outbound_proxy does.
 func TestCodexProxyFor(t *testing.T) {
-	const base = "http://127.0.0.1:3425/v1"
+	const base = "http://127.0.0.1:3725/v1"
 	clash := "http://127.0.0.1:7890"
 	plain := filepath.Join(t.TempDir(), "config.toml")
 	os.WriteFile(plain, []byte("model = \"gpt-5.5\"\n"), 0o600)
@@ -101,9 +101,9 @@ func TestCodexProxyFor(t *testing.T) {
 	}
 }
 
-// liu_dyj on X: magpie opened from the Dock lacks the NO_PROXY a shell
+// liu_dyj on X: fogway opened from the Dock lacks the NO_PROXY a shell
 // profile sets, which the Codex a terminal or the ChatGPT app runs has.
-// The login shell's value is Codex's; magpie's own only where the shell
+// The login shell's value is Codex's; fogway's own only where the shell
 // has none.
 func TestCodexEnvTakesLoginShell(t *testing.T) {
 	was := loginEnv
@@ -115,21 +115,21 @@ func TestCodexEnvTakesLoginShell(t *testing.T) {
 		t.Fatalf("NO_PROXY = %q, want the login shell's", got)
 	}
 	if got := codexEnv("HTTP_PROXY"); got != "http://127.0.0.1:7890" {
-		t.Fatalf("HTTP_PROXY = %q, want magpie's own", got)
+		t.Fatalf("HTTP_PROXY = %q, want fogway's own", got)
 	}
 	proxyAs(t, nil, netproxy.Proxy{URL: "http://127.0.0.1:7890", HTTP: "http://127.0.0.1:7890"}, "darwin", nil)
 	codexProxyEnv = codexEnv
 	cfg := filepath.Join(t.TempDir(), "config.toml")
 	os.WriteFile(cfg, []byte("model = \"gpt-5.5\"\n"), 0o600)
-	if p, from := codexProxyFor(cfg, "http://127.0.0.1:3425/v1"); p != "" {
+	if p, from := codexProxyFor(cfg, "http://127.0.0.1:3725/v1"); p != "" {
 		t.Fatalf("NO_PROXY=127.0.0.1 in the shell, still through %q from %q", p, from)
 	}
 }
 
-// A proxy's own 502 isn't magpie; a proxy that passes the request on is.
+// A proxy's own 502 isn't fogway; a proxy that passes the request on is.
 func TestRealProxyProbe(t *testing.T) {
 	gw := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, `{"name":"magpie"}`)
+		io.WriteString(w, `{"name":"fogway"}`)
 	}))
 	defer gw.Close()
 	dead := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +149,7 @@ func TestRealProxyProbe(t *testing.T) {
 	}))
 	defer pass.Close()
 	if realProxyProbe(gw.URL+"/v1", dead.URL) {
-		t.Fatal("a proxy answering 502 counted as reaching magpie")
+		t.Fatal("a proxy answering 502 counted as reaching fogway")
 	}
 	if !realProxyProbe(gw.URL+"/v1", pass.URL) {
 		t.Fatal("a proxy passing the request on didn't count")
@@ -213,7 +213,7 @@ func socksOnly(t *testing.T) string {
 	return ln.Addr().String()
 }
 
-// Connected to magpie, with the gateway up but Codex's way to it through a
+// Connected to fogway, with the gateway up but Codex's way to it through a
 // proxy that answers 502: the row says so, which proxy and where it is set,
 // rather than connected (kind "proxied"); once the proxy passes it on, or
 // 127.0.0.1 goes around it, connected again.

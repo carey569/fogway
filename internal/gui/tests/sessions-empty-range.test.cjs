@@ -27,13 +27,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         if (url.pathname === "/api/sessions/overview") return json({ count: url.searchParams.get("days") === "0" ? 1 : 0, days: [], top: { tokens: [], cost: [], active: [] } });
         if (url.pathname === "/api/usage/quotas") return json([]);
         if (url.pathname.startsWith("/api/")) return json({});
-        const file = url.pathname === "/app.js" && process.env.MAGPIE_TEST_APP_JS ? process.env.MAGPIE_TEST_APP_JS : path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
+        const file = url.pathname === "/app.js" && process.env.FOGWAY_TEST_APP_JS ? process.env.FOGWAY_TEST_APP_JS : path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
         const body = await fs.readFile(file).catch(() => null);
         const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" }[path.extname(file)];
         return body ? route.fulfill({ body, contentType }) : route.fulfill({ status: 404, body: "" });
       });
-      await page.addInitScript(() => { localStorage.setItem("magpie.usageTab", "sessions"); localStorage.setItem("magpie.sessRange", "today"); });
-      await page.goto("http://magpie.test/?view=usage");
+      await page.addInitScript(() => { localStorage.setItem("fogway.usageTab", "sessions"); localStorage.setItem("fogway.sessRange", "today"); });
+      await page.goto("http://fogway.test/?view=usage");
       await page.locator('#sessAgent [data-agent="opencode"]').click();
       await page.locator("#sessStats .sess-show-history").click();
       await page.getByText("Historical conversation", { exact: true }).waitFor();

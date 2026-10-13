@@ -93,7 +93,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
             const held = new Promise((y) => { release = y; });
             page.on("pageerror", (e) => errors.push(e.message));
             await page.route("**/*", serve(lang, [acct], asks, held));
-            await page.goto("http://magpie.test/?view=routing");
+            await page.goto("http://fogway.test/?view=routing");
             const act = page.locator(".rt-act", { hasText: "work@example.com" }).first();
             await act.locator(".wins span").filter({ hasText: w.before }).waitFor();
             const b = page.locator("#rtReadAllowances");
@@ -134,7 +134,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const page = await (await browser.newContext({ viewport: { width: 1100, height: 760 }, reducedMotion: "reduce" })).newPage();
     page.setDefaultTimeout(5000);
     await page.route("**/*", serve("en", [key], [], Promise.resolve()));
-    await page.goto("http://magpie.test/?view=routing");
+    await page.goto("http://fogway.test/?view=routing");
     await page.locator(".rt-act", { hasText: "main" }).first().waitFor();
     await page.waitForTimeout(1200);
     assert.equal(await page.locator("#rtReadAllowances").isVisible(), false);

@@ -38,7 +38,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", serve);
     t.after(() => browser.close());
-    await page.goto("http://magpie.test/");
+    await page.goto("http://fogway.test/");
     await page.waitForFunction(() => document.readyState === "complete");
     // a narrow column of single lines, as a status line sits in an agent's row
     await page.evaluate((line) => {

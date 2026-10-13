@@ -9,7 +9,7 @@
 // grid are the ones that were there, patched, and the grid and its box
 // keep their height on every frame between. In Chromium and WebKit, at a
 // phone's width and a desk's; with the card open, and folded to its head
-// (magpie.ctxShut), whose nodes, bar and height stay the same too.
+// (fogway.ctxShut), whose nodes, bar and height stay the same too.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -83,7 +83,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         const feed = { next: null };
         await page.route("**/*", serve(feed));
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         await page.locator(".rt-req").nth(first.length - 1).waitFor();
         await page.locator(".rt-ctx .ctx-waffle").waitFor();
         await page.waitForTimeout(1500); // the cells come in, the first play ends
@@ -164,13 +164,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await t.test(`${width}x${height}, folded`, async () => {
         const context = await browser.newContext({ viewport: { width, height } });
         const page = await context.newPage();
-        await page.addInitScript(() => { try { localStorage.setItem("magpie.ctxShut", "1"); } catch {} });
+        await page.addInitScript(() => { try { localStorage.setItem("fogway.ctxShut", "1"); } catch {} });
         page.setDefaultTimeout(5000);
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         const feed = { next: null };
         await page.route("**/*", serve(feed));
-        await page.goto("http://magpie.test/?view=routing");
+        await page.goto("http://fogway.test/?view=routing");
         await page.locator(".rt-req").nth(first.length - 1).waitFor();
         await page.locator(".rt-ctx .ctx-card.shut").waitFor();
         await page.waitForTimeout(600);

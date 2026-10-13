@@ -22,12 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/codexcat"
-	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/filememo"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/steady"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/codexcat"
+	"github.com/fogway/fogway/internal/edit"
+	"github.com/fogway/fogway/internal/filememo"
+	"github.com/fogway/fogway/internal/settings"
+	"github.com/fogway/fogway/internal/steady"
 )
 
 // Quota cards, readings and file helpers that the key-based providers
@@ -260,7 +260,7 @@ type SubscriptionQuota struct {
 	// BalanceParts are the Balance's amounts each apart, when the balance
 	// field the user wrote has several or a percent (cardParts)
 	BalanceParts []BalancePart `json:"balanceParts,omitempty"`
-	// BalanceTrend is the Balance over time, as magpie read it, and when
+	// BalanceTrend is the Balance over time, as fogway read it, and when
 	// it runs out at that pace (balance_history.go)
 	BalanceTrend *BalanceTrend `json:"balanceTrend,omitempty"`
 	// Until is when the plan's paid time ends: it renews then when Renew
@@ -281,7 +281,7 @@ type SubscriptionQuota struct {
 	// minute's, or a Claude account's until Claude Code tells it again)
 	// can hand back long after; nil when not known.
 	ReadAt *time.Time `json:"readAt,omitempty"`
-	// Kind is the card's kind as another magpie is told it (CachedCards):
+	// Kind is the card's kind as another fogway is told it (CachedCards):
 	// subscription, plan or balance; "" here.
 	Kind string `json:"kind,omitempty"`
 	// LastServedAt is when the account, plan or key last answered a
@@ -558,7 +558,7 @@ func zcodeTeamHeaders(base, org, project string) map[string]string {
 }
 
 // zhipuTeamOf is the team project a GLM key belongs to, when that key is a
-// ZCode account's team key magpie holds: never, in Fogway.
+// ZCode account's team key fogway holds: never, in Fogway.
 func zhipuTeamOf(key string) (org, project string) {
 	return "", ""
 }
@@ -583,7 +583,7 @@ func zcodeRoot(base string) string {
 	return zcodeZaiAPI
 }
 
-// Do sends req to p with client, without the header magpie names a
+// Do sends req to p with client, without the header fogway names a
 // conversation by, which is the gateway's own.
 func (p Provider) Do(client *http.Client, req *http.Request) (*http.Response, error) {
 	req.Header.Del(ConversationHeader)
@@ -604,7 +604,7 @@ var cmdPlans = []struct {
 
 // ConversationHeader carries the conversation a request belongs to, to a
 // plugin's chat.headers hook as its session; it goes no further.
-const ConversationHeader = "X-Magpie-Conversation"
+const ConversationHeader = "X-Fogway-Conversation"
 
 var ZCodeBigModelBase = "https://open.bigmodel.cn/api/anthropic"
 
@@ -724,7 +724,7 @@ type accountStatusError struct {
 	retryAfter time.Duration // what the vendor asked to wait, when it said
 }
 
-// zcodeAppVersion is the ZCode whose sign-in magpie makes.
+// zcodeAppVersion is the ZCode whose sign-in fogway makes.
 const zcodeAppVersion = "3.14.3"
 
 func firstNonEmpty(ss ...string) string {
@@ -820,7 +820,7 @@ func undashIn(entries []Entry, id string) (string, bool) {
 	return found, found != ""
 }
 
-// CodeAssist is Google's Code Assist API, which magpie only speaks
+// CodeAssist is Google's Code Assist API, which fogway only speaks
 // upstream, to a Gemini CLI or Antigravity account. Not in Protocols: no
 // other provider serves it.
 const CodeAssist Protocol = "codeassist"
@@ -864,10 +864,10 @@ func ClaudeSpelled(ref string) string {
 	return ref
 }
 
-// CodexCatalog is shown as a Codex that names magpie its model_provider is
+// CodexCatalog is shown as a Codex that names fogway its model_provider is
 // handed it from GET /v1/codex/models (#1281): every model, a ChatGPT
-// account's own among them, since that Codex reaches them through magpie's
-// /v1 by magpie's id, not through the ChatGPT backend's list.
+// account's own among them, since that Codex reaches them through fogway's
+// /v1 by fogway's id, not through the ChatGPT backend's list.
 func CodexCatalog(shown []Entry) []catalog.Model {
 	find := GroupFinder()
 	return codexListed(shown, func(id string) []Member {
@@ -1085,17 +1085,17 @@ func grokRef(root, b map[string]any) map[string]any {
 // CodexTiers sets on m what Codex is offered on e's service tiers
 // (codexcat.Entries turns them into the entry's service_tiers): one source
 // for every list Codex is handed, the gateway's and the models.json file
-// magpie writes for a Codex CLI that names magpie its provider (#1530).
+// fogway writes for a Codex CLI that names fogway its provider (#1530).
 func CodexTiers(m *catalog.Model, e Entry, members func(id string) []Member) {
 	// a provider the user added by its address is sent the tier Codex
 	// asks for as it is (hsiangron on X)
 	m.OwnTier = e.Group == "" && e.Provider.Preset == "" && e.Provider.ID != ""
 }
 
-// ClaudeRead is a model read back from Claude Code's settings as magpie
+// ClaudeRead is a model read back from Claude Code's settings as fogway
 // serves it: a dashed spelling ClaudeSpelled wrote taken back to the
 // served id, anything else as it is. A model of a provider switched off
-// since is taken back too, so magpie still knows it for its own and moves
+// since is taken back too, so fogway still knows it for its own and moves
 // the agent off it (Reseat).
 func ClaudeRead(ref string) string {
 	if real, ok := ClaudeUndashed(ref); ok {
@@ -1125,14 +1125,14 @@ func offEntries() []Entry {
 	return out
 }
 
-// CodexListTag names the list Codex is handed, for its ETag: magpie's models,
+// CodexListTag names the list Codex is handed, for its ETag: fogway's models,
 // the account's own taken out of it, the order they are in, the windows set on them, the auto-review model, and whether its OpenAI models say
 // multi-agent V1 (settings.CodexAgentsV1), so any of them changing has
 // Codex ask for the list again.
 func CodexListTag() string { return codexListTag("") }
 
-// CodexOwnListTag names the list a Codex that reaches magpie for account
-// failover alone is handed, its own models without magpie's (#1385). Neither
+// CodexOwnListTag names the list a Codex that reaches fogway for account
+// failover alone is handed, its own models without fogway's (#1385). Neither
 // it nor CodexListTag's is a part of the other, so Codex asks again when it
 // moves from one list to the other; a V1 list's mark stays in front.
 func CodexOwnListTag() string { return codexListTag("own") }
@@ -1156,7 +1156,7 @@ func codexListTag(kind string) string {
 	if v := settings.Load().CodexAutoReview; v != "" {
 		ms = append(ms, catalog.Model{ID: "~autoreview:" + v})
 	}
-	// and the effort new sessions start at, which magpie's models take as
+	// and the effort new sessions start at, which fogway's models take as
 	// their default (codexcat.ModelDefault): another one set, Codex asks
 	// for the list again
 	if v := codexcat.NewSessionEffort(); v != "" {
@@ -1166,7 +1166,7 @@ func codexListTag(kind string) string {
 }
 
 // CodexListed is the catalog as a Codex signed in to ChatGPT is handed it,
-// after the backend's own models: all but a ChatGPT account's in magpie,
+// after the backend's own models: all but a ChatGPT account's in fogway,
 // which the backend lists already. A group answers for its first member
 // but is not that provider's.
 func CodexListed() []catalog.Model {
@@ -1259,7 +1259,7 @@ func AccountModelsOf(id, ref string) (string, []string, error) {
 	return r, p.AccountModels[strings.ToLower(r)], nil
 }
 
-// UsedUp is usedUp for the CLI's magpie quota wait, so what it waits out
+// UsedUp is usedUp for the CLI's fogway quota wait, so what it waits out
 // is what stops an account here.
 func UsedUp(q SubscriptionQuota, now time.Time) bool { return usedUp(q, now) }
 

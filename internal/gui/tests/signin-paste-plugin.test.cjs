@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// A plugin's browser sign-in that comes back to a port on magpie's machine
+// A plugin's browser sign-in that comes back to a port on fogway's machine
 // (Devin's, Kiro's, Trae's, Zed's plugins) takes the address the browser
-// ended on, for a magpie on a server or in Docker opened from another
+// ended on, for a fogway on a server or in Docker opened from another
 // computer (Chicring): beside the plugin's own words, the same field a
 // built-in's sign-in shows, posted to the sign-in, and the plugin's API key
 // way still offered. A narrow window, English and Chinese, Chromium and
@@ -47,7 +47,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
         try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
       });
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForFunction((l) => state.settings.lang === l, lang);
       await page.evaluate(() => {
         signing = { id: "plug-flow", agent: "devin", method: 0, state: "waiting", pasteCallback: true,

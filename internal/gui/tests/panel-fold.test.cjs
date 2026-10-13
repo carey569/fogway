@@ -131,7 +131,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     };
 
     await t.test("the tray panel, at its tallest", async () => {
-      const page = await open("http://magpie.test/?mode=panel", { width: 440, height: 560 });
+      const page = await open("http://fogway.test/?mode=panel", { width: 440, height: 560 });
       await page.locator('.row.agent[data-id="codex"] .ag-sum').click();
       await page.waitForTimeout(900);
       await toEnd(page);
@@ -150,7 +150,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     });
 
     await t.test("the window", async () => {
-      const page = await open("http://magpie.test/", { width: 900, height: 480 });
+      const page = await open("http://fogway.test/", { width: 900, height: 480 });
       await toEnd(page);
       await unrolls(page, "Show more");
       await toEnd(page);

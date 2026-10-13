@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
 func TestListKeepsImageModelsSeparate(t *testing.T) {

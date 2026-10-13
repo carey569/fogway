@@ -3,18 +3,18 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 const { fixture } = require("./fixtures/caller-keys.cjs");
 
-// #1551 (everpcpc): magpie web in Docker behind a reverse proxy, with
-// MAGPIE_PUBLIC_URL=https://magpie.example.com. The page is opened from
-// other machines, yet Gateway's Connect started at http://127.0.0.1:3425,
+// #1551 (everpcpc): fogway web in Docker behind a reverse proxy, with
+// FOGWAY_PUBLIC_URL=https://fogway.example.com. The page is opened from
+// other machines, yet Gateway's Connect started at http://127.0.0.1:3725,
 // and so did the copied snippets and the gateway's own address. With no
 // address picked, Connect now starts at the public URL, labelled as such,
 // the snippets with it, and About shows it beside the local address agents
 // here use. An address the user picked, this computer's included, still
-// wins after a reload. Served to other machines (magpie web), the
+// wins after a reload. Served to other machines (fogway web), the
 // gateway's address and Settings' MCP server show the public URL too; in
-// the app they stay this computer's. Without MAGPIE_PUBLIC_URL nothing
+// the app they stay this computer's. Without FOGWAY_PUBLIC_URL nothing
 // changes: Connect starts at this computer's.
-const PUBLIC = "https://magpie.example.com";
+const PUBLIC = "https://fogway.example.com";
 const LOCAL = "http://127.0.0.1:3999";
 const LANGS = ["en", "zh", "zh-TW", "ja", "de"];
 const words = {
@@ -30,7 +30,7 @@ async function setup(t, engine, lang, width, options) {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.route("**/*", fixture(lang, "light", [], { lan: true, ...options }));
   const open = async () => {
-    await page.goto("http://magpie.test/?view=gateway");
+    await page.goto("http://fogway.test/?view=gateway");
     await page.locator("#connectAddress").waitFor();
   };
   const shown = (sel) => page.locator(sel).textContent();
@@ -52,7 +52,7 @@ const keyed = (page, base) => page.waitForFunction((u) => {
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of LANGS) {
     for (const width of [1100, 420]) {
-      test(`${engine} ${lang} ${width}: Connect starts at MAGPIE_PUBLIC_URL until an address is picked`, async (t) => {
+      test(`${engine} ${lang} ${width}: Connect starts at FOGWAY_PUBLIC_URL until an address is picked`, async (t) => {
         const { page, errors, open, shown, settingsTab, fits } = await setup(t, engine, lang, width, { lanURLs: [PUBLIC], publicURL: PUBLIC });
 
         // nothing picked yet: the public URL, with a gateway key, in the
@@ -64,7 +64,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // in the app, the gateway's own address stays this computer's
         assert.equal(await shown("#gateway .url code"), LOCAL);
         await page.locator("#connectAddress").click();
-        assert.match(await page.locator(".proto-menu .pm-item", { hasText: "magpie.example.com" }).textContent(), new RegExp(words[lang]));
+        assert.match(await page.locator(".proto-menu .pm-item", { hasText: "fogway.example.com" }).textContent(), new RegExp(words[lang]));
         await fits("Gateway");
 
         // the user's own pick, this computer, wins over the public URL
@@ -82,24 +82,24 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.match(await shown("#about"), /127\.0\.0\.1:3999/);
         await fits("About");
         await settingsTab("models");
-        assert.equal(await shown("#searchMcpRow code"), LOCAL + "/mcp/magpie/web-search");
+        assert.equal(await shown("#searchMcpRow code"), LOCAL + "/mcp/fogway/web-search");
         assert.deepEqual(errors, []);
       });
     }
   }
   for (const width of [1100, 420]) {
-    test(`${engine} ${width}: magpie web shows MAGPIE_PUBLIC_URL as the gateway's address`, async (t) => {
+    test(`${engine} ${width}: fogway web shows FOGWAY_PUBLIC_URL as the gateway's address`, async (t) => {
       const { page, errors, open, shown, settingsTab } = await setup(t, engine, "en", width, { lanURLs: [PUBLIC], publicURL: PUBLIC, web: true });
       await open();
       assert.equal(await shown("#connectAddress"), PUBLIC + "/v1");
       await keyed(page, PUBLIC + "/v1");
       assert.equal(await shown("#gateway .url code"), PUBLIC);
       await settingsTab("models");
-      assert.equal(await shown("#searchMcpRow code"), PUBLIC + "/mcp/magpie/web-search");
+      assert.equal(await shown("#searchMcpRow code"), PUBLIC + "/mcp/fogway/web-search");
       assert.deepEqual(errors, []);
     });
   }
-  test(`${engine}: without MAGPIE_PUBLIC_URL Connect starts at this computer's address`, async (t) => {
+  test(`${engine}: without FOGWAY_PUBLIC_URL Connect starts at this computer's address`, async (t) => {
     const { page, errors, open, shown, settingsTab } = await setup(t, engine, "en", 1100, { lanURLs: ["http://192.168.1.10:3999"], web: true });
     await open();
     assert.equal(await shown("#connectAddress"), LOCAL + "/v1");

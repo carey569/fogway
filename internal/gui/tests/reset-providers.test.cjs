@@ -60,7 +60,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         const seen = [];
         await page.route("**/*", serve(lang, seen));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const w = lang === "en" ? words.en : await page.evaluate(() => ({ three: "↺ " + I18N.zh["{n} resets"].replace("{n}", 3), two: "↺ " + I18N.zh["{n} resets"].replace("{n}", 2), use: I18N.zh["Use a reset"] }));
         const resetsIn = page.locator('.editor .acc[data-account-id="me@example.com"] .aq-resets');
         const openEditor = async () => {

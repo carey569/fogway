@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // adaptiveVendor answers as Anthropic does for a model from 4.6 on: a 400
@@ -54,8 +54,8 @@ func (v *adaptiveVendor) last() map[string]any {
 }
 
 // Keenc on Discord: claude-opus-5-5 answers 400 to thinking.type=enabled,
-// and magpie sent it so — relaying an agent's budget as it came, and
-// building one for a model magpie knows by another name than the vendor's.
+// and fogway sent it so — relaying an agent's budget as it came, and
+// building one for a model fogway knows by another name than the vendor's.
 // Every request reaching an Anthropic endpoint for it asks adaptive
 // thinking, with the effort in output_config; an older Claude keeps its
 // budget, and "disabled" stays.
@@ -68,7 +68,7 @@ func TestAdaptiveOnlyModelsNeverGetABudget(t *testing.T) {
 		Models: []string{"claude-opus-5.5", "anthropic.claude-opus-5-5-20260901-v1:0", "opus", "claude-sonnet-4-5"}}); err != nil {
 		t.Fatal(err)
 	}
-	// magpie's "opus" is the vendor's claude-opus-5-5[1m]
+	// fogway's "opus" is the vendor's claude-opus-5-5[1m]
 	if err := provider.SetUpstreamName("relay/opus", "claude-opus-5-5[1m]"); err != nil {
 		t.Fatal(err)
 	}

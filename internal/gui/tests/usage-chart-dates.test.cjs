@@ -68,7 +68,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         p.on("pageerror", (e) => errors.push(e.message));
         let answer = () => overview("day");
         await p.route("**/*", serve(lang, () => answer()));
-        await p.goto("http://magpie.test/");
+        await p.goto("http://fogway.test/");
         await p.locator('[data-view="usage"]').first().click();
         const labels = () => p.locator("#chart .labels span").allTextContents();
         const title = (i) => p.locator("#chart .bar").nth(i).getAttribute("title");

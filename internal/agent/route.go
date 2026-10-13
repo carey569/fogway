@@ -4,39 +4,39 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Every agent's model picker has two halves: the models the agent reaches
-// on its own (its sign-in, its own keys), and magpie's catalog — every model
+// on its own (its sign-in, its own keys), and fogway's catalog — every model
 // of every provider the user added, reached through the local gateway.
 // A catalog model is spelled "provider/model"; an agent that sends that to
 // the gateway gets the vendor's reply in whichever API the agent speaks.
 
-// magpieID is the provider id agents know the gateway by.
-const magpieID = "magpie"
+// fogwayID is the provider id agents know the gateway by.
+const fogwayID = "fogway"
 
 // RoutingGroups is the picker's group of routing groups.
 const RoutingGroups = "Routing groups"
 
-// viaMagpie lists the catalog as agent is shown it, for a picker: the
+// viaFogway lists the catalog as agent is shown it, for a picker: the
 // routing groups first, in one group of their own, then one group per
 // provider.
-func viaMagpie(agent, prefix string) []Option {
+func viaFogway(agent, prefix string) []Option {
 	var out, groups []Option
 	shown, _ := provider.CatalogFor(agent)
 	own := map[string]bool{} // the agent's own sign-in among the providers: none
 	fast := provider.FastPicks(agent)
 	for _, e := range shown {
 		if e.Group != "" {
-			groups = append(groups, Option{Value: prefix + e.ID, Label: e.Name, Note: "routing group · via magpie",
+			groups = append(groups, Option{Value: prefix + e.ID, Label: e.Name, Note: "routing group · via fogway",
 				Icon: e.Provider.Icon, Icons: e.Icons, Group: RoutingGroups, Ref: e.ID})
 			continue
 		}
-		note := e.Provider.Name + " · via magpie"
+		note := e.Provider.Name + " · via fogway"
 		o := Option{Value: prefix + e.ID, Label: e.Name, Note: note,
 			Icon: e.Provider.Icon, Group: e.Provider.Name, Ref: e.ID, Free: e.Free, Rate: e.Rate, RateWas: e.RateWas, Context: e.Context, own: own[e.Provider.ID],
 			sub: false}
@@ -52,7 +52,7 @@ func viaMagpie(agent, prefix string) []Option {
 
 // listLabels are the names the agent's own list calls the catalog's models
 // by, by id: provider.Labels, which follows the Provider in model names
-// setting, where an Option's Label is the name alone for magpie's picker.
+// setting, where an Option's Label is the name alone for fogway's picker.
 func listLabels(agent string) map[string]string {
 	shown, _ := provider.CatalogFor(agent)
 	labels := provider.Labels(shown)
@@ -63,11 +63,11 @@ func listLabels(agent string) map[string]string {
 	return out
 }
 
-// viaMagpieFor is viaMagpie without the agent's own account: Codex CLI going
-// through magpie to its own ChatGPT login would only add a hop.
-func viaMagpieFor(agentID, prefix string) []Option {
+// viaFogwayFor is viaFogway without the agent's own account: Codex CLI going
+// through fogway to its own ChatGPT login would only add a hop.
+func viaFogwayFor(agentID, prefix string) []Option {
 	var out []Option
-	for _, o := range viaMagpie(agentID, prefix) {
+	for _, o := range viaFogway(agentID, prefix) {
 		if !strings.HasPrefix(o.Value, prefix+agentID+"/") {
 			out = append(out, o)
 		}
@@ -75,8 +75,8 @@ func viaMagpieFor(agentID, prefix string) []Option {
 	return out
 }
 
-// isMagpie reports whether a model value is a catalog reference.
-func isMagpie(v string) bool {
+// isFogway reports whether a model value is a catalog reference.
+func isFogway(v string) bool {
 	if pid, _, ok := strings.Cut(v, "/"); ok && dryProviders[pid] {
 		return true
 	}
@@ -91,16 +91,16 @@ func firstOf(xs []string) string {
 	return ""
 }
 
-// magpieModels is the catalog as agent is shown it, as catalog.Models, for
+// fogwayModels is the catalog as agent is shown it, as catalog.Models, for
 // agents that keep their own model files.
-func magpieModels(agent string) []catalog.Model {
+func fogwayModels(agent string) []catalog.Model {
 	// the providers built once for all the models' prices, not for each:
 	// dsh's round at every start built them for each of hundreds
 	defer provider.Hold()()
 	var out []catalog.Model
 	shown, _ := provider.CatalogFor(agent)
 	labels := provider.Labels(shown)
-	// a model magpie describes images to takes them (provider.Described)
+	// a model fogway describes images to takes them (provider.Described)
 	seen := provider.Described != nil && provider.Described()
 	st, find := settings.Load(), provider.GroupFinder()
 	members := func(id string) []provider.Member {
@@ -136,8 +136,8 @@ func magpieModels(agent string) []catalog.Model {
 			m.APIs = []string{string(provider.Responses)}
 		}
 		// the service tiers Codex is offered on it, as the gateway's own
-		// lists offer them: Fast in the Codex CLI magpie writes
-		// magpie-models.json for (#1530)
+		// lists offer them: Fast in the Codex CLI fogway writes
+		// fogway-models.json for (#1530)
 		provider.CodexTiers(&m, e, members)
 		out = append(out, m)
 	}

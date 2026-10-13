@@ -10,12 +10,12 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/edit"
 )
 
-const zedProvider = "language_models.openai_compatible.magpie"
+const zedProvider = "language_models.openai_compatible.fogway"
 const zedModel = "agent.default_model"
 
 // Zed stores API keys in the OS credential store, keyed by the API URL.
@@ -23,12 +23,12 @@ var zedCredential = saveZedCredential
 
 // Zed uses ~/.config on macOS, XDG on Linux and Roaming AppData on Windows.
 func zed(home, cfg string) *Agent {
-	bin := os.Getenv("MAGPIE_ZED_BIN")
+	bin := os.Getenv("FOGWAY_ZED_BIN")
 	if bin == "" {
 		bin = "zed"
 	}
 	processes := zedProcessNames()
-	if custom := appdir.Getenv("MAGPIE_ZED_CONFIG_DIR"); custom != "" {
+	if custom := appdir.Getenv("FOGWAY_ZED_CONFIG_DIR"); custom != "" {
 		return zedAtWith(custom, bin, processes)
 	}
 	switch runtime.GOOS {
@@ -53,7 +53,7 @@ func zedAtWith(dir, bin string, processes []string) *Agent {
 		ID: "zed", Name: "Zed", Icon: "zed", Bin: bin, Dir: dir, Path: path, Spelled: prefixed,
 		UA: []string{"zed"},
 		Notice: func() string {
-			if usesMagpie(model()) && Running(processes...) {
+			if usesFogway(model()) && Running(processes...) {
 				return noticeZed.String()
 			}
 			return ""
@@ -67,7 +67,7 @@ func zedAtWith(dir, bin string, processes []string) *Agent {
 			})
 		},
 		Check: func() string {
-			if !usesMagpie(model()) {
+			if !usesFogway(model()) {
 				return ""
 			}
 			return wiringOff("Zed", path, func(k string) (string, bool) { return edit.GetJSON(path, zedProvider+"."+k) }, "api_url", gatewayV1())
@@ -75,11 +75,11 @@ func zedAtWith(dir, bin string, processes []string) *Agent {
 		Fields: []Field{{
 			Key: "model", Label: "model", Get: model,
 			Set: func(v string) error {
-				if ref, ok := strings.CutPrefix(v, magpieID+"/"); ok && isMagpie(ref) {
+				if ref, ok := strings.CutPrefix(v, fogwayID+"/"); ok && isFogway(ref) {
 					if err := zedCredential(gatewayV1()); err != nil {
 						return fmt.Errorf("configure Zed gateway credential: %w", err)
 					}
-					if !usesMagpie(model()) {
+					if !usesFogway(model()) {
 						previous := map[string]string{key + "model": get(zedModel)}
 						if get(zedProvider+".api_url") != gatewayV1() {
 							previous[key+"provider"] = get(zedProvider)
@@ -88,16 +88,16 @@ func zedAtWith(dir, bin string, processes []string) *Agent {
 					}
 					return edit.SetJSON(path,
 						edit.KV{Path: zedProvider, Value: zedProviderJSON(path)},
-						edit.KV{Path: zedModel, Value: map[string]string{"provider": magpieID, "model": ref}})
+						edit.KV{Path: zedModel, Value: map[string]string{"provider": fogwayID, "model": ref}})
 				}
-				// Validate a native selection before removing magpie's wiring.
+				// Validate a native selection before removing fogway's wiring.
 				p, m, ok := strings.Cut(v, "/")
 				if v != "" && (!ok || p == "" || m == "") {
 					return fmt.Errorf("expected provider/model, got %q", v)
 				}
-				if get(zedProvider+".api_url") == gatewayV1() || usesMagpie(model()) {
+				if get(zedProvider+".api_url") == gatewayV1() || usesFogway(model()) {
 					for _, entry := range []struct{ name, field string }{{"provider", zedProvider}, {"model", zedModel}} {
-						if entry.name == "model" && !usesMagpie(model()) {
+						if entry.name == "model" && !usesFogway(model()) {
 							forget(key + entry.name)
 							continue
 						}
@@ -105,7 +105,7 @@ func zedAtWith(dir, bin string, processes []string) *Agent {
 							if err := edit.SetJSON(path, edit.KV{Path: entry.field, Value: json.RawMessage(was)}); err != nil {
 								return err
 							}
-						} else if entry.name == "provider" || usesMagpie(model()) {
+						} else if entry.name == "provider" || usesFogway(model()) {
 							if err := edit.DelJSON(path, entry.field); err != nil {
 								return err
 							}
@@ -121,17 +121,17 @@ func zedAtWith(dir, bin string, processes []string) *Agent {
 			},
 			Options: func(cur map[string]string) []Option {
 				var own []Option
-				if v := cur["model"]; v != "" && !usesMagpie(v) {
+				if v := cur["model"]; v != "" && !usesFogway(v) {
 					own = append(own, Option{Value: v, Icon: modelIcon("", v)})
 				}
-				return append(group("Zed", own), viaMagpie("zed", magpieID+"/")...)
+				return append(group("Zed", own), viaFogway("zed", fogwayID+"/")...)
 			},
 		}},
 	}, path, stashPath())
 }
 
 func zedProcessNames() []string {
-	value := os.Getenv("MAGPIE_ZED_PROCESS_NAMES")
+	value := os.Getenv("FOGWAY_ZED_PROCESS_NAMES")
 	if value == "" {
 		return []string{`(^|/)(zed|zeditor|zed-editor)( |$)`}
 	}
@@ -148,7 +148,7 @@ func zedProcessNames() []string {
 	return out
 }
 
-// zedLevels are the reasoning_effort values magpie writes for Zed, weakest
+// zedLevels are the reasoning_effort values fogway writes for Zed, weakest
 // first: those every Zed that reads the field takes. Its settings take
 // language_model_core's ReasoningEffort, lowercase; max and none came after
 // it (Zed 0.233 has minimal to xhigh), and a value a Zed doesn't know is
@@ -181,7 +181,7 @@ func zedEffort(m catalog.Model) string {
 	return zedLevels[best]
 }
 
-// zedProviderJSON is magpie's provider in Zed's settings at path. A
+// zedProviderJSON is fogway's provider in Zed's settings at path. A
 // reasoning_effort already on a model there is kept: the user may have
 // picked another level, or "none" to keep it from thinking.
 func zedProviderJSON(path string) map[string]any {
@@ -200,7 +200,7 @@ func zedProviderJSON(path string) map[string]any {
 		}
 	}
 	models := []any{}
-	for _, m := range magpieModels("zed") {
+	for _, m := range fogwayModels("zed") {
 		context := m.Context
 		if context == 0 {
 			context = 128000 // Zed requires a context window for every custom model.
@@ -239,5 +239,5 @@ func zedProviderJSON(path string) map[string]any {
 
 // what zed says after a change (notice.go)
 var (
-	noticeZed = newNotice("Restart Zed if it still asks for an API key: magpie has configured its gateway credential in the system credential store.")
+	noticeZed = newNotice("Restart Zed if it still asks for an API key: fogway has configured its gateway credential in the system credential store.")
 )

@@ -7,16 +7,16 @@ import (
 	"testing"
 )
 
-// A magpie run in a shell whose XDG_CONFIG_HOME moves its files says so when
+// A fogway run in a shell whose XDG_CONFIG_HOME moves its files says so when
 // a provider isn't found, naming the folder the app keeps them in (蒙面人 on
-// Discord: `magpie provider refresh antigravity` found no Antigravity, which
+// Discord: `fogway provider refresh antigravity` found no Antigravity, which
 // the window showed signed in); without the variable it says nothing more.
 func TestFindSaysFilesAreElsewhere(t *testing.T) {
 	h := t.TempDir()
 	t.Setenv("HOME", h)
 	t.Setenv("USERPROFILE", h)
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
-	app := filepath.Join(h, ".config", "magpie")
+	app := filepath.Join(h, ".config", "fogway")
 	if err := os.MkdirAll(app, 0o700); err != nil {
 		t.Fatal(err)
 	}

@@ -8,7 +8,7 @@ const assets = path.resolve(__dirname, "../assets");
 
 function fixture(lang, posts) {
   let settings = { theme: "light", lang, tray: "panel", currency: "usd", textSize: 100,
-    version: "0.1.700", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3999",
+    version: "0.1.700", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3999",
     proxy: "", proxyNow: "none", proxySource: "none", redactWords: [], visionModels: [], imageGenModels: [],
     workbuddyCheckins: [], lanURLs: [], otel: {}, fx: { rate: 7.2, at: new Date().toISOString(), stale: false } };
   const relay = { id: "relay", name: "Relay", icon: "generic", host: "relay.test", chat: "https://relay.test/v1",
@@ -82,7 +82,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
       page.on("dialog", (dialog) => { errors.push("Unexpected native dialog: " + dialog.type()); dialog.dismiss(); });
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", fixture(lang, posts));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       const dirtyText = lang === "zh" ? /放弃未保存/ : /Discard unsaved/;
       const saveName = lang === "zh" ? "保存" : "Save";
       const cancelName = lang === "zh" ? "取消" : "Cancel";
@@ -181,7 +181,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
       const page = await browser.newPage({ viewport: { width: 1100, height: 800 }, reducedMotion: "reduce" });
       page.setDefaultTimeout(5000);
       await page.route("**/*", fixture(lang, []));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.evaluate(() => {
         const element = document.createElement("div");
         element.id = "already-inert";
@@ -217,7 +217,7 @@ for (const engine of process.env.BROWSER ? [process.env.BROWSER] : ["chromium", 
       t.after(() => browser.close());
       const page = await browser.newPage({ viewport: { width: 1100, height: 800 } });
       await page.route("**/*", fixture(lang, []));
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator('#providers .row.provider[data-id="relay"]').click();
       const nav = page.locator('#nav button[data-view="providers"]');
       const point = await nav.boundingBox();

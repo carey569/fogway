@@ -15,27 +15,27 @@ import (
 )
 
 // The system's close on the quick panel (KWin's title bar X on KDE, #1283;
-// Alt+F4; a window manager's close key) reaches magpie as WindowClosing, as
+// Alt+F4; a window manager's close key) reaches fogway as WindowClosing, as
 // Close sends it. The panel is hidden and stays the tray's, so the icon
 // opens it again; closed, the icon did nothing until a restart. A panel
 // lightweight mode let go still closes.
 func TestPanelCloseHidesIt(t *testing.T) {
-	out, err := runAppKit(t, 30*time.Second, []string{"MAGPIE_TEST_PANEL_CLOSE=1"})
+	out, err := runAppKit(t, 30*time.Second, []string{"FOGWAY_TEST_PANEL_CLOSE=1"})
 	if err != nil || !strings.Contains(string(out), "panel close: ok") {
 		t.Fatalf("panel close: %v\n%s", err, out)
 	}
 }
 
 func init() {
-	if os.Getenv("MAGPIE_TEST_PANEL_CLOSE") != "1" {
+	if os.Getenv("FOGWAY_TEST_PANEL_CLOSE") != "1" {
 		return
 	}
 	app := application.New(application.Options{
-		Name: "magpie panel close regression",
+		Name: "fogway panel close regression",
 		Mac:  application.MacOptions{ActivationPolicy: application.ActivationPolicyProhibited},
 		Assets: application.AssetOptions{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<p>magpie</p>`)
+			fmt.Fprint(w, `<p>fogway</p>`)
 		})},
 	})
 	h := &host{app: app}

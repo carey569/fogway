@@ -47,7 +47,7 @@ func TestBlockList(t *testing.T) {
 	}
 }
 
-// A table emptied by taking magpie's key out (Hermes's providers: {} and
+// A table emptied by taking fogway's key out (Hermes's providers: {} and
 // model: {} after a disconnect) is filled in block style when it is
 // switched on again, not written on one line; a flow table that holds
 // something stays as it is.
@@ -56,11 +56,11 @@ func TestSetYAMLFillsAnEmptyTableInBlocks(t *testing.T) {
 	if err := os.WriteFile(p, []byte("providers: {}\nmodel: {}\nkeep: {a: 1}\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := SetYAML(p, KV{"providers.magpie", map[string]any{"name": "magpie", "models": []string{"x"}}}, KV{"model.default", "x"}, KV{"keep.b", 2}); err != nil {
+	if err := SetYAML(p, KV{"providers.fogway", map[string]any{"name": "fogway", "models": []string{"x"}}}, KV{"model.default", "x"}, KV{"keep.b", 2}); err != nil {
 		t.Fatal(err)
 	}
 	b, _ := os.ReadFile(p)
-	want := "providers:\n  magpie:\n    models:\n      - x\n    name: magpie\nmodel:\n  default: x\nkeep: {a: 1, b: 2}\n"
+	want := "providers:\n  fogway:\n    models:\n      - x\n    name: fogway\nmodel:\n  default: x\nkeep: {a: 1, b: 2}\n"
 	if string(b) != want {
 		t.Fatalf("got\n%s\nwant\n%s", b, want)
 	}

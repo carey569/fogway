@@ -13,12 +13,12 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const CUT = "the WebDAV server kept 0 of 6869 bytes of 5f0c-2026-08-29.magpie-usage: the write was cut short — sync again, and if it keeps happening the network to the server is dropping long uploads";
+const CUT = "the WebDAV server kept 0 of 6869 bytes of 5f0c-2026-08-29.fogway-usage: the write was cut short — sync again, and if it keeps happening the network to the server is dropping long uploads";
 
 function serve(lang, sync) {
   const settings = {
-    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/magpie",
-    gateway: "http://127.0.0.1:3425", visionModels: [], imageGenModels: [],
+    theme: "light", lang, tray: "panel", version: "test", dir: "/tmp/fogway",
+    gateway: "http://127.0.0.1:3725", visionModels: [], imageGenModels: [],
     fx: { rate: 7.2, stale: false },
   };
   return async (route) => {
@@ -66,7 +66,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route("**/*", serve(lang, c.sync));
           page.setDefaultTimeout(5000);
-          await page.goto("http://magpie.test/");
+          await page.goto("http://fogway.test/");
           await page.locator("#prefs").click();
           await page.locator(":is(#setTab-sync, .nav-s[data-of=setTab-sync]):visible").click();
           const first = page.locator("#syncList .row.pref").first();

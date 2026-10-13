@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // #1519 (fatkun): after a start, or after light mode let the window go, the
-// Agents and Providers pages waited ~2 s for magpie to read every agent's
+// Agents and Providers pages waited ~2 s for fogway to read every agent's
 // config again (seconds more with WSL agents on). The Agents page now draws
 // the state kept from the last read at once and the fresh one replaces it:
 // an agent leaves the list only once the fresh read says it is gone. The
@@ -57,7 +57,7 @@ async function open(engine, t, kept, view) {
   page.on("pageerror", (e) => errors.push(e.message));
   const read = { done: false }; // the fresh read is answered
   await page.route("**/*", serve(kept, read));
-  await page.goto("http://magpie.test/" + (view ? "?view=" + view : ""));
+  await page.goto("http://fogway.test/" + (view ? "?view=" + view : ""));
   return { page, errors, read };
 }
 

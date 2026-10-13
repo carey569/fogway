@@ -4,12 +4,12 @@ import (
 	"sort"
 	"time"
 
-	"github.com/yetone/magpie/internal/sessions"
+	"github.com/fogway/fogway/internal/sessions"
 )
 
 // Summaries is Summarize(p) and Direct(p) asked at one moment, for a page
 // that shows the two together: asked one after the other, midnight could
-// fall between them and set one day's calls through magpie beside the next
+// fall between them and set one day's calls through fogway beside the next
 // day's calls not through it. The gateway's sessions are its top
 // summaryCacheSessions (SummarizeTop), of its SessionCount: a page lists a
 // few, and the summary of a long history is then kept rather than worked
@@ -24,7 +24,7 @@ func Summaries(p Period) (Summary, Summary) {
 // worked out without the rest: the gateway's own calls are only matched
 // against them, from the blocks of the ledger's index as they are, not each
 // made into a priced row. Over a long history (Vantiboo1ean, ~750k
-// requests) those were most of the TUI's and magpie usage's wait.
+// requests) those were most of the TUI's and fogway usage's wait.
 func directRows(p Period, now time.Time) []Row {
 	since, until := p.Since(now), p.Until(now)
 	reader := LogCalls

@@ -3,7 +3,7 @@
 // Usage page — the one that answered last, else the first — and the others
 // in brief, their bars without when they reset (whqtian on Discord: 只显示
 // 一个账号即可，其他的可以点击展开; ARNO: 以前每个账号所占的空间很小，基本
-// 能一页看到所有账号… 关了magpie后又得一个个展开); the tray panel leaves the
+// 能一页看到所有账号… 关了fogway后又得一个个展开); the tray panel leaves the
 // ones in brief out, behind "Show N more accounts". Each account opens or
 // folds on its own, and stays so across a reload, by provider and account;
 // the card's button opens the rest; a provider with one account has no
@@ -88,7 +88,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // reload at once lands while the page's first reads are on their way,
       // and WebKit reports each one it cancels as a page error, "Fetch API
       // cannot load … due to access control checks" (#1350)
-      const page = await open("http://magpie.test/?view=usage");
+      const page = await open("http://fogway.test/?view=usage");
       await page.waitForSelector(".subscription-account .user", { state: "attached" });
 
       let got = await cards(page);
@@ -168,7 +168,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.locator("#usageMask").click();
 
       // the tray panel folds the same way, and follows what was opened
-      const panel = await open("http://magpie.test/?mode=panel");
+      const panel = await open("http://fogway.test/?mode=panel");
       await panel.setViewportSize({ width: 380, height: 900 });
       await panel.evaluate(() => setPanelTab("usage"));
       await panel.waitForSelector("#panelQuota .pq-card .pq-user");
@@ -218,8 +218,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" })).newPage();
     page.setDefaultTimeout(5000);
     await page.route("**/*", serve("zh", false, many));
-    await page.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("magpie.quotaRange", "off"); sessionStorage.setItem("set", "1"); } } catch {} });
-    await page.goto("http://magpie.test/?view=usage");
+    await page.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("fogway.quotaRange", "off"); sessionStorage.setItem("set", "1"); } } catch {} });
+    await page.goto("http://fogway.test/?view=usage");
     await page.waitForSelector(".subscription-account .user");
     const seen = () => page.evaluate(() => {
       const box = document.querySelector("#subscriptionUsage");

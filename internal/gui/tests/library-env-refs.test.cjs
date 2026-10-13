@@ -5,8 +5,8 @@
 // settings (here Antigravity, noEnvRefs) is never given such a server: its
 // chip is greyed on the row and in the editor with the reason, and a value
 // typed back to plain text lights it again. The editor says how to write
-// one under Headers and Environment. A check magpie can't make because the
-// variable isn't set where magpie runs says which one, not "couldn't check".
+// one under Headers and Environment. A check fogway can't make because the
+// variable isn't set where fogway runs says which one, not "couldn't check".
 // In en, zh, ja and de at 440px: no sideways scroll.
 // No backend: the API is faked here.
 const assert = require("node:assert/strict");
@@ -19,7 +19,7 @@ const assets = path.resolve(__dirname, "../assets");
 const HOME = "/Users/emo";
 const agent = (id, name, more = {}) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json`, ...more });
 const lib = (servers) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex", { noSSE: true }), agent("agy", "Antigravity", { noEnvRefs: true })],
   instructions: { agents: [] }, servers, skills: [], foundServers: [], projects: [], foundSkills: [], problems: [],
 });
@@ -46,14 +46,14 @@ function server(lang, servers) {
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
     if (url.pathname === "/api/library") return json(lib(servers));
-    // gh's token isn't set where magpie runs; fs has none to need
+    // gh's token isn't set where fogway runs; fs has none to need
     if (url.pathname === "/api/library/mcp/check") return json({ servers: Object.fromEntries(req.postDataJSON().names.map((n) => [n, n === "gh" ? { state: "error", why: "novar", detail: "GH_TOKEN" } : { state: "ok", tools: 2 }])) });
     if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -87,12 +87,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         ];
         const errors = [];
         const ctx = await browser.newContext({ viewport: { width: 440, height: 1000 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "mcp"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, servers));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         await v.locator(".lib-server").first().waitFor();
@@ -105,11 +105,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await agy.getAttribute("title"), why);
         assert.equal(await row("fs").locator('.lib-ag[data-agent="agy"]').getAttribute("aria-disabled"), null, "a server with no ${NAME} was held from Antigravity");
 
-        // the check: which variable magpie's own environment hasn't
+        // the check: which variable fogway's own environment hasn't
         const status = v.locator('.lib-health[data-server="gh"]');
         await page.waitForFunction(() => document.querySelector('#view-library .lib-health[data-server="gh"]')?.classList.contains("err"));
         assert.equal((await status.textContent()).trim(), w("{names} not set", { names: "GH_TOKEN" }));
-        assert.equal((await status.getAttribute("title")).split("\n")[0], w("magpie can't check it: {names} isn't set where magpie runs. An agent started where it is set still gets it", { names: "GH_TOKEN" }));
+        assert.equal((await status.getAttribute("title")).split("\n")[0], w("fogway can't check it: {names} isn't set where fogway runs. An agent started where it is set still gets it", { names: "GH_TOKEN" }));
 
         // the editor: the hint under Headers, the chip greyed with the reason
         await row("gh").locator(".sub").click();

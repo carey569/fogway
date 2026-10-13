@@ -56,14 +56,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], asked = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, mode, asked));
-        await page.goto(`http://magpie.test/?view=providers&mode=${mode}`);
+        await page.goto(`http://fogway.test/?view=providers&mode=${mode}`);
         await page.locator("#addProvider").click();
         const sheet = page.locator("#addSheet");
         const box = sheet.locator(".signing");
         await sheet.locator('.tile[data-pick="ZCode"]').click();
         await box.locator('button[data-site="bigmodel"]').waitFor();
         // in a short window the step is under the tiles: the reader scrolls to it
-        // (with the wheel: magpie puts back a scroll the reader didn't make)
+        // (with the wheel: fogway puts back a scroll the reader didn't make)
         await page.mouse.move(width / 2, height / 2);
         for (let i = 0; i < 20 && await box.evaluate((b) => b.getBoundingClientRect().bottom > innerHeight - 8); i++) {
           await page.mouse.wheel(0, 120);

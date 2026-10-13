@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/testenv"
+	"github.com/fogway/fogway/internal/testenv"
 )
 
 func TestNewerVersions(t *testing.T) {
@@ -61,7 +61,7 @@ func TestInstalledVersion(t *testing.T) {
 		}
 	}
 	if v := (&Agent{ID: "unknown-cli", Bin: "pi"}).InstalledVersion(); v != "" {
-		t.Errorf("a CLI magpie doesn't know: %q", v)
+		t.Errorf("a CLI fogway doesn't know: %q", v)
 	}
 }
 
@@ -356,7 +356,7 @@ func TestUpdateCLI(t *testing.T) {
 		t.Errorf("no change: %v", err)
 	}
 
-	// an agent magpie has no CLI for, or one in WSL, has nothing
+	// an agent fogway has no CLI for, or one in WSL, has nothing
 	if _, ok := (&Agent{ID: "alma"}).CLI(); ok {
 		t.Error("alma has a CLI")
 	}
@@ -489,7 +489,7 @@ func TestGrokInstalled(t *testing.T) {
 		t.Errorf("ran %q", ran)
 	}
 
-	// grok's own update at launch (auto_update), not through magpie: the
+	// grok's own update at launch (auto_update), not through fogway: the
 	// version is asked again
 	install("1.0.51")
 	says = "grok 1.0.51 (0a1b2c3d4e5f)"

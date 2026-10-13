@@ -66,7 +66,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, calls));
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings&tab=privacy");
+        await page.goto("http://fogway.test/?view=settings&tab=privacy");
         const head = page.locator("#redactList .row.rule-row").first();
         await head.waitFor();
         await settingsDrawn(page); // the rows found are the ones that stay (#1653)

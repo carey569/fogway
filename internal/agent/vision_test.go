@@ -4,9 +4,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // visionOff has no model describe images to one that can't see them, so an
@@ -39,7 +39,7 @@ func TestDescribedModelTakesImages(t *testing.T) {
 		t.Fatal(err)
 	}
 	plain := func() catalog.Model {
-		for _, m := range magpieModels("dsh") {
+		for _, m := range fogwayModels("dsh") {
 			if m.ID == "v/plain" {
 				return m
 			}

@@ -54,7 +54,7 @@ function fixture(lang, requests) {
     if (url.pathname === "/api/providers") return json(providers);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
-    if (url.pathname === "/api/usage") return json({ ...totals(rows), accounts, callerKeys: [], agents: [], models: [], series: [], bucket: "day", path: "~/.config/magpie/usage.jsonl" });
+    if (url.pathname === "/api/usage") return json({ ...totals(rows), accounts, callerKeys: [], agents: [], models: [], series: [], bucket: "day", path: "~/.config/fogway/usage.jsonl" });
     if (url.pathname === "/api/usage/requests") { requests.push(url.searchParams); return json(ledger(url.searchParams)); }
     if (url.pathname === "/api/usage/requests/export") {
       requests.push(Object.assign(url.searchParams, { method: req.method() }));
@@ -79,7 +79,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const w = lang === "zh"
         ? { head: "账号", none: "未记录账号", all: "全部账号" }
         : { head: "Accounts", none: "account not recorded", all: "All accounts" };
-      await page.goto("http://magpie.test/?view=usage");
+      await page.goto("http://fogway.test/?view=usage");
 
       // Overview: one row per provider and account, the unrecorded one named so
       await page.locator("#usageAccounts .row").first().waitFor();

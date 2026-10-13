@@ -18,7 +18,7 @@ const HOME = "/Users/liuweifeng";
 const agent = (id, name, icon) => ({ id, name, icon, skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json` });
 const AGENTS = ["claude", "codex", "zcode", "pi", "gemini"];
 const lib = () => ({
-  dir: `${HOME}/.config/magpie/library`, backups: `${HOME}/.config/magpie/backups`, home: HOME,
+  dir: `${HOME}/.config/fogway/library`, backups: `${HOME}/.config/fogway/backups`, home: HOME,
   agents: [
     agent("claude", "Claude Code", "claudecode-color"),
     agent("codex", "Codex", "codex-color"),
@@ -75,12 +75,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const open = async (lang, width, libTab) => {
       const posts = [];
       const ctx = await browser.newContext({ viewport: { width, height: 800 } });
-      await ctx.addInitScript((x) => { try { localStorage.setItem("magpie.libTab", x); } catch {} }, libTab);
+      await ctx.addInitScript((x) => { try { localStorage.setItem("fogway.libTab", x); } catch {} }, libTab);
       const page = await ctx.newPage();
       page.setDefaultTimeout(5000);
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.locator('button[data-view="library"]').click();
       return { ctx, page, posts };
     };

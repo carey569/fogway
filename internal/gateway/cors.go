@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // corsGuard lets the web pages and browser extensions the user listed
@@ -35,7 +35,7 @@ func corsGuard(next http.Handler) http.Handler {
 		if origin == "" || !corsAllowed(origin) {
 			if foreignPage(r, origin) {
 				log.Printf("refused %s %s from the web page %s: not one listed in Settings", r.Method, r.URL.Path, origin)
-				writeError(w, provider.Chat, http.StatusForbidden, "magpie doesn't answer the web page "+origin+": list it in Settings → Network and sharing → Web pages to let it call magpie with a gateway key")
+				writeError(w, provider.Chat, http.StatusForbidden, "fogway doesn't answer the web page "+origin+": list it in Settings → Network and sharing → Web pages to let it call fogway with a gateway key")
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -59,11 +59,11 @@ func corsGuard(next http.Handler) http.Handler {
 			return
 		}
 		// lanGuard, in front of Handler on the real server, has already
-		// taken the key and put magpie's own token in its place
+		// taken the key and put fogway's own token in its place
 		keyed := access.Caller(r.Context()).KeyID != "" ||
 			slices.ContainsFunc(callerKeys(r), func(k string) bool { _, ok := access.Authenticate(k); return ok })
 		if !keyed {
-			writeError(w, provider.Chat, http.StatusUnauthorized, "a web page or browser extension calls magpie with a gateway key: create one in magpie's Gateway page and send it as Authorization: Bearer <key> (or x-api-key)")
+			writeError(w, provider.Chat, http.StatusUnauthorized, "a web page or browser extension calls fogway with a gateway key: create one in fogway's Gateway page and send it as Authorization: Bearer <key> (or x-api-key)")
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -73,7 +73,7 @@ func corsGuard(next http.Handler) http.Handler {
 // foreignPage: origin is an http(s) web page that is neither on this
 // computer (localhost, *.localhost, 127.0.0.0/8, [::1], any port) nor the
 // request's own origin (a page served at the address the request names,
-// such as magpie's web app on a LAN address), so a browser sent it for a
+// such as fogway's web app on a LAN address), so a browser sent it for a
 // site elsewhere. usemagpie.ai may still read the Omarchy theme
 // (omarchyTheme).
 //
@@ -81,7 +81,7 @@ func corsGuard(next http.Handler) http.Handler {
 // page, some Electron renderers) and other schemes — app://, file://,
 // tauri://, vscode-webview://, chrome-extension:// — come from desktop
 // apps, editor webviews and browser extensions. Such a client could call
-// magpie before only because it doesn't enforce CORS (a webview with web
+// fogway before only because it doesn't enforce CORS (a webview with web
 // security off, an extension holding host permissions), and no ordinary
 // web page can send those origins, so they pass as before. *.localhost
 // counts as this computer: browsers resolve it to loopback, and Tauri's

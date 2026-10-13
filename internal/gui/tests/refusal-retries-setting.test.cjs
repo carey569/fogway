@@ -1,6 +1,6 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Settings › Models › Replies (DD on Discord: Anthropic's safety filter
-// refused a turn, and magpie asked account after account where Claude Code
+// refused a turn, and fogway asked account after account where Claude Code
 // would have switched to its fallback model): Ask again after a refusal is
 // All at first, says what Never ask again does, and Never ask again saves
 // refusalRetries 0, then All saves null, with the rest of the settings kept
@@ -60,7 +60,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const saved = [];
       await page.route("**/*", serve(lang, saved));
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings&tab=models");
+      await page.goto("http://fogway.test/?view=settings&tab=models");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const row = page.locator("#replyList #refusalRetriesRow");
       await row.waitFor();

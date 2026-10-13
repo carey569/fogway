@@ -31,7 +31,7 @@ const quotas = [
     windows: [{ name: "5 hours", used: 10, resetsAt: later }, { name: "7 days", used: 20, resetsAt: later }] },
   { provider: "zhipu", name: "GLM Coding", icon: "zhipu-color", user: "team@example.com", plan: "Team",
     windows: [{ name: "5 hours", used: 30 }], resets: { count: 1, byWindow: true, fiveHour: 1 } },
-  // a plugin's, its resets told but not spent from magpie: never sent to Codex's
+  // a plugin's, its resets told but not spent from fogway: never sent to Codex's
   { provider: "codex-plugin", name: "Codex (plugin)", user: "Me@example.com", plan: "Plus",
     windows: [{ name: "7 days", used: 100, resetsAt: later }], resets: { count: 3, until: later } },
 ];
@@ -125,7 +125,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the Usage page's card: Me in full, two in brief
       const posts = [];
-      const page = await open("http://magpie.test/?view=usage", { width: 900, height: 700 }, posts);
+      const page = await open("http://fogway.test/?view=usage", { width: 900, height: 700 }, posts);
       const me = '.quota-autoreset[data-user="Me@example.com"]', two = '.quota-autoreset[data-user="two@example.com"]';
       await page.locator(me).waitFor();
       assert.equal(await page.locator(".quota-autoreset").count(), 1, "only Codex's own named accounts in full have the say; the GLM team's and the plugin's don't");
@@ -179,7 +179,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // the menu bar panel's card
       const panelPosts = [];
-      const panel = await open("http://magpie.test/?mode=panel", { width: 440, height: 600 }, panelPosts);
+      const panel = await open("http://fogway.test/?mode=panel", { width: 440, height: 600 }, panelPosts);
       const psel = '.pq-autoreset[data-user="Me@example.com"]';
       await panel.locator('#ptabs [data-ptab="usage"]').click();
       await panel.locator(psel).waitFor();

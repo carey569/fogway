@@ -3,15 +3,15 @@ package codexcat
 import (
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
+	"github.com/fogway/fogway/internal/catalog"
 )
 
-// What this magpie tells another that has it as its provider: the tiers
+// What this fogway tells another that has it as its provider: the tiers
 // its Codex is offered on each model — a ChatGPT account's own model with
 // those of Codex's own entry, Ultrafast among them, a relay's GPT model
 // Fast, none on any other — and that one's Codex is offered the same on
 // the model, with Codex's own names (#1234).
-func TestServiceTiersGoOnToAnotherMagpie(t *testing.T) {
+func TestServiceTiersGoOnToAnotherFogway(t *testing.T) {
 	v1Home(t, `{"etag":"W/\"a\"","models":[{"slug":"gpt-6.1-sol","base_instructions":"x","service_tiers":[{"id":"priority","name":"Fast","description":"f"},{"id":"ultrafast","name":"Ultrafast","description":"u"}]}]}`)
 	here := ServiceTiers([]catalog.Model{
 		{ID: "codex/gpt-6.1-sol", Name: "a"},
@@ -41,7 +41,7 @@ func TestServiceTiersGoOnToAnotherMagpie(t *testing.T) {
 	}
 	got := ServiceTiers(there)
 	if s := ids(got["office/codex/gpt-6.1-sol"]); s != "priority:Fast ultrafast:Ultrafast " {
-		t.Errorf("the other magpie's Codex offered %q", s)
+		t.Errorf("the other fogway's Codex offered %q", s)
 	}
 	if s := ids(got["office/relay/glm-5"]); s != "" {
 		t.Errorf("a model offered no tier there is offered %q", s)

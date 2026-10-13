@@ -4,15 +4,15 @@ import "testing"
 
 func TestTarget(t *testing.T) {
 	for in, want := range map[string]string{
-		`C:\Tools\magpie-windows-amd64.exe`:          `C:\Tools\magpie-windows-amd64.exe`,
-		`C:\Tools\magpie.exe.old`:                    `C:\Tools\magpie.exe`,
-		`C:\Tools\magpie.exe.old-3`:                  `C:\Tools\magpie.exe`,
-		`C:\Tools\magpie.exe.new`:                    `C:\Tools\magpie.exe`,
-		`C:\Tools\MAGPIE.EXE.OLD`:                    `C:\Tools\MAGPIE.EXE`,
-		`C:\old\magpie.exe`:                          `C:\old\magpie.exe`,
-		`C:\Tools\magpie.exe.older`:                  `C:\Tools\magpie.exe.older`,
-		`/usr/local/bin/magpie`:                      `/usr/local/bin/magpie`,
-		`C:\Users\me\Downloads\magpie (1).exe.old-2`: `C:\Users\me\Downloads\magpie (1).exe`,
+		`C:\Tools\fogway-windows-amd64.exe`:          `C:\Tools\fogway-windows-amd64.exe`,
+		`C:\Tools\fogway.exe.old`:                    `C:\Tools\fogway.exe`,
+		`C:\Tools\fogway.exe.old-3`:                  `C:\Tools\fogway.exe`,
+		`C:\Tools\fogway.exe.new`:                    `C:\Tools\fogway.exe`,
+		`C:\Tools\FOGWAY.EXE.OLD`:                    `C:\Tools\FOGWAY.EXE`,
+		`C:\old\fogway.exe`:                          `C:\old\fogway.exe`,
+		`C:\Tools\fogway.exe.older`:                  `C:\Tools\fogway.exe.older`,
+		`/usr/local/bin/fogway`:                      `/usr/local/bin/fogway`,
+		`C:\Users\me\Downloads\fogway (1).exe.old-2`: `C:\Users\me\Downloads\fogway (1).exe`,
 	} {
 		if got := Target(in); got != want {
 			t.Errorf("Target(%q) = %q, want %q", in, got, want)
@@ -21,17 +21,17 @@ func TestTarget(t *testing.T) {
 }
 
 func TestStale(t *testing.T) {
-	exe := "/tools/magpie.exe"
+	exe := "/tools/fogway.exe"
 	for _, c := range []struct {
 		target, dir string
 		stale       bool
 	}{
 		{"", "", true},                            // no shortcut yet
-		{"/tools/magpie.exe", "/tools", false},    // already this one
-		{"/TOOLS/Magpie.EXE", "/Tools/", false},   // the same, in another case
-		{"/downloads/magpie.exe", "/tools", true}, // the exe was moved
-		{"/tools/magpie.exe", "/downloads", true}, // starts in another folder
-		{"/tools/magpie.exe", "", true},           // in no folder
+		{"/tools/fogway.exe", "/tools", false},    // already this one
+		{"/TOOLS/Fogway.EXE", "/Tools/", false},   // the same, in another case
+		{"/downloads/fogway.exe", "/tools", true}, // the exe was moved
+		{"/tools/fogway.exe", "/downloads", true}, // starts in another folder
+		{"/tools/fogway.exe", "", true},           // in no folder
 	} {
 		if got := Stale(c.target, c.dir, exe); got != c.stale {
 			t.Errorf("Stale(%q, %q) = %v, want %v", c.target, c.dir, got, c.stale)

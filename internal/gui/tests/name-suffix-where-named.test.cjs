@@ -93,7 +93,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     test(`${engine} ${lang}: Names & levels says what agents' lists show and drops the provider there`, async (t) => {
       const posts = [];
       const { page, errors } = await launch(t, engine, lang, posts);
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider").click();
       if (!(await page.locator(".mnames:not([hidden])").count())) await page.getByRole("button", { name: w.names, exact: true }).click();
       const sfx = page.locator(".mnames:not([hidden]) .msuffix");
@@ -113,7 +113,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     test(`${engine} ${lang}: "· routing group" is set over the groups, for all of them, and a group's editor says what it shows`, async (t) => {
       const posts = [];
       const { page, errors } = await launch(t, engine, lang, posts);
-      await page.goto("http://magpie.test/?view=routing");
+      await page.goto("http://fogway.test/?view=routing");
       const card = page.locator(".rt-group", { hasText: "Fast" });
       await card.waitFor();
       // the setting is over the groups, before the first card

@@ -41,7 +41,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const events = [], errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", fixture(lang, "light", events, { lan: true, limits: limits() }));
-      await page.goto("http://magpie.test/?view=gateway");
+      await page.goto("http://fogway.test/?view=gateway");
       await page.locator("#gatewayKeys .acc[data-key]").last().waitFor();
       const row = (id) => page.locator(`#gatewayKeys .acc[data-key="${id}"]`);
       const sent = (action) => events.filter((e) => e.action === action);

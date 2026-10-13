@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/yetone/magpie/internal/appdir"
-	"github.com/yetone/magpie/internal/filelock"
+	"github.com/fogway/fogway/internal/appdir"
+	"github.com/fogway/fogway/internal/filelock"
 )
 
 // plugins.yml says which built-in plugins are on, and each one's config:
@@ -27,10 +27,10 @@ import (
 // the built-in default (every plugin on, its Manifest.Defaults), the
 // preset (Essentials leaves the plugins not Essential off), then the
 // user's own rows. A plugin in use (Manifest.InUse) is on whatever they
-// say. `magpie plugin dump` shows the result and where each value came
+// say. `fogway plugin dump` shows the result and where each value came
 // from.
 //
-// A new install is written the Essentials preset, a magpie that ran here
+// A new install is written the Essentials preset, a fogway that ran here
 // before All (Settle), so an existing user keeps everything they had.
 
 // Presets a plugins.yml can name.
@@ -52,11 +52,11 @@ type Row struct {
 	Config  map[string]any `yaml:"config,omitempty"`
 }
 
-// Path is plugins.yml, in magpie's folder.
+// Path is plugins.yml, in fogway's folder.
 func Path() string { return filepath.Join(appdir.Config(), "plugins.yml") }
 
 var (
-	inProcess sync.Mutex // filelock.Mutex holds other magpies off; this, this one's goroutines
+	inProcess sync.Mutex // filelock.Mutex holds other fogways off; this, this one's goroutines
 	fileLock  = filelock.Mutex{Path: func() string { return Path() + ".lock" }}
 )
 
@@ -162,7 +162,7 @@ func merge(under, over any) any {
 }
 
 // Settle writes a first plugins.yml when there is none: the Essentials
-// preset on a new install, All on a magpie that ran here before. It says
+// preset on a new install, All on a fogway that ran here before. It says
 // whether it wrote one. A plugins.yml there, or one that can't be looked
 // at, is left as it is.
 func Settle(newInstall bool) (bool, error) {
@@ -207,8 +207,8 @@ func update(change func(*File)) error {
 	return write(f)
 }
 
-const header = "# magpie's built-in plugins: which are on, and each one's config.\n" +
-	"# `magpie plugin dump` shows what they come to, and where each value is from.\n"
+const header = "# fogway's built-in plugins: which are on, and each one's config.\n" +
+	"# `fogway plugin dump` shows what they come to, and where each value is from.\n"
 
 // write puts f in plugins.yml whole or not at all, the file it replaces
 // kept as plugins.yml.bak. Called with the locks held.

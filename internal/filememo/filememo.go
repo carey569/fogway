@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/steady"
+	"github.com/fogway/fogway/internal/steady"
 )
 
 type entry struct {
@@ -36,7 +36,7 @@ var (
 	mu   sync.Mutex
 	seen = map[string]entry{}
 	// holds is how many requests hold what was read (Hold); gen is moved
-	// on by every write magpie makes (Forget)
+	// on by every write fogway makes (Forget)
 	holds int
 	gen   uint64
 	// gone is the files found not there last time looked at, not waited
@@ -65,7 +65,7 @@ func Hold() (release func()) {
 	})
 }
 
-// Forget has every file looked at again on its next read: magpie wrote
+// Forget has every file looked at again on its next read: fogway wrote
 // one.
 func Forget() {
 	mu.Lock()

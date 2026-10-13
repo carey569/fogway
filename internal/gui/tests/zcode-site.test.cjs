@@ -37,7 +37,7 @@ for (const engine of engines) for (const lang of ["en", "zh"]) {
       const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
       return route.fulfill({ body: await fs.readFile(file), contentType });
     });
-    await page.goto("http://magpie.test/?view=providers");
+    await page.goto("http://fogway.test/?view=providers");
     await page.waitForFunction((l) => state.settings.lang === l, lang);
     // the sign-in starts on the Providers page, its list read: whether a
     // subscription is moved onto its plugin is told from it (subOf)

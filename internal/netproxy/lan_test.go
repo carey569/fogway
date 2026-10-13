@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // stubLookup answers names from m for the test, and forgets what earlier
@@ -29,7 +29,7 @@ func stubLookup(t *testing.T, m map[string]string) {
 	t.Cleanup(func() { lanLookup = old; clear(lanCache.m) })
 }
 
-// #982: with a proxy set, a Remote magpie on the user's network is asked
+// #982: with a proxy set, a Remote fogway on the user's network is asked
 // directly; a vendor still goes through the proxy, and so does a provider
 // with a proxy of its own.
 func TestLANGoesAroundTheProxy(t *testing.T) {
@@ -39,7 +39,7 @@ func TestLANGoesAroundTheProxy(t *testing.T) {
 	req := func(host, choice string) *http.Request {
 		return (&http.Request{URL: &url.URL{Scheme: "http", Host: host}}).WithContext(With(context.Background(), choice))
 	}
-	for _, h := range []string{"192.168.131.20:3425", "10.0.0.5:3425", "172.20.1.1", "100.101.102.103:3425", "[fd7a:115c:a1e0::1]:3425", "server.lan:3425", "nas.tail1234.ts.net:3425", "mac-mini.local:3425"} {
+	for _, h := range []string{"192.168.131.20:3725", "10.0.0.5:3725", "172.20.1.1", "100.101.102.103:3725", "[fd7a:115c:a1e0::1]:3725", "server.lan:3725", "nas.tail1234.ts.net:3725", "mac-mini.local:3725"} {
 		if p, err := Func(req(h, "")); p != nil || err != nil {
 			t.Errorf("%s: through %v (%v), want direct", h, p, err)
 		}
@@ -49,15 +49,15 @@ func TestLANGoesAroundTheProxy(t *testing.T) {
 			t.Errorf("%s: %v, want the proxy", h, p)
 		}
 	}
-	if p, _ := Func(req("192.168.131.20:3425", "socks5://127.0.0.1:1080")); p == nil || p.Host != "127.0.0.1:1080" {
+	if p, _ := Func(req("192.168.131.20:3725", "socks5://127.0.0.1:1080")); p == nil || p.Host != "127.0.0.1:1080" {
 		t.Errorf("a provider's own proxy: %v", p)
 	}
 }
 
 // The reporter's case end to end: a proxy that answers 502 Bad Gateway to
 // whatever it is asked (as Clash does for a host it can't reach), set in
-// magpie, and another magpie at this computer's LAN address. The list
-// comes from the other magpie, not the proxy's 502.
+// fogway, and another fogway at this computer's LAN address. The list
+// comes from the other fogway, not the proxy's 502.
 func TestLANModelListNotThroughProxy(t *testing.T) {
 	var lan net.IP
 	addrs, _ := net.InterfaceAddrs()
@@ -79,7 +79,7 @@ func TestLANModelListNotThroughProxy(t *testing.T) {
 		t.Skip("can't listen on", lan, err)
 	}
 	remote := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer sk-magpie-key" {
+		if r.Header.Get("Authorization") != "Bearer sk-fogway-key" {
 			http.Error(w, "no API key was sent", http.StatusUnauthorized)
 			return
 		}
@@ -94,7 +94,7 @@ func TestLANModelListNotThroughProxy(t *testing.T) {
 	clear(lanCache.m)
 	c := &http.Client{Transport: Dispatch(&http.Transport{Proxy: Func})}
 	req, _ := http.NewRequest("GET", remote.URL+"/v1/models", nil)
-	req.Header.Set("Authorization", "Bearer sk-magpie-key")
+	req.Header.Set("Authorization", "Bearer sk-fogway-key")
 	res, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -105,6 +105,6 @@ func TestLANModelListNotThroughProxy(t *testing.T) {
 		t.Fatalf("%s: %s %s", remote.URL, res.Status, b)
 	}
 	if !strings.Contains(string(b), "codex/gpt-6.1-sol") {
-		t.Fatalf("not the other magpie's list: %s", b)
+		t.Fatalf("not the other fogway's list: %s", b)
 	}
 }

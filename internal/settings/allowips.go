@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// SplitAllowIPs splits MAGPIE_ALLOW_IPS ("1.2.3.4,10.0.0.0/8 2001:db8::/32")
+// SplitAllowIPs splits FOGWAY_ALLOW_IPS ("1.2.3.4,10.0.0.0/8 2001:db8::/32")
 // into its entries, at commas and spaces.
 func SplitAllowIPs(v string) []string {
 	return strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == ';' || r == ' ' || r == '\t' || r == '\n' })

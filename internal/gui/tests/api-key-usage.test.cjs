@@ -69,7 +69,7 @@ function fixture(lang, theme, posts, requests) {
       return json(providers);
     }
     if (url.pathname === "/api/usage/quotas") return json([]);
-    if (url.pathname === "/api/usage") return json({ ...totals(rows), callerKeys: callerKeys(), agents: [], models: [], series: [], bucket: "day", path: "~/.config/magpie/usage.jsonl" });
+    if (url.pathname === "/api/usage") return json({ ...totals(rows), callerKeys: callerKeys(), agents: [], models: [], series: [], bucket: "day", path: "~/.config/fogway/usage.jsonl" });
     if (url.pathname === "/api/usage/requests") { requests.push(url.searchParams); return json(ledger(url.searchParams)); }
     if (url.pathname === "/api/usage/requests/export") {
       requests.push(Object.assign(url.searchParams, { method: req.method() }));
@@ -94,7 +94,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const w = lang === "zh"
         ? { addButton: "添加", first: "设为首选", remove: "移除", failed: "失败", all: "全部网关密钥" }
         : { addButton: "Add", first: "Make first", remove: "Remove", failed: "Failed", all: "All gateway keys" };
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator(".row.provider", { hasText: "Relay" }).click();
       assert.equal(await page.locator(".accts .acc:not(.add)").count(), 2);
       await page.locator(".accts .acc.add").click();

@@ -65,7 +65,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang));
 
-      await page.goto("http://magpie.test/?view=providers");
+      await page.goto("http://fogway.test/?view=providers");
       await page.locator("#providers .row.provider").first().waitFor();
       // the list holds the ones on; the ones off are under the fold, folded
       assert.deepEqual(await ids(page, "#providers"), ["p0", "p2", "p3", "p4", "p6", "p7", "p8", "p10", "p11"]);

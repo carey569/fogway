@@ -87,7 +87,7 @@ const words = {
 };
 const NEW = [
   "No cap on {window}: it is used to 100%, whatever this account's cap. Click to change",
-  "{window} has a cap of its own: magpie counts this account as used up once {window} is at {n}%, until it renews. Click to change",
+  "{window} has a cap of its own: fogway counts this account as used up once {window} is at {n}%, until it renews. Click to change",
   "Click to give {window} a cap of its own, apart from this account's",
   "{window} of {who} follows the account's cap", "{window} of {who} has no cap", "{who} stops at {n}% of {window}",
   "Cap for {window}, in percent", "Account's cap · {n}%", "Account's cap · none", "As the account's other windows",
@@ -114,7 +114,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         const posts = [];
         await page.route("**/*", serve(lang, posts, use));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator(".row.provider", { hasText: "Codex" }).first().click();
         await page.locator(".editor .accts .acc .aq-w").first().waitFor();
         return { page, errors, posts };

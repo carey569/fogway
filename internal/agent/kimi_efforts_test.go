@@ -8,8 +8,8 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // #333: the new Kimi Code is told each thinking model's levels
@@ -57,14 +57,14 @@ func TestKimiEfforts(t *testing.T) {
 
 	path := filepath.Join(home, ".kimi-code", "config.toml")
 	writeFile(t, path, "")
-	if err := kimi(home).Field("model").Set("magpie/think/deep"); err != nil {
+	if err := kimi(home).Field("model").Set("fogway/think/deep"); err != nil {
 		t.Fatal(err)
 	}
 	ms := read(path)
 	for k, want := range map[string]model{
-		"magpie/think/deep":  {[]string{"thinking", "tool_use"}, []string{"high", "max"}, "high"},
-		"magpie/think/wide":  {[]string{"thinking", "tool_use"}, []string{"low", "medium"}, ""},
-		"magpie/think/plain": {[]string{"tool_use"}, nil, ""},
+		"fogway/think/deep":  {[]string{"thinking", "tool_use"}, []string{"high", "max"}, "high"},
+		"fogway/think/wide":  {[]string{"thinking", "tool_use"}, []string{"low", "medium"}, ""},
+		"fogway/think/plain": {[]string{"tool_use"}, nil, ""},
 	} {
 		if got := ms[k]; !reflect.DeepEqual(got, want) {
 			t.Errorf("%s: %+v, want %+v", k, got, want)
@@ -74,10 +74,10 @@ func TestKimiEfforts(t *testing.T) {
 	os.RemoveAll(filepath.Join(home, ".kimi-code"))
 	legacy := filepath.Join(home, ".kimi", "config.toml")
 	writeFile(t, legacy, "")
-	if err := kimi(home).Field("model").Set("magpie/think/deep"); err != nil {
+	if err := kimi(home).Field("model").Set("fogway/think/deep"); err != nil {
 		t.Fatal(err)
 	}
-	if got := read(legacy)["magpie/think/deep"]; got.SupportEfforts != nil || got.DefaultEffort != "" {
+	if got := read(legacy)["fogway/think/deep"]; got.SupportEfforts != nil || got.DefaultEffort != "" {
 		t.Errorf("kimi-cli's: %+v", got)
 	}
 }

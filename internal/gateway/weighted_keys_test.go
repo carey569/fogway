@@ -3,7 +3,7 @@ package gateway
 import (
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A key's weight is saved with it, the first key's too, and 1 is the

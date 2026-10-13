@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // geminiSigUpstream is Gemini's OpenAI-compatible API as far as thought
@@ -97,7 +97,7 @@ func sigPost(t *testing.T, s *Server, path, body string) string {
 	return rec.Body.String()
 }
 
-// Pi on Gemini through magpie (#687): Pi speaks Chat, relayed to Gemini's
+// Pi on Gemini through fogway (#687): Pi speaks Chat, relayed to Gemini's
 // OpenAI-compatible API as it is, and keeps a tool call's id but not its
 // extra_content. The second request, the call and its result sent back,
 // was turned away with "Function call is missing a thought_signature";
@@ -144,7 +144,7 @@ func TestGeminiThoughtSignatureThroughPi(t *testing.T) {
 	}
 }
 
-// Claude Code, or any client magpie translates for, on Gemini's
+// Claude Code, or any client fogway translates for, on Gemini's
 // OpenAI-compatible API: the tool_use id carries the signature back the
 // same way.
 func TestGeminiThoughtSignatureThroughAnthropic(t *testing.T) {
@@ -238,7 +238,7 @@ func TestGeminiCallsWithoutSignature(t *testing.T) {
 		t.Errorf("another upstream was sent %s", other)
 	}
 
-	// the same through magpie's own translation
+	// the same through fogway's own translation
 	r := &Request{Messages: []Message{
 		{Role: "assistant", Parts: []Part{{Kind: ToolCall, ID: "toolu_1", Name: "a"}}},
 		{Role: "user", Parts: []Part{{Kind: ToolResult, CallID: "toolu_1", Text: "x"}}},
@@ -275,8 +275,8 @@ func TestSignedID(t *testing.T) {
 	}
 }
 
-// sigFixtures are ids as magpie gives them for Gemini 3's calls: Gemini's
-// own call id or magpie's call_<newID>, with a signature the size of
+// sigFixtures are ids as fogway gives them for Gemini 3's calls: Gemini's
+// own call id or fogway's call_<newID>, with a signature the size of
 // vertexCallSig and of the 421-character one #1536 measured (315 bytes),
 // and one that isn't canonical base64 (__tsr).
 func sigFixtures() []struct{ id, sig string } {
@@ -312,8 +312,8 @@ func TestShortenedIDHasNoSignature(t *testing.T) {
 	}
 }
 
-// Ids magpie gave before #1536, with no length in their mark, still give
-// their signatures back: a conversation started on an older magpie goes on.
+// Ids fogway gave before #1536, with no length in their mark, still give
+// their signatures back: a conversation started on an older fogway goes on.
 func TestOldSignedIDsStillRead(t *testing.T) {
 	for _, c := range sigFixtures() {
 		var old string

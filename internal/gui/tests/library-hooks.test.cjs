@@ -2,7 +2,7 @@
 // #1790 (AllenReder): Hooks, the Library's fifth tab. A hook is kept once
 // and given to agents with the chips every other tab has. The tab lists
 // each hook with what it runs on, in words (After a tool runs · File
-// edits), and its command; an agent magpie can't write hooks for has its
+// edits), and its command; an agent fogway can't write hooks for has its
 // chip greyed, saying why, and a click on it posts nothing. Asides say
 // what an agent does with a hook given to it: Codex runs one only once it
 // is trusted in its /hooks, Cursor runs Claude Code's too. A row's chip
@@ -29,10 +29,10 @@ const HOOK_AGENTS = [
   { id: "codex", file: `${HOME}/.codex/hooks.json`, events: ["PreToolUse", "PostToolUse", "Stop"] },
   { id: "cursor", file: `${HOME}/.cursor/hooks.json`, events: ["afterFileEdit", "stop"] },
   { id: "gemini", file: `${HOME}/.gemini/settings.json`, events: ["AfterTool", "AfterAgent"] },
-  { id: "opencode", no: "OpenCode has no hooks magpie can write" },
+  { id: "opencode", no: "OpenCode has no hooks fogway can write" },
 ];
 const lib = (hooks) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: [agent("claude", "Claude Code"), agent("codex", "Codex"), agent("cursor", "Cursor"), agent("gemini", "Gemini CLI"), agent("opencode", "OpenCode")],
   instructions: { agents: [] }, servers: [], skills: [], foundServers: [], projects: [], foundSkills: [], problems: [],
   hooks, hookAgents: HOOK_AGENTS,
@@ -77,7 +77,7 @@ function server(lang, state, posts) {
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
-    if (url.host !== "magpie.test") return route.fulfill({ status: 404, body: "" });
+    if (url.host !== "fogway.test") return route.fulfill({ status: 404, body: "" });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
     try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
@@ -124,13 +124,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const state = { hooks: [hk("bark", "turn-end", "", "curl -s https://api.day.app/KEY/done", ["codex"]), hk("fmt", "after-tool", "edit", "prettier -w .", ["claude", "cursor"])] };
         const posts = [], errors = [];
         const ctx = await browser.newContext({ viewport: { width: 440, height: 1000 }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "hooks"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "hooks"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         page.on("dialog", (d) => { errors.push("a browser dialog: " + d.message()); d.dismiss(); });
         await page.route("**/*", server(lang, state, posts));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         const v = page.locator("#view-library");
         await v.locator(".lib-hook").first().waitFor();
@@ -147,14 +147,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // what an agent does with one given to it
         await v.locator(".lib-hooks-codex").filter({ hasText: w("Codex runs a new or changed hook only once you trust it: review it in Codex's /hooks.") }).waitFor();
         await v.locator(".lib-hooks-twice").filter({ hasText: w("Cursor runs Claude Code's hooks too: a hook given to both runs twice in Cursor.") }).waitFor();
-        await v.locator(".lib-hooks-no").filter({ hasText: w("magpie can't give hooks to {agents} yet: their chips are greyed, and say why.", { agents: "OpenCode" }) }).waitFor();
+        await v.locator(".lib-hooks-no").filter({ hasText: w("fogway can't give hooks to {agents} yet: their chips are greyed, and say why.", { agents: "OpenCode" }) }).waitFor();
         assert.equal(await v.locator(".lib-hooks-off").count(), 0, "Gemini CLI, given none, said to have hooks off");
         assert.deepEqual(await sideways(page), [], "sideways scroll with the list");
 
         // OpenCode's chip is greyed, says why, and a click posts nothing
         const oc = row("bark").locator('.lib-ag[data-agent="opencode"]');
         assert.equal(await oc.getAttribute("aria-disabled"), "true");
-        assert.equal(await oc.getAttribute("title"), w("{agent} has no hooks magpie can write", { agent: "OpenCode" }));
+        assert.equal(await oc.getAttribute("title"), w("{agent} has no hooks fogway can write", { agent: "OpenCode" }));
         await press(page, oc);
         await page.waitForTimeout(150);
         assert.deepEqual(posts, [], "a greyed chip posted");

@@ -98,7 +98,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], seen = { starts: [], canceled: [] };
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, seen));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         const scrolls = () => page.evaluate(() => [window.scrollX, window.scrollY, ...[...document.querySelectorAll("*")].filter((e) => e.scrollTop).map((e) => e.scrollTop)]);
         const wide = () => page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
 
@@ -166,7 +166,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [], seen = { starts: [], canceled: [] };
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", serve(lang, seen));
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator(".row.provider", { hasText: "Codex" }).first().click();
         await page.locator(".editor .accts .acc.add").first().click();
         const via = page.locator(".editor .signing .acts .via");

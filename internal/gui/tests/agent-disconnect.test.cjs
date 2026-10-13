@@ -1,9 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Fate on Discord: taking out what magpie wrote into an agent's config
+// Fate on Discord: taking out what fogway wrote into an agent's config
 // wasn't obvious — picking Default looked like it might, and isn't it (it is
-// the agent as installed). An agent magpie is in (wired) has "Disconnect from
-// magpie" in its row's menu and in its model picker, beside Default, each
-// saying what it does; an agent magpie isn't in has neither. It asks first
+// the agent as installed). An agent fogway is in (wired) has "Disconnect from
+// fogway" in its row's menu and in its model picker, beside Default, each
+// saying what it does; an agent fogway isn't in has neither. It asks first
 // in the app's own dialog (no native confirm), Cancel posts nothing, and
 // Disconnect posts agents/disconnect and draws the row with the model the
 // agent had before, no longer wired. No click moves the page. In English and
@@ -15,10 +15,10 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const options = ["gpt-5.4", "magpie/relay/m1"].map((m) => ({ value: m, label: "Label " + m, ...(m.startsWith("magpie/") ? { ref: "relay/m1" } : {}) }));
+const options = ["gpt-5.4", "fogway/relay/m1"].map((m) => ({ value: m, label: "Label " + m, ...(m.startsWith("fogway/") ? { ref: "relay/m1" } : {}) }));
 const fresh = () => ({
   agents: [
-    { id: "codex", name: "Codex", icon: "generic", path: "/fixture/codex", wired: true, fields: [{ key: "model", label: "model", value: "magpie/relay/m1", options }] },
+    { id: "codex", name: "Codex", icon: "generic", path: "/fixture/codex", wired: true, fields: [{ key: "model", label: "model", value: "fogway/relay/m1", options }] },
     { id: "claude", name: "Claude Code", icon: "generic", path: "/fixture/claude", fields: [{ key: "model", label: "model", value: "gpt-5.4", options }] },
   ],
   profiles: [],
@@ -54,15 +54,15 @@ function server(lang, posts) {
 }
 
 const words = {
-  en: { item: "Disconnect from magpie", ask: "Disconnect Codex from magpie?", go: "Disconnect", cancel: "Cancel", done: /Codex no longer goes through magpie/ },
-  zh: { item: "断开 magpie（还原配置）", ask: "断开 Codex 和 magpie？", go: "断开", cancel: "取消", done: /Codex 已不再经过 magpie/ },
+  en: { item: "Disconnect from fogway", ask: "Disconnect Codex from fogway?", go: "Disconnect", cancel: "Cancel", done: /Codex no longer goes through fogway/ },
+  zh: { item: "断开 fogway（还原配置）", ask: "断开 Codex 和 fogway？", go: "断开", cancel: "取消", done: /Codex 已不再经过 fogway/ },
 };
 const row = (id) => `.row.agent[data-id="${id}"]`;
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh"]) {
     const w = words[lang];
-    test(`${engine} ${lang}: Disconnect from magpie puts back what the agent had`, async (t) => {
+    test(`${engine} ${lang}: Disconnect from fogway puts back what the agent had`, async (t) => {
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       t.after(() => browser.close());
       const page = await (await browser.newContext({ viewport: { width: 980, height: 520 }, reducedMotion: "reduce" })).newPage();
@@ -71,20 +71,20 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("dialog", (d) => { dialogs.push(d.message()); d.dismiss(); });
       await page.route("**/*", server(lang, posts));
-      await page.goto("http://magpie.test/?view=agents");
+      await page.goto("http://fogway.test/?view=agents");
       await page.locator(row("claude")).waitFor();
       // Claude Code, not connected, is under Not set up (#726): unrolled
       await page.locator(".agent-more").click();
       await page.waitForFunction(() => !document.querySelector(".agent-fold-inner")?.inert);
       const missing = await page.evaluate(() => [
-        "Drag to reorder · click to move, hide or disconnect from magpie",
-        "Disconnect from magpie",
-        "Take out everything magpie wrote into {agent}'s config and put back what it had before",
-        "put back what {agent} had before magpie",
-        "Disconnect {agent} from magpie?",
-        "magpie takes out everything it wrote into {agent}'s config — its endpoint, key, models and effort — and puts back the settings {agent} had before. magpie's providers and accounts stay as they are.",
+        "Drag to reorder · click to move, hide or disconnect from fogway",
+        "Disconnect from fogway",
+        "Take out everything fogway wrote into {agent}'s config and put back what it had before",
+        "put back what {agent} had before fogway",
+        "Disconnect {agent} from fogway?",
+        "fogway takes out everything it wrote into {agent}'s config — its endpoint, key, models and effort — and puts back the settings {agent} had before. fogway's providers and accounts stay as they are.",
         "Disconnect",
-        "{agent} no longer goes through magpie; its own settings are back",
+        "{agent} no longer goes through fogway; its own settings are back",
       ].filter((k) => !I18N.zh[k]));
       assert.deepEqual(missing, [], "every string has its Chinese");
       const tops = () => page.evaluate(() => [document.scrollingElement.scrollTop, document.querySelector("#view-agents")?.scrollTop]);
@@ -96,11 +96,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       };
       const closeMenu = async () => { await page.keyboard.press("Escape"); await page.locator(".pop.row-menu").waitFor({ state: "detached" }); };
 
-      // only where magpie is in the config
+      // only where fogway is in the config
       await openMenu("claude");
-      assert.equal(await menuItem().count(), 0, "an agent magpie isn't in has nothing to disconnect");
+      assert.equal(await menuItem().count(), 0, "an agent fogway isn't in has nothing to disconnect");
       await closeMenu();
-      assert.match(await page.locator(`${row("codex")} .ag-handle`).getAttribute("title"), lang === "en" ? /disconnect from magpie/ : /断开 magpie/);
+      assert.match(await page.locator(`${row("codex")} .ag-handle`).getAttribute("title"), lang === "en" ? /disconnect from fogway/ : /断开 fogway/);
       await openMenu("codex");
       assert.equal(await menuItem().count(), 1);
       assert.ok(await menuItem().getAttribute("title"), "it says what it does");
@@ -115,7 +115,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(posts, []);
 
       // the model picker beside the switch has it too, beside Default;
-      // Claude Code, not connected, has only magpie's models to pick there
+      // Claude Code, not connected, has only fogway's models to pick there
       // and no row to open
       assert.equal(await page.locator(`${row("claude")} .field:not(.ag-start)`).count(), 0);
       assert.equal(await page.locator(`${row("claude")} .ag-link`).count(), 0);

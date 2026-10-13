@@ -1,4 +1,4 @@
-// #1499 (fjrtdk): Aside keeps one folder per account, and magpie configures
+// #1499 (fjrtdk): Aside keeps one folder per account, and fogway configures
 // the one Aside has active unless an account is picked on the row. The
 // account field shows only with more than one account, says in the page's
 // language which one Aside has active, and a pick is sent as the field.
@@ -36,7 +36,7 @@ for (const engine of ['chromium', 'webkit']) {
           id: 'aside', name: 'Aside', icon: 'aside', wired: true, path: '~/.aside/u/1/settings.json',
           native: { provider: 'connected', runtime: 'applied', fields: {} },
           fields: [
-            { key: 'model', label: 'model', value: 'magpie/group/spacebunny', options: [{ value: 'magpie/group/spacebunny', ref: 'group/spacebunny', label: 'spacebunny' }] },
+            { key: 'model', label: 'model', value: 'fogway/group/spacebunny', options: [{ value: 'fogway/group/spacebunny', ref: 'group/spacebunny', label: 'spacebunny' }] },
             { key: 'account', label: 'account', value: '', options: accounts },
           ],
         };
@@ -56,7 +56,7 @@ for (const engine of ['chromium', 'webkit']) {
           const file = path.join(assets, p === '/' ? 'index.html' : p);
           return route.fulfill({ body: await fs.readFile(file), contentType: { '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml' }[path.extname(file)] });
         });
-        await page.goto('http://magpie.test/?view=agents');
+        await page.goto('http://fogway.test/?view=agents');
         const row = page.locator('.row.agent[data-id="aside"]');
         await row.waitFor();
         // its settings beyond the model are under Details

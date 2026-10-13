@@ -1,9 +1,9 @@
-// Package netproxy decides which proxy magpie's own requests to vendors go
+// Package netproxy decides which proxy fogway's own requests to vendors go
 // through. An app started from the Dock or the Start menu has no
 // HTTPS_PROXY in its environment, so without this every call to a vendor
 // that is only reachable through a proxy hangs until the agent gives up.
 //
-// In order: the proxy set in magpie's settings (or "direct" for none), the
+// In order: the proxy set in fogway's settings (or "direct" for none), the
 // usual *_PROXY variables, then the system's proxy (macOS network
 // settings, Windows Internet Options). Loopback is never proxied, nor,
 // unless a provider has a proxy of its own, a host on the user's own
@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Install routes http.DefaultTransport (and so http.DefaultClient) through
@@ -57,7 +57,7 @@ type choiceKey struct{}
 
 type holdKey struct{}
 
-// Hold is ctx for work magpie was not asked to do and must not send: no
+// Hold is ctx for work fogway was not asked to do and must not send: no
 // request made with it through Func, or a transport Dispatch made, leaves
 // the machine; each fails with err before it dials (#1518, allowance
 // reads while the user has them read only when asked).
@@ -81,7 +81,7 @@ func Held(ctx context.Context) error {
 // the proxy's address (http://, https://, socks5://; host:port means
 // http). Requests made with it through Func, or through a transport
 // Dispatch made, take that proxy. A choice ctx already names is replaced,
-// "" too: a request magpie makes for one provider while serving another's
+// "" too: a request fogway makes for one provider while serving another's
 // (a web search asked of Codex in a turn served by a provider set to
 // "direct", #1522) goes through its own provider's proxy, never the one
 // it was made under.
@@ -221,14 +221,14 @@ func For(u *url.URL) (*url.URL, error) {
 	return Parse(sys.URL)
 }
 
-// Env is env (the process's own when nil) for an agent's CLI that magpie
+// Env is env (the process's own when nil) for an agent's CLI that fogway
 // starts — a sign-in, or a subscription's run — told to use the proxy
-// magpie's own requests would: the CLI reads only *_PROXY, which an app
+// fogway's own requests would: the CLI reads only *_PROXY, which an app
 // started from the Dock or the Start menu doesn't have, so a proxy set in
-// magpie or the system's alone left it trying the vendor directly. A
-// proxy set in magpie replaces any in env and "direct" drops them; the
+// fogway or the system's alone left it trying the vendor directly. A
+// proxy set in fogway replaces any in env and "direct" drops them; the
 // system's is only added where env names none. Loopback never goes
-// through it, since a CLI calls back to magpie there.
+// through it, since a CLI calls back to fogway there.
 func Env(env []string) []string { return EnvWith("", env) }
 
 // EnvWith is Env for a CLI run on one provider's behalf, whose own proxy
@@ -330,7 +330,7 @@ func Describe() (proxy, source string) {
 	return "", "none"
 }
 
-// Redact is a proxy address as magpie may show it: in a log line, an
+// Redact is a proxy address as fogway may show it: in a log line, an
 // error, a status or the GUI (#852, #1886). Its user and password are
 // left out, and the rest kept as it was written (no scheme added to one
 // written without). A malformed address is "", because its userinfo
@@ -355,7 +355,7 @@ func Redact(raw string) string {
 // fromEnv is the proxy the environment names for u: HTTPS_PROXY or
 // HTTP_PROXY as Go reads them, else ALL_PROXY (curl's, which Go doesn't
 // read: a shell with only ALL_PROXY=socks5://… set has curl go through it,
-// and magpie, its updates among its requests, too). NO_PROXY is kept for
+// and fogway, its updates among its requests, too). NO_PROXY is kept for
 // it as well.
 func fromEnv(u *url.URL) (*url.URL, error) {
 	if p, err := http.ProxyFromEnvironment(&http.Request{URL: u}); p != nil || err != nil {
@@ -420,7 +420,7 @@ var sysCache struct {
 }
 
 // How long a system proxy read stands: a proxy that is set, 15 seconds;
-// none, 2. magpie started at login comes up before the proxy app does
+// none, 2. fogway started at login comes up before the proxy app does
 // (#1518), and its requests went direct for up to 15 seconds after the
 // proxy app had set the system's proxy.
 var (

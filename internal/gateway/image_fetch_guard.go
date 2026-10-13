@@ -13,17 +13,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/yetone/magpie/internal/netproxy"
+	"github.com/fogway/fogway/internal/netproxy"
 )
 
 // An image a caller names by URL (an edit's, or one to draw from) is
-// downloaded by magpie itself for a vendor that takes only the bytes. The
+// downloaded by fogway itself for a vendor that takes only the bytes. The
 // URL is the caller's, so the download goes only to public addresses:
 // never to this computer (loopback), the user's own network (RFC 1918,
 // fc00::/7), link-local addresses (169.254/16 with the cloud metadata
 // service, fe80::/10), CGNAT (100.64/10, Tailscale's), or the other
 // special ranges below — through any redirect too. Otherwise a gateway
-// key's holder could have magpie read a service only this computer
+// key's holder could have fogway read a service only this computer
 // reaches and get its answer back as the "image".
 //
 // A request from this computer itself (local: loopback, not through a
@@ -39,7 +39,7 @@ import (
 //     nothing;
 //   - a direct connection is checked again on the address actually
 //     dialled (privateDialer's Control);
-//   - through a proxy (magpie's, the provider's, the system's) the proxy
+//   - through a proxy (fogway's, the provider's, the system's) the proxy
 //     is dialled, and it is sent the pinned address, never the name, so
 //     it can't resolve it to another (an https:// CONNECT, SOCKS, or a
 //     plain http:// request whose Host is then the address too);
@@ -53,7 +53,7 @@ type mayFetchPrivate struct{}
 
 // errPrivateAddress is a caller's image URL that leads somewhere other
 // than the public internet.
-var errPrivateAddress = errors.New("it is at a private address, which magpie downloads from only for a request from this computer: send the image itself (a data: URL or a file) instead")
+var errPrivateAddress = errors.New("it is at a private address, which fogway downloads from only for a request from this computer: send the image itself (a data: URL or a file) instead")
 
 // lookupIP resolves a host for a caller's image; a test swaps it.
 var lookupIP = func(ctx context.Context, host string) ([]netip.Addr, error) {
@@ -136,7 +136,7 @@ func (publicTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if host == "" {
 		return nil, errors.New("the URL names no host")
 	}
-	// the proxy this request would take, as any other of magpie's: chosen
+	// the proxy this request would take, as any other of fogway's: chosen
 	// by the name, before it is pinned to an address
 	proxy, err := netproxy.Func(req)
 	if err != nil {

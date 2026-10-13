@@ -17,8 +17,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 
-const BEGIN = "<!-- magpie-ui-preview:begin -->";
-const END = "<!-- magpie-ui-preview:end -->";
+const BEGIN = "<!-- fogway-ui-preview:begin -->";
+const END = "<!-- fogway-ui-preview:end -->";
 const BRANCH = "ui-previews";
 const repo = process.env.GITHUB_REPOSITORY;
 const pr = Number(process.env.PR);
@@ -61,7 +61,7 @@ async function setBlock(inner) {
 }
 
 const short = (sha) => sha.slice(0, 7);
-const head = (sha) => `---\n### 🎬 界面预览\n<sub>CI 用这个 PR 的代码构建并真实运行 magpie（沙盒环境，配置了真实的 DeepSeek key），按改动自动操作、截图和录屏 · <code>${short(sha)}</code>${runURL ? ` · [运行记录](${runURL})` : ""}</sub>\n`;
+const head = (sha) => `---\n### 🎬 界面预览\n<sub>CI 用这个 PR 的代码构建并真实运行 fogway（沙盒环境，配置了真实的 DeepSeek key），按改动自动操作、截图和录屏 · <code>${short(sha)}</code>${runURL ? ` · [运行记录](${runURL})` : ""}</sub>\n`;
 
 async function detect() {
   const p = await gh(`/repos/${repo}/pulls/${pr}`);
@@ -106,7 +106,7 @@ async function pushMedia(sha, dir) {
     for (const f of await fs.readdir(dir)) await fs.copyFile(path.join(dir, f), path.join(to, f));
     await fs.writeFile(path.join(to, "index.html"), player(sha, JSON.parse(await fs.readFile(path.join(dir, "manifest.json"), "utf8"))));
     await fs.writeFile(path.join(work, ".nojekyll"), "");
-    await fs.writeFile(path.join(work, "index.html"), `<!doctype html><meta charset="utf-8"><title>magpie UI previews</title><p>Screenshots and recordings of <a href="https://github.com/${repo}/pulls">${repo}</a> pull requests, made by .github/workflows/ui-preview.yml.</p>`);
+    await fs.writeFile(path.join(work, "index.html"), `<!doctype html><meta charset="utf-8"><title>fogway UI previews</title><p>Screenshots and recordings of <a href="https://github.com/${repo}/pulls">${repo}</a> pull requests, made by .github/workflows/ui-preview.yml.</p>`);
     git(["checkout", "-q", "--orphan", `tmp-${attempt}`], work);
     git(["add", "-A"], work);
     git(["commit", "-q", "-m", `ui preview for #${pr} at ${short(sha)}`], work);

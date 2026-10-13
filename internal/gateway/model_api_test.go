@@ -8,8 +8,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/fogway/fogway/internal/provider"
 	"github.com/tidwall/gjson"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // A custom provider with a Gemini URL beside its chat and Anthropic ones

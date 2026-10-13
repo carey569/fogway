@@ -19,7 +19,7 @@ function serve(lang, web = false) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:${web}};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3425", running: true, window: true } });
+    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3725", running: true, window: true } });
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
@@ -58,7 +58,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve("en"));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       assert.equal(await width(page), 212, "app.css's width to start");
 
@@ -80,7 +80,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(await width(page), 320);
       await drag(page, 130);
       assert.equal(await width(page), 168);
-      // at its narrowest every page's name, Settings and the magpie read whole
+      // at its narrowest every page's name, Settings and the fogway read whole
       const cut = await page.locator("#side :is(.nav-gl, button[data-view] > span, #prefs .side-l, .brand)").evaluateAll((es) => es.filter((e) => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().right > 168).map((e) => e.textContent.trim()));
       assert.deepEqual(cut, []);
 
@@ -95,7 +95,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // kept for the next time the window opens (the sidebar picked, for
       // the narrow window below)
-      await page.evaluate(() => localStorage.setItem("magpie.navLayout", "side"));
+      await page.evaluate(() => localStorage.setItem("fogway.navLayout", "side"));
       await page.reload();
       await page.waitForSelector("#nav button.on");
       await page.locator("#side").waitFor();
@@ -122,7 +122,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const page = await context.newPage();
       page.setDefaultTimeout(5000);
       await page.route("**/*", serve("zh"));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       await drag(page, 240);
       // short of folding it stays at its narrowest
@@ -143,12 +143,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await context.close();
     });
 
-    await t.test("magpie web on an iPad: a finger drags it", async () => {
+    await t.test("fogway web on an iPad: a finger drags it", async () => {
       const context = await browser.newContext({ viewport: { width: 1180, height: 820 }, reducedMotion: "reduce", hasTouch: true, isMobile: engine === "chromium" });
       const page = await context.newPage();
       page.setDefaultTimeout(5000);
       await page.route("**/*", serve("en", true));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       assert.ok(await side(page), "an iPad's landscape width has the sidebar");
       const e = await page.locator("#sideEdge").boundingBox();
@@ -165,13 +165,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await context.close();
     });
 
-    await t.test("magpie web on a phone: no sidebar, no edge", async () => {
+    await t.test("fogway web on a phone: no sidebar, no edge", async () => {
       const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce", hasTouch: true, isMobile: engine === "chromium" });
       const page = await context.newPage();
       page.setDefaultTimeout(5000);
-      await page.addInitScript(() => { try { localStorage.setItem("magpie.navLayout", "side"); localStorage.setItem("magpie.sideWidth", "320"); } catch {} });
+      await page.addInitScript(() => { try { localStorage.setItem("fogway.navLayout", "side"); localStorage.setItem("fogway.sideWidth", "320"); } catch {} });
       await page.route("**/*", serve("zh", true));
-      await page.goto("http://magpie.test/");
+      await page.goto("http://fogway.test/");
       await page.waitForSelector("#nav button.on");
       assert.equal(await side(page), false);
       assert.equal(await page.locator("#sideEdge").isVisible(), false);

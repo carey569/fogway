@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
+	"github.com/fogway/fogway/internal/access"
+	"github.com/fogway/fogway/internal/provider"
+	"github.com/fogway/fogway/internal/settings"
 )
 
 // Sharing gates remote access; each authorized remote call carries the same
@@ -41,7 +41,7 @@ func TestLANGuard(t *testing.T) {
 	}
 	keys, _ := access.List()
 	keyID := keys[0].ID
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	if c := call("192.168.1.9:5000", "x-api-key", secret); c != http.StatusForbidden {
 		t.Fatal("unshared remote", c)
 	}
@@ -56,12 +56,12 @@ func TestLANGuard(t *testing.T) {
 	if addr := listenAddr(); addr != "0.0.0.0:"+Port() {
 		t.Fatal(addr)
 	}
-	for _, hdr := range [][]string{nil, {"Authorization", "Bearer magpie"}, {"x-api-key", "wrong"}} {
+	for _, hdr := range [][]string{nil, {"Authorization", "Bearer fogway"}, {"x-api-key", "wrong"}} {
 		if c := call("192.168.1.9:5000", hdr...); c != http.StatusUnauthorized {
 			t.Fatal("unauthorized remote", hdr, c)
 		}
 	}
-	if c := call("192.168.1.9:5000", "x-api-key", secret); c != 200 || id != keyID || got != "Bearer magpie|magpie" {
+	if c := call("192.168.1.9:5000", "x-api-key", secret); c != 200 || id != keyID || got != "Bearer fogway|fogway" {
 		t.Fatal(c, id, got)
 	}
 	if c := call("127.0.0.1:5000", "Authorization", "Bearer "+secret); c != 200 || id != keyID {
@@ -78,13 +78,13 @@ func TestLANGuard(t *testing.T) {
 	}
 	s.LAN = false
 	settings.Save(s)
-	// MAGPIE_ADDR on the network, not shared (the Docker image): another
+	// FOGWAY_ADDR on the network, not shared (the Docker image): another
 	// machine, a container's host among them, needs an enabled key too
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3499")
-	for _, hdr := range [][]string{nil, {"Authorization", "Bearer magpie"}, {"x-api-key", "wrong"}} {
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3499")
+	for _, hdr := range [][]string{nil, {"Authorization", "Bearer fogway"}, {"x-api-key", "wrong"}} {
 		for _, from := range []string{"192.168.1.9:5000", "172.17.0.1:40312", "[fd00::1]:5000"} {
 			if c := call(from, hdr...); c != http.StatusUnauthorized || id != "" {
-				t.Fatal("MAGPIE_ADDR on the network, not shared:", from, hdr, c)
+				t.Fatal("FOGWAY_ADDR on the network, not shared:", from, hdr, c)
 			}
 		}
 	}
@@ -92,22 +92,22 @@ func TestLANGuard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c := call("172.17.0.1:40312", "Authorization", "Bearer "+secret); c != 200 || id == "" || got != "Bearer magpie|" {
-		t.Fatal("MAGPIE_ADDR on the network, with a key:", c, id, got)
+	if c := call("172.17.0.1:40312", "Authorization", "Bearer "+secret); c != 200 || id == "" || got != "Bearer fogway|" {
+		t.Fatal("FOGWAY_ADDR on the network, with a key:", c, id, got)
 	}
 	if c := call("127.0.0.1:5000", "Authorization", "Bearer anything"); c != 200 {
-		t.Fatal("loopback, MAGPIE_ADDR on the network:", c)
+		t.Fatal("loopback, FOGWAY_ADDR on the network:", c)
 	}
 }
 
 // A gateway on every interface is reached here on loopback.
 func TestURLOfWildcard(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3499")
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3499")
 	if u := URL(); u != "http://127.0.0.1:3499" {
 		t.Fatal(u)
 	}
-	t.Setenv("MAGPIE_ADDR", "")
-	if u := URL(); u != "http://127.0.0.1:3425" {
+	t.Setenv("FOGWAY_ADDR", "")
+	if u := URL(); u != "http://127.0.0.1:3725" {
 		t.Fatal(u)
 	}
 }
@@ -119,7 +119,7 @@ func TestAgentOf(t *testing.T) {
 		{"Bearer " + TokenFor("alma"), "", "ai-sdk/openai/2.0.52 ai-sdk/provider-utils/3.0.12 runtime/node.js/v22", "alma"},
 		// alma-server's (Alma 0.4's @ai-sdk/openai 4.0.15 under Node 22,
 		// whose navigator.userAgent the AI SDK appends): Alma's by the key
-		// magpie gives its provider, the AI SDK's without it (Lutra.x)
+		// fogway gives its provider, the AI SDK's without it (Lutra.x)
 		{"Bearer " + TokenFor("alma"), "", "ai-sdk/openai/4.0.15 ai-sdk/provider-utils/5.0.10 runtime/node.js/22", "alma"},
 		{"Bearer " + Token, "", "ai-sdk/openai/4.0.15 ai-sdk/provider-utils/5.0.10 runtime/node.js/22", "ai-sdk"},
 		{"", TokenFor("alma"), "ai-sdk/anthropic/2.0.1", "alma"},
@@ -143,30 +143,30 @@ func TestAgentOf(t *testing.T) {
 	}
 }
 
-// In a container magpie's own addresses are the container's (Docker's
+// In a container fogway's own addresses are the container's (Docker's
 // bridge, 172.17.x), which a NAS's other devices can't reach: set,
-// MAGPIE_PUBLIC_URL is the address shared, and its host the one printed
+// FOGWAY_PUBLIC_URL is the address shared, and its host the one printed
 // for the web page.
 func TestPublicURLShared(t *testing.T) {
-	t.Setenv("MAGPIE_ADDR", "0.0.0.0:3425")
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3725")
 	for _, c := range []struct{ env, want, host string }{
-		{"http://192.168.1.20:3425", "http://192.168.1.20:3425", "192.168.1.20"},
-		{"https://nas.example.com/magpie/", "https://nas.example.com/magpie", "nas.example.com"},
+		{"http://192.168.1.20:3725", "http://192.168.1.20:3725", "192.168.1.20"},
+		{"https://nas.example.com/fogway/", "https://nas.example.com/fogway", "nas.example.com"},
 		{"nas.local:13425", "http://nas.local:13425", "nas.local"},
 		{"http://[fd00::20]:13425", "http://[fd00::20]:13425", "fd00::20"},
 	} {
-		t.Setenv("MAGPIE_PUBLIC_URL", c.env)
+		t.Setenv("FOGWAY_PUBLIC_URL", c.env)
 		if got := LANURLs(); len(got) != 1 || got[0] != c.want {
-			t.Errorf("MAGPIE_PUBLIC_URL=%q: %v, want %s", c.env, got, c.want)
+			t.Errorf("FOGWAY_PUBLIC_URL=%q: %v, want %s", c.env, got, c.want)
 		}
 		if got := PublicHost(); got != c.host {
-			t.Errorf("MAGPIE_PUBLIC_URL=%q: host %q, want %s", c.env, got, c.host)
+			t.Errorf("FOGWAY_PUBLIC_URL=%q: host %q, want %s", c.env, got, c.host)
 		}
 		if ContainerAddrs() {
-			t.Errorf("MAGPIE_PUBLIC_URL=%q still says the addresses are a container's", c.env)
+			t.Errorf("FOGWAY_PUBLIC_URL=%q still says the addresses are a container's", c.env)
 		}
 	}
-	t.Setenv("MAGPIE_PUBLIC_URL", "")
+	t.Setenv("FOGWAY_PUBLIC_URL", "")
 	if PublicHost() != "" {
 		t.Error("unset, a host:", PublicHost())
 	}
@@ -204,13 +204,13 @@ func TestInContainer(t *testing.T) {
 // Another computer lists the models with the key it was given whatever
 // else its client sends beside it: an empty or placeholder Authorization
 // with the key in x-api-key, a stale token there, "bearer" in lower case
-// (悠悠哥 on Discord: a client's model list from magpie shared on a NAS
-// failed, while from magpie on 127.0.0.1, which takes any token, it came).
+// (悠悠哥 on Discord: a client's model list from fogway shared on a NAS
+// failed, while from fogway on 127.0.0.1, which takes any token, it came).
 // The request comes as it would from the network: another address, the
 // NAS's address as its Host.
 func TestLANModelsWithKeyBesideAnotherToken(t *testing.T) {
 	setup(t, provider.Chat, &fake{t: t})
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	keys, secrets := newCaller(t, "PC")
 	key := secrets[0]
 	var who string
@@ -220,7 +220,7 @@ func TestLANModelsWithKeyBesideAnotherToken(t *testing.T) {
 	}))
 	list := func(from, path string, hdr ...string) (int, string) {
 		who = ""
-		r := httptest.NewRequest("GET", "http://192.168.0.200:3425"+path, nil)
+		r := httptest.NewRequest("GET", "http://192.168.0.200:3725"+path, nil)
 		r.RemoteAddr = from
 		for i := 0; i+1 < len(hdr); i += 2 {
 			r.Header.Set(hdr[i], hdr[i+1])
@@ -235,9 +235,9 @@ func TestLANModelsWithKeyBesideAnotherToken(t *testing.T) {
 		{"x-api-key", key, "Authorization", "Bearer "},
 		{"x-api-key", key, "Authorization", "Bearer"},
 		{"x-api-key", key, "Authorization", "Bearer undefined"},
-		{"x-api-key", key, "Authorization", "Bearer magpie"},
+		{"x-api-key", key, "Authorization", "Bearer fogway"},
 		{"Authorization", "bearer " + key},
-		{"Authorization", "Bearer magpie", "x-goog-api-key", key},
+		{"Authorization", "Bearer fogway", "x-goog-api-key", key},
 	} {
 		for _, path := range []string{"/v1/models", "/models", "/v1/models?limit=1000"} {
 			c, b := list("192.168.0.9:50123", path, hdr...)
@@ -251,7 +251,7 @@ func TestLANModelsWithKeyBesideAnotherToken(t *testing.T) {
 	}
 	// a key the gateway doesn't have is refused wherever it is sent
 	for _, hdr := range [][]string{
-		{"x-api-key", "sk-magpie-wrong", "Authorization", "Bearer magpie"},
+		{"x-api-key", "sk-fogway-wrong", "Authorization", "Bearer fogway"},
 		{"Authorization", "Bearer "},
 		{"x-api-key", key + "x"},
 	} {
@@ -266,18 +266,18 @@ func TestLANModelsWithKeyBesideAnotherToken(t *testing.T) {
 }
 
 // ZCode's custom provider asks no model list; its models are typed one a
-// line (悠悠哥 on Discord: from magpie on a NAS nothing filled it, while a
-// magpie on this computer writes its models into ZCode's own config).
+// line (悠悠哥 on Discord: from fogway on a NAS nothing filled it, while a
+// fogway on this computer writes its models into ZCode's own config).
 // /v1/models?format=text gives the ids one a line to paste there, opened
 // in a browser on another computer with the key as ?key=; without a key it
 // is refused as the list is.
 func TestLANModelsAsText(t *testing.T) {
 	setup(t, provider.Chat, &fake{t: t})
-	t.Setenv("MAGPIE_ADDR", "")
+	t.Setenv("FOGWAY_ADDR", "")
 	_, secrets := newCaller(t, "PC")
 	h := lanGuard(New().Handler())
 	get := func(path string) *httptest.ResponseRecorder {
-		r := httptest.NewRequest("GET", "http://192.168.0.200:3425"+path, nil)
+		r := httptest.NewRequest("GET", "http://192.168.0.200:3725"+path, nil)
 		r.RemoteAddr = "192.168.0.9:50123"
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)

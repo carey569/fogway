@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
+	"github.com/fogway/fogway/internal/gateway"
 )
 
-// A magpie that found the gateway taken serves it once the one that had it
-// is gone (one left running from before an update, a magpie serve).
+// A fogway that found the gateway taken serves it once the one that had it
+// is gone (one left running from before an update, a fogway serve).
 func TestGatewayTakenOver(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", os.Getenv("HOME"))
@@ -22,14 +22,14 @@ func TestGatewayTakenOver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("MAGPIE_ADDR", ln.Addr().String())
+	t.Setenv("FOGWAY_ADDR", ln.Addr().String())
 	other := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"name":"magpie"}`))
+		w.Write([]byte(`{"name":"fogway"}`))
 	})}
 	go other.Serve(ln)
 	defer other.Close()
 	// the watch and the gateway it takes up end with the test, before its
-	// HOME and MAGPIE_ADDR are put back
+	// HOME and FOGWAY_ADDR are put back
 	ctx, stop := context.WithCancel(context.Background())
 	watched := make(chan struct{})
 	t.Cleanup(func() {
@@ -48,7 +48,7 @@ func TestGatewayTakenOver(t *testing.T) {
 		watchGateway(ctx, 50*time.Millisecond)
 	}()
 	if serveGateway() != nil {
-		t.Fatal("served over another magpie")
+		t.Fatal("served over another fogway")
 	}
 	time.Sleep(200 * time.Millisecond)
 	if served.Load() != nil {

@@ -19,8 +19,8 @@ function server(lang, users, posts) {
   const fixed = {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd", dock: false, dockWindow: false, proxy: "",
     redact: false, redactPersonal: false, redactWords: [], codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "",
-    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "", version: "0.1.900", dir: "~/.config/magpie",
-    gateway: "http://127.0.0.1:3425", proxyNow: "none", proxySource: "none", visionModels: [], imageGenModels: [], lanURLs: [],
+    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "", version: "0.1.900", dir: "~/.config/fogway",
+    gateway: "http://127.0.0.1:3725", proxyNow: "none", proxySource: "none", visionModels: [], imageGenModels: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
     codexUsers: users, codexAutoReset: [],
   };
@@ -84,7 +84,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const posted = async (n) => { for (let i = 0; i < 100 && posts.length < n; i++) await page.waitForTimeout(20); assert.equal(posts.length, n, "posts"); return posts[n - 1]; };
         const w = words[lang];
         await watchSettingsReads(page);
-        await page.goto("http://magpie.test/?view=settings&tab=usage");
+        await page.goto("http://fogway.test/?view=settings&tab=usage");
         await settingsDrawn(page);
         const head = page.locator("#codexAutoResetRow");
         await head.waitFor();
@@ -137,7 +137,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     page.on("pageerror", (e) => errors.push(e.message));
     await page.route("**/*", server("en", [], []));
     await watchSettingsReads(page);
-    await page.goto("http://magpie.test/?view=settings&tab=usage");
+    await page.goto("http://fogway.test/?view=settings&tab=usage");
     await settingsDrawn(page);
     await page.locator("#resetReminderSegs .opt").first().waitFor();
     assert.equal(await page.locator("#codexAutoResetRow").isVisible(), false);

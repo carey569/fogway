@@ -9,17 +9,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/local"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/gateway"
+	"github.com/fogway/fogway/internal/local"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-const localUsage = `usage: magpie local [status] [--json]
-       magpie local models
-       magpie local setup [<model>|<repo> <file>] [--hf <endpoint>] [--github-mirror <prefix>]
-       magpie local use <model>|<repo> <file>
-       magpie local on|off
-       magpie local mask [on|off]
+const localUsage = `usage: fogway local [status] [--json]
+       fogway local models
+       fogway local setup [<model>|<repo> <file>] [--hf <endpoint>] [--github-mirror <prefix>]
+       fogway local use <model>|<repo> <file>
+       fogway local on|off
+       fogway local mask [on|off]
+       fogway local think [on|off]
   the model on this computer: llama.cpp's llama-server, downloaded for this
   platform (Metal on a Mac, CUDA with an NVIDIA card, else Vulkan or the CPU),
   running a GGUF model pulled from Hugging Face. It is served as local/<model>,
@@ -27,12 +28,14 @@ const localUsage = `usage: magpie local [status] [--json]
   judges whether it can do the turn itself and whether the turn is sensitive.
   setup downloads llama.cpp and the model now, in the terminal, and turns the
   local model on: the recommended one for this computer's memory unless one is
-  named (magpie local models lists them; any repository and .gguf file of it
+  named (fogway local models lists them; any repository and .gguf file of it
   can be given). --hf takes a mirror (https://hf-mirror.com); HF_ENDPOINT and
-  HF_TOKEN are read too. The app, or magpie serve, runs it while on.
+  HF_TOKEN are read too. The app, or fogway serve, runs it while on.
   mask on has group/auto mask a sensitive turn before it goes to the cloud,
   and keep a sensitive turn the local model takes on this computer even when
-  it fails; off routes by what the local model can do alone.`
+  it fails; off routes by what the local model can do alone.
+  think on lets the local model reason before it answers, slower; off (the
+  default) has it answer at once.`
 
 func localCmd(args []string) error {
 	rest := args[1:]
@@ -62,7 +65,7 @@ func localCmd(args []string) error {
 		}
 		fmt.Println(green.Render("✓"), "the local model is", bold.Render(m.ID()), muted.Render("("+m.Repo+" · "+m.File+")"))
 		if c.On {
-			fmt.Println(muted.Render("  the gateway loads it next; magpie local setup downloads it now"))
+			fmt.Println(muted.Render("  the gateway loads it next; fogway local setup downloads it now"))
 		}
 		return nil
 	case "on", "off":
@@ -78,6 +81,24 @@ func localCmd(args []string) error {
 		return nil
 	case "mask":
 		return localMask(rest)
+	case "think":
+		c, err := local.Load()
+		if err != nil {
+			return err
+		}
+		if len(rest) == 0 {
+			fmt.Println("thinking is", map[bool]string{true: "on", false: "off"}[c.Think])
+			return nil
+		}
+		if rest[0] != "on" && rest[0] != "off" {
+			return fmt.Errorf("fogway local think [on|off]")
+		}
+		c.Think = rest[0] == "on"
+		if err := local.Save(c); err != nil {
+			return err
+		}
+		fmt.Println(green.Render("✓"), "thinking", rest[0], muted.Render("· the local model restarts with it"))
+		return nil
 	case "help", "-h", "--help":
 		fmt.Println(localUsage)
 		return nil
@@ -95,14 +116,14 @@ func localModelOf(args []string) (local.Model, error) {
 				return m, nil
 			}
 		}
-		return local.Model{}, fmt.Errorf("no model %q in magpie local models; give a repository and a .gguf file of it", args[0])
+		return local.Model{}, fmt.Errorf("no model %q in fogway local models; give a repository and a .gguf file of it", args[0])
 	case 2:
 		if !strings.Contains(args[0], "/") || !strings.HasSuffix(strings.ToLower(args[1]), ".gguf") {
 			return local.Model{}, fmt.Errorf("give a Hugging Face repository (owner/name) and a .gguf file in it")
 		}
 		return local.Model{Repo: args[0], File: args[1]}, nil
 	}
-	return local.Model{}, fmt.Errorf("magpie local use <model>   or   magpie local use <repo> <file.gguf>")
+	return local.Model{}, fmt.Errorf("fogway local use <model>   or   fogway local use <repo> <file.gguf>")
 }
 
 func localStatus(asJSON bool) error {
@@ -137,7 +158,7 @@ func localStatus(asJSON bool) error {
 		}
 		fmt.Println(muted.Render("  now      "), line)
 	} else if c.On {
-		fmt.Println(muted.Render("  now      "), "the gateway isn't running: the app or magpie serve runs it")
+		fmt.Println(muted.Render("  now      "), "the gateway isn't running: the app or fogway serve runs it")
 	}
 	if g, _, ok := provider.FindGroup(provider.GroupPrefix + provider.HybridGroupID); ok && g.Hybrid != nil {
 		mask := "off"
@@ -183,7 +204,7 @@ func localModels() error {
 		}
 		fmt.Printf("%s%-12s %-28s %s  %s\n", mark, m.ID(), m.Repo, gib(m.Size), muted.Render(m.Note))
 	}
-	fmt.Println(muted.Render("★ recommended for this computer (" + gib(h.RAM) + " memory) · magpie local setup <name> · or any repo and .gguf file"))
+	fmt.Println(muted.Render("★ recommended for this computer (" + gib(h.RAM) + " memory) · fogway local setup <name> · or any repo and .gguf file"))
 	return nil
 }
 
@@ -244,7 +265,7 @@ func localSetup(args []string) error {
 	if err := local.Save(c); err != nil {
 		return err
 	}
-	fmt.Println(green.Render("✓"), "ready:", bold.Render(local.Ref(m)), muted.Render("· the app, or magpie serve, runs it; group/"+provider.HybridGroupID+" routes between it and the cloud"))
+	fmt.Println(green.Render("✓"), "ready:", bold.Render(local.Ref(m)), muted.Render("· the app, or fogway serve, runs it; group/"+provider.HybridGroupID+" routes between it and the cloud"))
 	return nil
 }
 
@@ -261,7 +282,7 @@ func gib2(n int64) string {
 func localMask(args []string) error {
 	g, _, ok := provider.FindGroup(provider.GroupPrefix + provider.HybridGroupID)
 	if !ok || g.Hybrid == nil {
-		return fmt.Errorf("there is no edge-cloud group yet: magpie local setup makes group/%s once the local model runs", provider.HybridGroupID)
+		return fmt.Errorf("there is no edge-cloud group yet: fogway local setup makes group/%s once the local model runs", provider.HybridGroupID)
 	}
 	if len(args) == 0 {
 		state := "off"
@@ -272,7 +293,7 @@ func localMask(args []string) error {
 		return nil
 	}
 	if args[0] != "on" && args[0] != "off" {
-		return fmt.Errorf("magpie local mask [on|off]")
+		return fmt.Errorf("fogway local mask [on|off]")
 	}
 	h := *g.Hybrid
 	h.Mask = args[0] == "on"
@@ -289,7 +310,7 @@ func localMask(args []string) error {
 func gatewayLocal() *local.Status {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gateway.URL()+"/v1/magpie/local", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gateway.URL()+"/v1/fogway/local", nil)
 	if err != nil {
 		return nil
 	}

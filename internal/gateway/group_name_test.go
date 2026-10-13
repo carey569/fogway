@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/provider"
 )
 
 // A routing group renamed keeps its id, and a client the user typed the
 // group's name into (ZCode's model field) asks for it by that name: the
-// name is the group's, as its id is (MOMO on Discord: "magpie knows no
-// model" after magpie group set <id> name=…). A model a provider serves
+// name is the group's, as its id is (MOMO on Discord: "fogway knows no
+// model" after fogway group set <id> name=…). A model a provider serves
 // by that id stays the provider's, and a name two groups share names
 // neither.
 func TestGroupAskedByItsName(t *testing.T) {

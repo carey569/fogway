@@ -19,7 +19,7 @@ const HOME = "/Users/aimer";
 const ids = ["claude", "codex", "gemini", "opencode", "pi", "kimi", "qwen", "droid", "crush", "goose", "amp", "cline"];
 const named = (id) => id[0].toUpperCase() + id.slice(1);
 const library = (lines) => ({
-  dir: `${HOME}/.magpie/library`, backups: `${HOME}/.magpie/backups`, home: HOME,
+  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
   agents: ids.map((id) => ({ id, name: named(id), icon: "", instructions: `${HOME}/.${id}/AGENTS.md` })),
   instructions: {
     shared: "",
@@ -63,12 +63,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     for (const lang of ["en", "zh"]) for (const [lines, height] of shapes) {
       await t.test(`${lang}, a set of ${lines} lines, ${height}px tall`, async () => {
         const ctx = await browser.newContext({ viewport: { width: 980, height }, reducedMotion: "reduce" });
-        await ctx.addInitScript(() => { try { localStorage.setItem("magpie.libTab", "instructions"); } catch {} });
+        await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "instructions"); } catch {} });
         const page = await ctx.newPage();
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, library(lines)));
-        await page.goto("http://magpie.test/");
+        await page.goto("http://fogway.test/");
         await page.locator('button[data-view="library"]').click();
         // the Default set open to edit
         await page.locator(`${view} .lib-set`).first().click();

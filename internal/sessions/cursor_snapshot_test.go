@@ -13,7 +13,7 @@ import (
 
 func cursorTempCopies(t *testing.T) []string {
 	t.Helper()
-	d, _ := filepath.Glob(filepath.Join(os.TempDir(), "magpie-cursor-*"))
+	d, _ := filepath.Glob(filepath.Join(os.TempDir(), "fogway-cursor-*"))
 	return d
 }
 
@@ -108,12 +108,12 @@ func TestCursorEditorCopiedOncePerChange(t *testing.T) {
 	}
 }
 
-// A copy left by a magpie that was killed mid-read is removed; one a
-// running magpie made a moment ago is not.
+// A copy left by a fogway that was killed mid-read is removed; one a
+// running fogway made a moment ago is not.
 func TestCursorLeftCopiesSwept(t *testing.T) {
 	t.Setenv("TMPDIR", t.TempDir())
-	left := filepath.Join(os.TempDir(), "magpie-cursor-left")
-	fresh := filepath.Join(os.TempDir(), "magpie-cursor-fresh")
+	left := filepath.Join(os.TempDir(), "fogway-cursor-left")
+	fresh := filepath.Join(os.TempDir(), "fogway-cursor-fresh")
 	for _, d := range []string{left, fresh} {
 		if err := os.MkdirAll(d, 0700); err != nil {
 			t.Fatal(err)

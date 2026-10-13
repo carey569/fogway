@@ -102,7 +102,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.setDefaultTimeout(5000);
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", f.route);
-        await page.goto("http://magpie.test/?view=providers");
+        await page.goto("http://fogway.test/?view=providers");
         await page.locator("#providers > .row.provider").nth(7).waitFor();
         const tr = (s, vars) => page.evaluate(([s, vars]) => t(s, vars), [s, vars]);
         const q = page.locator("#pvQ");

@@ -2,7 +2,7 @@
 // Settings' "Codex auto-review model" (#938, guitaoliu: Codex's auto-review
 // runs on the conversation's model, with no way to pick a cheaper one): by
 // default Codex's own pick; the app's menu (no native select) offers
-// magpie's models and groups; a pick posts settings/codex-auto-review on its
+// fogway's models and groups; a pick posts settings/codex-auto-review on its
 // own, its button shows the choice under a name alone (1ooogle on X), a refusal is said and the row keeps
 // what it had, and no click scrolls the Settings page.
 // English and Chinese, Chromium and WebKit; no backend, the API is faked here.
@@ -21,7 +21,7 @@ function settingsPayload(over) {
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
-    version: "0.1.400", dir: "~/.config/magpie", gateway: "http://127.0.0.1:3425",
+    version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
     titleModels: [
@@ -91,7 +91,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await browser.close();
       });
       await watchSettingsReads(page);
-      await page.goto("http://magpie.test/?view=settings");
+      await page.goto("http://fogway.test/?view=settings");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)
       const row = page.locator("#codexAutoReviewRow");
       const pick = page.locator("#codexAutoReviewPick button");
@@ -110,7 +110,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const before = await view(page);
       assert(before > 0, "the settings list must scroll to the row");
 
-      // the app's menu: Codex's own pick and magpie's models and groups
+      // the app's menu: Codex's own pick and fogway's models and groups
       const choose = async (text) => {
         await pick.click();
         await page.locator("#pop:not([hidden]) #list li").first().waitFor();

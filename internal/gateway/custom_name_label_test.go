@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
+	"github.com/fogway/fogway/internal/catalog"
+	"github.com/fogway/fogway/internal/provider"
 )
 
-// /v1/models' magpie_label names a model as the agents' lists do, by the
+// /v1/models' fogway_label names a model as the agents' lists do, by the
 // Provider in model names setting: on, as by default, a name the user gave
 // a model has its provider's after it like any other (#203); own, that
 // name is just as they wrote it and the vendor's keep theirs (#92: "Opus
@@ -42,7 +42,7 @@ func TestModelsListSuffixModes(t *testing.T) {
 			Data []struct {
 				ID    string `json:"id"`
 				Name  string `json:"display_name"`
-				Label string `json:"magpie_label"`
+				Label string `json:"fogway_label"`
 			} `json:"data"`
 		}
 		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {

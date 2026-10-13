@@ -1,8 +1,8 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// #1385 (shenghsi): Codex isn't connected, yet magpie set openai_base_url for
+// #1385 (shenghsi): Codex isn't connected, yet fogway set openai_base_url for
 // it so a request its ChatGPT account has no allowance for goes on to the
-// user's other ChatGPT accounts on in magpie. The row says it goes through
-// magpie for that alone, its title says what turns it off, and a button
+// user's other ChatGPT accounts on in fogway. The row says it goes through
+// fogway for that alone, its title says what turns it off, and a button
 // opens Providers › Codex, where those accounts are switched off. A Codex
 // not failing over says what it said before. In every language, at a narrow
 // width too, in Chromium and WebKit; no click moves the page.
@@ -13,7 +13,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const options = [{ value: "gpt-5.5", label: "GPT-5.5" }, { value: "relay/m1", label: "m1", ref: "relay/m1", note: "Relay · via magpie" }];
+const options = [{ value: "gpt-5.5", label: "GPT-5.5" }, { value: "relay/m1", label: "m1", ref: "relay/m1", note: "Relay · via fogway" }];
 const state = () => ({
   agents: [
     { id: "codex", name: "Codex", icon: "generic", path: "/fixture/codex", failover: true, fields: [{ key: "model", label: "model", value: "gpt-5.5", options }] },
@@ -55,8 +55,8 @@ const codexProvider = {
   },
 };
 
-const said = "Not connected · goes through magpie only to fail over to your other ChatGPT accounts";
-const title = "magpie set openai_base_url in {agent}'s config.toml, so a request the ChatGPT account {agent} is signed in to has no allowance for goes on to your other ChatGPT accounts on in magpie. {agent} keeps to its own models. To stop it, tick Only switch {agent}'s sign-in under Providers › Codex, or switch those accounts off; connecting {agent} adds magpie's models.";
+const said = "Not connected · goes through fogway only to fail over to your other ChatGPT accounts";
+const title = "fogway set openai_base_url in {agent}'s config.toml, so a request the ChatGPT account {agent} is signed in to has no allowance for goes on to your other ChatGPT accounts on in fogway. {agent} keeps to its own models. To stop it, tick Only switch {agent}'s sign-in under Providers › Codex, or switch those accounts off; connecting {agent} adds fogway's models.";
 const button = "ChatGPT accounts";
 const plain = "Not connected · {agent} uses its own settings";
 const row = (id) => `.row.agent[data-id="${id}"]`;
@@ -73,7 +73,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         page.on("pageerror", (e) => errors.push(e.message));
         page.on("dialog", (d) => { dialogs.push(d.message()); d.dismiss(); });
         await page.route("**/*", server(lang));
-        await page.goto("http://magpie.test/?view=agents");
+        await page.goto("http://fogway.test/?view=agents");
         await page.locator(`${row("codex")} .ag-st`).waitFor();
         const tr = (k) => page.evaluate(([k, lang]) => (lang === "en" ? k : I18N[lang]?.[k]), [k, lang]);
         for (const k of [said, title, button]) assert.ok(await tr(k), `${lang} has ${k.slice(0, 40)}`);

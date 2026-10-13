@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/edit"
+	"github.com/fogway/fogway/internal/edit"
 )
 
 // CC Switch's Codex config, as it writes it: its "custom" table, one of
@@ -18,11 +18,11 @@ const ccSwitchCodex = "model_provider = \"custom\"\nmodel = \"gpt-5.4\"\nmodel_r
 	"[profiles.work]\nmodel_provider = \"cc-switch-2\"\n"
 
 // A Codex thread keeps the provider it was started on, and CC Switch puts
-// every third-party one on its "custom" table: reopened after magpie took
-// Codex over, it still went to the relay, a magpie model picked in it
-// too, and the relay said the model wasn't found. While a magpie model is
-// on, CC Switch's tables go through magpie too, and get their own base URL
-// back when Codex steps off magpie; a profile's table and the user's own
+// every third-party one on its "custom" table: reopened after fogway took
+// Codex over, it still went to the relay, a fogway model picked in it
+// too, and the relay said the model wasn't found. While a fogway model is
+// on, CC Switch's tables go through fogway too, and get their own base URL
+// back when Codex steps off fogway; a profile's table and the user's own
 // stay as they are.
 func TestCodexTakesCCSwitchTables(t *testing.T) {
 	for _, auth := range []string{`{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, ""} {
@@ -41,7 +41,7 @@ func TestCodexTakesCCSwitchTables(t *testing.T) {
 			t.Fatal(err)
 		}
 		if c := table("custom"); c["base_url"] != v1 || c["experimental_bearer_token"] != "sk-relay" || c["requires_openai_auth"] != "true" {
-			t.Fatalf("auth %q: custom not through magpie:\n%s", auth, read())
+			t.Fatalf("auth %q: custom not through fogway:\n%s", auth, read())
 		}
 		if table("cc-switch-2")["base_url"] != "https://old.example/v1" || table("mine")["base_url"] != "https://mine.example/v1" {
 			t.Fatalf("auth %q: other tables changed:\n%s", auth, read())
@@ -49,7 +49,7 @@ func TestCodexTakesCCSwitchTables(t *testing.T) {
 		if d := cx.Check(); d != "" {
 			t.Fatalf("auth %q: check: %s", auth, d)
 		}
-		// CC Switch writes its table again: the row says so, and magpie's
+		// CC Switch writes its table again: the row says so, and fogway's
 		// next sync takes it over again
 		if err := edit.SetTOMLKey(path, "model_providers.custom", "base_url", "https://relay2.example/v1"); err != nil {
 			t.Fatal(err)
@@ -86,8 +86,8 @@ func TestCodexTakesCCSwitchTables(t *testing.T) {
 	}
 }
 
-// A CC Switch table the user pointed at magpie by hand stays so when Codex
-// steps off magpie: magpie gives back only what it took.
+// A CC Switch table the user pointed at fogway by hand stays so when Codex
+// steps off fogway: fogway gives back only what it took.
 func TestCodexKeepsHandPointedCCSwitchTable(t *testing.T) {
 	home, read := codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, "")
 	v1 := here(home).v1()
@@ -107,13 +107,13 @@ func TestCodexKeepsHandPointedCCSwitchTable(t *testing.T) {
 
 // CC Switch's OpenAI mirror ("custom": name OpenAI, the ChatGPT sign-in, no
 // base_url) left in config.toml after the user moved Codex onto the
-// built-in provider and a magpie model. Codex's openai_base_url, which
-// takes the built-in provider to magpie, doesn't reach a table of another
+// built-in provider and a fogway model. Codex's openai_base_url, which
+// takes the built-in provider to fogway, doesn't reach a table of another
 // id, so a thread started on "custom" and reopened went straight to
-// ChatGPT, which refused the magpie model picked in it, and magpie never
-// saw the request (#1796, WardLu). While Codex goes to magpie by the base
+// ChatGPT, which refused the fogway model picked in it, and fogway never
+// saw the request (#1796, WardLu). While Codex goes to fogway by the base
 // URL the mirror does too; a profile's mirror is the user's to pick, and
-// stepping off magpie takes the base URL off again.
+// stepping off fogway takes the base URL off again.
 func TestCodexTakesCCSwitchMirrorForItsThreads(t *testing.T) {
 	const cfg = "model = \"gpt-5.4\"\n\n" +
 		"[model_providers.custom]\nname = \"OpenAI\"\nrequires_openai_auth = true\nsupports_websockets = true\nwire_api = \"responses\"\n\n" +
@@ -135,7 +135,7 @@ func TestCodexTakesCCSwitchMirrorForItsThreads(t *testing.T) {
 			t.Fatal(err)
 		}
 		if c := table("custom"); c["base_url"] != at.codexURL() || c["requires_openai_auth"] != "true" || c["name"] != "OpenAI" {
-			t.Fatalf("round %d: the mirror isn't through magpie:\n%s", round, read())
+			t.Fatalf("round %d: the mirror isn't through fogway:\n%s", round, read())
 		}
 		if _, ok := table("cc-switch-3")["base_url"]; ok {
 			t.Fatalf("round %d: the profile's mirror changed:\n%s", round, read())
@@ -153,13 +153,13 @@ func TestCodexTakesCCSwitchMirrorForItsThreads(t *testing.T) {
 			t.Fatal(err)
 		}
 		if _, ok := table("custom")["base_url"]; ok {
-			t.Fatalf("round %d: off magpie (%q), the mirror keeps magpie's URL:\n%s", round, off, read())
+			t.Fatalf("round %d: off fogway (%q), the mirror keeps fogway's URL:\n%s", round, off, read())
 		}
 		if _, ok := stashLoad()[at.key("codex.mirrors")]; ok {
 			t.Errorf("round %d: stash left", round)
 		}
 	}
-	// one the user changed while magpie had it stays as they left it
+	// one the user changed while fogway had it stays as they left it
 	if err := cx.Fields[0].Set("fake/m1"); err != nil {
 		t.Fatal(err)
 	}
