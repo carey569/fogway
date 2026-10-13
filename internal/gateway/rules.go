@@ -69,6 +69,8 @@ type RuleHit struct {
 	Small   []string `json:"small,omitempty"`
 	// Bare: the group has no rules, only its effort picked
 	Bare bool `json:"bare,omitempty"`
+	// Hybrid: the edge-cloud route's decision for the turn (hybrid.go)
+	Hybrid *HybridHit `json:"hybrid,omitempty"`
 }
 
 // Classified is what the classifier was asked as a turn began, and said.
@@ -105,6 +107,8 @@ type turnRule struct {
 	// cache of it is read from then (ruleAnswered)
 	answered time.Time
 	size     int // how long magpie took the conversation's last request to be (estimate)
+	// hybrid is the edge-cloud route's decision for the turn
+	hybrid *HybridHit
 }
 
 var turnRules = struct {

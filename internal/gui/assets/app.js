@@ -3832,7 +3832,7 @@ async function load(again) {
     if (applyPrefs(state.settings, state.fx) || relang) {
       again = false; // the Usage page too is drawn again, in the new language
       if (view === "library") window.loadLibrary?.();
-      if (view === "plugins") window.loadPlugins?.();
+      if (view === "local") window.loadLocal?.();
       if (view === "sessions") window.loadSessionsPage?.();
     }
     // a Library drawn before the state came counted the hidden agents too
@@ -24381,7 +24381,7 @@ async function show(v) {
   $("#prefs").classList.toggle("on", v === "settings");
   if (v === "settings") $("#prefs").setAttribute("aria-current", "page"); else $("#prefs").removeAttribute("aria-current");
   navSubs();
-  for (const id of ["agents", "providers", "gateway", "routing", "usage", "sessions", "plugins", "settings"]) $("#view-" + id).hidden = v !== id;
+  for (const id of ["agents", "providers", "gateway", "routing", "usage", "sessions", "local", "settings"]) $("#view-" + id).hidden = v !== id;
   // back to where the reader was in it, and again once it has what it loads
   const back = () => backToReader($("#view-" + v));
   requestAnimationFrame(back);
@@ -24396,7 +24396,7 @@ async function show(v) {
   if (v === "usage") loadUsage(true).then(back, (e) => status(e.message, "err"));
   if (v === "settings") loadSettings().then(back, (e) => status(e.message, "err"));
   if (v === "library") window.loadLibrary?.()?.then(back);
-  if (v === "plugins") window.loadPlugins?.()?.then(back);
+  if (v === "local") window.loadLocal?.()?.then(back);
   if (v === "sessions") window.loadSessionsPage?.()?.then(back);
   syncTitle();
   syncURL();
@@ -25260,7 +25260,7 @@ setInterval(renderUpdateBadge, 15 * 60 * 1000); // a window left open still hear
 // the reader (someone else's plugin, or one pinned; the community's update
 // by themselves)
 async function renderPluginDot() {
-  const b = mode === "window" && document.querySelector('#nav button[data-view="plugins"]');
+  const b = null; // Fogway has no plugins to update
   if (!b) return;
   const u = await api("plugins/updates").catch(() => null);
   const n = u?.waiting?.length || 0;
@@ -25517,7 +25517,7 @@ navHides(); // the pages built-in plugins switched off have, from boot.js
 // from the tray or a reload) first, then the one kept; a page gateway mode
 // leaves out, or one there is no longer, gives way to the first page.
 // the pages the window can open on besides the first (Agents)
-const OPEN_VIEWS = ["providers", "gateway", "routing", "usage", "sessions", "plugins", "settings"];
+const OPEN_VIEWS = ["providers", "gateway", "routing", "usage", "sessions", "local", "settings"];
 function keptView() {
   const asked = params.get("view");
   if (asked === "agents" || OPEN_VIEWS.includes(asked)) return asked;

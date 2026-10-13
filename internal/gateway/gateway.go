@@ -443,6 +443,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 	srv := &http.Server{Handler: lanGuard(s.Handler()), ReadHeaderTimeout: 30 * time.Second, IdleTimeout: 5 * time.Minute}
 	// the magpie serving the gateway keeps the computer awake while agents
 	// work, when settings say to
+	go keepLocal(ctx) // the model on this computer, as local.json says
 	go awake.Keep(ctx, func() awake.Level {
 		switch set := settings.Load(); {
 		case !set.KeepAwake:
@@ -510,6 +511,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/magpie/quotas/history", s.quotasHistory)
 	mux.HandleFunc("GET /v1/magpie/route", s.sessionRoute)
 	mux.HandleFunc("GET /v1/magpie/concurrency", s.concurrency)
+	mux.HandleFunc("GET /v1/magpie/local", s.localStatus)
 	mux.HandleFunc("GET /v1/magpie/limit", s.keyLimit)
 	mux.HandleFunc("POST /v1/chat/completions", s.handle(provider.Chat))
 	mux.HandleFunc("POST /chat/completions", s.handle(provider.Chat))
@@ -1445,7 +1447,28 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			ruleReq, ruleAt, words = req, ruleKey(g, r.Header, req), firstWords(req)
 		}
 	}
-	if ruleReq != nil && g.Ruled() {
+	if ruleReq != nil && g.Hybrid != nil {
+		var j judge
+		if ask != nil {
+			j = s.askJudge
+		}
+		hit = hybridFor(ruleAt, g, ms, ruleReq, j)
+		// a sensitive turn for the cloud goes masked: what the local model
+		// finds, with the secrets and personal data the rules find
+		if hit.Hybrid != nil && hit.Hybrid.Masked && ask != nil {
+			terms := s.sensitiveTerms(ruleAt, g.Hybrid.Local, ruleReq)
+			o := redactionOptions()
+			o.Secrets, o.Personal = true, true
+			o.Words = append(slices.Clone(o.Words), terms...)
+			if m, n := redact.MaskJSON(body, o); n > 0 {
+				body = m
+				rw := redact.NewWriter(w)
+				w = rw
+				defer rw.Finish()
+			}
+			hit.Hybrid.Terms = len(terms)
+		}
+	} else if ruleReq != nil && g.Ruled() {
 		hit = ruleFor(ruleAt, g, ms, ruleReq, agent, ask)
 	}
 	// Some clients send images even when the selected model is known to
@@ -1634,6 +1657,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		// begins; within it, whoever answered last stays while it is of
 		// the rule's member, the member's others behind it (#1946)
 		cands, pl = ruleOver(hit, ms, cands, pl, aff)
+		cands, pl = hybridOnly(hit, ms, cands, pl)
 	}
 	// the rules of the groups in the group, down the one that goes first
 	var nested []NestedRule
@@ -2102,6 +2126,9 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			// ended for looping (#1359): the agent had its 200 and the
 			// stream's error; logged apart from the vendor's own errors
 			call.Status, call.Error, call.Usage.ErrType = hw.status, c.p.Name+": "+hw.looped, loopErrType
+			if hit != nil && hit.Hybrid != nil && hit.Hybrid.Local && slices.ContainsFunc(ruleMembers(hit, ms), func(m provider.Member) bool { return ofMember(c, m) }) {
+				hybridEscalate(ruleAt)
+			}
 		}
 		if wentAt = sent; at.set {
 			wentAt = at.effort
@@ -2600,6 +2627,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			}
 			if hit != nil && !hit.Compact {
 				ruleAnswered(ruleAt, call.Usage)
+				hybridAnswered(ruleAt, hit, ms, c)
 			}
 			for _, at := range nestedAt {
 				ruleAnswered(at, call.Usage)

@@ -312,6 +312,8 @@ func run(args []string) error {
 		return updateCmd(args)
 	case "plugin", "plugins":
 		return pluginCmd(args)
+	case "local":
+		return localCmd(args)
 	}
 
 	a, err := agent.Find(args[0])

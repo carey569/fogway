@@ -1033,6 +1033,7 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 	gatewayFixRoutes(mux)
 	gatewayModeRoutes(mux)
 	builtinRoutes(mux)
+	localRoutes(mux)
 	mux.HandleFunc("GET /api/settings", func(rw http.ResponseWriter, r *http.Request) {
 		access.MigrateLegacyLANKeyBestEffort()
 		writeJSON(rw, settingsState())

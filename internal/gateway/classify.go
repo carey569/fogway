@@ -357,7 +357,12 @@ func readEffort(answer string) (string, float64, error) {
 // askChat sends a chat model body through the gateway and returns its
 // answer's text.
 func (s *Server) askChat(model string, body []byte) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), classifyTimeout)
+	return s.askChatFor(model, body, classifyTimeout)
+}
+
+// askChatFor is askChat given wait for the answer.
+func (s *Server) askChatFor(model string, body []byte, wait time.Duration) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
 	r, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://magpie/v1/chat/completions", nil)
 	if err != nil {
@@ -368,7 +373,7 @@ func (s *Server) askChat(model string, body []byte) (string, error) {
 	w := httptest.NewRecorder()
 	s.serve(w, r, provider.Chat, body)
 	if ctx.Err() != nil {
-		return "", fmt.Errorf("%s gave no answer in %s", model, classifyTimeout)
+		return "", fmt.Errorf("%s gave no answer in %s", model, wait)
 	}
 	var out struct {
 		Choices []struct {

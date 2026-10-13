@@ -1,0 +1,306 @@
+package cli
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/yetone/magpie/internal/gateway"
+	"github.com/yetone/magpie/internal/local"
+	"github.com/yetone/magpie/internal/provider"
+)
+
+const localUsage = `usage: magpie local [status] [--json]
+       magpie local models
+       magpie local setup [<model>|<repo> <file>] [--hf <endpoint>] [--github-mirror <prefix>]
+       magpie local use <model>|<repo> <file>
+       magpie local on|off
+       magpie local mask [on|off]
+  the model on this computer: llama.cpp's llama-server, downloaded for this
+  platform (Metal on a Mac, CUDA with an NVIDIA card, else Vulkan or the CPU),
+  running a GGUF model pulled from Hugging Face. It is served as local/<model>,
+  and group/auto routes each turn between it and the cloud: the local model
+  judges whether it can do the turn itself and whether the turn is sensitive.
+  setup downloads llama.cpp and the model now, in the terminal, and turns the
+  local model on: the recommended one for this computer's memory unless one is
+  named (magpie local models lists them; any repository and .gguf file of it
+  can be given). --hf takes a mirror (https://hf-mirror.com); HF_ENDPOINT and
+  HF_TOKEN are read too. The app, or magpie serve, runs it while on.
+  mask on has group/auto mask a sensitive turn before it goes to the cloud,
+  and keep a sensitive turn the local model takes on this computer even when
+  it fails; off routes by what the local model can do alone.`
+
+func localCmd(args []string) error {
+	rest := args[1:]
+	sub := ""
+	if len(rest) > 0 {
+		sub, rest = rest[0], rest[1:]
+	}
+	switch sub {
+	case "", "status":
+		return localStatus(len(rest) > 0 && (rest[0] == "--json" || rest[0] == "-j"))
+	case "models":
+		return localModels()
+	case "setup":
+		return localSetup(rest)
+	case "use":
+		c, err := local.Load()
+		if err != nil {
+			return err
+		}
+		m, err := localModelOf(rest)
+		if err != nil {
+			return err
+		}
+		c.Model = m
+		if err := local.Save(c); err != nil {
+			return err
+		}
+		fmt.Println(green.Render("✓"), "the local model is", bold.Render(m.ID()), muted.Render("("+m.Repo+" · "+m.File+")"))
+		if c.On {
+			fmt.Println(muted.Render("  the gateway loads it next; magpie local setup downloads it now"))
+		}
+		return nil
+	case "on", "off":
+		c, err := local.Load()
+		if err != nil {
+			return err
+		}
+		c.On = sub == "on"
+		if err := local.Save(c); err != nil {
+			return err
+		}
+		fmt.Println(green.Render("✓"), "the local model is", sub)
+		return nil
+	case "mask":
+		return localMask(rest)
+	case "help", "-h", "--help":
+		fmt.Println(localUsage)
+		return nil
+	}
+	return fmt.Errorf("%s", localUsage)
+}
+
+// localModelOf is the model args name: a catalog model by its name, or a
+// repository and a file of it.
+func localModelOf(args []string) (local.Model, error) {
+	switch len(args) {
+	case 1:
+		for _, m := range local.Catalog {
+			if strings.EqualFold(m.ID(), args[0]) {
+				return m, nil
+			}
+		}
+		return local.Model{}, fmt.Errorf("no model %q in magpie local models; give a repository and a .gguf file of it", args[0])
+	case 2:
+		if !strings.Contains(args[0], "/") || !strings.HasSuffix(strings.ToLower(args[1]), ".gguf") {
+			return local.Model{}, fmt.Errorf("give a Hugging Face repository (owner/name) and a .gguf file in it")
+		}
+		return local.Model{Repo: args[0], File: args[1]}, nil
+	}
+	return local.Model{}, fmt.Errorf("magpie local use <model>   or   magpie local use <repo> <file.gguf>")
+}
+
+func localStatus(asJSON bool) error {
+	c, err := local.Load()
+	if err != nil {
+		return err
+	}
+	h := local.Detect()
+	if asJSON {
+		b, _ := json.MarshalIndent(map[string]any{"config": c, "hardware": h, "model": c.Picked(h), "status": gatewayLocal()}, "", "  ")
+		fmt.Println(string(b))
+		return nil
+	}
+	state := "off"
+	if c.On {
+		state = "on"
+	}
+	m := c.Picked(h)
+	fmt.Println(bold.Render("local model"), state, muted.Render("· "+local.Ref(m)))
+	fmt.Println(muted.Render("  model    "), m.Repo, muted.Render(m.File))
+	fmt.Println(muted.Render("  computer "), fmt.Sprintf("%s/%s, %s memory", h.OS, h.Arch, gib(h.RAM)), gpuWords(h), muted.Render("· llama.cpp "+cmpOr(c.Backend, h.Backend())))
+	if st := gatewayLocal(); st != nil {
+		line := string(st.Phase)
+		if st.URL != "" && st.Phase == local.Ready {
+			line += " at " + st.URL
+		}
+		if st.Progress != nil && st.Progress.Total > 0 {
+			line += fmt.Sprintf(" · %s %d%%", st.Progress.What, st.Progress.Done*100/st.Progress.Total)
+		}
+		if st.Error != "" {
+			line += " · " + st.Error
+		}
+		fmt.Println(muted.Render("  now      "), line)
+	} else if c.On {
+		fmt.Println(muted.Render("  now      "), "the gateway isn't running: the app or magpie serve runs it")
+	}
+	if g, _, ok := provider.FindGroup(provider.GroupPrefix + provider.HybridGroupID); ok && g.Hybrid != nil {
+		mask := "off"
+		if g.Hybrid.Mask {
+			mask = "on"
+		}
+		fmt.Println(muted.Render("  route    "), "group/"+provider.HybridGroupID, muted.Render("· "+strings.Join(g.Members, ", ")+" · masking "+mask))
+	}
+	return nil
+}
+
+func gib(n uint64) string {
+	if n == 0 {
+		return "unknown"
+	}
+	return fmt.Sprintf("%.0f GB", float64(n)/(1<<30))
+}
+
+func gpuWords(h local.Hardware) string {
+	switch {
+	case h.GPU != "":
+		return muted.Render("· " + h.GPU + " " + gib(h.VRAM))
+	case h.Unified:
+		return muted.Render("· Apple silicon, memory shared with the GPU")
+	}
+	return ""
+}
+
+func cmpOr(a, b string) string {
+	if a != "" {
+		return a
+	}
+	return b
+}
+
+func localModels() error {
+	h := local.Detect()
+	rec := local.Recommend(h)
+	for _, m := range local.Catalog {
+		mark := "  "
+		if m.ID() == rec.ID() {
+			mark = green.Render("★ ")
+		}
+		fmt.Printf("%s%-12s %-28s %s  %s\n", mark, m.ID(), m.Repo, gib(m.Size), muted.Render(m.Note))
+	}
+	fmt.Println(muted.Render("★ recommended for this computer (" + gib(h.RAM) + " memory) · magpie local setup <name> · or any repo and .gguf file"))
+	return nil
+}
+
+// localSetup downloads llama.cpp and the model in the terminal, then turns
+// the local model on.
+func localSetup(args []string) error {
+	c, err := local.Load()
+	if err != nil {
+		return err
+	}
+	var names []string
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--hf", "--hf-endpoint":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--hf takes an address, such as https://hf-mirror.com")
+			}
+			c.HFEndpoint, i = args[i+1], i+1
+		case "--github-mirror", "--mirror":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--github-mirror takes a prefix")
+			}
+			c.GitHubMirror, i = args[i+1], i+1
+		default:
+			names = append(names, args[i])
+		}
+	}
+	if len(names) > 0 {
+		m, err := localModelOf(names)
+		if err != nil {
+			return err
+		}
+		c.Model = m
+	}
+	ctx, stop := interruptContext()
+	defer stop()
+	last := time.Time{}
+	tell := func(p local.Progress) {
+		if time.Since(last) < 200*time.Millisecond && p.Done != p.Total {
+			return
+		}
+		last = time.Now()
+		if p.Total > 0 {
+			fmt.Fprintf(os.Stderr, "\r  %s  %s / %s  %3d%%   ", p.What, gib2(p.Done), gib2(p.Total), p.Done*100/p.Total)
+		} else {
+			fmt.Fprintf(os.Stderr, "\r  %s  %s   ", p.What, gib2(p.Done))
+		}
+	}
+	h := local.Detect()
+	m := c.Picked(h)
+	fmt.Println("setting up", bold.Render(m.ID()), muted.Render("("+m.Repo+")"), "for", h.OS+"/"+h.Arch, muted.Render("· llama.cpp "+cmpOr(c.Backend, h.Backend())))
+	if _, err := local.Prepare(ctx, c, tell); err != nil {
+		fmt.Fprintln(os.Stderr)
+		return err
+	}
+	fmt.Fprintln(os.Stderr)
+	c.On = true
+	if err := local.Save(c); err != nil {
+		return err
+	}
+	fmt.Println(green.Render("✓"), "ready:", bold.Render(local.Ref(m)), muted.Render("· the app, or magpie serve, runs it; group/"+provider.HybridGroupID+" routes between it and the cloud"))
+	return nil
+}
+
+func gib2(n int64) string {
+	switch {
+	case n >= 1<<30:
+		return fmt.Sprintf("%.2f GB", float64(n)/(1<<30))
+	case n >= 1<<20:
+		return fmt.Sprintf("%.0f MB", float64(n)/(1<<20))
+	}
+	return fmt.Sprintf("%d KB", n>>10)
+}
+
+func localMask(args []string) error {
+	g, _, ok := provider.FindGroup(provider.GroupPrefix + provider.HybridGroupID)
+	if !ok || g.Hybrid == nil {
+		return fmt.Errorf("there is no edge-cloud group yet: magpie local setup makes group/%s once the local model runs", provider.HybridGroupID)
+	}
+	if len(args) == 0 {
+		state := "off"
+		if g.Hybrid.Mask {
+			state = "on"
+		}
+		fmt.Println("masking is", state)
+		return nil
+	}
+	if args[0] != "on" && args[0] != "off" {
+		return fmt.Errorf("magpie local mask [on|off]")
+	}
+	h := *g.Hybrid
+	h.Mask = args[0] == "on"
+	g.Hybrid = &h
+	if err := provider.SaveGroup(g); err != nil {
+		return err
+	}
+	fmt.Println(green.Render("✓"), "masking", args[0], muted.Render("· group/"+provider.HybridGroupID))
+	return nil
+}
+
+// gatewayLocal is the local model's status as the running gateway has it,
+// nil when no gateway answers.
+func gatewayLocal() *local.Status {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gateway.URL()+"/v1/magpie/local", nil)
+	if err != nil {
+		return nil
+	}
+	res, err := (&http.Client{Transport: &http.Transport{Proxy: nil}}).Do(req)
+	if err != nil {
+		return nil
+	}
+	defer res.Body.Close()
+	var s local.Status
+	if res.StatusCode != http.StatusOK || json.NewDecoder(res.Body).Decode(&s) != nil {
+		return nil
+	}
+	return &s
+}

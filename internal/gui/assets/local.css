@@ -1,0 +1,30 @@
+/* Local: the model on this computer and the edge-cloud route (local.js) */
+#view-local { padding: 18px 22px 40px; max-width: 760px; }
+#view-local .lm-top h2 { margin: 0 0 4px; font-size: 18px; }
+#view-local .lm-note { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 4px 0 10px; }
+#view-local .lm-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+#view-local .lm-card h3 { margin: 0 0 8px; font-size: 14px; flex: 1; }
+#view-local .lm-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+#view-local .lm-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; }
+#view-local .lm-dot.lm-ready { background: var(--green); }
+#view-local .lm-dot.lm-failed { background: var(--red); }
+#view-local .lm-dot.lm-preparing, #view-local .lm-dot.lm-downloading, #view-local .lm-dot.lm-starting { background: var(--amber); animation: lm-pulse 1.2s ease-in-out infinite; }
+@keyframes lm-pulse { 50% { opacity: .35; } }
+#view-local .lm-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; min-width: 0; }
+#view-local .lm-row:first-of-type { border-top: 0; }
+#view-local .lm-k { width: 120px; flex: none; color: var(--muted); }
+#view-local .lm-v { min-width: 0; overflow-wrap: anywhere; font-family: var(--code); font-size: 12px; }
+#view-local .lm-row select, #view-local .lm-row input { flex: 1; min-width: 0; max-width: 100%; }
+#view-local .lm-bar { height: 6px; border-radius: 3px; background: var(--pill); overflow: hidden; margin: 2px 0 8px; }
+#view-local .lm-fill { height: 100%; background: var(--accent); transition: width .3s; }
+#view-local .lm-err { color: var(--red); background: var(--red-soft); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; overflow-wrap: anywhere; }
+#view-local .lm-custom { padding-left: 132px; }
+#view-local .lm-cloud { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+#view-local .lm-member { display: inline-flex; align-items: center; gap: 4px; background: var(--pill); border-radius: 6px; padding: 2px 4px 2px 8px; font-family: var(--code); font-size: 12px; }
+#view-local .lm-card > button { margin-top: 10px; }
+@media (max-width: 560px) {
+  #view-local { padding: 14px 16px 32px; }
+  #view-local .lm-row { flex-wrap: wrap; }
+  #view-local .lm-k { width: 100%; }
+  #view-local .lm-custom { padding-left: 0; }
+}

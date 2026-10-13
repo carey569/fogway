@@ -70,7 +70,7 @@ const EffortAuto = "auto"
 // begins: a rule to put a member first, or the turn's effort. A pause
 // rule decides nothing then (PausedOut is looked at on every request).
 func (g Group) Ruled() bool {
-	return slices.ContainsFunc(g.Rules, func(r Rule) bool { return !r.Pause }) || g.Effort == EffortAuto
+	return slices.ContainsFunc(g.Rules, func(r Rule) bool { return !r.Pause }) || g.Effort == EffortAuto || g.Hybrid != nil
 }
 
 // Manual is a group's routing when the user picks which member it uses,
@@ -186,6 +186,9 @@ type Group struct {
 	// Rules send the requests they match to one member first, in order:
 	// the first that matches decides (see Rule).
 	Rules []Rule `json:"rules,omitempty"`
+	// Hybrid makes the group the edge-cloud route: its member on this
+	// computer judges each turn and takes those it can (see Hybrid).
+	Hybrid *Hybrid `json:"hybrid,omitempty"`
 	// Classifier is the model ("provider/model") asked which of the rules'
 	// intents a user's message is, or a group ("group/<id>", never this
 	// one) whose models are asked in turn, failing over as for any request.

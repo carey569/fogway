@@ -45,6 +45,8 @@ func helpFor(args []string) string {
 		return groupUsage
 	case "plugin", "plugins":
 		return pluginUsage
+	case "local":
+		return localUsage
 	case "quota", "quotas":
 		return quotaUsage
 	case "sessions":
