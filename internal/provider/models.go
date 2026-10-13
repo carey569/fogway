@@ -2113,14 +2113,6 @@ func (e Entry) Modalities() (in, out []string) {
 	return in, slices.Clone(e.Outputs)
 }
 
-// EntryOf is the model as the agents see it, by the id they ask for. It is
-// the catalog's own entry, so the window and reply limit it carries are the
-// ones a request is routed and metered against, with whatever the user set
-// already applied.
-func EntryOf(id string) (Entry, bool) {
-	return entryIn(Catalog(), id)
-}
-
 // ServedEntryOf is the model a limit may be set on, by the id the user
 // typed: any model its provider serves, not only the catalog's own entry.
 // The setters ask serves — the provider's own models deciding, switched off
@@ -2145,15 +2137,6 @@ func ServedEntryOf(id string) (Entry, bool) {
 			if m.ID == model {
 				return entryFor(*p, m, s), true
 			}
-		}
-	}
-	return Entry{}, false
-}
-
-func entryIn(entries []Entry, id string) (Entry, bool) {
-	for _, e := range entries {
-		if e.ID == id {
-			return e, true
 		}
 	}
 	return Entry{}, false

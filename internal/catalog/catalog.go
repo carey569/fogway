@@ -1341,16 +1341,6 @@ func Drawers(id string) []Model {
 	return out
 }
 
-// Providers returns models.dev provider ids known to the catalog.
-func Providers() []string {
-	var ids []string
-	for id := range load() {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
-	return ids
-}
-
 // CodexHome is where Codex CLI keeps its state: $CODEX_HOME, else ~/.codex.
 func CodexHome() string { return appdir.CodexHome() }
 

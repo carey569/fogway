@@ -893,23 +893,6 @@ func pricer() func(string) *catalog.Price {
 	}
 }
 
-// Reset forgets the kept parses, in memory only.
-func Reset() {
-	desktopTitles.Lock()
-	desktopTitles.names, desktopTitles.last = nil, nil
-	desktopTitles.Unlock()
-	directoryCache.Lock()
-	directoryCache.entries = map[string]directoryEntry{}
-	directoryCache.Unlock()
-	resetCalls()
-	wslReset()
-	mu.Lock()
-	defer mu.Unlock()
-	saved()
-	cache, loaded = nil, false
-	cacheGeneration++
-}
-
 // List reads the latest sessions of every agent, the most recently active
 // first, at most limit of them (Limit when 0).
 func List(limit int) []Session {
@@ -1359,10 +1342,6 @@ func makers(id string) []string {
 
 var safeID = regexp.MustCompile(`^[0-9A-Za-z_-]+$`)
 var safeOmpProfile = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
-
-// ResumeCommand is the shell line that picks a session up again in its
-// folder, or "" for an id that isn't plain.
-func ResumeCommand(agent, id, cwd string) string { return resumeCommand("", agent, id, cwd, "") }
 
 // resumeCommand is ResumeCommand for a session in a WSL distro too, when
 // distro is set: see wslResume.

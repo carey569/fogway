@@ -31,14 +31,6 @@ var kimiModelTable = `models."` + magpieID + "/"
 // know: it has to be told one, and compacts as it nears it.
 const kimiContext = 128000
 
-// KimiDir is the folder Kimi Code keeps its config.toml in, and whether it is
-// the old kimi-cli's. kimi-cli (1.50 on) hands over to the new Kimi Code,
-// which reads only ~/.kimi-code: it offers to copy ~/.kimi's config over
-// when it first starts, and once that's done never reads ~/.kimi again, so a
-// model written there is one it never sees (#290). ~/.kimi is kimi-cli's only where
-// the new one isn't: no ~/.kimi-code, nor $KIMI_CODE_HOME.
-func KimiDir(home string) (dir string, legacy bool) { return kimiDir(here(home)) }
-
 // kimiDir is KimiDir at a place: in a WSL distro its variables aren't
 // read, and a stopped one's is ~/.kimi-code until it is looked at.
 func kimiDir(at place) (dir string, legacy bool) {

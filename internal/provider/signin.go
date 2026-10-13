@@ -166,23 +166,6 @@ func randomToken(n int) string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-// StartSignIn begins adding an account to an agent: open the returned URL
-// in a browser and the rest happens on its own; SignInStatus follows it.
-//
-// An agent signed in with a CLI that isn't installed has it installed first:
-// the sign-in is then "installing", and gets its URL when that is done.
-func StartSignIn(agent string) (SignInState, error) {
-	// "zcode:bigmodel" is ZCode signed in on BigModel (智谱)
-	agent, site, _ := strings.Cut(agent, ":")
-	return StartSignInAt(agent, site)
-}
-
-// StartSignInAt is StartSignIn on one of the sites an agent signs in on:
-// ZCode's "zai" (the default) or "bigmodel".
-func StartSignInAt(agent, site string) (SignInState, error) {
-	return StartSignInWith(agent, SignInOptions{Site: site})
-}
-
 // StartSignInWith is StartSignIn with the sign-in's choices: its site and
 // the proxy it goes through.
 func StartSignInWith(agent string, o SignInOptions) (SignInState, error) {
@@ -629,23 +612,6 @@ func (s *signInFlow) claim() bool {
 	}
 	s.claimed = true
 	return true
-}
-
-// WaitSignIn blocks until a sign-in is over, for the command line.
-func WaitSignIn(ctx context.Context, id string) (SignInState, error) {
-	signIns.Lock()
-	s, ok := signIns.m[id]
-	signIns.Unlock()
-	if !ok {
-		return SignInState{}, errors.New("no such sign-in")
-	}
-	select {
-	case <-s.done:
-		return s.status(), nil
-	case <-ctx.Done():
-		s.finish(SignInState{State: "canceled"})
-		return s.status(), ctx.Err()
-	}
 }
 
 func (s *signInFlow) status() SignInState {

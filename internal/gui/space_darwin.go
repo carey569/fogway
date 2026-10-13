@@ -66,12 +66,6 @@ func setMovesToActiveSpace(w *application.WebviewWindow, on bool) {
 	}
 }
 
-// movesToActiveSpace says whether it is; on the main thread.
-func movesToActiveSpace(w *application.WebviewWindow) bool {
-	p := w.NativeWindow()
-	return p != nil && C.movesToActiveSpace(p) != 0
-}
-
 // windowOpen says whether w is open: shown, on any Space, and not
 // minimised; on the main thread.
 func windowOpen(w *application.WebviewWindow) bool {

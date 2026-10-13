@@ -20,9 +20,6 @@ type observedSession struct {
 	agent, id string
 }
 
-// OTelSessionAgent reports recent observations for callers without a session ID.
-func OTelSessionAgent(agent string) bool { return OTelSession(agent, "") }
-
 // OTelSession reports whether this exact agent/session has recent local
 // observations. Only requests without an ID fall back to agent-level readiness.
 // Callers must also verify loopback and absence of a gateway key.

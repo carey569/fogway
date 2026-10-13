@@ -528,7 +528,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/models", s.models)
 	mux.HandleFunc("GET /models", s.models)
 	mux.HandleFunc("GET /v1/models/{id...}", s.model)
-	mux.HandleFunc("GET /muse-code/models", s.museModels)
 	// Claude Desktop's third-party gateway looks for one here before it
 	// takes the address
 	mux.HandleFunc("GET /api/hello", func(w http.ResponseWriter, r *http.Request) {
@@ -539,8 +538,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/magpie/usage/requests", s.usageRequests)
 	mux.HandleFunc("POST /v1/magpie/usage/requests", s.usageIngest)
 	mux.HandleFunc("GET /v1/magpie/quotas/history", s.quotasHistory)
-	mux.HandleFunc("GET "+provider.RemoteCardsPath, s.quotaCards)
-	mux.HandleFunc("POST "+provider.RemoteRefreshPath, s.quotaCardsRefresh)
 	mux.HandleFunc("GET /v1/magpie/route", s.sessionRoute)
 	mux.HandleFunc("GET /v1/magpie/concurrency", s.concurrency)
 	mux.HandleFunc("GET /v1/magpie/limit", s.keyLimit)
@@ -554,35 +551,15 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /responses", responsesOverHTTP)
 	mux.HandleFunc("POST /v1/messages", keepsSignIn(s.handle(provider.Anthropic)))
 	mux.HandleFunc("POST /messages", keepsSignIn(s.handle(provider.Anthropic)))
-	mux.HandleFunc("POST /v1/systemone", s.serveSystemOne)
-	// Codex's web.run tool (anton on Discord)
-	mux.HandleFunc("POST /v1"+AlphaSearchPath, s.alphaSearch)
-	mux.HandleFunc("POST "+AlphaSearchPath, s.alphaSearch)
 	mux.HandleFunc("POST /v1/messages/count_tokens", keepsSignIn(s.countTokens))
-	mux.HandleFunc("POST /v1/images/generations", s.images(false))
-	mux.HandleFunc("POST /images/generations", s.images(false))
-	mux.HandleFunc("POST /v1/images/edits", s.images(true))
-	mux.HandleFunc("POST /images/edits", s.images(true))
 	mux.HandleFunc("POST /v1/embeddings", s.retrieve("/embeddings", "embeddings"))
 	mux.HandleFunc("POST /embeddings", s.retrieve("/embeddings", "embeddings"))
 	mux.HandleFunc("POST /v1/rerank", s.retrieve("/rerank", "rerank"))
 	mux.HandleFunc("POST /rerank", s.retrieve("/rerank", "rerank"))
-	mux.HandleFunc("POST /v1/videos", s.videosCreate)
-	mux.HandleFunc("POST /videos", s.videosCreate)
-	mux.HandleFunc("GET /v1/videos/{id}", s.videosGet)
-	mux.HandleFunc("GET /videos/{id}", s.videosGet)
-	mux.HandleFunc("GET /v1/videos/{id}/content", s.videosContent)
-	mux.HandleFunc("GET /videos/{id}/content", s.videosContent)
-	mux.HandleFunc("POST "+claudeMCPPath+"{token}", s.subscription.mcpCall)
-	mux.HandleFunc("/mcp/{name}", s.mcpProxy)
-	mux.HandleFunc(SearchMCPPath, s.searchMCP)
-	mux.HandleFunc(VisionMCPPath, s.visionMCP)
-	mux.HandleFunc(CodexPath+"/", s.codexBackend)
-	mux.HandleFunc("GET "+CodexCatalogPath, s.codexCatalog)
 	mux.HandleFunc("GET /v1beta/models", s.geminiModels)
 	mux.HandleFunc("POST /v1beta/models/{call...}", s.gemini)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		writeError(w, provider.Chat, http.StatusNotFound, "magpie serves /v1/chat/completions, /v1/responses, /v1/messages, /v1/systemone, /v1/images/generations, /v1/images/edits, /v1/videos, /v1/embeddings, /v1/rerank and /v1beta/models/*")
+		writeError(w, provider.Chat, http.StatusNotFound, "magpie serves /v1/chat/completions, /v1/responses, /v1/messages, /v1/embeddings, /v1/rerank and /v1beta/models/*")
 	})
 	return s.counted(corsGuard(callerGuard(withCaller(keyLimited(mux)))))
 }
@@ -644,20 +621,6 @@ func (s *Server) quotasHistory(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"object": "list", "data": provider.QuotaHistories(provider.QuotaHistorySince(q.Get("days"), time.Now()), q.Get("provider"), q.Get("user"))})
 }
 
-// quotaCards is the Usage page's cards as this magpie last read them, for
-// another magpie that has this one as its provider (remote-magpie) to
-// show: its own cache, however old, and no vendor asked for it.
-func (s *Server) quotaCards(w http.ResponseWriter, r *http.Request) {
-	if !local(r) && !sharedWith(r) {
-		writeError(w, provider.Chat, http.StatusForbidden, "magpie's quotas are told to another machine only when magpie is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
-		return
-	}
-	if refuseHeld(w, r, heldRefused) {
-		return
-	}
-	writeJSON(w, 200, map[string]any{"object": "list", "data": provider.CachedCards(time.Now())})
-}
-
 // remoteRefreshes is when another magpie last had each card read again
 // here: one refreshed by hand is read at most once in remoteRefreshGap,
 // however often it is asked, so the vendor sees no more than this
@@ -668,41 +631,6 @@ var remoteRefreshes = struct {
 }{at: map[string]time.Time{}}
 
 const remoteRefreshGap = 30 * time.Second
-
-// quotaCardsRefresh is a card's refresh pressed on another magpie: the
-// card (?provider=, &user=) is read again here, or every card when none
-// is named, then the cards are answered as quotaCards answers them.
-func (s *Server) quotaCardsRefresh(w http.ResponseWriter, r *http.Request) {
-	if !local(r) && !sharedWith(r) {
-		writeError(w, provider.Chat, http.StatusForbidden, "magpie's quotas are told to another machine only when magpie is shared on the local network (Settings → Share on local network) and the request carries its API key (Authorization: Bearer <key> or x-api-key: <key>)")
-		return
-	}
-	if refuseHeld(w, r, heldRefused) {
-		return
-	}
-	id, user := r.URL.Query().Get("provider"), r.URL.Query().Get("user")
-	if strings.Contains(id, "/") || provider.IsRemoteCard(id) { // a card this magpie has from another: not passed on
-		writeError(w, provider.Chat, http.StatusBadRequest, "this magpie reads only its own cards again")
-		return
-	}
-	key := id + "|" + strings.ToLower(user)
-	remoteRefreshes.Lock()
-	due := time.Since(remoteRefreshes.at[key]) >= remoteRefreshGap
-	if due {
-		remoteRefreshes.at[key] = time.Now()
-	}
-	remoteRefreshes.Unlock()
-	if due {
-		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-		if id == "" {
-			provider.ReadAllCards(ctx)
-		} else {
-			provider.RefreshUsage(ctx, id, user)
-		}
-		cancel()
-	}
-	writeJSON(w, 200, map[string]any{"object": "list", "data": provider.CachedCards(time.Now())})
-}
 
 func modelObject(e provider.Entry) map[string]any {
 	type reasoningLevel struct {

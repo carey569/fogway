@@ -315,15 +315,6 @@ func copilotProbeEditor(ctx context.Context, user, host string) {
 	}
 }
 
-// copilotAccount is the Copilot account in use first.
-func copilotAccount(cfg string) (Provider, bool) {
-	ls := copilotLogins(cfg)
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return copilotProvider(ls[0].app, ls[0].Plan), true
-}
-
 // copilotAlsoOn is the Copilot accounts in use behind the first.
 func copilotAlsoOn() []Provider {
 	var out []Provider

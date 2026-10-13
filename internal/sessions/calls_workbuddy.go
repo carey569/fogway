@@ -78,24 +78,6 @@ type wbIDs struct {
 	ids   map[string]bool
 }
 
-// workbuddyGateway is whether a model id is one WorkBuddy asks magpie's
-// gateway for. A routing group's id says so on its own: "group/<id>" is a
-// name only a magpie answers to (provider.GroupPrefix), so a call asked for
-// under it went to a gateway whichever machine that was, and this file has
-// nothing to pair it with. The rest are read from models.json, whose entries
-// for magpie (internal/agent's workbuddy.go writes them: vendor "magpie",
-// url this gateway's) are the ones WorkBuddy shows in its picker as
-// "custom-local:<id>". An entry the user put there for another vendor keeps
-// its own usage, so the vendor is read too and not only the prefix.
-//
-// models.json is the user's own configuration, not a record of the call: take
-// magpie's models out of it and the calls made while they were in stop being
-// read as the gateway's here, and are counted as the agent's own beside the
-// gateway's rows for the same calls. It is the one shape this cannot tell
-// from the file alone — WorkBuddy names no provider of its own, as dsh, ZCode
-// and OpenCode do — so it is said here and pinned by a test.
-func workbuddyGateway(id string) bool { return buddyGateway(WorkBuddyDir(), id) }
-
 // buddyGateway is workbuddyGateway for the models.json in dir: WorkBuddy's,
 // or CodeBuddy Code's, which names magpie's models the same way.
 func buddyGateway(dir, id string) bool {

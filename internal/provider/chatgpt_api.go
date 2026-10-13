@@ -739,21 +739,6 @@ func siwcProvider(l Login) Provider {
 		Website: "https://chatgpt.com", Account: a}
 }
 
-func siwcAccount() (Provider, bool) {
-	ls := siwcLoginList()
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return siwcProvider(ls[0]), true
-}
-
-// SIWCForTest points the sign-in and the API at test servers.
-func SIWCForTest(issuer, api string) func() {
-	oldI, oldA, oldT, oldS := siwcIssuer, siwcAuthorizeURL, siwcTokenURL, siwcAPI
-	siwcIssuer, siwcAuthorizeURL, siwcTokenURL, siwcAPI = issuer, issuer+"/api/accounts/authorize", issuer+"/api/accounts/oauth/token", api
-	return func() { siwcIssuer, siwcAuthorizeURL, siwcTokenURL, siwcAPI = oldI, oldA, oldT, oldS }
-}
-
 // siwcAlsoOn is the ChatGPT API accounts in use behind the first.
 func siwcAlsoOn() []Provider {
 	var out []Provider

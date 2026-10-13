@@ -72,65 +72,6 @@ var errKeyHeld = errors.New("remote magpie holds this key to a budget, models or
 // be reached at all.
 const errRemoteUnreachable = "couldn't reach the remote magpie"
 
-// CachedCards is the Usage page's cards as this magpie last read them,
-// each with its kind, for another magpie to show: no vendor is asked,
-// whatever their age, and another magpie's cards shown here aren't
-// passed on.
-//
-// The cards are the page's with what was read of the same accounts and
-// keys behind it since (cards_kept.go): a magpie serving only other
-// magpies has nobody on its page (#1313).
-func CachedCards(now time.Time) []SubscriptionQuota {
-	c := &subscriptionUsageCache
-	c.Lock()
-	data := c.data
-	c.Unlock()
-	subs := withDailyCredits(visibleQuotas(withAccountReadings(data)), now)
-	p := &planQuotaCache
-	p.Lock()
-	plans := slices.Clone(p.data)
-	p.Unlock()
-	b := &keyBalanceCache
-	b.Lock()
-	balances := slices.Clone(b.data)
-	b.Unlock()
-	ps := keyCardProviders()
-	if plans == nil || balances == nil {
-		keptPlans, keptBalances := keptKeyCards(ps)
-		if plans == nil {
-			plans = keptPlans
-		}
-		if balances == nil {
-			balances = keptBalances
-		}
-	}
-	plans, balances = withKeyReadings(plans, ps, "plan"), withKeyReadings(balances, ps, "balance")
-	plans, subs = seatCards(plans, subs)
-	subs = withAccountNames(subs)
-	out := []SubscriptionQuota{}
-	for _, g := range []struct {
-		kind string
-		qs   []SubscriptionQuota
-	}{{"subscription", subs}, {"plan", plans}, {"balance", balances}} {
-		for _, q := range g.qs {
-			if q.From == "" {
-				q.Kind = g.kind
-				out = append(out, q)
-			}
-		}
-	}
-	return out
-}
-
-// ReadAllCards has every card read again, the page's Refresh asked by
-// another magpie whose card of this one's said nothing was read yet.
-func ReadAllCards(ctx context.Context) {
-	AskUsage()
-	ForgetBalances()
-	forgetPlanQuotas()
-	Quotas(Asked(ctx))
-}
-
 var remoteCardCache struct {
 	sync.Mutex
 	m map[string]remoteCardsRead
@@ -148,28 +89,6 @@ type remoteCardsRead struct {
 // (a key replaced by one the remote holds shows none of them).
 func remoteCardsID(p Provider) string {
 	return p.ID + "\x00" + keyID(p.Key)
-}
-
-// ForgetRemoteCardsForTest drops the remote magpies' cards kept here, for
-// a test run again (-count) to ask its own fake remote afresh.
-func ForgetRemoteCardsForTest() {
-	c := &remoteCardCache
-	c.Lock()
-	c.m = nil
-	c.Unlock()
-	k := &remoteKeyCache
-	k.Lock()
-	k.m = nil
-	k.Unlock()
-}
-
-// ForgetKeptCardsForTest has the cards kept on disk (quotas.json) read
-// again from the home a test has set: they are read once per process.
-func ForgetKeptCardsForTest() {
-	c := &lastQuotas
-	c.Lock()
-	c.m, c.loaded = nil, false
-	c.Unlock()
 }
 
 // remoteMagpies are the remote magpies this magpie uses.
@@ -263,13 +182,6 @@ func remoteOf(id string) (Provider, string, bool) {
 		}
 	}
 	return Provider{}, "", false
-}
-
-// IsRemoteCard is whether id is a card this magpie has from a remote
-// magpie, or the card standing for the remote itself.
-func IsRemoteCard(id string) bool {
-	_, _, ok := remoteOf(id)
-	return ok
 }
 
 // refreshRemote has the remote magpie read its card again (every card,

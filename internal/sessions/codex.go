@@ -89,12 +89,6 @@ var (
 	cxText      = []byte(`,"text":"`)
 )
 
-func codexLine(s *state, b []byte, main bool) {
-	if codexHead(s, b, main) {
-		codexBody(s, b, main)
-	}
-}
-
 // codexHead notes the time of a line, from its start, and says whether the
 // rest of it is worth reading: from its type and its payload's, which a
 // rollout writes first, so irrelevant tool output is never searched.

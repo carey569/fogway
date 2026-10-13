@@ -442,10 +442,6 @@ func SetAutoGroups(on bool) error {
 	return store(f)
 }
 
-// AutoGroupID is the id of the group magpie finds for a model, however a
-// vendor spells it: "auto-claude-opus-5-5" for claude-opus-5.5.
-func AutoGroupID(model string) string { return "auto-" + Slug(sameModel(model)) }
-
 var groupDots = regexp.MustCompile(`\.{2,}`)
 
 // GroupSlug derives a group's own id from a name as Slug does, the dots

@@ -51,17 +51,6 @@ var (
 	factoryAPIEU  = "https://api.eu.factory.ai"
 )
 
-// FactoryBaseForTest points Factory's API at api, and its EU region at eu,
-// until the returned function runs. A provider built after the call uses
-// them. Tests outside this package use it.
-func FactoryBaseForTest(api, eu string) func() {
-	oldA, oldE := factoryAPI, factoryAPIEU
-	factoryAPI, factoryAPIEU = api, eu
-	return func() {
-		factoryAPI, factoryAPIEU = oldA, oldE
-	}
-}
-
 const (
 	// factoryClientID is droid's WorkOS client, production.
 	factoryClientID = "client_01HNM792M5G5G1A2THWPXKFMXB"
@@ -725,14 +714,6 @@ func factoryProvider(a factoryLogin) Provider {
 	return Provider{ID: "factory", Name: "Factory", Icon: "factory",
 		Anthropic: factoryAPI + "/api/llm/a", Responses: factoryAPI + "/api/llm/o/v1", Chat: factoryAPI + "/api/llm/o/v1",
 		Website: "https://factory.ai", Account: acct}
-}
-
-func factoryAccount() (Provider, bool) {
-	ls := factoryLogins()
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return factoryProvider(ls[0]), true
 }
 
 // factoryAlsoOn is the Factory accounts in use behind the first.

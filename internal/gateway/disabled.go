@@ -106,22 +106,3 @@ func countOff(w http.ResponseWriter, proto provider.Protocol, id string) bool {
 	}
 	return refuseOff(w, proto, id)
 }
-
-// codexNativeOff is the refusal for one of Codex's own models, asked at
-// the ChatGPT backend's route by its bare id: disabled by that id, or as
-// the codex provider's ("codex/gpt-5.5").
-func codexNativeOff(model string) (string, bool) {
-	if model == "" {
-		return "", false
-	}
-	if provider.DisabledUnknown() {
-		return unknownDisabledError(model), true
-	}
-	if pat, off := provider.IDDisabled(model); off {
-		return disabledError(model, pat), true
-	}
-	if pat, off := provider.ModelDisabled("codex", model); off {
-		return disabledError(model, pat), true
-	}
-	return "", false
-}

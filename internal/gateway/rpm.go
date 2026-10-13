@@ -184,17 +184,6 @@ func (l *rpms) free(who string, limit int) bool {
 	return len(l.prune(who, time.Now())) < limit
 }
 
-// used is how many requests of who's are counted in its minute now, to go
-// or gone.
-func (l *rpms) used(who string) int {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.m == nil {
-		return 0
-	}
-	return len(l.prune(who, time.Now()))
-}
-
 // rpmTicket, on a request's context, counts each request made with it
 // against who's MaxRPM as it goes out (rpmTransport), waiting at most
 // longest (0: no bound). paid is a place the forward loop took already,

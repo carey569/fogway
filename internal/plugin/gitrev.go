@@ -210,51 +210,12 @@ func GitHead(ctx context.Context, spec string, fresh bool) (string, error) {
 	return sha, err
 }
 
-// GitHeadCached is what the git spec's repository said last, never asked
-// now; "" when it hasn't been asked or didn't answer.
-func GitHeadCached(spec string) string {
-	headsMu.Lock()
-	defer headsMu.Unlock()
-	return heads[spec].sha
-}
-
 // GitBehind is whether the git plugin spec's repository has moved on from
 // the commit installed: both known, and not the same.
 func GitBehind(spec, head string) bool {
 	have := GitCommit(spec)
 	return have != "" && head != "" && !SameCommit(have, head)
 }
-
-// GitHeads is the commit each installed git plugin's repository is at,
-// as GitHead tells it, a few asked at once; one that couldn't be told is
-// left out.
-func GitHeads(ctx context.Context) map[string]string {
-	out := map[string]string{}
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, npmAtOnce)
-	for _, e := range Load().Plugins {
-		if !IsGit(e.Spec) {
-			continue
-		}
-		wg.Add(1)
-		go func(spec string) {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			if sha, err := GitHead(ctx, spec, false); err == nil && sha != "" {
-				mu.Lock()
-				out[spec] = short(sha)
-				mu.Unlock()
-			}
-		}(e.Spec)
-	}
-	wg.Wait()
-	return out
-}
-
-// ShortCommit is a commit as the page shows it, its first 7 digits.
-func ShortCommit(sha string) string { return short(sha) }
 
 // short is a commit as the page shows it.
 func short(sha string) string {

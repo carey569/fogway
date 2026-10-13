@@ -16,7 +16,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -511,38 +510,6 @@ type Clash struct {
 	With []string `json:"with"`
 }
 
-// Clashes are the provider ids each loaded plugin shares with another,
-// by the plugin's spec.
-func Clashes(loaded []Loaded) map[string][]Clash {
-	who := map[string][]string{}
-	var ids []string
-	for _, l := range loaded {
-		for _, id := range l.Provides {
-			if who[id] == nil {
-				ids = append(ids, id)
-			}
-			who[id] = append(who[id], l.Spec)
-		}
-	}
-	out := map[string][]Clash{}
-	for _, id := range ids {
-		specs := who[id]
-		if len(specs) < 2 {
-			continue
-		}
-		by := ""
-		for _, l := range loaded {
-			if slices.Contains(specs, l.Spec) && l.ServedBy[id] == "" {
-				by = l.Spec
-			}
-		}
-		for _, s := range specs {
-			out[s] = append(out[s], Clash{ID: id, By: by, With: slices.DeleteFunc(slices.Clone(specs), func(x string) bool { return x == s })})
-		}
-	}
-	return out
-}
-
 var (
 	hostMu  sync.Mutex
 	current *host
@@ -1007,20 +974,6 @@ func (h *host) dispatch(m message) {
 	c.transition(callAnswered, nil, &m)
 }
 
-// enqueue hands one message to the writer goroutine. It waits only for room in
-// the bounded queue, honoring ctx and the host's own end, so a caller is never
-// parked in a blocked write and a host that is gone makes it return. Messages
-// keep their order, so an abort is written after the fetch it belongs to.
-func (h *host) enqueue(ctx context.Context, v any) error {
-	return h.enqueueDone(ctx, v, nil)
-}
-
-// enqueueDone is enqueue, asking the writer to report the write's result on
-// done (nil for a write that succeeded).
-func (h *host) enqueueDone(ctx context.Context, v any, done chan error) error {
-	return h.enqueueCall(ctx, v, done, nil)
-}
-
 // enqueueCall commits acceptance with the lifecycle while holding h.mu.
 // Waiting for writer room owns no lifecycle lock, so cancellation can
 // release an unsent call and the next attempt cannot enqueue it.
@@ -1173,13 +1126,6 @@ func (h *host) credit(c *call, n int) {
 	ct.credit += n
 	h.ctrlMu.Unlock()
 	h.wakeCtrl()
-}
-
-// abort queues a fetch to stop. It is not dropped: the call keeps its slot
-// until the abort is written (or the host dies), so a child that stopped
-// reading its stdin cannot grow the backlog past the call limit.
-func (h *host) abort(c *call) {
-	c.settle(context.Canceled)
 }
 
 func (h *host) wakeCtrl() {
@@ -1359,16 +1305,6 @@ func callWithTimeout(ctx context.Context, method string, params, out any, timeou
 		defer cancel()
 	}
 	return h.call(ctx, method, params, out)
-}
-
-// Plugins is how each plugin fared when the host loaded it, starting the
-// host if need be.
-func Plugins(ctx context.Context) ([]Loaded, error) {
-	h, err := get(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return h.loaded, nil
 }
 
 // FetchRequest is a request a provider's plugin makes.

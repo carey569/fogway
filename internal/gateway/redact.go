@@ -24,17 +24,6 @@ func redacted(w http.ResponseWriter, body []byte) (http.ResponseWriter, []byte, 
 	return rw, masked, rw.Finish
 }
 
-// redactedPrompt masks a parsed image or video prompt before any vendor
-// body is built, including multipart forms, and restores the reply's text.
-func redactedPrompt(w http.ResponseWriter, prompt string) (http.ResponseWriter, string, func()) {
-	masked, n := redact.Mask(prompt, redactionOptions())
-	if n == 0 {
-		return w, prompt, func() {}
-	}
-	rw := redact.NewWriter(w)
-	return rw, masked, rw.Finish
-}
-
 func redactionOptions() redact.Options {
 	st := settings.Load()
 	return redact.Options{Secrets: st.Redact, Personal: st.RedactPersonal, Kinds: st.RedactKinds, Words: st.RedactWords, Rules: st.RedactRules}

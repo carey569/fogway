@@ -103,22 +103,6 @@ func (s bunState) usable(v string) bool {
 	return v != "" && !update.Newer(BunVersion, v) && !slices.Contains(s.Bad, v)
 }
 
-// BunInUse is the version of the Bun plugins run on (or will, once it is
-// downloaded): the newest magpie took, else BunVersion.
-func BunInUse() string {
-	if b := os.Getenv("MAGPIE_BUN"); b != "" {
-		bunMu.Lock()
-		defer bunMu.Unlock()
-		if _, ok := envBunVersion[b]; !ok {
-			envBunVersion[b] = bunReported(b)
-		}
-		return envBunVersion[b]
-	}
-	bunMu.Lock()
-	defer bunMu.Unlock()
-	return inUseLocked()
-}
-
 func inUseLocked() string {
 	s := readBunState()
 	if s.usable(s.Current) && haveBun(s.Current) {

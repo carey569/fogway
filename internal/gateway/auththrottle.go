@@ -55,12 +55,3 @@ func tooManyAuthFails() (over bool, retry time.Duration) {
 	// off. The failure is not charged again while the bucket is empty.
 	return true, time.Duration((1 - t.tokens) * float64(authFailRefill))
 }
-
-// resetAuthThrottle refills the bucket. fresh(t) calls it so the global
-// counter never carries wrong-key tries from one test into the next.
-func resetAuthThrottle() {
-	t := &authThrottle
-	t.Lock()
-	t.tokens, t.last, t.now = authFailBurst, time.Time{}, time.Now
-	t.Unlock()
-}

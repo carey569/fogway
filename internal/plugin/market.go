@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -116,14 +115,6 @@ func npmCached() map[string]npmEntry {
 	return npmCache
 }
 
-// ReloadInfo forgets what npm said, as kept in memory: the next ask reads
-// it from disk again, as a magpie just started does.
-func ReloadInfo() {
-	npmMu.Lock()
-	npmCache = nil
-	npmMu.Unlock()
-}
-
 // saveNPM writes npmCache to disk; npmMu held.
 func saveNPM() {
 	b, err := json.Marshal(npmCache)
@@ -135,21 +126,6 @@ func saveNPM() {
 	if os.WriteFile(tmp, b, 0o644) == nil {
 		_ = os.Rename(tmp, npmCacheFile())
 	}
-}
-
-// InfoCached is what npm said last of each package it was asked of, however
-// long ago, without asking again; a package never asked isn't in it.
-func InfoCached(names []string) map[string]NPM {
-	npmMu.Lock()
-	defer npmMu.Unlock()
-	c := npmCached()
-	out := map[string]NPM{}
-	for _, n := range names {
-		if e, ok := c[n]; ok {
-			out[n] = e.Info
-		}
-	}
-	return out
 }
 
 func marketCache() string { return filepath.Join(appdir.Cache(), "plugin-market.json") }
@@ -176,59 +152,8 @@ func parseMarket(b []byte) ([]Listing, error) {
 	return out, nil
 }
 
-// Market is the list of plugins magpie suggests: fetched at most every six
-// hours, else the copy fetched last, else the one built in.
-func Market(ctx context.Context) []Listing {
-	marketMu.Lock()
-	defer marketMu.Unlock()
-	if marketList != nil && time.Since(marketAt) < 6*time.Hour {
-		return marketList
-	}
-	src := os.Getenv("MAGPIE_PLUGIN_MARKET")
-	if src == "" {
-		src = MarketURL
-	}
-	if src != "off" {
-		c, cancel := context.WithTimeout(ctx, 6*time.Second)
-		// the list names the packages installed: a copy of the very file
-		// may stand in for it (with 「国内镜像」), a proxy may not
-		b, err := fetchJSONFaithful(c, src, 1<<20)
-		cancel()
-		if err == nil {
-			if l, err := parseMarket(b); err == nil {
-				marketList, marketAt = l, time.Now()
-				_ = os.MkdirAll(filepath.Dir(marketCache()), 0o755)
-				_ = os.WriteFile(marketCache(), b, 0o644)
-				return l
-			}
-		}
-		if b, err := os.ReadFile(marketCache()); err == nil {
-			if l, err := parseMarket(b); err == nil {
-				// tried again in a minute, not six hours
-				marketList, marketAt = l, time.Now().Add(-6*time.Hour+time.Minute)
-				return l
-			}
-		}
-	}
-	l, _ := parseMarket(builtinMarket)
-	marketList, marketAt = l, time.Now().Add(-6*time.Hour+time.Minute)
-	return l
-}
-
-// RefreshMarket has the next Market fetch the list again, as with the
-// 「国内镜像」 switch just turned on; the one held is kept till then.
-func RefreshMarket() {
-	marketMu.Lock()
-	marketAt = time.Time{}
-	marketMu.Unlock()
-}
-
 func fetchJSON(ctx context.Context, u string, limit int64) ([]byte, error) {
 	return fetchJSONFrom(ctx, u, limit, source.Do)
-}
-
-func fetchJSONFaithful(ctx context.Context, u string, limit int64) ([]byte, error) {
-	return fetchJSONFrom(ctx, u, limit, source.DoFaithful)
 }
 
 func fetchJSONFrom(ctx context.Context, u string, limit int64, do func(*http.Client, *http.Request) (*http.Response, error)) ([]byte, error) {
@@ -469,177 +394,10 @@ type Hit struct {
 	NPM
 }
 
-// Search asks npm for plugins matching q: OpenCode plugins, and pi
-// packages, which list "pi-package" among their keywords as pi's own
-// gallery asks.
-func Search(ctx context.Context, q string) ([]Hit, error) {
-	q = strings.TrimSpace(q)
-	if q == "" {
-		return []Hit{}, nil
-	}
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	var (
-		wg       sync.WaitGroup
-		oc, pi   []Hit
-		ocE, piE error
-	)
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		// a plugin, not a tool that mentions OpenCode: its name says so,
-		// or its keywords name an OpenCode plugin
-		oc, ocE = searchNPM(ctx, q+" opencode", func(text string, _ []string) bool {
-			return strings.Contains(text, "opencode") && (strings.Contains(text, "auth") || strings.Contains(text, "plugin") || strings.Contains(text, "provider"))
-		})
-	}()
-	go func() {
-		defer wg.Done()
-		// a pi package that signs in to a provider or brings one; one
-		// that only adds pi a command or a tool has nothing for magpie
-		pi, piE = searchNPM(ctx, "keywords:pi-package "+q, func(text string, kw []string) bool {
-			return slices.Contains(kw, "pi-package") && (strings.Contains(text, "auth") || strings.Contains(text, "provider"))
-		})
-	}()
-	wg.Wait()
-	if ocE != nil && piE != nil {
-		return nil, ocE
-	}
-	out, seen := []Hit{}, map[string]bool{}
-	for _, h := range append(oc, pi...) {
-		if !seen[h.Package] {
-			seen[h.Package] = true
-			out = append(out, h)
-		}
-	}
-	return out, nil
-}
-
-// searchNPM is npm's search for text, the packages keep says are plugins
-// (given their name and keywords, lowercased, and the keywords).
-func searchNPM(ctx context.Context, text string, keep func(string, []string) bool) ([]Hit, error) {
-	v := url.Values{"text": {text}, "size": {"30"}}
-	b, err := fetchJSON(ctx, npmRegistry+"/-/v1/search?"+v.Encode(), 4<<20)
-	if err != nil {
-		return nil, err
-	}
-	var r struct {
-		Objects []struct {
-			Package struct {
-				Name        string   `json:"name"`
-				Version     string   `json:"version"`
-				Description string   `json:"description"`
-				Keywords    []string `json:"keywords"`
-				License     string   `json:"license"`
-				Publisher   struct {
-					Username string `json:"username"`
-				} `json:"publisher"`
-				Links struct {
-					Homepage   string `json:"homepage"`
-					Repository string `json:"repository"`
-				} `json:"links"`
-			} `json:"package"`
-			Downloads struct {
-				Weekly int `json:"weekly"`
-			} `json:"downloads"`
-		} `json:"objects"`
-	}
-	if err := json.Unmarshal(b, &r); err != nil {
-		return nil, err
-	}
-	var out []Hit
-	for _, o := range r.Objects {
-		p := o.Package
-		if !keep(strings.ToLower(p.Name+" "+strings.Join(p.Keywords, " ")), p.Keywords) {
-			continue
-		}
-		out = append(out, Hit{Package: p.Name, NPM: NPM{
-			Version: p.Version, Description: p.Description, Publisher: p.Publisher.Username, License: p.License,
-			Homepage: p.Links.Homepage, Repository: repoURL(p.Links.Repository), Weekly: o.Downloads.Weekly,
-		}})
-	}
-	return out, nil
-}
-
 // Page is a package's page: its README and when it last changed.
 type Page struct {
 	Readme  string    `json:"readme"`
 	Updated time.Time `json:"updated"`
-}
-
-// Readme is the package's README, as npm has it, or — for a plugin added
-// from a folder on this computer or a git repository — the one its folder
-// carries.
-func Readme(ctx context.Context, name string) (Page, error) {
-	if IsGit(name) {
-		// one not installed yet (a repository tagged magpie-plugin): its
-		// README as GitHub has it
-		if _, err := os.Stat(Target(name)); err != nil {
-			if repo := githubRepo(name); repo != "" {
-				return githubReadme(ctx, repo)
-			}
-		}
-	}
-	if IsPath(name) || IsGit(name) {
-		return folderReadme(Target(name))
-	}
-	if !pkgName.MatchString(name) {
-		return Page{}, fmt.Errorf("%q isn't an npm package name", name)
-	}
-	ctx, cancel := context.WithTimeout(ctx, 12*time.Second)
-	defer cancel()
-	b, err := fetchJSON(ctx, npmRegistry+"/"+npmPath(name), 32<<20)
-	if err != nil {
-		return Page{}, err
-	}
-	var d struct {
-		Readme string               `json:"readme"`
-		Time   map[string]time.Time `json:"time"`
-	}
-	if err := json.Unmarshal(b, &d); err != nil {
-		return Page{}, err
-	}
-	const most = 200 << 10
-	if len(d.Readme) > most {
-		d.Readme = d.Readme[:most]
-	}
-	return Page{Readme: d.Readme, Updated: d.Time["modified"]}, nil
-}
-
-// folderReadme is the README a plugin's own folder carries: README.md,
-// whatever its case, else a markdown or text one named beside it. A folder
-// without one says so, rather than answering with npm's silence.
-func folderReadme(dir string) (Page, error) {
-	ents, err := os.ReadDir(dir)
-	if err != nil {
-		return Page{}, err
-	}
-	named := map[string]os.DirEntry{}
-	for _, e := range ents {
-		if !e.IsDir() {
-			named[strings.ToLower(e.Name())] = e
-		}
-	}
-	for _, want := range []string{"readme.md", "readme.markdown", "readme.txt", "readme"} {
-		e, ok := named[want]
-		if !ok {
-			continue
-		}
-		b, err := os.ReadFile(filepath.Join(dir, e.Name()))
-		if err != nil {
-			return Page{}, err
-		}
-		const most = 200 << 10
-		if len(b) > most {
-			b = b[:most]
-		}
-		var at time.Time
-		if fi, err := e.Info(); err == nil {
-			at = fi.ModTime()
-		}
-		return Page{Readme: string(b), Updated: at}, nil
-	}
-	return Page{}, fmt.Errorf("%s has no README: add a README.md beside its package.json", dir)
 }
 
 // Installed is the version of the plugin spec installed, "" for a path or
@@ -655,26 +413,6 @@ func Installed(spec string) string {
 	var p struct{ Version string }
 	_ = json.Unmarshal(b, &p)
 	return p.Version
-}
-
-// InstalledIcon is the picture the installed plugin spec's package.json
-// gives in magpie.icon, as ownIcon takes one: the plugin's own, for its
-// row, apart from those its providers give themselves in the auth hook
-// (#1775). "" for none, or a plugin that is one file.
-func InstalledIcon(spec string) string {
-	b, err := os.ReadFile(filepath.Join(Target(spec), "package.json"))
-	if err != nil {
-		return ""
-	}
-	var p struct {
-		Magpie struct {
-			Icon string `json:"icon"`
-		} `json:"magpie"`
-	}
-	if json.Unmarshal(b, &p) != nil {
-		return ""
-	}
-	return ownIcon(p.Magpie.Icon)
 }
 
 // Upgrade installs the newest version of one plugin: npm's, or its git

@@ -616,10 +616,6 @@ type matchGroup struct {
 	counts []int
 }
 
-func matchedLocal(gateway *rowChunk, chunks []*rowChunk, skip map[rowRef]bool, since time.Time) map[rowRef]bool {
-	return matchedBlocks([]*rowChunk{gateway}, chunks, skip, since, true)
-}
-
 func matchedBlocks(gateways []*rowChunk, chunks []*rowChunk, skip map[rowRef]bool, since time.Time, newestIDs bool) map[rowRef]bool {
 	gatewaySince := since
 	if !since.IsZero() {
@@ -770,9 +766,6 @@ func sharesOf(m map[string]*Share) []Share {
 		return strings.Compare(a.ID, b.ID)
 	})
 	return out
-}
-func buildRequestPage(p Period, f Filter, offset, limit int, gateway *rowChunk, chunks []*rowChunk) RequestPage {
-	return buildRequestBlocks(p, f, offset, limit, Clock(), []*rowChunk{gateway}, chunks, nil, nil)
 }
 
 // Shared days are never matched to this computer's gateway or session calls.
@@ -1031,9 +1024,6 @@ func buildRequestBlocks(p Period, f Filter, offset, limit int, now time.Time, ga
 		}
 	}
 	return out
-}
-func pageFromLedger(p Period, f Filter, offset, limit int, all Ledgered) RequestPage {
-	return pageFromLedgerAt(p, f, offset, limit, all, Clock())
 }
 
 // pageFromLedgerAt is the page of a ledger read at now, its chart over the

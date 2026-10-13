@@ -16,13 +16,6 @@ import (
 // has produced any observations. Header inspection never emits history/bodies.
 type TraceSession struct{ Agent, ID string }
 
-// TraceSessionVisible resolves a first request before the next reader tick.
-// Only formats with an authoritative header are eligible; filenames alone
-// cannot establish that a usable local transcript exists.
-func TraceSessionVisible(agent, id string) bool {
-	return new(TraceSessionIndex).Visible(agent, id)
-}
-
 // TraceSessionIndex shares one discovery snapshot across all request IDs and
 // polling. The caller that wins refresh performs directory I/O; other
 // concurrent requests use the snapshot without waiting for that scan.

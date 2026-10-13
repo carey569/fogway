@@ -194,14 +194,6 @@ func Set(id string, on bool) error {
 	})
 }
 
-// SetPreset changes the preset, keeping the user's own rows.
-func SetPreset(preset string) error {
-	if preset != PresetAll && preset != PresetEssentials {
-		return fmt.Errorf("no preset %q (essentials or all)", preset)
-	}
-	return update(func(f *File) { f.Preset = preset })
-}
-
 func update(change func(*File)) error {
 	inProcess.Lock()
 	defer inProcess.Unlock()

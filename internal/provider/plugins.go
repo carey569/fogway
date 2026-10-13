@@ -105,21 +105,6 @@ func PluginOf(id string) (plugin.Provider, bool) {
 	return plugin.Provider{}, false
 }
 
-// pluginAccounts are the plugins' providers signed in to, each as its
-// first account.
-func pluginAccounts() []Provider {
-	var out []Provider
-	for _, pp := range heldPlugins() {
-		if movingNow(pp.ID) {
-			continue // shown once the move is through (migrate.go)
-		}
-		if ls := pluginLogins(pp); len(ls) > 0 {
-			out = append(out, pluginProvider(pp, ls[0]))
-		}
-	}
-	return out
-}
-
 // pluginProtocol is the API model is spoken to on, as OpenCode's AI SDK
 // package for it speaks: Anthropic's, OpenAI's Responses (and Copilot's
 // for GPT-5 and after), Gemini's (as Code Assist's inner request), else

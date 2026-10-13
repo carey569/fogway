@@ -122,19 +122,6 @@ func RevokedSignIn(a *Account, req *http.Request) (why string, ok bool) {
 	return why, ok
 }
 
-// SignInMarked says account a is marked revoked: a request is asked of
-// another account first where the gateway picks one alone (compaction).
-func SignInMarked(a *Account) bool {
-	if !RevokedAccount(a) {
-		return false
-	}
-	revoked.Lock()
-	defer revoked.Unlock()
-	revokedLoad()
-	_, ok := revoked.accounts[revokedKey(a.Agent, a.User)]
-	return ok
-}
-
 // NoteRevokedSignIn keeps that the vendor revoked the credential req went
 // to account a with. A saved ChatGPT account is refreshed first, as Codex
 // does on a 401: a refresh that goes through is a new sign-in, and the

@@ -75,18 +75,6 @@ func (d Dirs) All() []string {
 // runtime.GOOS, set by a test to try another system's.
 var OS = runtime.GOOS
 
-// Here are Desktop's folders on this computer.
-func Here() Dirs {
-	home, _ := os.UserHomeDir()
-	return Find(OS, home, appdir.Getenv)
-}
-
-// Find are Desktop's folders on goos for home, with getenv reading the
-// environment (a folder in it that isn't absolute is passed over).
-func Find(goos, home string, getenv func(string) string) Dirs {
-	return Sets(goos, home, getenv)[0]
-}
-
 // Sets are every set of Desktop's folders on goos for home: Find's first,
 // then, for an MSIX install, the other of the package's and the usual
 // ones, which one build or another of the packaged app reads.

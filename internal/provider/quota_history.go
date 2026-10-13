@@ -301,65 +301,6 @@ func noteQuotaHistory(qs []SubscriptionQuota, now time.Time) {
 	writeQuotaHist(h)
 }
 
-// mergeQuotaHist puts b's points into a: the union of both, a point within
-// quotaHistSame of the next one (of the same cycle) dropped for it.
-func mergeQuotaHist(a, b quotaHist) (changed bool) {
-	for key, ws := range b {
-		if a[key] == nil {
-			a[key] = map[string][]QuotaPoint{}
-		}
-		for name, pts := range ws {
-			old := a[key][name]
-			all := slices.Concat(old, pts)
-			slices.SortStableFunc(all, func(x, y QuotaPoint) int { return x.At.Compare(y.At) })
-			out := all[:0:0]
-			for i, p := range all {
-				if i+1 < len(all) && all[i+1].At.Sub(p.At) < quotaHistSame && !newCycle(p, all[i+1]) {
-					continue // the newer of two near the same
-				}
-				out = append(out, p)
-			}
-			if !slices.EqualFunc(old, out, samePoint) {
-				a[key][name] = out
-				changed = true
-			}
-		}
-	}
-	return changed
-}
-
-func samePoint(x, y QuotaPoint) bool {
-	eq := func(a, b *time.Time) bool { return a == nil && b == nil || a != nil && b != nil && a.Equal(*b) }
-	return x.At.Equal(y.At) && x.Left == y.Left && eq(x.Start, y.Start) && eq(x.ResetsAt, y.ResetsAt)
-}
-
-// QuotaHistoryData is this computer's history as kept, for the usage sync
-// to share.
-func QuotaHistoryData() []byte {
-	quotaHistMu.Lock()
-	defer quotaHistMu.Unlock()
-	b, _ := os.ReadFile(quotaHistPath())
-	return b
-}
-
-// MergeQuotaHistory merges another computer's history (as QuotaHistoryData
-// gave it there) into this one's.
-func MergeQuotaHistory(data []byte, now time.Time) error {
-	var b quotaHist
-	if err := json.Unmarshal(data, &b); err != nil {
-		return err
-	}
-	quotaHistMu.Lock()
-	defer quotaHistMu.Unlock()
-	h := readQuotaHist()
-	if !mergeQuotaHist(h, b) {
-		return nil
-	}
-	h.prune(now)
-	writeQuotaHist(h)
-	return nil
-}
-
 // QuotaHistories is every account's windows' points since since, the
 // accounts and windows in name order; provider and user, when given, pick
 // one provider's, or one account's.

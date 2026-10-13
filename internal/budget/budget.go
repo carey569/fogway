@@ -118,14 +118,6 @@ func read(keyID string, start time.Time) *sums {
 	return s
 }
 
-// Forget drops what is kept in memory, as a restart would.
-func Forget() {
-	state.Lock()
-	defer state.Unlock()
-	state.sums = map[string]*sums{}
-	state.held = map[window]*held{}
-}
-
 // Append writes rec to usage.jsonl and, for a key's call, counts it
 // against the key's window. The two happen together so a window read from
 // the file meanwhile counts the call once.

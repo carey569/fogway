@@ -627,10 +627,6 @@ func (cfg reasonixConfig) hasModel(ref string) bool {
 	return false
 }
 
-func reasonixCatalog(models []catalog.Model, selected, effort string) reasonixProvider {
-	return reasonixCatalogAt(models, selected, effort, gatewayV1())
-}
-
 // reasonixCatalogAt is reasonixCatalog for a Reasonix reaching the
 // gateway's /v1 at v1.
 func reasonixCatalogAt(models []catalog.Model, selected, effort, v1 string) reasonixProvider {

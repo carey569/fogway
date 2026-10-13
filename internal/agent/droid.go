@@ -32,7 +32,6 @@ import (
 	"github.com/tidwall/jsonc"
 
 	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -57,9 +56,6 @@ type droidEntry struct {
 	// told otherwise, so this is always written
 	NoImageSupport bool `json:"noImageSupport"`
 }
-
-// droidEntries are magpie's custom models as the catalog is now.
-func droidEntries() []droidEntry { return droidEntriesAt(gateway.URL()) }
 
 // droidEntriesAt are droidEntries for a droid reaching the gateway at gw.
 func droidEntriesAt(gw string) []droidEntry {

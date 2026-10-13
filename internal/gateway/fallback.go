@@ -137,28 +137,6 @@ func (c candidate) who() string {
 	return c.restKey()
 }
 
-// perKey is a provider once per key it has on, in order — or, for a
-// signed-in agent, once per account it has on, its own first. A key made
-// for one protocol only serves on that one's endpoint, and the keys that
-// suit the request go first: the Anthropic key for a Claude model, the
-// OpenAI one for a GPT model, else the key that speaks what the agent
-// spoke, so nothing is translated that needn't be.
-func perKey(p provider.Provider, model string, from provider.Protocol) []candidate {
-	out, aside, _ := perKeyOf(p, model, from)
-	return append(out, aside...)
-}
-
-// perKeyOf is perKey, split: the keys routing goes over, those made for
-// another protocol, and the accounts or keys it left out as not listing
-// the model. Keys made for different protocols are not one pool: routing
-// weighs, rotates and keeps conversations over those made for the
-// protocol that suits the request best, and the others are tried only
-// after them, in the order they suit it.
-func perKeyOf(p provider.Provider, model string, from provider.Protocol) (out, aside, left []candidate) {
-	out, aside, left, _ = perKeyBarred(p, model, from)
-	return out, aside, left
-}
-
 // perKeyBarred is perKeyOf, and the accounts or keys the user set not to
 // serve the model (provider.AccountModels, #474): never tried, whatever
 // else there is — none, when every one of them is.
@@ -908,11 +886,6 @@ var restingUntil = struct {
 	m    map[string]time.Time
 	note map[string]Rest // why each rests
 }{m: map[string]time.Time{}, note: map[string]Rest{}}
-
-func (s *Server) resting(id string) bool {
-	_, ok := restOf(id)
-	return ok
-}
 
 // restOf is why a candidate is resting, while it is.
 func restOf(id string) (Rest, bool) {

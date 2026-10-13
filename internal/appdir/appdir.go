@@ -76,16 +76,6 @@ func Portable() string {
 	return portable
 }
 
-// UseExecutable decides again as if magpie ran from exe ("" for an
-// installed magpie, whatever runs): for tests.
-func UseExecutable(exe string) {
-	once.Do(func() {})
-	portable = ""
-	if exe != "" {
-		portable = Resolve(exe)
-	}
-}
-
 // Resolve is the data folder of a magpie run from exe, or "" when it isn't
 // portable.
 func Resolve(exe string) string {

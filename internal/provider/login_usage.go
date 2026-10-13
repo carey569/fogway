@@ -44,15 +44,6 @@ var loginUsageFor struct {
 	f func(ctx context.Context, agent string) map[string]SubscriptionQuota
 }
 
-// LoginUsageVia has tests stand in for LoginUsage's readings. It returns
-// once no reading is still running through the one it replaces, and none
-// starts through it after.
-func LoginUsageVia(f func(ctx context.Context, agent string) map[string]SubscriptionQuota) {
-	loginUsageFor.Lock()
-	loginUsageFor.f = f
-	loginUsageFor.Unlock()
-}
-
 // loginUsageStandIn is the stand-in's reading, and false when there is none.
 func loginUsageStandIn(ctx context.Context, agent string) (map[string]SubscriptionQuota, bool) {
 	loginUsageFor.RLock()

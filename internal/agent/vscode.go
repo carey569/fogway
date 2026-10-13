@@ -137,8 +137,6 @@ func vscodeOf(k vscodeKind, home, cfg string) *Agent {
 	return vscodeKindAt(k, filepath.Join(cfg, k.folder, "User"))
 }
 
-func vscodeAt(dir string) *Agent { return vscodeKindAt(vscodeStable, dir) }
-
 func vscodeKindAt(k vscodeKind, dir string) *Agent {
 	path := filepath.Join(dir, "settings.json")
 	models := filepath.Join(dir, "chatLanguageModels.json")

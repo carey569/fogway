@@ -59,37 +59,3 @@ func SetGroupOrder(ids []string) error {
 	f.GroupOrder = order
 	return store(f)
 }
-
-// StoredGroupOrder is the order the user put the groups in, as saved; as
-// with Stored, a file that can't be read is an error.
-func StoredGroupOrder() ([]string, error) {
-	f, err := read()
-	return f.GroupOrder, err
-}
-
-// MirrorGroupOrder makes the groups' order the one another computer has,
-// as sync brings it, the way MirrorOrder does the providers': its ids
-// first, then the ones named here alone. None leaves the order here as it
-// is.
-func MirrorGroupOrder(order []string) error {
-	if len(order) == 0 {
-		return nil
-	}
-	f, err := read()
-	if err != nil {
-		return err
-	}
-	out := []string{}
-	seen := map[string]bool{}
-	for _, id := range slices.Concat(order, f.GroupOrder) {
-		if id != "" && !seen[id] {
-			seen[id] = true
-			out = append(out, id)
-		}
-	}
-	if slices.Equal(out, f.GroupOrder) {
-		return nil
-	}
-	f.GroupOrder = out
-	return store(f)
-}

@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/yetone/magpie/internal/provider"
@@ -22,13 +21,6 @@ type SubagentPick struct {
 func (p *SubagentPick) Moved() bool { return p != nil && p.Kept == "" }
 
 type subagentPickKey struct{}
-
-func withSubagentPick(r *http.Request, p *SubagentPick) *http.Request {
-	if p == nil {
-		return r
-	}
-	return r.WithContext(context.WithValue(r.Context(), subagentPickKey{}, p))
-}
 
 func subagentPickOf(r *http.Request) *SubagentPick {
 	p, _ := r.Context().Value(subagentPickKey{}).(*SubagentPick)

@@ -266,25 +266,6 @@ type MoveCandidate struct {
 	Accounts int    `json:"accounts"`
 }
 
-// MoveCandidates are the built-ins not on their plugins that have accounts
-// to move, by name.
-func MoveCandidates() []MoveCandidate {
-	if settings.AccountDiscoveryOff() {
-		return nil
-	}
-	out := []MoveCandidate{}
-	for id, mv := range movers {
-		if Moved(id) {
-			continue
-		}
-		if accts, err := mv.out(); err == nil && len(accts) > 0 {
-			out = append(out, MoveCandidate{ID: id, Name: nameOf(id), Package: mv.pkg, Accounts: len(accts)})
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
-	return out
-}
-
 // MovePackage is the plugin the built-in id moves to.
 func MovePackage(id string) string {
 	if m := movers[id]; m != nil {
@@ -1273,53 +1254,4 @@ func KeepRetiringMoved(ctx context.Context) {
 		}
 		t.Reset(time.Hour)
 	}
-}
-
-// MovedOnto are the built-ins moved onto the plugin named (its spec or
-// package name).
-func MovedOnto(name string) []string {
-	var out []string
-	for _, e := range plugin.Load().Plugins {
-		if plugin.Name(e.Spec) != name && e.Spec != name {
-			continue
-		}
-		pkg := plugin.PackageName(e.Spec)
-		for _, id := range OnPlugins() {
-			if m, _ := MigrationOf(id); m.Package == pkg && !slices.Contains(out, id) {
-				out = append(out, id)
-			}
-		}
-	}
-	return out
-}
-
-// releasePlugin moves the built-ins on the plugin named back first, so
-// taking the plugin away leaves none of them without its accounts.
-func releasePlugin(ctx context.Context, name string) error {
-	for _, id := range MovedOnto(name) {
-		if err := moveBack(ctx, id, false); err != nil {
-			return fmt.Errorf("moving %s back to the built-in: %w", id, err)
-		}
-	}
-	return nil
-}
-
-// RemovePlugin removes the plugin named, the built-ins moved onto it moved
-// back to themselves first.
-func RemovePlugin(ctx context.Context, name string) error {
-	if err := releasePlugin(ctx, name); err != nil {
-		return err
-	}
-	return plugin.Remove(ctx, name)
-}
-
-// SetPluginOff turns the plugin named off, the built-ins moved onto it
-// moved back to themselves first, or back on.
-func SetPluginOff(ctx context.Context, name string, off bool) error {
-	if off {
-		if err := releasePlugin(ctx, name); err != nil {
-			return err
-		}
-	}
-	return plugin.SetOff(name, off)
 }

@@ -53,8 +53,6 @@ func helpFor(args []string) string {
 		return searchUsage
 	case "visible":
 		return visibleUsage
-	case "claude-code":
-		return claudeCodeUsage
 	case "list":
 		cmd = "ls"
 	case "account":

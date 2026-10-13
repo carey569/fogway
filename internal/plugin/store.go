@@ -475,48 +475,6 @@ func notPlugin(target string) error {
 	return errors.New(why)
 }
 
-// Update installs npm's newest version (asked now, installAt) of each npm
-// plugin, and fetches each git one again. A plugin pinned to a version
-// that npm has a newer one of is updated too, and unpinned, as its row's
-// Update does: the page counts it in Update all, and the CLI's update
-// says it installs the newest of each (ARNO on Discord: a plugin updated
-// with Update all still said an update was out, pinned where it was). A
-// pinned one already at npm's newest stays as its spec says.
-func Update(ctx context.Context) error {
-	var errs []error
-	for _, e := range Load().Plugins {
-		if !IsPath(e.Spec) {
-			v := ""
-			if !IsGit(e.Spec) {
-				v = newestOf(ctx, Name(e.Spec))
-			}
-			var err error
-			switch {
-			case v != "" && Pinned(e.Spec):
-				if update.Newer(v, Installed(e.Spec)) {
-					_, err = add(ctx, Name(e.Spec), v)
-				} else {
-					err = reinstall(ctx, e.Spec)
-				}
-			case v != "":
-				err = installAt(ctx, Name(e.Spec), v)
-			default:
-				// a git one, or npm not answering: as its spec says
-				err = reinstall(ctx, e.Spec)
-			}
-			if err != nil {
-				errs = append(errs, fmt.Errorf("%s: %w", e.Spec, err))
-				continue
-			}
-		}
-		if err := ensurePi(ctx, Target(e.Spec)); err != nil {
-			errs = append(errs, fmt.Errorf("%s: %w", e.Spec, err))
-		}
-	}
-	Restart()
-	return errors.Join(errs...)
-}
-
 // indexOf is the plugin name means in l: the one added as name exactly,
 // else the one of that package. A plugin of the user's own (a folder)
 // beside a third party's is each told apart by its own spec, so taking
@@ -552,88 +510,6 @@ func Remove(ctx context.Context, name string) error {
 	}
 	Restart()
 	return nil
-}
-
-// SetOff turns a plugin off or back on.
-func SetOff(name string, off bool) error {
-	listMu.Lock()
-	defer listMu.Unlock()
-	l := Load()
-	i := indexOf(l, name)
-	if i < 0 {
-		return fmt.Errorf("no plugin %q", name)
-	}
-	l.Plugins[i].Off = off
-	if err := save(l); err != nil {
-		return err
-	}
-	Restart()
-	return nil
-}
-
-// Prefer has the plugin named serve provider id, which another plugin
-// signs in to as well (Clash): the host runs it for id from now on, the
-// other one keeping its other providers. A plugin removed takes its picks
-// with it; one switched off leaves the id to the others until it is on
-// again.
-func Prefer(name, id string) error {
-	listMu.Lock()
-	defer listMu.Unlock()
-	l := Load()
-	i := indexOf(l, name)
-	if i < 0 {
-		return fmt.Errorf("no plugin %q", name)
-	}
-	if id == "" {
-		return errors.New("no provider given")
-	}
-	if l.Prefer == nil {
-		l.Prefer = map[string]string{}
-	}
-	l.Prefer[id] = l.Plugins[i].Spec
-	if err := save(l); err != nil {
-		return err
-	}
-	Restart()
-	return nil
-}
-
-// SetOptions sets the options a plugin is handed (a middleware's
-// ctx.options); nil takes them away.
-func SetOptions(name string, opts map[string]any) error {
-	listMu.Lock()
-	defer listMu.Unlock()
-	l := Load()
-	i := indexOf(l, name)
-	if i < 0 {
-		// a short name, as the community's READMEs write it: param-override
-		// for @magpie-community/middleware-param-override
-		i = slices.IndexFunc(l.Plugins, func(x Entry) bool { return ShortName(Name(x.Spec)) == name })
-	}
-	if i < 0 {
-		return fmt.Errorf("no plugin %q", name)
-	}
-	if len(opts) == 0 {
-		opts = nil
-	}
-	l.Plugins[i].Options = opts
-	if err := save(l); err != nil {
-		return err
-	}
-	Restart()
-	return nil
-}
-
-// ShortName is a package's name without its scope and the words every
-// package of its kind has: model-map for @magpie-community/middleware-model-map,
-// zed for @magpie-community/opencode-zed-auth. A plugin added from a folder
-// is named by its path, which on Windows ends after a backslash.
-func ShortName(pkg string) string {
-	if i := strings.LastIndexAny(pkg, `/\`); i >= 0 {
-		pkg = pkg[i+1:]
-	}
-	pkg = strings.TrimPrefix(strings.TrimPrefix(pkg, "middleware-"), "opencode-")
-	return strings.TrimSuffix(pkg, "-auth")
 }
 
 // install puts an npm package into plugins/ with bun add, its scripts

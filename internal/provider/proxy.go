@@ -68,26 +68,10 @@ func ProxyOfLogin(id, user string) string {
 	return s.Proxy
 }
 
-// Via is ctx for requests made on behalf of the provider or signed-in
-// account with id (see Provider.Via).
-func Via(ctx context.Context, id string) context.Context {
-	return netproxy.With(ctx, ProxyOf(id))
-}
-
 // ViaLogin is ctx for requests made on behalf of the account user of the
 // subscription id (ProxyOfLogin).
 func ViaLogin(ctx context.Context, id, user string) context.Context {
 	return netproxy.With(ctx, ProxyOfLogin(id, user))
-}
-
-// ViaSignedIn is ctx for requests made with the sign-in an agent has now
-// (Codex's own, relayed as it came): through the proxy of the account it
-// is signed in to.
-func ViaSignedIn(ctx context.Context, id string) context.Context {
-	if l, ok := liveLogin(id); ok {
-		return ViaLogin(ctx, id, l.User)
-	}
-	return Via(ctx, id)
 }
 
 func storedPicks(id string) (Provider, bool) {

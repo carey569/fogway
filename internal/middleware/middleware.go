@@ -18,7 +18,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -94,13 +93,6 @@ func current() *set {
 	s = load(st)
 	cur.Store(s)
 	return s
-}
-
-// Reload drops the middleware loaded, so the next request loads it again.
-func Reload() {
-	loadMu.Lock()
-	cur.Store(nil)
-	loadMu.Unlock()
 }
 
 type found struct {
@@ -404,36 +396,4 @@ type State struct {
 	AvgMicro float64  `json:"avgMicros"`
 	Failures int64    `json:"failures"`
 	Last     string   `json:"lastError,omitempty"`
-}
-
-// States are the middleware plugins, by spec.
-func States() map[string]State {
-	s := current()
-	out := map[string]State{}
-	for spec, e := range s.errs {
-		out[spec] = State{Hooks: []string{}, Error: e}
-	}
-	for _, m := range s.list {
-		st := State{Hooks: []string{}, Calls: m.calls.Load(), Failures: m.failures.Load()}
-		for _, h := range []struct {
-			ok   bool
-			name string
-		}{{m.hasReq, "onRequest"}, {m.hasEv, "onEvent"}, {m.hasResp, "onResponse"}} {
-			if h.ok {
-				st.Hooks = append(st.Hooks, h.name)
-			}
-		}
-		for n := range m.events {
-			st.Events = append(st.Events, n)
-		}
-		sort.Strings(st.Events)
-		if st.Calls > 0 {
-			st.AvgMicro = float64(m.nanos.Load()) / float64(st.Calls) / 1e3
-		}
-		if p := m.lastErr.Load(); p != nil {
-			st.Last = *p
-		}
-		out[m.spec] = st
-	}
-	return out
 }

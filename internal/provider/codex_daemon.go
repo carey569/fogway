@@ -468,6 +468,3 @@ func splitExe(args string) (exe, rest string) {
 	exe, rest, _ = strings.Cut(args, " ")
 	return exe, rest
 }
-
-// CodexHome is the Codex home magpie wires and signs Codex in through.
-func CodexHome() string { return codexHome() }

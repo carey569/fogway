@@ -9,7 +9,6 @@ import (
 	"context"
 	"log"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/yetone/magpie/internal/provider"
@@ -51,20 +50,6 @@ func (s *Server) autoReset(ctx context.Context, cands []candidate, c candidate, 
 		}
 	}
 	return candidate{}, provider.ResetOutcome{}, false
-}
-
-// autoResetSignedIn is autoReset for a request relayed with Codex's own
-// sign-in, the only account there is.
-func (s *Server) autoResetSignedIn(ctx context.Context) (string, provider.ResetOutcome, bool) {
-	who, ok := provider.CodexSignedIn()
-	if !ok || !provider.CodexAutoReset(who) {
-		return "", provider.ResetOutcome{}, false
-	}
-	out, ok := autoResetOf(ctx, "codex", who)
-	if ok {
-		s.Unrest("codex@" + strings.ToLower(who))
-	}
-	return who, out, ok
 }
 
 // autoResetOf spends one of agent's account user's resets if its rules

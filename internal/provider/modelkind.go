@@ -83,13 +83,6 @@ func (p Provider) hasKindable(model string) bool {
 	return slices.ContainsFunc(all, func(m catalog.Model) bool { return m.ID == model })
 }
 
-// SetModelKind says what a provider's model, spelt "provider/model", makes:
-// KindImage, KindVideo, or "" to leave it to its vendor's list and name.
-func SetModelKind(ref, kind string) error {
-	_, err := setModelKind(ref, kind)
-	return err
-}
-
 func setModelKind(ref, kind string) (bool, error) {
 	p, model, err := splitRef(ref)
 	if err != nil {

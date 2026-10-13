@@ -336,18 +336,6 @@ func accountLabel(p provider.Provider) (name, icon string) {
 	if !p.IsPlugin() {
 		return name, icon
 	}
-	if pp, ok := provider.PluginOf(p.ID); ok {
-		// a plugin's sign-in: named for the provider it signs in to
-		name, icon = pp.Name, pluginIcon(pp)
-		if name == "" {
-			name = p.Name
-		}
-		if provider.Moved(pp.ID) {
-			icon = p.Icon // the built-in's, as it was
-		}
-		return name, icon
-	}
-	// its plugin not listed now: the provider's own name and logo
 	name, icon = p.Name, p.Icon
 	if icon == "" {
 		icon = "generic"
@@ -415,8 +403,8 @@ type gatewayJSON struct {
 	// Lanes are the keys and accounts with requests out or waiting under
 	// a limit on requests at once (#892), by provider#keyid or
 	// provider@account
-	Lanes   map[string]gateway.Lane `json:"lanes,omitempty"`
-	Groups  []gwGroupJSON           `json:"groups"` // the catalog's routing groups, listed before the models
+	Lanes  map[string]gateway.Lane `json:"lanes,omitempty"`
+	Groups []gwGroupJSON           `json:"groups"` // the catalog's routing groups, listed before the models
 }
 
 // gwGroupJSON is a routing group as the Gateway view lists it.
@@ -454,8 +442,6 @@ type providersJSON struct {
 	// after Codex was switched to another, until it is quit and opened
 	// again (provider.CodexAppStale)
 	CodexApp string `json:"codexApp,omitempty"`
-	// Plugins are the providers the plugins sign in to, for the add sheet
-	Plugins []pluginSubJSON `json:"plugins"`
 	// OnPlugins are the built-in subscriptions moved onto their plugins,
 	// which the add sheet offers as the plugin's alone
 	OnPlugins []string `json:"onPlugins,omitempty"`
@@ -852,7 +838,6 @@ func providersState() providersJSON {
 	}
 	s.CodexDaemon = provider.CodexDaemonStale()
 	s.CodexApp = provider.CodexAppStale()
-	s.Plugins = pluginSubs()
 	s.Fetching = provider.FetchingNew()
 	return s
 }
@@ -882,7 +867,6 @@ func moveContext(r *http.Request) (context.Context, context.CancelFunc) {
 
 func providerRoutes(mux *http.ServeMux, w Windows) {
 	importAppsRoutes(mux)
-	pluginRoutes(mux, w)
 	traceRoutes(mux)
 	contextRoutesAPI(mux)
 	tuneRoutes(mux)

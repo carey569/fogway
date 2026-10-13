@@ -54,14 +54,6 @@ func (p Provider) AccountCap(user string) int {
 	return caps[accountKey(user)]
 }
 
-// AccountCapOf is AccountCap of the provider id, 0 when there is none.
-func AccountCapOf(id, user string) int {
-	if s, ok := storedPicks(id); ok {
-		return s.AccountCaps[accountKey(user)]
-	}
-	return 0
-}
-
 // WindowCaps is what holds an account at a share of its windows: its usage
 // cap for every window (All), the share of each window the user set one
 // on (Windows, by WindowCapID; 100 is none on that window), and Credits

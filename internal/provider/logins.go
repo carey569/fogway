@@ -522,19 +522,6 @@ func claudeUser(email, plan string, acct map[string]any) string {
 // codexAuthPath is Codex's sign-in, under its home (appdir.CodexHome).
 func codexAuthPath() string { return filepath.Join(appdir.CodexHome(), "auth.json") }
 
-// CodexAPIKeySignedIn says Codex itself is signed in with an OpenAI
-// API key rather than a ChatGPT account (auth.json's auth_mode): its
-// sign-in is a key's, and spends no account a gateway key's list
-// governs.
-func CodexAPIKeySignedIn() bool {
-	b, err := readAccountFile(codexAuthPath())
-	if err != nil {
-		return false
-	}
-	var a codexAuth
-	return json.Unmarshal(b, &a) == nil && a.AuthMode == "apikey"
-}
-
 // claudeProfilePath is Claude Code's global state file, which holds the
 // signed-in account's identity next to much else.
 func claudeProfilePath() string {

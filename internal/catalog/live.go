@@ -182,29 +182,6 @@ func Touched() {
 	}
 }
 
-// Fetch asks an endpoint for its models. base is an API base URL of any
-// flavour (…/v1, …/anthropic, …/api); the usual list paths are tried
-// around it. The result keeps the server's order. anthropic sends the
-// Anthropic version header, which the official API requires but which a
-// dual-protocol relay like OpenRouter reads as a request for its
-// Anthropic-flavoured catalog — namespaced, differently named ids.
-func Fetch(ctx context.Context, base, key string, anthropic bool, headers map[string]string) ([]Model, error) {
-	ms, _, err := FetchAt(ctx, base, key, anthropic, headers)
-	return ms, err
-}
-
-// FetchAt is Fetch, and says which URL answered. An OpenAI-style base
-// with a version in its path (…/v1, …/api/plan/v3, …/api/paas/v4,
-// …/v1beta/openai) names the vendor's API as it is and is asked only as
-// written, at base/models: a /v1 is looked for only around a base without
-// one (a bare host, a relay's …/api), where it may have been left out. An
-// Anthropic base is the root /v1/messages is asked at, so /v1/models
-// under it is its own list. When no URL answers, the error names each one
-// asked and what it said.
-func FetchAt(ctx context.Context, base, key string, anthropic bool, headers map[string]string) ([]Model, string, error) {
-	return FetchAtListed(ctx, base, key, anthropic, headers, nil)
-}
-
 // ErrAsked is what FetchAtListed says when every list URL of the base was
 // already asked for this key and none of them answered: there is nothing
 // left to ask there, which is not a refusal of the base and is not

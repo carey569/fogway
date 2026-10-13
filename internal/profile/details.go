@@ -2,7 +2,6 @@ package profile
 
 import (
 	"regexp"
-	"slices"
 	"sort"
 	"strings"
 
@@ -152,17 +151,5 @@ func Details(p Profile) []Group {
 		}
 		out = append(out, g)
 	}
-	return out
-}
-
-// givenTo is the names in m given to the agent id, sorted.
-func givenTo(m map[string][]string, id string) []string {
-	var out []string
-	for name, ids := range m {
-		if slices.Contains(ids, id) {
-			out = append(out, name)
-		}
-	}
-	sort.Strings(out)
 	return out
 }

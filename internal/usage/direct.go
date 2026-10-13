@@ -7,18 +7,6 @@ import (
 	"github.com/yetone/magpie/internal/sessions"
 )
 
-// Direct is a period's calls the agents made on their own, which the gateway
-// never saw: those their session files record (Codex, Claude Code, Claude
-// Desktop…), summed up as Summarize sums the gateway's, by agent, model and
-// account. The Usage page's Requests tab and the tray panel count them
-// beside the gateway's; magpie usage and the TUI show them in a part of
-// their own (Kumo31 on Discord: Codex used outside magpie was on the
-// window's Usage tab but not in magpie usage).
-func Direct(p Period) Summary {
-	now := Clock()
-	return direct(p, now, directRows(p, now))
-}
-
 // Summaries is Summarize(p) and Direct(p) asked at one moment, for a page
 // that shows the two together: asked one after the other, midnight could
 // fall between them and set one day's calls through magpie beside the next

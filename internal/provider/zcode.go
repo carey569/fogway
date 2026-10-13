@@ -286,14 +286,6 @@ func forgetZCodeLogin(user string) error {
 	return forgetSideLogin("zcode", user, zcodeSide(), nil)
 }
 
-func zcodeAccount() (Provider, bool) {
-	ls := zcodeLogins()
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return zcodeProvider(ls[0].User, ls[0].Plan, ls[0].key), true
-}
-
 // zcodeAlsoOn is the ZCode accounts in use behind the first.
 func zcodeAlsoOn() []Provider {
 	var out []Provider

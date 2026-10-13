@@ -158,16 +158,6 @@ func (k *keyList) accountServes(p provider.Provider, model string) bool {
 	return accountServesOn(k.who, p, model, refs)
 }
 
-// accountServes says some account or key the key may use serves the provider's
-// model: an account of several set to serve other models only (#474) is
-// one the key may use, and none of the key's.
-func accountServes(who access.Identity, p provider.Provider, model string) bool {
-	if len(who.Accounts) == 0 {
-		return true
-	}
-	return accountServesOn(who, p, model, p.AccountIDs())
-}
-
 // accountServesOn is accountServes over refs, p's accounts and keys.
 func accountServesOn(who access.Identity, p provider.Provider, model string, refs []provider.AccountRef) bool {
 	if len(refs) == 0 {
@@ -260,28 +250,6 @@ func accountAllowed(who access.Identity, c candidate) bool {
 		return true
 	}
 	return who.AllowsAccount(c.p.ID, c.p.AccountID())
-}
-
-// allowedKey is p sent on the first of its keys in use the calling key
-// may use (#905), for the paths that send on one key of the provider
-// rather than over its candidates — a Grok or Volcengine video, which is
-// asked after on the first key again — in place of the first, which may
-// be one the key may not: a key held to a later one is sent on it, and
-// refused only when it may use none. A provider of an account keeps its
-// one account, checked as it is; one with no account and no key (a local
-// ollama) has nothing to hold. A key's own list of models (#474) is not
-// weighed here; the paths that can go over the keys do (onKeys, a
-// drawing's, the decision path's).
-func allowedKey(who access.Identity, p provider.Provider, model string) (provider.Provider, bool) {
-	if p.Key == "" {
-		return p, p.Account == nil || accountAllowed(who, candidate{p: p, model: model})
-	}
-	for _, k := range p.KeysOn() {
-		if q := p.WithKey(k); accountAllowed(who, candidate{p: q, model: model}) {
-			return q, true
-		}
-	}
-	return p, false
 }
 
 // onKeys is the keys or accounts of p a request for model that isn't a

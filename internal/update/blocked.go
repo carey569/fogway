@@ -213,6 +213,3 @@ func ReadBlocked(current string) *Blocked {
 	}
 	return &b
 }
-
-// ClearBlocked forgets the note: the version started after all.
-func ClearBlocked() { os.Remove(blockedFile()) }

@@ -89,9 +89,6 @@ func NewDeviceFlow(client *http.Client, site *Site) *DeviceFlow {
 // Site is the Qoder site the flow signs in on.
 func (f *DeviceFlow) Site() *Site { return f.site }
 
-// Client is the flow's HTTP client, reused for the model fetch after sign-in.
-func (f *DeviceFlow) Client() *http.Client { return f.client }
-
 func (f *DeviceFlow) MachineID() string { return f.machineID }
 
 // Authorization returns the page to open and the (verifier, nonce) the poll

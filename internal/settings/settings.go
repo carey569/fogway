@@ -986,11 +986,6 @@ func loadChecked() (Settings, error) {
 // parses counts settings.json's parses (Parses).
 var parses atomic.Int64
 
-// Parses is how many times settings.json has been parsed in this process,
-// for a test that a look holding the settings doesn't read them again for
-// each thing it looks at.
-func Parses() int64 { return parses.Load() }
-
 // validSettings is settings.json's contents read as Settings.
 func validSettings(b []byte) bool {
 	var s Settings

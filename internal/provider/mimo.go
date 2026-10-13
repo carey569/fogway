@@ -454,14 +454,6 @@ func mimoProvider(l mimoLogin) Provider {
 		Website: "https://mimo-ai.xiaomimimo.com", Account: a}
 }
 
-func mimoAccount() (Provider, bool) {
-	ls := mimoLogins()
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return mimoProvider(ls[0]), true
-}
-
 // mimoAlsoOn is the MiMo accounts in use behind the first.
 func mimoAlsoOn() []Provider {
 	var out []Provider

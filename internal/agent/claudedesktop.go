@@ -65,13 +65,6 @@ func desktopPathsOf(dir, dir3p string) desktopPaths {
 	}
 }
 
-// desktopDirs are Desktop's Claude and Claude-3p folders on goos: the ones
-// magpie writes deploymentMode and its profile into (desktopdir.Find).
-func desktopDirs(goos, home string, getenv func(string) string) (string, string) {
-	d := desktopdir.Find(goos, home, getenv)
-	return d.Mode, d.ThreeP
-}
-
 // desktopSets are those of every set of Desktop's folders, Find's first:
 // for a packaged Desktop the package's and the real ones, each with its
 // own stash.
@@ -83,18 +76,6 @@ func desktopSets(goos, home string, getenv func(string) string) []desktopPaths {
 			p.key = ".package"
 		}
 		out = append(out, p)
-	}
-	return out
-}
-
-// DesktopConfigs3p are the claude_desktop_config.json files Claude Desktop
-// reads in its 3p mode: there its whole userData is Claude-3p, its MCP
-// servers too (%LOCALAPPDATA%\Claude-3p on Windows, and the MSIX package's;
-// Claude-3p beside Claude elsewhere).
-func DesktopConfigs3p(home string) []string {
-	var out []string
-	for _, p := range desktopSets(desktopdir.OS, home, os.Getenv) {
-		out = append(out, p.config3p)
 	}
 	return out
 }

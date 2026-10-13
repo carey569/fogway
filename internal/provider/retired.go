@@ -124,16 +124,6 @@ func Unretire(pid, model string) {
 	catalog.Touched()
 }
 
-// Retired says whether provider pid's vendor said model is retired, within
-// retiredFor.
-func Retired(pid, model string) bool {
-	retired.Lock()
-	defer retired.Unlock()
-	readRetired()
-	at, ok := retired.at[pid+"/"+model]
-	return ok && time.Since(at) < retiredFor
-}
-
 // retiredNow is the models retired now, by "provider/model", read once for
 // a catalog built.
 func retiredNow() map[string]bool {

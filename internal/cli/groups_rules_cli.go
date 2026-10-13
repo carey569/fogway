@@ -87,9 +87,6 @@ func parseRule(g provider.Group, words []string) (provider.Rule, int, string, er
 	return r, at, classifier, err
 }
 
-// groupMember is the group's member a typed model names.
-func groupMember(g provider.Group, in string) (string, error) { return provider.GroupMember(g, in) }
-
 // ruleCmd: magpie group rule …
 func ruleCmd(args []string) error {
 	if len(args) == 0 || slices.Contains([]string{"help", "-h", "--help"}, args[0]) {

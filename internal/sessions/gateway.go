@@ -54,12 +54,6 @@ func gatewayIdentity(agent, id string) string {
 	return hex.EncodeToString(h[:])
 }
 
-// SaveGatewayTurn keeps a bounded, scrubbed exchange. Recording is checked again
-// under the same lock as disable-and-clear, so in-flight requests cannot refill it.
-func SaveGatewayTurn(turn GatewayTurn) error {
-	return saveGatewayTurn(turn, GatewayRecordingGeneration())
-}
-
 // GatewayRecordingGeneration returns the current consent generation. A
 // request captures it when recording starts and must present the same value
 // when saving, so clearing and re-enabling recording cannot resurrect old data.

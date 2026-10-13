@@ -192,13 +192,6 @@ func ask(v Vendor) {
 	kept[v.ID] = s
 }
 
-// Forget drops every reading, for tests.
-func Forget() {
-	mu.Lock()
-	defer mu.Unlock()
-	kept = map[string]Status{}
-}
-
 // summary is the part of a Statuspage summary.json (and incident.io's,
 // which OpenAI's is) that is read.
 type summary struct {

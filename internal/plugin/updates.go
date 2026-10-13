@@ -10,19 +10,13 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/yetone/magpie/internal/ghtoken"
 	"github.com/yetone/magpie/internal/settings"
 	"github.com/yetone/magpie/internal/steady"
 	"github.com/yetone/magpie/internal/update"
@@ -109,45 +103,6 @@ func readUpdates() Updates {
 		_ = json.Unmarshal(b, &u)
 	}
 	return u
-}
-
-// PendingUpdates is what the last look found, less what has changed since:
-// a plugin updated, removed or switched off since waits no more.
-func PendingUpdates() Updates {
-	updatesMu.Lock()
-	defer updatesMu.Unlock()
-	u := readUpdates()
-	have := map[string]Entry{}
-	for _, e := range Load().Plugins {
-		have[Name(e.Spec)] = e
-	}
-	u.Waiting = slices.DeleteFunc(u.Waiting, func(w Waiting) bool {
-		e, ok := have[w.Package]
-		if ok && w.Git {
-			// updated since: the commit installed is the one it was at
-			return e.Off || e.Spec != w.Spec || !GitBehind(e.Spec, w.Latest)
-		}
-		return !ok || e.Off || !update.Newer(w.Latest, Installed(e.Spec))
-	})
-	if u.Waiting == nil {
-		u.Waiting = []Waiting{}
-	}
-	if u.Updated == nil {
-		u.Updated = []Updated{}
-	}
-	return u
-}
-
-// LastUpdated is the update magpie made by itself to the package since
-// the time given, if it made one.
-func LastUpdated(pkg string, since time.Time) (Updated, bool) {
-	u := PendingUpdates()
-	for i := len(u.Updated) - 1; i >= 0; i-- {
-		if x := u.Updated[i]; x.Package == pkg && x.At.After(since) {
-			return x, true
-		}
-	}
-	return Updated{}, false
 }
 
 // CheckUpdates asks npm for each plugin's newest version, updates the
@@ -294,140 +249,3 @@ type VersionChecks struct {
 
 // checkEach is how long npm is waited for, for each package a check asks
 var checkEach = 15 * time.Second
-
-// CheckNow asks npm now, not what it said within the hour, for the newest
-// version of each installed plugin, for the reader's Check for updates.
-// Nothing is installed: what it finds is updated as any update is, with
-// Upgrade. What npm says is kept, as Info keeps it, and the updates found
-// for the reader (someone else's, or pinned) wait for them as the
-// background look's do, putting the dot on Plugins.
-func CheckNow(ctx context.Context) VersionChecks {
-	es := Load().Plugins
-	out := make([]VersionCheck, len(es))
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, npmAtOnce)
-	for i, e := range es {
-		c := VersionCheck{Spec: e.Spec, Package: Name(e.Spec), Version: Installed(e.Spec), Off: e.Off}
-		c.Auto = Official(c.Package) && !Pinned(e.Spec) && !e.Off
-		switch {
-		case IsPath(e.Spec):
-			c.Status = "folder"
-		case IsGit(e.Spec):
-			c.Auto = false
-			if c.Commit = short(GitCommit(e.Spec)); c.Commit == "" {
-				c.Status = "git"
-			}
-		}
-		out[i] = c
-		if c.Status != "" {
-			continue
-		}
-		if IsGit(e.Spec) {
-			wg.Add(1)
-			go func(c *VersionCheck, spec string) {
-				defer wg.Done()
-				sem <- struct{}{}
-				defer func() { <-sem }()
-				cctx, cancel := context.WithTimeout(ctx, checkEach)
-				head, err := GitHead(cctx, spec, true)
-				cancel()
-				if err != nil {
-					c.Status, c.Why, c.Error = "unknown", whyNot(err), err.Error()
-					var l ghtoken.Limited
-					if errors.As(err, &l) {
-						c.Limited = &GitHubLimit{Token: l.Token}
-						if !l.Until.IsZero() {
-							c.Limited.Until = l.Until.UTC().Format(time.RFC3339)
-						}
-					}
-					return
-				}
-				c.Head, c.Status = short(head), "current"
-				if GitBehind(spec, head) {
-					c.Status = "update"
-				}
-			}(&out[i], e.Spec)
-			continue
-		}
-		wg.Add(1)
-		go func(c *VersionCheck) {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			cctx, cancel := context.WithTimeout(ctx, checkEach)
-			info, err := npmAsk(cctx, c.Package)
-			cancel()
-			if err == nil || errors.Is(err, errNotFound) {
-				npmMu.Lock()
-				npmCached()[c.Package] = npmEntry{info, time.Now()}
-				saveNPM()
-				npmMu.Unlock()
-			}
-			if err == nil && info.Version == "" {
-				err = errors.New("npm named no version")
-			}
-			if err != nil {
-				c.Status, c.Why, c.Error = "unknown", whyNot(err), err.Error()
-				return
-			}
-			c.Latest, c.Status = info.Version, "current"
-			if c.Version != "" && update.Newer(info.Version, c.Version) {
-				c.Status = "update"
-			}
-		}(&out[i])
-	}
-	wg.Wait()
-	now := time.Now().UTC().Truncate(time.Second)
-
-	// the updates found wait for the reader, as the background look's do;
-	// one npm didn't answer for waits as it did
-	updatesMu.Lock()
-	u := readUpdates()
-	asked := map[string]bool{}
-	var waiting []Waiting
-	for _, c := range out {
-		if c.Status == "unknown" || c.Status == "git" || c.Status == "folder" {
-			continue
-		}
-		asked[c.Package] = true
-		switch {
-		case c.Status != "update" || c.Off || c.Auto:
-		case c.Head != "":
-			waiting = append(waiting, Waiting{Spec: c.Spec, Package: c.Package, Version: c.Commit, Latest: c.Head, Git: true})
-		default:
-			waiting = append(waiting, Waiting{Spec: c.Spec, Package: c.Package, Version: c.Version, Latest: c.Latest})
-		}
-	}
-	for _, w := range u.Waiting {
-		if !asked[w.Package] {
-			waiting = append(waiting, w)
-		}
-	}
-	u.Checked, u.Waiting = now, waiting
-	if b, err := json.MarshalIndent(u, "", "  "); err == nil {
-		if err := os.MkdirAll(settings.Dir(), 0o700); err == nil {
-			_ = writeWhole(updatesPath(), b)
-		}
-	}
-	updatesMu.Unlock()
-	return VersionChecks{At: now, Plugins: out}
-}
-
-// whyNot is why npm said nothing of a package, in a word the page says in
-// its own: not reached, too many requests, an error, or no such package.
-func whyNot(err error) string {
-	var se *statusError
-	var ue *url.Error
-	var ne net.Error
-	switch {
-	case errors.Is(err, errNotFound):
-		return "missing"
-	case errors.As(err, &se) && se.Code == http.StatusTooManyRequests, errors.As(err, new(ghtoken.Limited)):
-		return "limited"
-	case errors.As(err, &se):
-		return "registry"
-	case errors.As(err, &ue), errors.As(err, &ne), errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
-		return "offline"
-	}
-	return "registry"
-}

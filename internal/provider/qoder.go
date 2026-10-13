@@ -224,14 +224,6 @@ func qoderLoginsOf(agent string) []sideLogin {
 	return ls
 }
 
-func QoderSignedIn() bool { return len(qoderLogins()) > 0 }
-
-// QoderCredential returns an independent snapshot for the selected account
-// on the global site.
-func QoderCredential(ctx context.Context, user string) (*qoder.Credential, error) {
-	return QoderCredentialOf(ctx, qoder.ProviderKey, user)
-}
-
 // QoderCredentialOf is QoderCredential for the site agent names ("qoder" or
 // "qoder-cn").
 func QoderCredentialOf(ctx context.Context, agent, user string) (*qoder.Credential, error) {
@@ -372,11 +364,6 @@ func qoderFetchModels(ctx context.Context, agent, user string) ([]catalog.Model,
 	return ms, catalog.SaveLive(agent, "", ms)
 }
 
-// QoderModel accepts only an enabled model in this account's own model list.
-func QoderModel(ctx context.Context, user, key string) (qoder.ModelInfo, error) {
-	return QoderModelOf(ctx, qoder.ProviderKey, user, key)
-}
-
 // QoderModelOf is QoderModel for the site agent names.
 func QoderModelOf(ctx context.Context, agent, user, key string) (qoder.ModelInfo, error) {
 	c, err := QoderCredentialOf(ctx, agent, user)
@@ -424,16 +411,6 @@ func qoderProvider(agent string, l sideLogin) Provider {
 	return Provider{ID: agent, Name: site.Name, Icon: "qoder", Website: site.Web, Account: a}
 }
 
-func qoderAccount() (Provider, bool) { return qoderAccountOf(qoder.ProviderKey) }
-
-func qoderAccountOf(agent string) (Provider, bool) {
-	ls := qoderLoginsOf(agent)
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return qoderProvider(agent, ls[0]), true
-}
-
 func qoderAlsoOn(agent string) []Provider {
 	var out []Provider
 	for _, l := range qoderLoginsOf(agent) {
@@ -469,9 +446,6 @@ type qoderFlow struct {
 }
 
 const qoderSignInTimeout = 15 * time.Minute
-
-// QoderAuthURL starts a sign-in on the global site.
-func QoderAuthURL() (url string, flow *qoderFlow, err error) { return qoderAuthURL(qoder.Global) }
 
 func qoderAuthURL(site *qoder.Site) (url string, flow *qoderFlow, err error) {
 	f := qoder.NewDeviceFlow(qoderClient, site)

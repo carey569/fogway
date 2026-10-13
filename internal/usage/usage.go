@@ -253,32 +253,6 @@ func (r Record) IsRejected() bool { return r.Rejected || r.Provider == "" && r.S
 // calls long past and none of them were magpie's to route.
 func (r Record) IsReported() bool { return r.Source == SourceReported }
 
-// Load streams complete records from the log. Historical request bodies are
-// not retained by a global cache after the caller finishes with this snapshot.
-func Load(since time.Time) []Record {
-	mu.Lock()
-	loads++
-	f, err := os.Open(Path())
-	mu.Unlock()
-	if err != nil {
-		return nil
-	}
-	defer f.Close()
-	var out []Record
-	reader := bufio.NewReaderSize(f, 64<<10)
-	for {
-		b, err := reader.ReadBytes('\n')
-		if err != nil {
-			break
-		} // an unfinished line is left for the next read
-		var r Record
-		if json.Unmarshal(b, &r) == nil && (since.IsZero() || !r.Time.Before(since)) {
-			out = append(out, r)
-		}
-	}
-	return out
-}
-
 // Known is an agent as its requests name it.
 type Known struct {
 	ID    string
@@ -750,24 +724,6 @@ type Summary struct {
 // receive their own result slices, without retaining historical Records.
 func Summarize(p Period) Summary {
 	return indexedSummary(p, Clock())
-}
-
-func summarize(p Period, now time.Time, recs []Record) Summary {
-	var first time.Time
-	keys := map[string]bool{}
-	for _, r := range recs {
-		if !r.IsRejected() && (first.IsZero() || r.Time.Before(first)) {
-			first = r.Time
-		}
-		if r.ProviderKeyID != "" {
-			keys[r.Provider] = true
-		}
-	}
-	return summarizeFrom(p, now, first, keys, func(fn func(Record)) {
-		for _, r := range recs {
-			fn(r)
-		}
-	})
 }
 
 func summarizeFrom(p Period, now time.Time, first time.Time, historicalKeys map[string]bool, read func(func(Record))) Summary {

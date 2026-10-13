@@ -64,15 +64,6 @@ var (
 	errQueueWait = errors.New("waited too long")
 )
 
-// acquire waits for one of who's limit slots, in turn, with no bound on
-// the queue or the wait. It answers the release, to call once the request
-// is done with the vendor, and false with no slot taken when ctx ended
-// first. A limit of 0 takes no slot.
-func (l *lanes) acquire(ctx context.Context, who string, limit int) (release func(), ok bool) {
-	release, err := l.take(ctx, who, limit, 0, 0)
-	return release, err == nil
-}
-
 // take is acquire with at most queue waiting (0: no bound) for at most
 // wait (0: as long as it takes): errQueueFull, errQueueWait, or ctx's
 // error when it ended first, with no slot taken.

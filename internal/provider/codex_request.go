@@ -473,29 +473,6 @@ func cachedSearch() map[string]any {
 	return map[string]any{"type": "web_search", "external_web_access": false}
 }
 
-// DeclareSearch is body with the web_search tool declared when its input
-// replays a web search and nothing declares the tool, or body as it was.
-// lite says the request goes as Codex's Responses Lite, whose tools are
-// an additional_tools input item: the backend refuses a web_search among
-// a Lite request's tools (400 "only supports function tools, custom tools,
-// and client-executed tool search").
-func DeclareSearch(body []byte, lite bool) []byte {
-	if !bytes.Contains(body, []byte(`"web_search_call"`)) {
-		return body
-	}
-	dec := json.NewDecoder(bytes.NewReader(body))
-	dec.UseNumber()
-	var m map[string]any
-	if dec.Decode(&m) != nil || m == nil || !declareSearch(m, lite) {
-		return body
-	}
-	out, err := json.Marshal(m)
-	if err != nil {
-		return body
-	}
-	return out
-}
-
 // declareSearch declares the web_search tool in m, a Responses request,
 // when its input replays a web search and neither its tools nor an
 // additional_tools item declares one, and says whether it did. A request

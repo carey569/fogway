@@ -185,15 +185,6 @@ func parseDevinStatus(out string) (user, plan string, ok bool) {
 	return user, plan, true
 }
 
-// devinAccount is the Devin account in use first.
-func devinAccount() (Provider, bool) {
-	ls := devinLogins()
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return devinProvider(ls[0]), true
-}
-
 // devinProvider is one of the Devin accounts; the CLI's own has the plan
 // the CLI says now.
 func devinProvider(l devinLogin) Provider {

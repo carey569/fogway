@@ -63,8 +63,6 @@ func Port() string {
 	return p
 }
 
-func migrateLANKey() error { return access.MigrateLegacyLANKey() }
-
 func migrateLANKeyBestEffort() {
 	access.MigrateLegacyLANKeyBestEffort()
 }

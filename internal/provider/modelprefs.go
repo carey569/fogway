@@ -358,19 +358,6 @@ func setModelImage(ref string, images *bool) (bool, error) {
 	return true, nil
 }
 
-// SetModelAPI says which one of a provider's APIs a model is asked on —
-// chat, responses, anthropic or gemini — for a relay whose one key serves some of
-// its models on one and others on another (01huadalang on Discord: 有的供应商
-// 一个 api 里有很多模型但是不同协议); "" leaves it to the vendor's list and
-// the URLs the provider has, as before. It must be an API the provider has
-// a URL for: a preset's or a subscription's as well as a custom
-// provider's, when it has more than one (01huadalang: OpenCode Go's
-// deepseek-v4.1-flash answers on Responses too, and magpie asked it on
-// chat alone).
-func SetModelAPI(ref, api string) error {
-	return touchedIf(setModelAPI(ref, api))
-}
-
 func setModelAPI(ref, api string) (bool, error) {
 	p, model, err := splitRef(ref)
 	if err != nil {
@@ -842,21 +829,6 @@ func UpstreamNameIn(wires map[string]string, pid, model string) string {
 		return model
 	}
 	return strings.ReplaceAll(n, "*", model)
-}
-
-// UpstreamNameAs is UpstreamName for a request that goes out asking for sent,
-// which is not always the model magpie knows: an Antigravity account is asked
-// for the variant of it the effort picks, and that is the id the body carries.
-// The two levels of the lookup are kept apart, since they are about different
-// things. A name given for the model itself is the model's, whichever variant
-// answers for it, so a "*" in it is that model and not the variant: the vendor
-// is asked for the model by the name its owner gave, as it is everywhere else
-// in magpie, and not for a "*" it never heard of. A "*" in the provider's own
-// name is whatever the request is going out under, so one name for a provider
-// asks for gemini-3.7-flash-high and gemini-3.7-flash-low each by its own,
-// rather than for the one id whatever level the effort picked.
-func UpstreamNameAs(p Provider, model, sent string) string {
-	return UpstreamNameAsIn(settings.Load().ModelWires, p.ID, model, sent)
 }
 
 // UpstreamNameAsIn is UpstreamNameAs over a settings' ModelWires already

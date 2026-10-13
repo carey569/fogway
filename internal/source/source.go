@@ -175,16 +175,6 @@ func DoOfficial(c *http.Client, req *http.Request) (*http.Response, error) {
 	return do(c, req, []string{req.URL.String()})
 }
 
-// DoFaithful sends req to its official address, after its mirror in China
-// when the 「国内镜像」 switch is on, but never to a fallback mirror: for a
-// file nothing checks, which only a copy of the very file may stand in for.
-func DoFaithful(c *http.Client, req *http.Request) (*http.Response, error) {
-	if !mirrorable(req) {
-		return DoOfficial(c, req)
-	}
-	return do(c, req, faithful(req.URL.String()))
-}
-
 func do(c *http.Client, req *http.Request, urls []string) (*http.Response, error) {
 	var last error
 	// a mirror in China is asked before the official address: whatever

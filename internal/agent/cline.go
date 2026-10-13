@@ -368,10 +368,6 @@ func clineRestore(path, snapshot string) error {
 	return edit.SetJSON(path, kvs...)
 }
 
-// clineModels is magpie's entry in models.json: every magpie model, model
-// the one the provider starts on.
-func clineModels(model string) map[string]any { return clineModelsAt(model, gatewayV1()) }
-
 // clineModelsAt is clineModels for a Cline reaching the gateway's /v1 at v1.
 func clineModelsAt(model, v1 string) map[string]any {
 	ms := map[string]any{}

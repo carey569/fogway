@@ -89,10 +89,6 @@ func TakesEffort(ms []catalog.Model, id string) string {
 	return DefaultEffort(e)
 }
 
-// Catalog renders models as a whole models.json, for the effort this
-// machine's Codex starts new sessions at (NewSessionEffort).
-func Catalog(ms []catalog.Model) []byte { return CatalogAt(ms, NewSessionEffort()) }
-
 // CatalogAt renders models as a whole models.json for a Codex that starts
 // new sessions at effort ("" for its models' own defaults): each model's
 // default_reasoning_level is ModelDefault's.
@@ -476,54 +472,6 @@ func ServiceTiers(ms []catalog.Model) map[string][]tier {
 	return out
 }
 
-// Order ranks entries — Codex's own, as the backend gives them, and
-// magpie's from Entries — in the order the user put them in (#855): Codex
-// lists its models by priority, lowest first. The ones at names go first,
-// by their place there; the others after them, as they stood. The slice is
-// put in that order too.
-func Order(entries []any, at map[string]int) {
-	type ranked struct {
-		i, by, was int
-	}
-	rs := make([]ranked, len(entries))
-	for i, e := range entries {
-		slug, was := "", i
-		switch o := e.(type) {
-		case map[string]any:
-			slug, _ = o["slug"].(string)
-			switch p := o["priority"].(type) {
-			case float64:
-				was = int(p)
-			case int:
-				was = p
-			}
-		case *model:
-			slug, was = o.Slug, o.Priority
-		}
-		by := len(at)
-		if n, ok := at[slug]; ok {
-			by = n
-		}
-		rs[i] = ranked{i, by, was}
-	}
-	slices.SortStableFunc(rs, func(a, b ranked) int {
-		if a.by != b.by {
-			return a.by - b.by
-		}
-		return a.was - b.was
-	})
-	in := slices.Clone(entries)
-	for n, r := range rs {
-		switch o := in[r.i].(type) {
-		case map[string]any:
-			o["priority"] = n + 1
-		case *model:
-			o.Priority = n + 1
-		}
-		entries[n] = in[r.i]
-	}
-}
-
 // CacheEntries is Codex's own models, as models_cache.json describes them
 // for the ChatGPT account it last asked with, by slug.
 func CacheEntries() map[string]map[string]any {
@@ -722,15 +670,6 @@ func Tag(ms []catalog.Model) string {
 
 // tagMark is where a tag starts in an ETag magpie made.
 const tagMark = "+magpie-"
-
-// WithTag is an ETag of the backend's (or none) with magpie's tag in it:
-// W/"abc" becomes W/"abc+magpie-<tag>".
-func WithTag(etag, tag string) string {
-	if strings.HasSuffix(etag, `"`) && len(etag) > 1 {
-		return strings.TrimSuffix(etag, `"`) + tagMark + tag + `"`
-	}
-	return etag + tagMark + tag
-}
 
 // Tagged reports whether an ETag carries this tag.
 func Tagged(etag, tag string) bool {

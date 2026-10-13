@@ -36,13 +36,6 @@ var codexZstd, _ = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedDefault),
 // tests of the compression clear it again.
 var codexZstdOff atomic.Bool
 
-// CodexZstdForTests sets whether turns to the ChatGPT backend go
-// compressed, for a test, and returns what puts it back.
-func CodexZstdForTests(on bool) (restore func()) {
-	was := codexZstdOff.Swap(!on)
-	return func() { codexZstdOff.Store(was) }
-}
-
 // CodexCompressed sends req's body, body, zstd-compressed as Codex's own
 // client sends it, when req is a turn to the ChatGPT backend
 // (CodexBase/responses), and as it is otherwise. It is called once the

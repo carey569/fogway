@@ -393,85 +393,8 @@ func keepUnloaded(ps, last []Provider) []Provider {
 	return ps
 }
 
-// UseCached is for tests: Cached answers with ps, as though the plugins
-// had just been asked, without Bun; nil forgets them.
-func UseCached(ps []Provider) {
-	provMu.Lock()
-	provCache, provGood, provTried = ps, ps != nil, ps != nil
-	// a refresh in flight began under what this replaces: what it read
-	// must not go over it
-	provEpoch++
-	if provCancel != nil {
-		provCancel()
-	}
-	provMu.Unlock()
-	// as asked with the plugins as they are now
-	listSeen.Lock()
-	listSeen.stamp, listSeen.set = listStamp(), ps != nil
-	listSeen.Unlock()
-}
-
 // refreshing is Cached's refreshes in the background.
 var refreshing sync.WaitGroup
-
-// Refreshed waits for Cached's refreshes in the background to end, the
-// host left running: for tests that watch the providers' list on disk.
-func Refreshed() { refreshing.Wait() }
-
-// Told waits for the hooks told of a change or a sign-in (OnChange,
-// OnSignIn) to end: for tests, so that a change one test made is not told
-// in the next, nor written into its folder as it goes.
-func Told() {
-	telling.Lock()
-	for telling.n > 0 {
-		telling.Wait()
-	}
-	telling.Unlock()
-}
-
-// Answered is whether what Cached gives now is the plugins' own answer,
-// rather than what was kept from before they were last asked. A page that
-// would otherwise read "signs in to nothing" out of an empty list can say
-// so only when this holds: an empty list before the answer arrives means
-// "not asked yet", not "none" (#1112).
-func Answered() bool {
-	provMu.Lock()
-	defer provMu.Unlock()
-	return provGood
-}
-
-// Settle waits for Cached's refreshes to end, stops the host, waits for
-// the hooks told of a change (Told) and forgets the plugins (UseCached
-// nil): for tests, whose folders the host runs in go when they end, so
-// the next test starts with nothing of this one's running or seen. Each
-// ask is bounded and the retries are few, so this waits a bounded time
-// even for a host that never answers.
-func Settle() {
-	refreshing.Wait()
-	Restart()
-	// what the host said of a sign-in is written before the folder goes
-	// (#1935); a hook that read the providers to know the account's
-	// started a host again, which goes too
-	Told()
-	refreshing.Wait()
-	Restart()
-	// and no host goes on finishing its calls in a folder going away
-	hostMu.Lock()
-	hs := make([]*host, 0, len(retiring))
-	for h := range retiring {
-		hs = append(hs, h)
-	}
-	hostMu.Unlock()
-	for _, h := range hs {
-		h.stop()
-	}
-	// nor is the restart, or a sign-in a host saved, told in the next test
-	Told()
-	// and the plugins go with the folder: the next test's, in a folder of
-	// its own, are not taken for the plugins changed (checkList), nor
-	// answered with these
-	UseCached(nil)
-}
 
 // Cached is the plugins' providers as last asked, without starting the
 // host: what is known of them when magpie has only just started. A
@@ -611,11 +534,6 @@ func validAuth(b []byte) bool {
 // never none.
 func readAuthFile() ([]byte, error) { return lastgood.Read(AuthPath(), validAuth) }
 
-// SignedIn is whether a plugin sign-in is kept for provider.
-func SignedIn(provider string) bool {
-	return len(accountsOf(readAuth(), provider)) > 0
-}
-
 // Prompt is a question a sign-in method asks before it starts.
 type Prompt struct {
 	Type        string `json:"type"` // text, select, password (text typed unseen, #1982)
@@ -627,31 +545,6 @@ type Prompt struct {
 		Value string `json:"value"`
 		Hint  string `json:"hint,omitempty"`
 	} `json:"options,omitempty"`
-}
-
-// NextPrompt is the method's next question given the answers so far; nil
-// when it has asked them all.
-func NextPrompt(ctx context.Context, provider string, method int, inputs map[string]string) (*Prompt, error) {
-	var r struct {
-		Prompt *Prompt `json:"prompt"`
-	}
-	err := Call(ctx, "prompt", map[string]any{"provider": provider, "method": method, "inputs": inputs}, &r)
-	return r.Prompt, err
-}
-
-// Validate is what the method says is wrong with value as the answer to
-// key, "" when nothing is.
-func Validate(ctx context.Context, provider string, method int, key, value string) (string, error) {
-	var r struct {
-		Error *string `json:"error"`
-	}
-	if err := Call(ctx, "validate", map[string]any{"provider": provider, "method": method, "key": key, "value": value}, &r); err != nil {
-		return "", err
-	}
-	if r.Error == nil {
-		return "", nil
-	}
-	return *r.Error, nil
 }
 
 // Authorization is an OAuth sign-in begun: the page to open, and whether
@@ -668,15 +561,6 @@ type Authorization struct {
 // provider's own id while nothing is kept there. A sign-in to an account
 // already signed in replaces that one's instead.
 const NewAccount = "new"
-
-// Authorize begins an OAuth sign-in to account (a key, or NewAccount),
-// through the proxy ctx names (netproxy.With): the plugin's requests for
-// it, there and in Finish, go through that one (#1663).
-func Authorize(ctx context.Context, provider string, method int, inputs map[string]string, account string) (Authorization, error) {
-	var a Authorization
-	err := Call(ctx, "authorize", map[string]any{"provider": provider, "method": method, "inputs": inputs, "account": account, "proxy": proxyOf(ctx)}, &a)
-	return a, err
-}
 
 // Saved is where a sign-in was kept: the provider (a plugin may sign in
 // to another than asked) and the account's key.
@@ -706,23 +590,6 @@ func Finish(ctx context.Context, session, code string) (Saved, error) {
 		Saved
 	}
 	if err := Call(ctx, "callback", map[string]any{"session": session, "code": code}, &r); err != nil {
-		return Saved{}, err
-	}
-	if !r.OK {
-		return Saved{}, failure(r.Error)
-	}
-	return r.Saved, nil
-}
-
-// APIKey signs in to account (a key, or NewAccount) with a key, as an
-// "api" method does, through the proxy ctx names.
-func APIKey(ctx context.Context, provider string, method int, inputs map[string]string, key, account string) (Saved, error) {
-	var r struct {
-		OK    bool   `json:"ok"`
-		Error string `json:"error"`
-		Saved
-	}
-	if err := Call(ctx, "apiKey", map[string]any{"provider": provider, "method": method, "inputs": inputs, "key": key, "account": account, "proxy": proxyOf(ctx)}, &r); err != nil {
 		return Saved{}, err
 	}
 	if !r.OK {

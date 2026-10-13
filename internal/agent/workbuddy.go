@@ -137,13 +137,6 @@ func workbuddyWired(path string) bool {
 	return slices.ContainsFunc(d.models, func(raw json.RawMessage) bool { _, ok := workbuddyMine(raw); return ok })
 }
 
-// workbuddyWrite puts magpie's models into models.json (on) or takes them
-// out, leaving every other entry and key as WorkBuddy wrote it. A model
-// turned off in WorkBuddy stays off, and models the user pointed at a magpie
-// on another machine (a NAS's) stay there with its key, as ZCode's do
-// (zcodeAddress): a sync brings the models up to date, not the address.
-func workbuddyWrite(path string, on bool) error { return buddyWrite(path, "workbuddy", on) }
-
 // buddyWrite is workbuddyWrite for an agent that reads this models.json:
 // WorkBuddy, or CodeBuddy Code (codebuddy.go), whose models go under the
 // agent's own key. A new file is a bare list for WorkBuddy, as it writes

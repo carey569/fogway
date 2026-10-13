@@ -132,17 +132,6 @@ var (
 		authID: "workbuddy-desktop-ai", platform: "workbuddy-ai", endpoint: &wbAIEndpoint, models: wbAIModels}
 )
 
-// WorkBuddyBaseForTest points WorkBuddy's API at cn, and WorkBuddy AI's at
-// ai, until the returned function runs. A provider built after the call
-// uses them. Tests outside this package use it.
-func WorkBuddyBaseForTest(cn, ai string) func() {
-	oldC, oldA := wbEndpoint, wbAIEndpoint
-	wbEndpoint, wbAIEndpoint = cn, ai
-	return func() {
-		wbEndpoint, wbAIEndpoint = oldC, oldA
-	}
-}
-
 // WorkBuddyAIID is WorkBuddy AI's subscription, the international build's.
 const WorkBuddyAIID = "workbuddy-ai"
 
@@ -326,14 +315,6 @@ func setWorkBuddyLoginOn(w *wbSite, user string, on bool) error {
 
 func forgetWorkBuddyLogin(w *wbSite, user string) error {
 	return forgetSideLogin(w.id, user, wbSide(w), nil)
-}
-
-func workBuddyAccount(w *wbSite) (Provider, bool) {
-	ls := wbLogins(w)
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return wbProvider(ls[0]), true
 }
 
 // workBuddyAlsoOn is w's accounts in use behind the first.

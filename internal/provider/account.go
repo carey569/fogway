@@ -789,104 +789,12 @@ func refreshFailed(status int, agent, msg string) error {
 
 // Accounts lists the signed-in agents as providers.
 func Accounts() []Provider {
-	if settings.AccountDiscoveryOff() {
-		return nil
-	}
-	rememberLogins(false)
-	home, _ := os.UserHomeDir()
-	cfg := appdir.Getenv("XDG_CONFIG_HOME")
-	if cfg == "" {
-		cfg = filepath.Join(home, ".config")
-	}
-	var out []Provider
-	if p, ok := claudeAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := codexAccount(home); ok {
-		out = append(out, p)
-	}
-	if p, ok := copilotAccount(cfg); ok {
-		out = append(out, p)
-	}
-	if p, ok := cursorAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := grokAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := devinAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := kiroAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := zcodeAccount(); ok {
-		out = append(out, p)
-	}
-	for _, w := range []*wbSite{wbCN, wbAI} {
-		if p, ok := workBuddyAccount(w); ok {
-			out = append(out, p)
-		}
-	}
-	if p, ok := commandCodeAccount(); ok {
-		out = append(out, p)
-	}
-	for _, agent := range qoderAgents {
-		if p, ok := qoderAccountOf(agent); ok {
-			out = append(out, p)
-		}
-	}
-	if p, ok := zedAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := factoryAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := mimoAccount(); ok {
-		out = append(out, p)
-	}
-	if p, ok := siwcAccount(); ok {
-		out = append(out, p)
-	}
-	for _, agent := range []string{"gemini", "antigravity"} {
-		if p, ok := googleAccountOf(agent); ok {
-			out = append(out, p)
-		}
-	}
-	// a built-in moved onto its plugin is the plugin's now (migrate.go)
-	out = slices.DeleteFunc(out, func(p Provider) bool { return Moved(p.ID) })
-	return placeMoved(out, pluginAccounts())
+	return nil
 }
 
 // builtinOrder is the built-ins' ids in the order Accounts lists them.
 var builtinOrder = slices.Concat([]string{"claude", "codex", "copilot", "cursor", "grok", "devin", "kiro", "zcode",
 	"workbuddy", WorkBuddyAIID, CommandCodePlanID}, qoderAgents, []string{"zed", "factory", MiMoID, ChatGPTAPIID, "gemini", "antigravity"})
-
-// placeMoved adds the plugins' accounts to the built-ins': one a built-in
-// was moved onto stands where the built-in stood, the others go last.
-func placeMoved(out, plugins []Provider) []Provider {
-	at := func(id string) int {
-		if i := slices.Index(builtinOrder, id); i >= 0 {
-			return i
-		}
-		return len(builtinOrder)
-	}
-	var rest []Provider
-	for _, p := range plugins {
-		if !Moved(p.ID) || !slices.Contains(builtinOrder, p.ID) {
-			rest = append(rest, p)
-			continue
-		}
-		// moved ones placed already count too: two moved in the plugins'
-		// order (WorkBuddy AI before WorkBuddy) keep the built-ins'
-		i := slices.IndexFunc(out, func(q Provider) bool { return at(q.ID) > at(p.ID) })
-		if i < 0 {
-			i = len(out)
-		}
-		out = slices.Insert(out, i, p)
-	}
-	return append(out, rest...)
-}
 
 func readJSON(path string, v any) bool {
 	b, err := readAccountFile(path)
@@ -934,14 +842,6 @@ const codexClientID = "app_EMoamEEZ73f0CkXaXp7hrann" // Codex CLI's own OAuth cl
 // codexTokenURL is where ChatGPT's tokens are issued and refreshed; a var
 // so tests can point it elsewhere.
 var codexTokenURL = "https://auth.openai.com/oauth/token"
-
-// CodexTokenURLForTest points ChatGPT's token endpoint at a test server,
-// for the CLI's tests; the func it returns puts it back.
-func CodexTokenURLForTest(u string) func() {
-	old := codexTokenURL
-	codexTokenURL = u
-	return func() { codexTokenURL = old }
-}
 
 // CodexBase is where a ChatGPT account's Codex requests go; a var so tests
 // can point it elsewhere.

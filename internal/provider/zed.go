@@ -262,14 +262,6 @@ func zedProvider(l zedLogin) Provider {
 	return Provider{ID: "zed", Name: "Zed", Icon: "zed", Website: "https://zed.dev", Account: a}
 }
 
-func zedAccount() (Provider, bool) {
-	ls := zedLogins()
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return zedProvider(ls[0]), true
-}
-
 // zedAlsoOn is the Zed accounts in use behind the first.
 func zedAlsoOn() []Provider {
 	var out []Provider

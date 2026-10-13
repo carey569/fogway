@@ -9,51 +9,14 @@ package gateway
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
 )
-
-// decisionGroupOf is the decision group a System One request's model names:
-// "group/<id>", or a group's id or name as GroupFor takes it. ok is false
-// when it names none, and the model goes to RouteDecider; err is said to
-// the caller when it names a group System One can't ask (a chat group, or
-// one switched off or gone), with its status.
-func decisionGroupOf(asked string) (g provider.Group, ms []provider.Member, ok bool, status int, err error) {
-	ref := strings.TrimSpace(asked)
-	explicit := strings.HasPrefix(ref, provider.GroupPrefix)
-	if !explicit {
-		gid, found := provider.GroupFor(ref)
-		if !found {
-			return g, nil, false, 0, nil
-		}
-		ref = gid
-	}
-	g, ms, found := provider.FindGroup(ref)
-	if !found {
-		if !explicit {
-			return g, nil, false, 0, nil
-		}
-		if off, isOff := provider.DisabledGroup(ref); isOff {
-			return g, nil, false, http.StatusNotFound, fmt.Errorf("the routing group %s is switched off in Magpie, so %q is not served; switch it on again on Magpie's Routing page to use it", off.Name, asked)
-		}
-		return g, nil, false, http.StatusNotFound, fmt.Errorf("magpie has no routing group %q", strings.TrimPrefix(ref, provider.GroupPrefix))
-	}
-	if !g.Decides() {
-		if !explicit {
-			return provider.Group{}, nil, false, 0, nil // a chat group by that name: a model of it may still be one
-		}
-		return g, nil, false, http.StatusBadRequest, fmt.Errorf("the routing group %s holds models that hold conversations; System One asks a group of decision models, or a decision model as \"provider/model\"", g.Name)
-	}
-	return g, ms, true, 0, nil
-}
 
 // decideTries are the keys and accounts of a decision group's models, in
 // the group's routing order — those resting after the rest, as for a
@@ -79,148 +42,6 @@ func (s *Server) decideFailed(c candidate, status int, header http.Header, body 
 	}
 	rest := s.restAfter(c, status, header, body)
 	return rest.Why, &rest
-}
-
-// serveDecisionGroup answers a System One request to the decision group g
-// (decisionGroupOf), its models ms: each of the group's keys and accounts
-// in turn until one answers, or the last one's answer passed on.
-func (s *Server) serveDecisionGroup(w http.ResponseWriter, r *http.Request, body []byte, asked string, g provider.Group, ms []provider.Member) {
-	start := time.Now()
-	if refuseOff(w, provider.Chat, asked) { // every model of it disabled (#1867)
-		return
-	}
-	g = g.Live()
-	keyWho, keyHeld := keyHolds(r)
-	accWho, accHeld := accountHolds(r)
-	// a gateway key held to some models (#882) names the group, or the
-	// models of it it may use
-	if keyHeld && !groupAllowed(keyWho, g, ms) {
-		writeError(w, provider.Chat, http.StatusForbidden, keyModelError(keyWho, asked))
-		return
-	}
-	// a model a pause rule holds for now is out, as for a chat
-	ms, paused := provider.PausedOut(g, ms, agentOf(r), "", ruleClock())
-	if len(ms) == 0 && len(paused) > 0 {
-		writeError(w, provider.Chat, http.StatusServiceUnavailable, pausedError(asked, paused))
-		return
-	}
-	cs, pl, ms := s.decideTries(g, ms)
-	if len(ms) == 0 {
-		writeError(w, provider.Chat, http.StatusNotFound, fmt.Sprintf("no decision model of the group %s can be asked now: their providers are switched off or gone", g.Name))
-		return
-	}
-	if keyHeld || accHeld {
-		who := keyWho
-		if !keyHeld {
-			who = accWho
-		}
-		var members map[string]bool
-		if keyHeld {
-			members = groupKeeps(keyWho, g, ms)
-		}
-		var held bool
-		if cs, pl, held = allowedCandidates(who, cs, pl, members); len(cs) == 0 && held {
-			writeError(w, provider.Chat, http.StatusForbidden, keyAccountsError(who, asked))
-			return
-		}
-	}
-	cs = probeOne(cs) // of those resting, only the one back soonest (#1799)
-	if len(cs) == 0 {
-		writeError(w, provider.Chat, http.StatusServiceUnavailable, fmt.Sprintf("no key or account of the group %s's decision models may serve them now", g.Name))
-		return
-	}
-	who := callerOf(r)
-	tr := s.trace.beginFor(r, Route{Time: start, Agent: who.agent, Session: sessionOf(r.Header), Model: asked, Provider: cs[0].p.ID,
-		Group: groupRef(g, ms), Order: pl.order, Left: pl.left})
-	var skipped []string
-	for i, c := range cs {
-		last := i == len(cs)-1
-		at := time.Now()
-		s.trace.update(tr, func(t *Route) {
-			t.Provider = c.p.ID
-			t.Tries = append(t.Tries, Try{ID: c.rest, Model: c.model, Start: at})
-		})
-		// each try ends as it went, and the route with the last
-		tried := func(status int, msg, fail string, rest *Rest, used Usage) {
-			ms := time.Since(at).Milliseconds()
-			s.trace.update(tr, func(t *Route) {
-				try := &t.Tries[len(t.Tries)-1]
-				try.Done, try.Status, try.Millis, try.Error, try.Fail, try.Rest = true, status, ms, msg, fail, rest
-				if status < 400 || last || r.Context().Err() != nil {
-					t.Done, t.Status, t.Error, t.Millis, t.Tokens = true, status, msg, time.Since(start).Milliseconds(), used.Input+used.Output
-					t.Usage = routeUsage(c.p.ID, c.model, used)
-				}
-			})
-		}
-		status, b, header, err := s.postDecide(r.Context(), c.p, c.model, withModel(body, c.model))
-		if err != nil {
-			fail, rest := failOther, (*Rest)(nil)
-			var tooMany *errRPM
-			if r.Context().Err() == nil && !errors.As(err, &tooMany) {
-				// unreachable: it rests, as a chat's would
-				fail, rest = s.decideFailed(c, http.StatusBadGateway, nil, []byte(err.Error()))
-			}
-			if !last && r.Context().Err() == nil {
-				tried(http.StatusBadGateway, err.Error(), fail, rest, Usage{})
-				skipped = append(skipped, c.label()+": "+err.Error())
-				continue
-			}
-			last = true
-			tried(http.StatusBadGateway, err.Error(), fail, rest, Usage{})
-			msg := err.Error()
-			if len(skipped) > 0 {
-				msg += " (tried first: " + strings.Join(skipped, "; ") + ")"
-			}
-			writeError(w, provider.Chat, http.StatusBadGateway, msg)
-			return
-		}
-		var use struct {
-			Model string `json:"model"` // the one that answered, when the reply says
-			Usage struct {
-				Input  int `json:"input_tokens"`
-				Output int `json:"output_tokens"`
-			} `json:"usage"`
-		}
-		_ = json.Unmarshal(b, &use)
-		used := Usage{Input: use.Usage.Input, Output: use.Usage.Output}
-		errMsg, fail := "", ""
-		var rest *Rest
-		if status >= 300 {
-			errMsg = provider.APIError(b, fmt.Sprintf("%d %s", status, http.StatusText(status)))
-		}
-		if status >= 400 {
-			fail, rest = s.decideFailed(c, status, header, b)
-			if !last && retryable(status, b) {
-				tried(status, errMsg, fail, rest, used)
-				skipped = append(skipped, fmt.Sprintf("%s: %s", c.label(), errMsg))
-				continue
-			}
-		}
-		last = true
-		took := time.Since(start).Milliseconds() // before what magpie writes down of it (#1939)
-		tried(status, errMsg, fail, rest, used)
-		if status < 400 {
-			servedCandidate(c, used.Input+used.Output)
-		}
-		var keyID, keyName string
-		if c.p.Account == nil && c.p.Key != "" {
-			keyID, keyName = provider.KeyID(c.p.Key), c.p.KeyName
-		}
-		appendUsage(r, usage.Record{RouteID: tr.ID, Time: start, Agent: who.agent, Via: who.via, Provider: c.p.ID, Host: c.p.Where(), Model: c.model, Requested: asked, Served: use.Model,
-			ProviderKeyID: keyID, ProviderKeyName: keyName, ProviderAccount: accountOf(c.p),
-			Input: use.Usage.Input, Output: use.Usage.Output, Millis: took, Status: status})
-		ctype := header.Get("Content-Type")
-		if ctype == "" || status < 300 {
-			ctype = "application/json"
-		}
-		if status >= 400 {
-			keepRetry(w.Header(), header, b)
-		}
-		w.Header().Set("Content-Type", ctype)
-		w.WriteHeader(status)
-		w.Write(b)
-		return
-	}
 }
 
 // decideRefused is a System One call a decision provider answered with a

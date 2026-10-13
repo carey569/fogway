@@ -1,13 +1,9 @@
 package cli
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"slices"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/yetone/magpie/internal/pluginrt"
 )
@@ -58,47 +54,15 @@ func builtinCmd(rest []string) error {
 	return nil
 }
 
-// dumpPlugins: `magpie plugin dump` — what plugins.yml comes to after its
-// layers: each built-in plugin, on or off and why, its config and the
-// layer each value is from, and how it runs in this process.
-func dumpPlugins(asJSON bool) error {
-	f, there, err := pluginrt.Load()
-	if err != nil {
-		return err
+const pluginUsage = `usage: magpie plugin [builtin] [on|off <id>]
+       list magpie's built-in plugins (Sessions, routing groups…), or turn one on or off`
+
+// pluginCmd: `magpie plugin …` is the built-in plugins, with or without
+// the word builtin.
+func pluginCmd(args []string) error {
+	rest := args[1:]
+	if len(rest) > 0 && (rest[0] == "builtin" || rest[0] == "builtins" || rest[0] == "built-in") {
+		rest = rest[1:]
 	}
-	cs, err := pluginrt.Refresh()
-	if err != nil {
-		return err
-	}
-	type plug struct {
-		pluginrt.Composed `yaml:",inline"`
-		State             pluginrt.State `json:"state" yaml:"state"`
-		Why               string         `json:"why,omitempty" yaml:"why,omitempty"`
-	}
-	st := map[string]pluginrt.Status{}
-	for _, s := range pluginrt.Running().Statuses() {
-		st[s.ID] = s
-	}
-	out := struct {
-		File    string `json:"file" yaml:"file"`
-		There   bool   `json:"there" yaml:"there"`
-		Preset  string `json:"preset" yaml:"preset"`
-		API     string `json:"api" yaml:"api"`
-		Plugins []plug `json:"plugins" yaml:"plugins"`
-	}{File: pluginrt.Path(), There: there, Preset: f.Preset, API: pluginrt.API}
-	if out.Preset == "" {
-		out.Preset = pluginrt.PresetAll
-	}
-	for _, c := range cs {
-		out.Plugins = append(out.Plugins, plug{Composed: c, State: st[c.ID].State, Why: st[c.ID].Why})
-	}
-	if asJSON {
-		b, _ := json.MarshalIndent(out, "", "  ")
-		fmt.Println(string(b))
-		return nil
-	}
-	e := yaml.NewEncoder(os.Stdout)
-	e.SetIndent(2)
-	defer e.Close()
-	return e.Encode(out)
+	return builtinCmd(rest)
 }

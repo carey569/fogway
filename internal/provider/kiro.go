@@ -223,19 +223,6 @@ func readKiroIDE() (kiroCred, bool) {
 	return c, true
 }
 
-// readKiro is the sign-in to use first: the key saved on the provider, else
-// that of the account in use first (kiro_accounts.go).
-func readKiro(key string) (kiroCred, bool) {
-	if key != "" {
-		return readKiroAt(key, "")
-	}
-	ls := kiroLogins()
-	if len(ls) == 0 {
-		return kiroCred{}, false
-	}
-	return readKiroAt("", ls[0].Home)
-}
-
 // readKiroAt is one account's sign-in: the key saved on the provider, one
 // magpie signed in in home, or, with neither, Kiro's own: kiro-cli's, else
 // the IDE's.
@@ -871,24 +858,6 @@ var askKiroIdentity = func(key, home string) (user, plan string) {
 		return "", ""
 	}
 	return l.UserInfo.Email, l.plan()
-}
-
-// kiroAccount is the Kiro account in use first: the key saved on the
-// provider, else the first of the accounts signed in.
-func kiroAccount() (Provider, bool) {
-	key := kiroKey()
-	var acct *Account
-	if key != "" {
-		user, plan := kiroIdentity(key, "")
-		acct = &Account{Agent: "kiro", User: firstNonEmpty(user, "Kiro API key"), Plan: firstNonEmpty(plan, "API key")}
-	} else {
-		ls := kiroLogins()
-		if len(ls) == 0 {
-			return Provider{}, false
-		}
-		acct = kiroAcct(ls[0])
-	}
-	return kiroProvider(key, acct), true
 }
 
 // kiroAcct is a signed-in Kiro account, with the plan Kiro last said.

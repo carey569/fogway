@@ -11,20 +11,6 @@ import (
 // ends at the midnight after the last, where the presets end at now.
 const rangeSep = ".."
 
-// RangeOf is the period of the days from one date (YYYY-MM-DD) to another,
-// in either order; ok is false when either is not a date.
-func RangeOf(from, to string) (Period, bool) {
-	a, err1 := time.Parse(time.DateOnly, from)
-	b, err2 := time.Parse(time.DateOnly, to)
-	if err1 != nil || err2 != nil {
-		return "", false
-	}
-	if b.Before(a) {
-		a, b = b, a
-	}
-	return Period(a.Format(time.DateOnly) + rangeSep + b.Format(time.DateOnly)), true
-}
-
 // days is the first and last day of a picked range, at midnight in loc.
 func (p Period) days(loc *time.Location) (first, last time.Time, ok bool) {
 	from, to, found := strings.Cut(string(p), rangeSep)

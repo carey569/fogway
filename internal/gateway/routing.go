@@ -874,12 +874,6 @@ const (
 	usedShare = provider.SpentShare
 )
 
-// route orders one provider's candidates as its routing says.
-func route(p provider.Provider, cs []candidate, model string, from provider.Protocol) []candidate {
-	cs, _ = weigh(p, cs, model, from)
-	return cs
-}
-
 // weighing is what one provider's candidates were ordered by: the share of
 // its allowance each account has used and when that renews, and the tokens
 // each served lately. The routing trace shows the same.

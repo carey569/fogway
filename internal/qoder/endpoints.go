@@ -106,6 +106,3 @@ func SiteOf(id string) *Site {
 
 // ChatURL is the full chat endpoint on the site's inference host.
 func (s *Site) ChatURL() string { return s.API + ChatPath }
-
-// ChatURL is the global site's chat endpoint.
-func ChatURL() string { return Global.ChatURL() }

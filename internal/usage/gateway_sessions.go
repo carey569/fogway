@@ -10,13 +10,6 @@ import (
 	"github.com/yetone/magpie/internal/sessions"
 )
 
-// GatewaySessionWindow returns gateway sessions and their daily usage for a
-// local-date range. It is kept separate from the GUI conversion so callers
-// can use the same single usage-log snapshot for list and stats.
-func GatewaySessionWindow(since time.Time) ([]GatewaySession, []GatewayDayUsage) {
-	return gatewaySessionSnapshot(since, nil)
-}
-
 func GatewaySessionWindowExcept(since time.Time, nativeKeys map[string]bool) ([]GatewaySession, []GatewayDayUsage) {
 	return gatewaySessionSnapshot(since, nativeKeys)
 }

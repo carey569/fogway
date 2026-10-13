@@ -130,35 +130,6 @@ func (s *seenVersion) get() string {
 	return s.v
 }
 
-func (s *seenVersion) saw(v string) {
-	s.Lock()
-	s.v = newerVersion(s.v, v)
-	s.Unlock()
-}
-
-// SawCodexClient notes the version a Codex client's request says it is —
-// its `version` header, else the one in its User-Agent (codex_cli_rs/0.159.0,
-// Codex Desktop/0.159.0) — when the request is Codex's (it names an
-// originator, or its User-Agent is codex_…).
-func SawCodexClient(h http.Header) {
-	ua := h.Get("User-Agent")
-	if h.Get("originator") == "" && !strings.HasPrefix(strings.ToLower(ua), "codex") {
-		return
-	}
-	v := claudeSemverRE.FindString(h.Get("version"))
-	if v == "" {
-		if _, rest, ok := strings.Cut(ua, "/"); ok {
-			if m := claudeSemverRE.FindStringIndex(rest); m != nil && m[0] == 0 {
-				v = rest[:m[1]]
-			}
-		}
-	}
-	if v == "" {
-		return
-	}
-	codexSeen.saw(v)
-}
-
 // codexExecutable finds the codex CLI; a var so tests can fake it. Beyond
 // PATH it looks where npm, nvm, bun, volta, pnpm, mise and the standalone
 // installer put it, which a desktop app's PATH lacks.
@@ -451,37 +422,6 @@ func CodexNativeUnlisted() (all bool, slugs map[string]bool) {
 	return all, slugs
 }
 
-// CodexOrder is where each model of Codex's list goes when the user put
-// them in an order of their own on the Agents page (#855), by the slug
-// Codex knows it by — a ChatGPT account's own by its bare one, as the
-// backend lists it — and whether they did. A model it doesn't name keeps
-// its place after them.
-func CodexOrder() (map[string]int, bool) {
-	order := ModelOrder("codex")
-	if len(order) == 0 {
-		return nil, false
-	}
-	at := make(map[string]int, len(order))
-	for i, id := range order {
-		at[id] = i
-	}
-	out := map[string]int{}
-	for _, e := range Catalog() {
-		i, ok := at[e.ID]
-		if !ok {
-			continue
-		}
-		slug := e.ID
-		if CodexOwn(e) {
-			slug = e.Model
-		}
-		if cur, seen := out[slug]; !seen || i < cur {
-			out[slug] = i
-		}
-	}
-	return out, true
-}
-
 // CodexListTag names the list Codex is handed, for its ETag: magpie's models,
 // the account's own taken out of it, the order they are in, the windows set on them, the auto-review model, and whether its OpenAI models say
 // multi-agent V1 (settings.CodexAgentsV1), so any of them changing has
@@ -533,57 +473,6 @@ func codexListTag(kind string) string {
 		ms = append(ms, catalog.Model{ID: "~effort:" + v})
 	}
 	return codexcat.PolicyTag(kind + codexcat.Tag(ms))
-}
-
-// CodexNativePicked is the set of the ChatGPT account's own model slugs the
-// user kept, and whether they narrowed that list at all. The backend lists
-// every model the account can reach; when the user has picked among them on
-// the codex provider, the gateway keeps its /models answer to those (see
-// codexModels). Not narrowed — the account's list is left whole.
-//
-// A provider switched off picks nothing, as it serves no agent anything
-// (Provider.Off): its picks are kept for when it is switched on again and
-// are not a narrowing now.
-func CodexNativePicked() (map[string]bool, bool) {
-	p, ok := find(All(), "codex")
-	if !ok || p.Off || len(p.Models) == 0 {
-		return nil, false
-	}
-	keep := make(map[string]bool, len(p.Models))
-	for _, id := range p.Models {
-		keep[id] = true
-	}
-	return keep, true
-}
-
-// CodexNativeWindow is the context window Codex is handed for one of the
-// ChatGPT account's own models, by the backend's slug, and the most it may
-// be raised to (0: as the entry says): the window the user set on the codex
-// provider (Provider.ContextOf), as /v1/models says it (#674). ok is false
-// for a model the user set none for, whose entry keeps the backend's window
-// — unless restore, for an entry not fresh from the backend: Codex's
-// models_cache.json keeps what magpie last handed it, a window since taken
-// away among it, so such an entry takes the account's own list's again.
-func CodexNativeWindow(restore bool) func(slug string) (n, most int, ok bool) {
-	p, _ := find(All(), "codex")
-	live, _, _ := catalog.Live("codex")
-	return func(slug string) (int, int, bool) {
-		if n := p.ContextOf(slug); n > 0 {
-			return n, 0, true
-		}
-		if !restore {
-			return 0, 0, false
-		}
-		for _, m := range live {
-			if m.ID == slug && m.Context > 0 {
-				// a list without the max (saved before magpie kept
-				// it) leaves the cache's own; Window still raises it to
-				// the window when it's below
-				return m.Context, m.MaxContext, true
-			}
-		}
-		return 0, 0, false
-	}
 }
 
 // codexWindowsTag is the windows the user set on the codex provider, for

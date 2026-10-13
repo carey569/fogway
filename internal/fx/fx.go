@@ -25,14 +25,6 @@ import (
 // against one US dollar; a var so a test can point it at a fake server.
 var rateURL = "https://open.er-api.com/v6/latest/USD"
 
-// SetRateURL points the rate at u until the returned func puts it back; for
-// other packages' tests.
-func SetRateURL(u string) (restore func()) {
-	old := rateURL
-	rateURL = u
-	return func() { rateURL = old }
-}
-
 // TTL is how long a fetched rate is used before another is asked for.
 const TTL = 12 * time.Hour
 
@@ -155,21 +147,6 @@ func Soon() Rate {
 		}()
 	}
 	return r
-}
-
-// Settle waits for a fetch Soon started to end; for tests, whose home goes
-// once they do.
-func Settle() {
-	refreshing.Lock()
-	refreshing.Unlock()
-}
-
-// Reset forgets the in-memory rate, so the next Get rereads the cache file
-// or asks rateURL again; tests use it between cases.
-func Reset() {
-	mu.Lock()
-	mem, failed = nil, time.Time{}
-	mu.Unlock()
 }
 
 // erAPI is the shape of open.er-api.com's reply (and exchangerate-api.com's,

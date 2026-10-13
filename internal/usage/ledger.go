@@ -306,11 +306,6 @@ func Ledger(p Period, f Filter) (rows []Row, sum Totals, agents []string) {
 	return l.Rows, l.Sum, l.Agents
 }
 
-func ledger(since time.Time, f Filter, recs []Record) (rows []Row, sum Totals, agents []string) {
-	rows, sum, agents, _ = ledgerWith(since, f, recs, nil)
-	return rows, sum, agents
-}
-
 // UnknownProvider groups local session calls without claiming a supplier.
 // Recorded provider IDs and matched creator identities stay in their own fields.
 const UnknownProvider = "session-unknown"
@@ -355,10 +350,6 @@ func gatewayMatches(recs []Record, logs []sessions.Call) map[int]bool {
 		matched[ref.Index] = true
 	}
 	return matched
-}
-
-func ledgerWith(since time.Time, f Filter, recs []Record, logs []sessions.Call) (rows []Row, sum Totals, agents, providers []string) {
-	return ledgerWithShared(since, time.Time{}, f, recs, logs, nil)
 }
 
 // ledgerWithShared is ledgerWith with the calls other computers made (#542),
@@ -889,13 +880,6 @@ type SeriesPoint struct {
 // those with the most tokens over the period; the rest are what is left of
 // the point's own sums.
 const seriesKeep = 24
-
-// LedgerSeries is the rows of a period, the ledger's or a filter's, summed by
-// hour, day or week, for the chart over them. A row is of the point its
-// time falls in; the rows are in any order.
-func LedgerSeries(p Period, rows []Row) (bucket string, pts []SeriesPoint) {
-	return ledgerSeriesAt(p, rows, Clock())
-}
 
 // ledgerSeriesAt is LedgerSeries with the period read at now, the moment the
 // rows were read at, so that the chart is of the rows' day.

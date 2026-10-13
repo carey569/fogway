@@ -169,14 +169,6 @@ func (f *firstToken) ms() (first, text int64) {
 	return f.first.Milliseconds(), f.text.Milliseconds()
 }
 
-// firstKind says whether a server-sent event of a reply, in any protocol an
-// agent speaks, carries content — text, reasoning or a tool call — and
-// whether that is text the reader sees.
-func firstKind(ev []byte) (content, text bool) {
-	content, text, _, _ = timingKind(ev)
-	return
-}
-
 func timingKind(ev []byte) (content, text, reasoning, hidden bool) {
 	var name string
 	var data []byte

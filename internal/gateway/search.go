@@ -402,17 +402,6 @@ func RelaysSaidToSearch() []provider.Provider {
 	return out
 }
 
-// smallModel is the provider's cheapest small model of a vendor that
-// searches well, or its cheapest, or its first; only among those keep
-// holds, when it is given. Only a model the user enabled is picked (what
-// agents are offered, Exposed), never one of the rest of the vendor's
-// list: OpenRouter turned away an unpicked anthropic/claude-haiku-5.5 for
-// the user's region (JonahFu on X).
-func smallModel(p provider.Provider, keep func(catalog.Model) bool) string {
-	id, _ := smallReady(p, keep, provider.Chat)
-	return id
-}
-
 // smallReady is smallModel of the models routing would still find an
 // account or key with allowance for, asked on from (spentModel), and
 // ready true; else smallModel of them all, and ready false. A model out

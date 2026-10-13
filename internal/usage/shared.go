@@ -19,7 +19,6 @@ import (
 
 	"github.com/yetone/magpie/internal/edit"
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
 )
 
 // ThisComputer is the Filter.Computer of the calls made here.
@@ -91,79 +90,13 @@ func validID(id string) bool {
 	return true
 }
 
-// ValidComputer is whether id can be another computer's id: a folder name
-// and a file name's first part, nothing else.
-func ValidComputer(id string) bool { return validID(id) }
-
-// OwnDays are this computer's calls since the day of since, by day, as the
-// Usage page lists them: a call another magpie passed on here is left to
-// that computer, which counts it itself, and where the request archive
-// keeps a call is this computer's own.
-func OwnDays(since time.Time) map[string][]SharedCall {
-	reader := LogCalls
-	if reader == nil {
-		reader = sessions.Calls
-	}
-	rows, _, _, _ := ledgerWith(since, Filter{}, gatewayRecords(since.Add(-24*time.Hour)), reader(since))
-	out := map[string][]SharedCall{}
-	for i := len(rows) - 1; i >= 0; i-- { // oldest first
-		r := rows[i]
-		if r.Via != "" {
-			continue
-		}
-		r.Archive, r.Computer = "", ""
-		if len(r.Error) > 300 {
-			r.Error = r.Error[:300]
-		}
-		day := r.Time.Local().Format(time.DateOnly)
-		out[day] = append(out[day], SharedCall{Record: r.Record, Source: r.Source})
-	}
-	return out
-}
-
 // sharedFile is where another computer's day is kept here.
 func sharedFile(computer, day string) string {
 	return filepath.Join(OthersDir(), computer, day+".json")
 }
 
-// KeepShared keeps another computer's day here, over the one kept before.
-func KeepShared(d SharedDay) error {
-	if !validID(d.Computer) {
-		return os.ErrInvalid
-	}
-	if _, err := time.Parse(time.DateOnly, d.Day); err != nil {
-		return err
-	}
-	b, err := json.Marshal(d)
-	if err != nil {
-		return err
-	}
-	f := sharedFile(d.Computer, d.Day)
-	if err := os.MkdirAll(filepath.Dir(f), 0o700); err != nil {
-		return err
-	}
-	if err := edit.WriteAtomic(f, b); err != nil {
-		return err
-	}
-	if d.Name != "" && d.Day >= latestDay(d.Computer) {
-		edit.WriteAtomic(nameFile(d.Computer), []byte(d.Name))
-	}
-	return os.Chmod(f, 0o600)
-}
-
 // nameFile keeps what another computer is called, as its latest day says.
 func nameFile(computer string) string { return filepath.Join(OthersDir(), computer, "name") }
-
-func latestDay(computer string) string {
-	days, _ := os.ReadDir(filepath.Join(OthersDir(), computer))
-	last := ""
-	for _, d := range days {
-		if day, ok := strings.CutSuffix(d.Name(), ".json"); ok && day > last {
-			last = day
-		}
-	}
-	return last
-}
 
 // sharedNames are the other computers kept here, by id, and what each is called.
 func sharedNames() map[string]string {
@@ -205,22 +138,6 @@ func SharedKept() []string {
 	slices.Sort(out)
 	return out
 }
-
-// DropShared lets another computer's day go, and its folder with its last.
-func DropShared(computer, day string) {
-	if !validID(computer) {
-		return
-	}
-	os.Remove(sharedFile(computer, day))
-	if latestDay(computer) == "" {
-		os.Remove(nameFile(computer))
-		os.Remove(filepath.Join(OthersDir(), computer))
-	}
-}
-
-// DropAllShared lets every other computer's usage go: sync, or its sharing
-// of usage, was turned off.
-func DropAllShared() { os.RemoveAll(OthersDir()) }
 
 // sharedSource is one kept day, for the request page to read when it changed.
 type sharedSource struct {

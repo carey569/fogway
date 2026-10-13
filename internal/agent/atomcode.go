@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
 )
 
 // atomcodeAccount is the account table magpie writes, and atomcodeModels the
@@ -284,16 +283,6 @@ func atomcodeIn(at place) *Agent {
 			},
 		}},
 	}, path)
-}
-
-// atomcodeTables are magpie's account and model tables: the gateway spoken
-// to as AtomCode's own Chat Completions, one model table per catalog model
-// with the model's window (AtomCode compacts as it nears it), its output
-// limit, whether it sees images, and the reasoning levels its picker offers.
-// No reasoning_effort is picked for the user — the vendor's default stands
-// until they choose one.
-func atomcodeTables(path string) []edit.Table {
-	return atomcodeTablesAt(path, gatewayV1(), gateway.TokenFor("atomcode"))
 }
 
 // atomcodeTablesAt is atomcodeTables for an AtomCode reaching the

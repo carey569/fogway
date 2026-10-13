@@ -1583,10 +1583,6 @@ func codexOwnOf(id string) string {
 	return model
 }
 
-// codexGatewayURL is where Codex's built-in OpenAI provider is pointed to
-// reach magpie.
-func codexGatewayURL() string { return gateway.URL() + gateway.CodexPath }
-
 // codexKeptGateway is the gateway's URL for this machine's Codex: the
 // address its config names when that is magpie's gateway on a host other
 // than this one's loopback (openai_base_url at the Codex path, or

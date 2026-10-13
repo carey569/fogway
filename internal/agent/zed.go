@@ -44,10 +44,6 @@ func zed(home, cfg string) *Agent {
 	return zedAtWith(filepath.Join(cfg, "zed"), bin, processes)
 }
 
-func zedAt(dir string) *Agent {
-	return zedAtWith(dir, "zed", zedProcessNames())
-}
-
 func zedAtWith(dir, bin string, processes []string) *Agent {
 	path := filepath.Join(dir, "settings.json")
 	get := func(k string) string { v, _ := edit.GetJSON(path, k); return v }

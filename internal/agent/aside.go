@@ -78,10 +78,6 @@ var asideRoles = []string{"fast", "standard", "deep", "visual"}
 
 const asideImageKey = "imageGenerationModel"
 
-// asideDir is the folder of the Aside account magpie configures
-// (asideChoice).
-func asideDir(at place) string { return asideAccountDir(at, asideChoice(at)) }
-
 var asideTimeout = 10 * time.Second
 
 const asideOK = "MAGPIE_ASIDE_OK"

@@ -137,20 +137,6 @@ var (
 	googleIAMCredentials = "https://iamcredentials.googleapis.com/v1"
 )
 
-// VertexForTest points Vertex AI at root, Google's token endpoint at token
-// and IAM Credentials at iam until the returned function runs, and forgets
-// the tokens minted. Tests outside this package use it.
-func VertexForTest(root, token, iam string) func() {
-	oldR, oldT, oldI := vertexRoot, googleTokenURL, googleIAMCredentials
-	vertexRoot = func(string) string { return root }
-	googleTokenURL, googleIAMCredentials = token, iam
-	forgetVertexTokens()
-	return func() {
-		vertexRoot, googleTokenURL, googleIAMCredentials = oldR, oldT, oldI
-		forgetVertexTokens()
-	}
-}
-
 // vertexBase is where the provider's requests go, the model's path
 // (VertexPath) after it: its project at its location. "" until those are
 // ones an address can be made of.
@@ -242,12 +228,6 @@ type vertexToken struct {
 	// rather than minting again, which would have each in turn wait as long
 	mints  atomic.Int64
 	failed error
-}
-
-func forgetVertexTokens() {
-	vertexTokens.Lock()
-	vertexTokens.m = map[string]*vertexToken{}
-	vertexTokens.Unlock()
 }
 
 // vertexAccessToken is the token a request to the provider is signed

@@ -113,21 +113,6 @@ func discardArchive(res *captureResponseWriter) {
 	}
 }
 
-// ArchiveName is where the archive keeps the call named "<date>/<id>",
-// under the bucket's magpie folder; false for a name not of that shape,
-// which is never one magpie made.
-func ArchiveName(date, id string) (string, bool) {
-	if _, err := time.Parse("2006-01-02", date); err != nil || len(id) == 0 || len(id) > 64 {
-		return "", false
-	}
-	for _, c := range id {
-		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c == '-') {
-			return "", false
-		}
-	}
-	return "archive/" + date + "/" + id + ".json", true
-}
-
 // Archived is a call as the archive keeps it.
 type Archived struct {
 	ID       string      `json:"id"`   // <date>/<id>
@@ -253,14 +238,6 @@ func archiveFailed(name string, err error) {
 	defer archiveMu.Unlock()
 	archiveErr, archiveErrAt = err.Error(), time.Now()
 	log.Printf("request archive: %s not uploaded: %v", name, err)
-}
-
-// ArchiveError is the last upload's failure, and when; "" once one after
-// it went.
-func ArchiveError() (string, time.Time) {
-	archiveMu.Lock()
-	defer archiveMu.Unlock()
-	return archiveErr, archiveErrAt
 }
 
 func scrubHeaders(h http.Header) map[string][]string {

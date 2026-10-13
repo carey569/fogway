@@ -336,11 +336,6 @@ func ownOptionsFrom(native func(p string) []catalog.Model, authFile string, cur 
 
 // ---- agents ----------------------------------------------------------------
 
-// magpieProviderJSON is the provider block agents with JSON configs get.
-func magpieProviderJSON(shape string) any {
-	return magpieProviderJSONFor(shape, shape)
-}
-
 // magpieProviderJSONFor is magpieProviderJSON for an agent whose catalog is
 // narrowed under a different id than its config shape (mimocode shares
 // OpenCode's shape but is seen as itself by magpie visible).

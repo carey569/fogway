@@ -51,20 +51,6 @@ const imageRedirects = 5
 
 type mayFetchPrivate struct{}
 
-// withPrivateFetch is ctx for a request whose image URLs may name private
-// addresses: one from this computer.
-func withPrivateFetch(ctx context.Context, r *http.Request) context.Context {
-	if local(r) && !fromBrowser(r) {
-		return context.WithValue(ctx, mayFetchPrivate{}, true)
-	}
-	return ctx
-}
-
-func privateFetchAllowed(ctx context.Context) bool {
-	ok, _ := ctx.Value(mayFetchPrivate{}).(bool)
-	return ok
-}
-
 // errPrivateAddress is a caller's image URL that leads somewhere other
 // than the public internet.
 var errPrivateAddress = errors.New("it is at a private address, which magpie downloads from only for a request from this computer: send the image itself (a data: URL or a file) instead")

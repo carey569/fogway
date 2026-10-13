@@ -151,23 +151,3 @@ func (s *signInFlow) pluginCallback(raw string) error {
 	}
 	return errors.New("the sign-in was canceled")
 }
-
-// PastePluginCallback is pluginCallback for the command line, which runs
-// a plugin's sign-in itself: page is the address the sign-in opened.
-func PastePluginCallback(ctx context.Context, page, raw string) (next string, err error) {
-	ports := loopbackPorts(page)
-	if len(ports) == 0 {
-		return "", errors.New("this sign-in can't be finished from a pasted address")
-	}
-	next, status, err := openPastedCallback(ctx, ports, raw)
-	if err == nil && next == "" && status == http.StatusNotFound {
-		err = errors.New("that address isn't from this sign-in: paste the one its browser tab ended on")
-	}
-	return next, err
-}
-
-// PluginPastesCallback says whether a plugin's sign-in that opened page
-// can be finished from the address its browser ends on.
-func PluginPastesCallback(id, page string) bool {
-	return !pluginPostsCallback[id] && len(loopbackPorts(page)) > 0
-}

@@ -277,35 +277,6 @@ func addGoogleLogin(agent, user, plan string, a googleAuth) error {
 	return addSideLogin(savedLogin{Agent: agent, User: user, Plan: plan, Auth: auth, Project: a.Project}, ownUser, func(savedLogin) {})
 }
 
-// SetGoogleProject names the Google Cloud project an account's requests
-// go to, "" to let Code Assist pick; Code Assist Standard and Enterprise
-// need one.
-func SetGoogleProject(agent, user, project string) error {
-	if _, ok := googleAppOf(agent); !ok {
-		return fmt.Errorf("only Gemini CLI and Antigravity accounts have a Google Cloud project")
-	}
-	found := false
-	for _, l := range googleLogins(agent) {
-		if strings.EqualFold(l.User, user) {
-			found = true
-		}
-	}
-	if !found {
-		return fmt.Errorf("no %s account %q", agent, user)
-	}
-	googleState.Lock()
-	for k := range googleState.projects {
-		if strings.HasPrefix(k, agent+"\x00") {
-			delete(googleState.projects, k)
-		}
-	}
-	googleState.Unlock()
-	return editSideLogin(agent, user, func(ls []savedLogin, i int) ([]savedLogin, error) {
-		ls[i].Project = strings.TrimSpace(project)
-		return ls, nil
-	})
-}
-
 // googleState is what magpie learned of each sign-in while it runs: the
 // access token, refreshed in memory (Google's refresh tokens don't turn
 // over, so nothing needs writing back), and the project and plan Code
@@ -1435,15 +1406,6 @@ func antigravitySession(r map[string]any) string {
 	sum := sha256.Sum256([]byte(first))
 	n := int64(binary.BigEndian.Uint64(sum[:8]) & 0x7fffffffffffffff)
 	return "-" + strconv.FormatInt(n, 10)
-}
-
-// googleAccountOf is the app's account in use first.
-func googleAccountOf(agent string) (Provider, bool) {
-	ls := googleLogins(agent)
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return googleProvider(ls[0].acct, ls[0].Plan), true
 }
 
 // googleAlsoOn is the app's accounts in use behind the first.

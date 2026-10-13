@@ -162,16 +162,6 @@ func Known(name string) (Tool, bool) {
 	return Tool{}, false
 }
 
-// Forget drops what Find knows, so the next Find looks again.
-func Forget() {
-	found.Lock()
-	found.at, found.tools = nil, nil
-	found.Unlock()
-	up.Lock()
-	up.at = time.Time{}
-	up.Unlock()
-}
-
 // probeScript prints where name is in the distro, with the PATH it is on,
 // from a login shell, then an interactive one (nvm's node is put on PATH
 // by .bashrc), then where Claude Code's installer puts it; and where

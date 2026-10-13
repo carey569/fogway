@@ -15,7 +15,6 @@ package provider
 // `login`, and the token that sign-in keeps.
 
 import (
-	"bufio"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -131,64 +130,10 @@ func parseCursorAbout(out []byte) (user, plan string, said bool) {
 // whatever about said; a var so tests can fake it.
 var cursorSignedOut = func() bool { return readCursorToken() == "" }
 
-func cursorAccount() (Provider, bool) {
-	user, plan, ok := cursorIdentity()
-	if !ok {
-		return Provider{}, false
-	}
-	acct := &Account{Agent: "cursor", User: user, Plan: plan}
-	acct.models = func() []catalog.Model { return []catalog.Model{{ID: "auto", Name: "Auto"}} }
-	acct.fetch = func(ctx context.Context) ([]catalog.Model, error) {
-		ms, err := cursorModels(ctx)
-		if err != nil {
-			return nil, err
-		}
-		// and the picker's models `cursor-agent models` leaves out
-		if tok, err := cursorToken(); err == nil {
-			ms = append(ms, cursorPickerModels(ctx, tok, ms)...)
-		}
-		return ms, catalog.SaveLive("cursor", "", ms)
-	}
-	return Provider{ID: "cursor", Name: "Cursor", Icon: "cursor", Website: "https://cursor.com", Account: acct}, true
-}
-
 var (
 	ansi         = regexp.MustCompile(`\x1b\[[0-9;?]*[A-Za-z]`)
 	cursorModelL = regexp.MustCompile(`^([A-Za-z0-9][\w.:-]*) - (.+)$`)
 )
-
-// cursorModels lists what the account can use, as `cursor-agent models`
-// prints it: "id - Name", one a line.
-func cursorModels(ctx context.Context) ([]catalog.Model, error) {
-	path := CursorExecutable()
-	if path == "" {
-		return nil, errorf("cursor-agent is not installed")
-	}
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	out, err := agentProbe(ctx, path, "models").Output()
-	if err != nil {
-		return nil, errorf("cursor-agent models: %v", err)
-	}
-	return parseCursorModels(string(out)), nil
-}
-
-func parseCursorModels(out string) []catalog.Model {
-	var ms []catalog.Model
-	s := bufio.NewScanner(strings.NewReader(ansi.ReplaceAllString(out, "")))
-	for s.Scan() {
-		m := cursorModelL.FindStringSubmatch(strings.TrimSpace(s.Text()))
-		if m == nil {
-			continue
-		}
-		// some names come with zero-width spaces and doubled ones
-		name := strings.Join(strings.Fields(strings.ReplaceAll(m[2], "\u200b", "")), " ")
-		name = strings.TrimSpace(strings.TrimSuffix(name, "(default)"))
-		name = strings.TrimSpace(strings.TrimSuffix(name, "(current)"))
-		ms = append(ms, catalog.Model{ID: m[1], Name: name, Context: cursorContext(m[1], name)})
-	}
-	return ms
-}
 
 // cursorDefaultContext is the context Cursor gives a model it doesn't name
 // as a 1M one.

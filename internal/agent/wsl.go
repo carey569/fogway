@@ -632,12 +632,6 @@ func wslKindOf(id string) wslKind {
 	panic("no WSL agent " + id)
 }
 
-// wslCodex is Codex in a distro.
-func wslCodex(d distro) *Agent { return wslAgent(wslKindOf("codex"), d) }
-
-// wslPi is Pi in a distro.
-func wslPi(d distro) *Agent { return wslAgent(wslKindOf("pi"), d) }
-
 // wslAgent is an agent in a distro: its own reading and writing, at the
 // distro's home, with the distro's way to the gateway. A distro that isn't
 // running is shown as magpie last saw it, and nothing of it is read: any

@@ -1336,11 +1336,6 @@ func dshLevels(ref string) []string {
 	return nil
 }
 
-// dshRouteConfig is magpie's first route with every one of models on it.
-func dshRouteConfig(models []catalog.Model, api, gw string) dshPiRoute {
-	return dshKindConfig(dshKinds[0], models, api, gw)
-}
-
 // dshKindConfig is magpie's route k for models, of the catalog one round
 // read: what the round decides from and what it writes come from the same
 // list. api is the wire protocol the route has now, kept when the gateway
@@ -1872,19 +1867,6 @@ func dshEffortOf(items []dshItem) string {
 	}
 	return dshEffortIn(items)
 }
-
-// dshFiles are the patch lists magpie writes: every profile's, else
-// config.yaml.
-func dshFiles(dir string) []string {
-	if files := dshProfiles(dir); len(files) > 0 {
-		return files
-	}
-	return []string{filepath.Join(dir, "config.yaml")}
-}
-
-// DshPatchFiles are the patch lists of the dsh whose home is dir, as magpie
-// writes them: every profile's (web's first), else config.yaml.
-func DshPatchFiles(dir string) []string { return dshFiles(dir) }
 
 // dshGetEffort reads the effort sessions start with.
 func dshGetEffort(dir string) string {

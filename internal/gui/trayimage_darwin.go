@@ -565,59 +565,9 @@ func trayHighlight(on bool) { C.mpHighlight(cBool(on)) }
 // trayOwnClicks keeps the button's own highlight out of a click (mpOwnClicks).
 func trayOwnClicks() { C.mpOwnClicks() }
 
-// trayImagePNG is the image as the menu bar h points high draws it at
-// scale (2 for a Retina screen), light or dark, on the bar's colour when
-// bg; with its size in pixels.
-func trayImagePNG(cells []trayCell, bird []byte, h, scale float64, dark, bg bool) (png []byte, w, ht int) {
-	b, n := cBytes(bird)
-	defer C.free(b)
-	withCells(cells, func(cs *C.mpTrayCell, count C.int) {
-		var size, pw, ph C.int
-		p := C.mpPNG(cs, count, b, n, C.CGFloat(h), C.CGFloat(scale), cBool(dark), cBool(bg), &size, &pw, &ph)
-		if p != nil {
-			png = C.GoBytes(p, size)
-			C.free(p)
-		}
-		w, ht = int(pw), int(ph)
-	})
-	return png, w, ht
-}
-
 func cBool(b bool) C.int {
 	if b {
 		return 1
 	}
 	return 0
-}
-
-// These native test wrappers stay here because Go does not support cgo
-// imports in _test.go files. They do not install monitors or create windows.
-// trayImageCellAt tests the native hit map; -1 means no quota cell.
-func trayImageCellAt(cells []trayCell, h, x float64) int {
-	at := -1
-	withCells(cells, func(cs *C.mpTrayCell, count C.int) {
-		at = int(C.mpCellAtCells(cs, count, C.CGFloat(h), C.CGFloat(x)))
-	})
-	return at
-}
-
-// trayImageCellStart returns cell i's start in image points, or -1 if absent.
-func trayImageCellStart(cells []trayCell, h float64, i int) float64 {
-	s := -1.0
-	withCells(cells, func(cs *C.mpTrayCell, count C.int) {
-		s = float64(C.mpCellStartAt(cs, count, C.CGFloat(h), C.int(i)))
-	})
-	return s
-}
-
-func trayImageClickAt(cells []trayCell, bird bool, h, x float64, modifiers uint64) bool {
-	hit := false
-	b := C.int(0)
-	if bird {
-		b = 1
-	}
-	withCells(cells, func(cs *C.mpTrayCell, count C.int) {
-		hit = C.mpClickCellsAt(cs, count, b, C.CGFloat(h), C.CGFloat(x), C.ulong(modifiers)) != 0
-	})
-	return hit
 }

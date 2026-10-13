@@ -263,12 +263,6 @@ func qoderPreferences(prefs, model, effort string) (out map[string]any, drop boo
 // qoderLevels are the efforts Qoder can ask for.
 var qoderLevels = []string{"low", "medium", "high", "xhigh", "max"}
 
-// qoderProvider is magpie's entry in Qoder's providers, every magpie model
-// in it, model the one it starts on.
-func qoderProvider(agent, model string) map[string]any {
-	return qoderProviderAt(agent, model, gatewayV1())
-}
-
 // qoderProviderAt is qoderProvider for a Qoder reaching the gateway's /v1
 // at v1.
 func qoderProviderAt(agent, model, v1 string) map[string]any {

@@ -308,14 +308,6 @@ func forgetCommandCodeLogin(user string) error {
 	return forgetSideLogin(CommandCodePlanID, user, cmdSide(), nil)
 }
 
-func commandCodeAccount() (Provider, bool) {
-	ls := cmdLogins()
-	if len(ls) == 0 {
-		return Provider{}, false
-	}
-	return cmdProvider(ls[0].User, ls[0].Plan, ls[0].auth), true
-}
-
 // commandCodeAlsoOn is the Command Code accounts in use behind the first.
 func commandCodeAlsoOn() []Provider {
 	var out []Provider

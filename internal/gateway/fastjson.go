@@ -309,20 +309,6 @@ func fillJSON(raw []byte, v reflect.Value) error {
 	return json.Unmarshal(raw, v.Addr().Interface())
 }
 
-// rawObject is json.Unmarshal(data, &m) for m a map[string]json.RawMessage.
-func rawObject(data []byte) (map[string]json.RawMessage, error) {
-	var m map[string]json.RawMessage
-	err := decodeJSON(data, &m)
-	return m, err
-}
-
-// rawArray is json.Unmarshal(data, &a) for a a []json.RawMessage.
-func rawArray(data []byte) ([]json.RawMessage, error) {
-	var a []json.RawMessage
-	err := decodeJSON(data, &a)
-	return a, err
-}
-
 func isJSONSpace(c byte) bool { return c == ' ' || c == '\t' || c == '\n' || c == '\r' }
 
 func skipJSONSpace(data []byte, i int) int {
