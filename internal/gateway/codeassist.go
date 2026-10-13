@@ -27,20 +27,9 @@ const skipSignature = "skip_thought_signature_validator"
 
 var unsafeToolID = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 
-// antigravityBaseOf is the model an id of Antigravity's own is one level
-// of; a var so tests can stand in for it.
-var antigravityBaseOf = provider.AntigravityBase
-
-// accountAgent is the agent behind p's account, and "" where p is one of the
-// user's own and has none: the question a rule keyed by the account has to be
-// able to answer for, and one a provider's id cannot answer — a relay added
-// under a built-in's id is that relay and not that account.
-func accountAgent(p provider.Provider) string {
-	if p.Account == nil {
-		return ""
-	}
-	return p.Account.Agent
-}
+// accountAgent is the agent behind p's account: "" for every provider of
+// Fogway's, which are keys.
+func accountAgent(p provider.Provider) string { return "" }
 
 // antigravityTurnsAway: a system prompt Antigravity answers with a 429
 // "Resource has been exhausted (e.g. check quota)" whatever the quota left,
@@ -88,50 +77,6 @@ const turnedAwayStatus = http.StatusBadRequest
 // the 429 Antigravity's body calls it.
 const turnedAwayErrType = "prompt_turned_away"
 
-// codeAssistID is the id a request on the account's app goes out under: on
-// Antigravity the variant the effort picks for a model that is a family of
-// levels, and elsewhere the model magpie knows. It is keyed by the account
-// (accountAgent) rather than by the provider's id, since that is the account
-// the variants belong to, and it is the id a ledger judges what the vendor
-// answered against (provider.AntigravitySentID), so the gateway and the
-// ledger read one rule rather than one each.
-// The envelope is built under it and named with it, so it is worked out
-// once where both of those are and handed down.
-func codeAssistID(model, effort, agent string) string {
-	if agent == "antigravity" {
-		return provider.AntigravitySentID(model, effort)
-	}
-	return model
-}
-
-// codeAssistBody is the envelope for a request on p's account, with the
-// vendor's own name for the model in its model field, over the names in
-// force (wires). It is named with the id the envelope carries, which on
-// Antigravity is the variant the effort picked (codeAssistID): a name given
-// for the whole provider then asks for each level by its own id instead of
-// one id for every level, so the effort keeps choosing and the relay is
-// asked for the model it serves at that level.
-//
-// The id is worked out once here and handed to the builder, since the name
-// in force is looked up against the very id the envelope is addressed to:
-// asking twice reads the vendor's catalogue twice over for one answer.
-func codeAssistBody(p provider.Provider, r *Request, model string, wires map[string]string) []byte {
-	sent := codeAssistID(model, r.Effort, p.Account.Agent)
-	body := buildCodeAssistSent(r, sent, p.Account.Agent)
-	if wire := provider.UpstreamNameAsIn(wires, p.ID, model, sent); wire != sent {
-		body = rewriteModel(body, wire)
-	}
-	return body
-}
-
-// buildCodeAssist builds the Code Assist envelope for a request, for the
-// app the account belongs to: "gemini" or "antigravity". On Antigravity a
-// model that is a family of levels is asked for as the variant the effort
-// picks (codeAssistID).
-func buildCodeAssist(r *Request, model, agent string) []byte {
-	return buildCodeAssistSent(r, codeAssistID(model, r.Effort, agent), agent)
-}
-
 // buildCodeAssistSent is buildCodeAssist with the id the envelope is
 // addressed to already worked out, for the caller that names the envelope
 // with that same id and would otherwise work it out a second time. There is
@@ -142,11 +87,6 @@ func buildCodeAssistSent(r *Request, sent, agent string) []byte {
 	ag := agent == "antigravity"
 	vx := agent == "vertex"
 	at := "" // the level the id says it thinks at
-	if ag {
-		if _, l, ok := antigravityBaseOf(sent); ok {
-			at = l
-		}
-	}
 	claude := strings.Contains(strings.ToLower(sent), "claude")
 	toolID := func(id string) string {
 		if !ag || id == "" {
@@ -1125,3 +1065,9 @@ func hasResponse(parts []map[string]any) bool {
 	}
 	return false
 }
+
+// buildCodeAssist builds the Gemini envelope for a request to model.
+func buildCodeAssist(r *Request, model, agent string) []byte {
+	return buildCodeAssistSent(r, model, agent)
+}
+

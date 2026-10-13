@@ -172,7 +172,7 @@ func (s *Server) retrieve(path, operation string) http.HandlerFunc {
 			call.Usage.Input = in
 			call.Fallback = strings.Join(skipped, "; ")
 			providerKeyID, providerKeyName := "", ""
-			if c.p.Account == nil && c.p.Key != "" {
+			if c.p.Key != "" {
 				providerKeyID, providerKeyName = provider.KeyID(c.p.Key), c.p.KeyName
 			}
 			appendUsage(r, usage.Record{Operation: operation, Time: start, Agent: call.Agent, Via: call.Via, Provider: c.p.ID, Host: c.p.Where(), Model: c.model, Requested: asked, ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName, ProviderAccount: accountOf(c.p),
@@ -207,7 +207,7 @@ func resolveRetrievalModel(id string) (provider.Provider, string, bool) {
 		return provider.Provider{}, "", false
 	}
 	for _, p := range provider.All() {
-		if !p.On() || p.DecideOnly() {
+		if !p.On() {
 			continue
 		}
 		for _, m := range p.PlanEmbeddings() {
@@ -231,10 +231,7 @@ func (s *Server) retrieveFrom(ctx context.Context, p provider.Provider, url stri
 	req.Header.Set("Accept", "application/json")
 	// magpie's, or the agent's own where the provider passes it on (#1851)
 	stampUA(ctx, p, req.Header)
-	if p.IsRemoteMagpie() {
-		req.Header.Set("User-Agent", "magpie/"+Version)
-		passOnCaller(ctx, req)
-	}
+
 	if err := p.Sign(ctx, req, provider.Chat, body); err != nil {
 		return nil, 502, err
 	}

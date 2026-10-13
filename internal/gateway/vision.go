@@ -182,18 +182,15 @@ func AutoVision() string {
 func autoVision() (string, bool) {
 	tier := func(p provider.Provider) int {
 		switch {
-		case p.Account != nil && p.Account.Agent == "claude":
-			return 0
-		case p.Account != nil && p.Account.Agent == "codex":
-			return 1
-		case p.Account == nil:
+
+		case true:
 			return 2
 		}
 		return 3
 	}
 	best, bestTier, bestCost, bestReady := "", 0, 0.0, false
 	for _, p := range provider.All() {
-		if !p.On() || p.DecideOnly() {
+		if !p.On() {
 			continue
 		}
 		t := tier(p)

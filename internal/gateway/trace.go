@@ -320,9 +320,6 @@ type Try struct {
 	// Codex resets was spent by itself (the user's setting) — on Who, and
 	// what spending it did — and the request asked again
 	Reset *AutoReset `json:"reset,omitempty"`
-	// Auto: the models Copilot's Auto picked for it, in turn — where each
-	// pick came from and Copilot's refusal of it — Model being "auto"
-	Auto []provider.AutoPick `json:"auto,omitempty"`
 }
 
 // AutoReset is a Codex reset spent by itself, on Who's account. (Claude's
@@ -350,13 +347,10 @@ func weighed(c candidate, p provider.Provider, wg weighing, fallback bool, from 
 	w := Weighed{ID: c.rest, Provider: p.ID, Name: p.Name, Icon: p.Icon, Preset: p.Preset, Model: c.model, Fixed: c.effort, Fast: c.fast,
 		Routing: p.Routing, Fallback: fallback, Shared: c.rest != p.ID, Rank: c.rank, NoURL: c.noURL}
 	switch {
-	case c.p.Account != nil:
-		w.Kind, w.Who, w.Agent, w.Plan = "account", c.p.Account.User, c.p.Account.Agent, c.p.Account.Plan
-		if w.Agent == "plugin" {
-			// a plugin's account is told as its provider's: a moved Grok's
-			// plan reads as the built-in's did
-			w.Agent = c.p.ID
-		}
+
+	// a plugin's account is told as its provider's: a moved Grok's
+	// plan reads as the built-in's did
+
 	case c.rest != p.ID:
 		w.Kind, w.Who = "key", c.p.KeyName
 		if w.Who == "" {

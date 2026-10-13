@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 // A card read again on its own, from its refresh button on the Usage page
@@ -58,69 +57,17 @@ func (r cardRefresh) wants(provider, user string) bool {
 	return provider == r.provider && (r.user == "" || strings.EqualFold(user, r.user))
 }
 
-// refreshLogins is the accounts of ls a read asks for, each read afresh
-// rather than from the minute's cache when it reads one card again.
-func refreshLogins(ctx context.Context, ls []Login) []Login {
-	r, ok := refreshing(ctx)
-	if !ok {
-		return ls
-	}
-	var out []Login
-	for _, l := range ls {
-		if r.user != "" && !strings.EqualFold(l.User, r.user) {
-			continue
-		}
-		forgetLoginReading(l)
-		out = append(out, l)
-	}
-	return out
-}
-
-// forgetLoginReading has l's next reading asked for, keeping what it was
-// for a hiccup (as AskUsage does for every account).
-func forgetLoginReading(l Login) {
-	key := l.Agent + "/" + strings.ToLower(l.User)
-	c := &loginUsageCache
-	c.Lock()
-	if e, ok := c.m[key]; ok {
-		e.at = time.Time{}
-		c.m[key] = e
-	}
-	c.Unlock()
-}
-
 // RefreshUsage reads the card of provider (of account user, "" for every
-// account it has) again, whether a subscription's, a plan's or a key's
-// balance, and keeps it with the others, which aren't asked. The next
-// Quotas has it.
+// account it has) again, a plan's or a key's balance, and keeps it with
+// the others, which aren't asked. The next Quotas has it.
 func RefreshUsage(ctx context.Context, provider, user string) {
-	// a remote magpie's card is read again there (remote_quotas.go)
-	if p, card, ok := remoteOf(provider); ok {
-		refreshRemote(ctx, p, card, user)
-		return
-	}
 	r := cardRefresh{provider, user}
 	ctx = context.WithValue(Asked(ctx), cardRefreshKey{}, r) // a card's refresh is the user asking
-	ctx, seq := quotaReading(ctx)
-	if provider == "claude" {
-		// Claude Code's /usage, run when the user asks (claudeWindows)
-		markClaudeUsageAsked()
-	}
+	ctx, _ = quotaReading(ctx)
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(2)
 	go func() { defer wg.Done(); PlanQuotas(ctx) }()
 	go func() { defer wg.Done(); KeyBalances(ctx) }()
-	go func() {
-		defer wg.Done()
-		out := fetchSubscriptionUsage(ctx)
-		now := time.Now()
-		noteDailyCredits(out, now)
-		noteQuotaHistory(out, now)
-		c := &subscriptionUsageCache
-		c.Lock()
-		c.data = cacheCards(c.data, out, seq, true)
-		c.Unlock()
-	}()
 	wg.Wait()
 }
 

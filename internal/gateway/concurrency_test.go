@@ -209,42 +209,6 @@ func TestMaxConcurrency(t *testing.T) {
 	}
 }
 
-// A queued request's wait is told in its route's try, and a limit lifted
-// lets whoever waits go at once.
-func TestLanesLimitLifted(t *testing.T) {
-	var l lanes
-	r1, ok := l.acquire(context.Background(), "p", 1)
-	if !ok {
-		t.Fatal("first slot refused")
-	}
-	got := make(chan func(), 1)
-	go func() {
-		r, _ := l.acquire(context.Background(), "p", 1)
-		got <- r
-	}()
-	within(t, "second queued", func() bool {
-		l.mu.Lock()
-		defer l.mu.Unlock()
-		return l.m["p"] != nil && len(l.m["p"].queue) == 1
-	})
-	if _, ok := l.acquire(context.Background(), "p", 0); !ok {
-		t.Fatal("no limit refused")
-	}
-	select {
-	case r2 := <-got:
-		r2()
-	case <-time.After(2 * time.Second):
-		t.Fatal("lifting the limit left the queue waiting")
-	}
-	r1()
-	r1() // twice is once
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if len(l.m) != 0 {
-		t.Fatalf("lanes left: %+v", l.m["p"])
-	}
-}
-
 // Concurrency is the user's setting, else none; 0 set is none, and a
 // negative one saved is 0.
 func TestProviderConcurrency(t *testing.T) {

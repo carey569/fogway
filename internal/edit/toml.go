@@ -324,12 +324,6 @@ func SetTOMLTop(path string, kvs ...KV) error {
 	return setTOMLTop(path, false, kvs...)
 }
 
-// SetTOMLTopPreserving is SetTOMLTop with an existing key's spacing and trailing
-// comment kept. New keys use the same spelling as SetTOMLTop.
-func SetTOMLTopPreserving(path string, kvs ...KV) error {
-	return setTOMLTop(path, true, kvs...)
-}
-
 func setTOMLTop(path string, preserve bool, kvs ...KV) error {
 	raw, err := Read(path)
 	if err != nil {

@@ -140,10 +140,6 @@ func Main(v string) {
 	for _, v := range ignored {
 		fmt.Fprintf(os.Stderr, "magpie: ignoring %s: not an absolute path (the programs magpie starts still get it)\n", v)
 	}
-	if provider.TookOpenedURL(os.Args[1:]) {
-		// Claude Code, signing in for magpie, handed over the page to open
-		return
-	}
 	endProbesOnSignal()
 	gateway.Version = version
 	netproxy.Install()
@@ -208,8 +204,6 @@ func run(args []string) error {
 	// the moves below look at (a write among them reads them again)
 	release := provider.Hold()
 	agent.RenameLegacy()
-	agent.MoveCursorEfforts()
-	agent.MoveAntigravityEfforts()
 	agent.MoveOffAccountIDs()
 	release()
 	// a provider added, edited or removed, or a list fetched anew, reaches
@@ -218,16 +212,10 @@ func run(args []string) error {
 	// a model Claude Code names that magpie doesn't serve goes to the one
 	// it is set to use for that tier
 	gateway.StandIn = agent.StandIn
-	// a Codex that reaches magpie for account failover alone is handed
-	// only its own models (#1385)
-	gateway.CodexOwnOnly = agent.CodexOwnOnly
 	// and dsh's patch lists, which dsh reads live: a route left behind by
 	// something else writing the file fails every session there until
 	// magpie writes its own list again
 	gateway.WhileServing = append(gateway.WhileServing, agent.KeepDshWired)
-	// and Cursor Private Inference's variables, which the Mac's launchd
-	// forgets at a restart, for the gateway's address now
-	gateway.WhileServing = append(gateway.WhileServing, agent.KeepCursorLocalEnv)
 	if len(args) == 0 {
 		if hasGUI {
 			return runGUI(true, "")

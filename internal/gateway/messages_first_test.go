@@ -190,24 +190,3 @@ func TestClaudeFromChatIsAskedOnMessages(t *testing.T) {
 		})
 	}
 }
-
-// The user's "Asked on" for a Claude model holds: pinned to Chat, OpenCode's
-// Chat is relayed as Chat.
-func TestClaudePinnedToChatStaysOnChat(t *testing.T) {
-	srv, seen := relayOfEvery(t)
-	fresh(t)
-	if err := provider.Save(provider.Provider{ID: "supergpt", Name: "SuperGPT", Key: "k", Chat: srv.URL + "/v1", Responses: srv.URL + "/v1", Anthropic: srv.URL,
-		Models: []string{"claude-opus-5-5"}}); err != nil {
-		t.Fatal(err)
-	}
-	if err := provider.SetModelAPI("supergpt/claude-opus-5-5", "chat"); err != nil {
-		t.Fatal(err)
-	}
-	seen()
-	if code, b := post(t, "/v1/chat/completions", `{"model":"supergpt/claude-opus-5-5","messages":[{"role":"user","content":"hi"}]}`); code != 200 {
-		t.Fatalf("chat: %d %s", code, b)
-	}
-	if paths, _ := seen(); len(paths) != 1 || paths[0] != "/v1/chat/completions" {
-		t.Errorf("Claude pinned to Chat went to %v", paths)
-	}
-}

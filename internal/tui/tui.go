@@ -103,34 +103,34 @@ type model struct {
 	// alone, not connected, says of it (agent.FailoverSaid, #1385)
 	failover []string
 
-	page      page
-	back      mode // where esc goes from a picker or a line to type
-	ask       ask
-	confirm   string // what a second d removes
-	provs     []provider.Provider
-	provsErr  error // providers.json can't be read: said, not "none yet"
-	prow      int
-	bal       map[string]string
-	asked     bool // balances were asked for
-	groups    []provider.Group
-	grow      int
-	shown     int    // groups from here on were removed: listed last, to bring back
-	gid       string // the group open
-	gsel      int    // its member or rule picked: the members, then the rules
-	period    usage.Period
-	sum       usage.Summary
-	direct    usage.Summary                // the agents' own calls, read from their session files
-	quotas    []provider.SubscriptionQuota // nil while the vendors are asked
-	qasked    bool                         // quotas were asked for
-	qleft     bool                         // windows read as what is left, not what is used
-	sstats    sessions.Stats               // the sessions' usage in the range picked
-	srange    int                          // in sessRanges
-	smodel    string                       // the model the sessions are narrowed to, "" for all
-	sfolder   string                       // the folder, "" for all
-	scost     bool                         // the chart shows cost, not tokens
-	slist     []sessions.Session           // the latest sessions, the most recently active first
-	ssel      int                          // the session picked among those shown
-	sstat     bool                         // the page shows the range's stats, not its sessions
+	page     page
+	back     mode // where esc goes from a picker or a line to type
+	ask      ask
+	confirm  string // what a second d removes
+	provs    []provider.Provider
+	provsErr error // providers.json can't be read: said, not "none yet"
+	prow     int
+	bal      map[string]string
+	asked    bool // balances were asked for
+	groups   []provider.Group
+	grow     int
+	shown    int    // groups from here on were removed: listed last, to bring back
+	gid      string // the group open
+	gsel     int    // its member or rule picked: the members, then the rules
+	period   usage.Period
+	sum      usage.Summary
+	direct   usage.Summary                // the agents' own calls, read from their session files
+	quotas   []provider.SubscriptionQuota // nil while the vendors are asked
+	qasked   bool                         // quotas were asked for
+	qleft    bool                         // windows read as what is left, not what is used
+	sstats   sessions.Stats               // the sessions' usage in the range picked
+	srange   int                          // in sessRanges
+	smodel   string                       // the model the sessions are narrowed to, "" for all
+	sfolder  string                       // the folder, "" for all
+	scost    bool                         // the chart shows cost, not tokens
+	slist    []sessions.Session           // the latest sessions, the most recently active first
+	ssel     int                          // the session picked among those shown
+	sstat    bool                         // the page shows the range's stats, not its sessions
 }
 
 type flashMsg struct {
@@ -289,13 +289,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case quotaMsg:
 		m.quotas = msg
-		return m, nil
-	case checkinMsg:
-		m.flash, m.flashOK = msg.text, msg.ok
-		// the accounts' lines say today's check-in now, with nothing asked
-		if m.quotas != nil {
-			m.quotas = provider.WithCheckins(m.quotas)
-		}
 		return m, nil
 	case sessFilterMsg:
 		m.ssel = 0
@@ -656,8 +649,12 @@ func (p *picker) refilter() {
 	p.cursor = 0
 }
 
-// score ranks prefix < substring < subsequence < note match; lower is better.
+// score ranks exact < prefix < substring < subsequence < note match; lower
+// is better: "ollama" picks Ollama, not Ollama Cloud listed before it.
 func score(value, note, q string) (int, bool) {
+	if value == q {
+		return -1, true
+	}
 	if strings.HasPrefix(value, q) {
 		return 0, true
 	}

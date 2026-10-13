@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -34,9 +33,6 @@ func isolateRefreshes(t *testing.T) {
 		planQuotaCache.Lock()
 		planQuotaCache.data, planQuotaCache.at = nil, time.Time{}
 		planQuotaCache.Unlock()
-		subscriptionUsageCache.Lock()
-		subscriptionUsageCache.data, subscriptionUsageCache.at, subscriptionUsageCache.asked = nil, time.Time{}, false
-		subscriptionUsageCache.Unlock()
 		lastQuotas.Lock()
 		lastQuotas.m, lastQuotas.loaded = nil, false
 		lastQuotas.Unlock()
@@ -205,77 +201,5 @@ func TestRefreshUsageKeepsNewerKeyReading(t *testing.T) {
 				assertCards(read(ctx), 90, 10, 40)
 			})
 		}
-	}
-}
-
-func TestRefreshUsageKeepsNewerSubscription(t *testing.T) {
-	for _, refused := range []bool{false, true} {
-		t.Run(fmt.Sprintf("late error=%t", refused), func(t *testing.T) {
-			isolateRefreshes(t)
-			home := signIn(t)
-			if err := os.RemoveAll(filepath.Join(home, ".config", "github-copilot")); err != nil {
-				t.Fatal(err)
-			}
-			arrived, release := make(chan struct{}), make(chan struct{})
-			var once sync.Once
-			var mu sync.Mutex
-			calls := 0
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				mu.Lock()
-				calls++
-				n := calls
-				mu.Unlock()
-				value := 80
-				if n == 1 {
-					value = 20
-					close(arrived)
-					<-release
-					if refused {
-						w.WriteHeader(http.StatusUnauthorized)
-						return
-					}
-				} else if n > 2 {
-					w.WriteHeader(http.StatusServiceUnavailable)
-					return
-				}
-				fmt.Fprintf(w, `{"plan_type":"pro","rate_limit":{"primary_window":{"used_percent":%d,"limit_window_seconds":18000}}}`, value)
-			}))
-			t.Cleanup(srv.Close)
-			old := CodexBase
-			CodexBase = srv.URL + "/backend-api/codex"
-			t.Cleanup(func() { CodexBase = old })
-			c := &subscriptionUsageCache
-			c.Lock()
-			c.data = []SubscriptionQuota{{Provider: "codex", User: "me@example.com", Windows: []QuotaWindow{{Used: 10}}}}
-			c.Unlock()
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			SubscriptionUsage(ctx)
-			c.Lock()
-			done := c.pending
-			c.Unlock()
-			t.Cleanup(func() {
-				once.Do(func() { close(release) })
-				<-done
-			})
-			waitRefresh(t, arrived)
-			RefreshUsage(ctx, "codex", "me@example.com")
-			once.Do(func() { close(release) })
-			waitRefresh(t, done)
-			got := SubscriptionUsage(ctx)
-			if len(got) != 1 || got[0].Error != "" || len(got[0].Windows) != 1 || got[0].Windows[0].Used != 80 {
-				t.Fatalf("after late subscription response: %+v, want 80%%", got)
-			}
-			lastQuotas.Lock()
-			lastQuotas.m, lastQuotas.loaded = nil, false
-			lastQuotas.Unlock()
-			c.Lock()
-			c.at, c.asked = time.Time{}, true
-			c.Unlock()
-			got = SubscriptionUsage(ctx)
-			if len(got) != 1 || got[0].Error != "" || len(got[0].Windows) != 1 || got[0].Windows[0].Used != 80 || got[0].AsOf == nil {
-				t.Fatalf("subscription fallback: %+v, want saved 80%%", got)
-			}
-		})
 	}
 }

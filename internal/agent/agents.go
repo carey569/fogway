@@ -38,8 +38,6 @@ func init() {
 	sessions.WSLHomes = wslHomes
 	sessions.WSLRunning = WSLRunning
 	sessions.WSLOff = func() bool { return !wslLooks() }
-	// a Copilot CLI signed in inside a running distro (#723)
-	provider.CopilotWSLHomes = copilotWSLHomes
 }
 
 // others are clients that reach the gateway without being agents magpie
@@ -87,63 +85,23 @@ func homes() (home, cfg string) {
 func builtins(home, cfg string) []*Agent {
 	return append([]*Agent{
 		claude(home),
-		claudeDesktop(home),
 		codex(home),
 		gemini(home),
-		agy(home),
 		opencode(home, cfg),
-		openChamber(home, cfg),
-		mimocode(home, cfg),
-		deveco(home, cfg),
 		pi(home),
-		stepcode(home),
-		aside(home),
-		omo(home),
-		primeAgent(home),
+		omp(home),
+		dsh(home),
 		goose(home, cfg),
 		cursor(home),
-		cursorLocal(),
 		zed(home, cfg),
 		vscode(home, cfg),
 		vscodeInsidersAgent(home, cfg),
-		vscodium(home, cfg),
-		copilotJetBrains(home),
-		air(home, cfg),
 		copilot(home),
 		crush(home, cfg),
-		dsh(home),
-		reasonix(home),
-		commandCode(home),
-		fx(home),
-		omp(home),
-		devin(home, cfg),
-		hermes(home),
-		morph(home),
 		kimi(home),
 		qwen(home),
-		muse(cfg),
-		empryo(home),
-		ante(home),
-		astrbot(home),
-		jcode(home),
-		miniMax(home),
 		droid(home),
 		cline(home),
-		qoder(home),
-		qoderCN(home),
-		grok(home),
-		grokApp(home),
-		zcode(home),
-		workbuddy(home),
-		workbuddyAI(home),
-		codebuddy(home),
-		pencil(home),
-		t3code(home),
-		hanako(home),
-		atomcode(home),
-		snow(home),
-		alma(),
-		cindy(),
 	}, append(ompProfiles(home), wslAgents()...)...)
 }
 
@@ -335,13 +293,6 @@ func ownOptionsFrom(native func(p string) []catalog.Model, authFile string, cur 
 }
 
 // ---- agents ----------------------------------------------------------------
-
-// magpieProviderJSONFor is magpieProviderJSON for an agent whose catalog is
-// narrowed under a different id than its config shape (mimocode shares
-// OpenCode's shape but is seen as itself by magpie visible).
-func magpieProviderJSONFor(shape, catalog string) any {
-	return magpieProviderJSONAt(shape, catalog, gateway.URL())
-}
 
 // magpieProviderJSONAt is magpieProviderJSONFor for an agent that reaches
 // the gateway at gw: one in a WSL distro under NAT (see wsl.go).
@@ -645,7 +596,7 @@ func openCodeLike(at place, id, name, icon, bin, dir, auth string, ua []string, 
 	// OpenCode it runs on this config, is one of magpie's: magpie's
 	// provider has to stay
 	onMagpie := func() bool {
-		return usesMagpie(get("model"), get("small_model")) || id == "opencode" && at.spell == nil && openChamberOnMagpie()
+		return usesMagpie(get("model"), get("small_model"))
 	}
 	set := func(key string) func(string) error {
 		return func(v string) error {
@@ -700,15 +651,6 @@ func openCodeKeyAt(id, gw string) string {
 		return agentKeyAt(id, gw)
 	}
 	return keyAt(gw)
-}
-
-// openCodeRef is the value that makes the OpenCode config at path (agent
-// id's, whose catalog magpie's provider there lists) send model v. One of
-// magpie's goes to a provider of the file's own that already sends it to
-// magpie, named there rather than in a second list of the same models, else
-// to magpie's provider, put in the file; any other is v as it is.
-func openCodeRef(path, id, v string) (string, error) {
-	return openCodeRefAt(here(""), path, id, v)
 }
 
 // openCodeRefAt is openCodeRef for the agent at a place, which reaches the
@@ -782,14 +724,6 @@ func opencodeIn(at place) *Agent {
 		[]string{"opencode"}, "oc")
 }
 
-// mimocodeIn is MiMo Code in a WSL distro: ~/.config/mimocode, as
-// MIMOCODE_HOME isn't read there.
-func mimocodeIn(at place) *Agent {
-	return openCodeLike(at, "mimocode", "MiMo Code", "mimocode", "mimo",
-		filepath.Join(at.home, ".config", "mimocode"), filepath.Join(at.home, ".local", "share", "mimocode", "auth.json"),
-		[]string{"mimocode"}, "mimo")
-}
-
 // openCodeDir is the folder OpenCode reads its user config from:
 // $OPENCODE_CONFIG_DIR when set, else $XDG_CONFIG_HOME/opencode (cfg).
 // OpenCode 2, the one OpenChamber bundles (#321), reads that folder in place
@@ -802,44 +736,6 @@ func openCodeDir(cfg string) string {
 		}
 	}
 	return filepath.Join(cfg, "opencode")
-}
-
-// mimocode is MiMo Code, the CLI, and the engine inside Xiaomi MiMo, the
-// desktop app (#249): both read the same config, which MIMOCODE_HOME moves
-// to its own config folder.
-func mimocode(home, cfg string) *Agent {
-	dir := filepath.Join(cfg, "mimocode")
-	if h := appdir.Getenv("MIMOCODE_HOME"); filepath.IsAbs(h) {
-		dir = filepath.Join(h, "config")
-	}
-	return openCodeLike(here(home), "mimocode", "MiMo Code", "mimocode", "mimo",
-		dir, filepath.Join(home, ".local", "share", "mimocode", "auth.json"),
-		[]string{"mimocode"}, "mimo")
-}
-
-// deveco is DevEco Code, Huawei's fork of OpenCode for HarmonyOS apps
-// (openharmony-sig/deveco-code, #1885). It keeps OpenCode's config shape
-// in its own folder, $XDG_CONFIG_HOME/deveco, merging config.json,
-// deveco.json and deveco.jsonc there (packages/opencode/src/config,
-// loadGlobal); DEVECO_CONFIG_DIR adds a folder read after it, as
-// OPENCODE_CONFIG_DIR does OpenCode's, so what magpie writes there wins.
-// Its auth is xdg-basedir's data folder's, ~/.local/share/deveco. 0.2.3's
-// requests to a provider of the config's say "deveco/0.2.3 ai-sdk/…", but
-// much of the OpenCode code it keeps still sends OpenCode's own User-Agent
-// (opencode/<version>), so its key names it as well (openCodeKeyAt).
-func deveco(home, cfg string) *Agent {
-	return openCodeLike(here(home), "deveco", "DevEco Code", "deveco-color", "deveco",
-		devecoDir(cfg), filepath.Join(home, ".local", "share", "deveco", "auth.json"), []string{"deveco"})
-}
-
-// devecoDir is the folder DevEco Code reads its user config from:
-// $DEVECO_CONFIG_DIR when set to an absolute folder, else
-// $XDG_CONFIG_HOME/deveco (cfg).
-func devecoDir(cfg string) string {
-	if d := strings.TrimSpace(appdir.Getenv("DEVECO_CONFIG_DIR")); filepath.IsAbs(d) {
-		return d
-	}
-	return filepath.Join(cfg, "deveco")
 }
 
 func pi(home string) *Agent { return piIn(here(home)) }

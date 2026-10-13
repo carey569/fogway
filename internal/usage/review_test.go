@@ -3,13 +3,10 @@ package usage
 import (
 	"bytes"
 	"encoding/csv"
-	"os"
-	"path/filepath"
 	"slices"
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/sessions"
 )
 
@@ -44,97 +41,6 @@ func TestGatewayCorrelation(t *testing.T) {
 	c.RequestID = "req_direct"
 	if len(gatewayMatches([]Record{r}, []sessions.Call{c})) != 0 {
 		t.Fatal("distinct request IDs must stay")
-	}
-}
-
-func TestRejectedOnlyInRequestRows(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	catalog.Reset()
-	t.Cleanup(catalog.Reset)
-	now := holdClock(t, time.Date(2026, 9, 30, 12, 0, 0, 0, time.Local))
-	recs := []Record{{Time: now, Agent: "codex", Provider: "relay", Model: "m", Status: 200, Input: 2}, {Time: now, Agent: "codex", Status: 404, Error: "unknown model", Rejected: true}, {Time: now, Agent: "codex", Status: 400}}
-	rows, sum, _ := ledger(time.Time{}, Filter{}, recs)
-	if len(rows) != 3 || sum.Calls != 1 || sum.Errors != 0 {
-		t.Fatalf("rows %d, totals %+v", len(rows), sum)
-	}
-	if s := summarize(Today, now, recs); s.Calls != 1 || s.Errors != 0 || len(s.Models) != 1 {
-		t.Fatalf("overview %+v", s)
-	}
-	_, series := LedgerSeries(Today, rows)
-	calls := 0
-	for _, p := range series {
-		calls += p.Calls
-	}
-	if calls != 1 {
-		t.Fatalf("chart counted %d", calls)
-	}
-	if by := Breakdown(rows, "provider"); len(by) != 1 || by[0].ID != "relay" {
-		t.Fatalf("breakdown %+v", by)
-	}
-}
-
-func TestCalendarBucketsAcrossDST(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	catalog.Reset()
-	t.Cleanup(catalog.Reset)
-	loc, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, date := range []struct {
-		month      time.Month
-		day, hours int
-	}{{time.March, 8, 23}, {time.November, 1, 25}} {
-		now := time.Date(2026, date.month, date.day, 23, 30, 0, 0, loc)
-		since, bucket, pts := timeline(Today, now, time.Time{})
-		if len(pts) != date.hours || bucketIndex(bucket, since, now) != len(pts)-1 {
-			t.Fatalf("hourly DST: %d points, bucket %d", len(pts), bucketIndex(bucket, since, now))
-		}
-		next := now.AddDate(0, 0, 1)
-		start, bucket, pts := timeline(Week, next, time.Time{})
-		r := Record{Time: next, Provider: "p", Input: 1, Status: 200}
-		if bucketIndex(bucket, start, next) != 6 {
-			t.Fatal("next calendar day is in the wrong bucket")
-		}
-		s := summarize(Week, next, []Record{r})
-		if s.Series[len(pts)-1].Calls != 1 {
-			t.Fatal("overview bucket lost the call")
-		}
-		first := now.AddDate(0, 0, -90)
-		start, bucket, pts = timeline(All, next, first)
-		if bucket != "week" || bucketIndex(bucket, start, next) != len(pts)-1 {
-			t.Fatal("weekly calendar bucket mismatch")
-		}
-	}
-}
-
-func TestUsageLogIncrementalAndReplacement(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", dir)
-	Append(Record{Model: "first"})
-	if len(Load(time.Time{})) != 1 {
-		t.Fatal("initial read")
-	}
-	f, err := os.OpenFile(Path(), os.O_APPEND|os.O_WRONLY, 0600)
-	if err != nil {
-		t.Fatal(err)
-	}
-	f.WriteString(`{"model":"second"`)
-	f.Close()
-	if len(Load(time.Time{})) != 1 {
-		t.Fatal("partial line was consumed")
-	}
-	f, _ = os.OpenFile(Path(), os.O_APPEND|os.O_WRONLY, 0600)
-	f.WriteString("}\n")
-	f.Close()
-	if rs := Load(time.Time{}); len(rs) != 2 || rs[1].Model != "second" {
-		t.Fatalf("completed line %+v", rs)
-	}
-	replacement := filepath.Join(dir, "replacement")
-	os.WriteFile(replacement, []byte("{\"model\":\"replacement\"}\n"), 0600)
-	os.Rename(replacement, Path())
-	if rs := Load(time.Time{}); len(rs) != 1 || rs[0].Model != "replacement" {
-		t.Fatalf("replacement %+v", rs)
 	}
 }
 

@@ -6,10 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 // Anthropic-shaped relays in front of other vendors' models (Grok's, as
@@ -252,35 +250,5 @@ func TestNonStreamEndedShort(t *testing.T) {
 		`{"type":"response.completed","response":{"id":"resp_1","status":"completed","output":[],"usage":{"input_tokens":5,"output_tokens":1}}}`)
 	if code != 200 || !strings.Contains(body, "Done.") || strings.Contains(body, "ended before") {
 		t.Errorf("status %d: %s", code, body)
-	}
-}
-
-// The upstream's own stop reason is kept with the request, for a reply
-// that ended too soon to be told apart by: the relay's word, not magpie's.
-func TestRelayStopReasonRecorded(t *testing.T) {
-	relayAnthropic(t, anthStart("grok-4", 5), anthText("Done."), relayStop("end_turn"), relayEnd)
-	recs := usage.Load(time.Time{})
-	if len(recs) != 1 || recs[0].Stop != "end_turn" {
-		t.Fatalf("records %+v, want stop end_turn", recs)
-	}
-	// and a reply relayed as it came, to an agent of the same protocol
-	fresh(t)
-	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(io.Discard, r.Body)
-		w.Header().Set("Content-Type", "text/event-stream")
-		for _, ev := range []string{anthStart("grok-4", 5), anthText("Done."), relayStop("tool_calls"), relayEnd} {
-			io.WriteString(w, "data:"+ev+"\r\n\r\n")
-		}
-	}))
-	defer up.Close()
-	if err := provider.Save(provider.Provider{ID: "up", Name: "UP", Key: "k", Models: []string{"grok-4"}, Anthropic: up.URL}); err != nil {
-		t.Fatal(err)
-	}
-	if code, body := post(t, "/v1/messages", `{"model":"up/grok-4","stream":true,"max_tokens":9,"messages":[{"role":"user","content":"hi"}]}`); code != 200 {
-		t.Fatalf("status %d: %s", code, body)
-	}
-	recs = usage.Load(time.Time{})
-	if len(recs) != 1 || recs[0].Stop != "tool_calls" {
-		t.Fatalf("records %+v, want stop tool_calls", recs)
 	}
 }

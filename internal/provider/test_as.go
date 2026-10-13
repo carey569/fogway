@@ -74,9 +74,7 @@ func (p Provider) TestsAs(client string) string {
 	default:
 		return "no such client \"" + client + "\": codex or claude-code"
 	}
-	if p.Account != nil || p.DecideOnly() {
-		return "a signed-in account is asked as its own client already"
-	}
+
 	if p.IsOpenCode() || p.IsCline() || p.IsKilo() {
 		return "its requests are asked as its own client already"
 	}
@@ -186,8 +184,8 @@ func clientShape(client string) http.Header {
 func clientHeaders(client string, h http.Header) {
 	shape := clientShape(client)
 	if shape == nil && client == ClientCodex {
-		v := codexVersion()
-		shape = http.Header{"User-Agent": {codexUserAgent(v)}, "Originator": {"codex_cli_rs"}, "Version": {v}}
+		v := codexClientVersion
+		shape = http.Header{"User-Agent": {"codex_cli_rs/" + v}, "Originator": {"codex_cli_rs"}, "Version": {v}}
 	}
 	for k, vs := range shape {
 		h[k] = vs
@@ -234,3 +232,7 @@ func (p Provider) TestClients() map[string]string {
 	}
 	return out
 }
+
+// codexClientVersion is the Codex CLI a request tested as Codex's says it
+// is: one recent enough for a relay that checks.
+const codexClientVersion = "0.155.1"

@@ -229,9 +229,7 @@ func dataURL(p Part) string {
 // built-in's, for show, which Cursor's is none, and its fast mode was lost
 // on every request magpie translated (#1360).
 func buildHost(p provider.Provider) string {
-	if p.IsPlugin() && p.PluginProvider() == "cursor" {
-		return "cursor"
-	}
+
 	return p.Host()
 }
 
@@ -242,7 +240,7 @@ func buildHost(p provider.Provider) string {
 // plugin, which replays it for a Go key as the built-in did to
 // /alpha/generate.
 func chatReplaysReasoning(host, model string) bool {
-	return strings.Contains(host, "deepseek") || strings.Contains(strings.ToLower(model), "deepseek") || host == provider.CommandCodePlanID
+	return strings.Contains(host, "deepseek") || strings.Contains(strings.ToLower(model), "deepseek")
 }
 
 func buildChat(r *Request, model, host string, rejectTemp bool) []byte {

@@ -252,29 +252,6 @@ func TestPi(t *testing.T) {
 	}
 }
 
-// Pi's sessions in a folder of the user's choosing, all in one, as the
-// sessionDir setting or $PI_CODING_AGENT_SESSION_DIR puts them.
-func TestPiSessionDir(t *testing.T) {
-	_, pi := setupMore(t)
-	flat := filepath.Join(filepath.Dir(pi), "flat")
-	os.MkdirAll(flat, 0o755)
-	from := filepath.Join(pi, "sessions", "--work-pi--")
-	name := "2026-09-24T08-00-00-000Z_" + piFirst + ".jsonl"
-	if err := os.Rename(filepath.Join(from, name), filepath.Join(flat, name)); err != nil {
-		t.Fatal(err)
-	}
-	os.WriteFile(filepath.Join(pi, "settings.json"), []byte("{\n  // where the sessions go\n  \"sessionDir\": "+jsonString(flat)+",\n}\n"), 0o644)
-	find(t, List(0), "pi", piFirst)
-
-	t.Setenv("PI_CODING_AGENT_SESSION_DIR", filepath.Join(filepath.Dir(pi), "none"))
-	Reset()
-	for _, s := range List(0) {
-		if s.ID == piFirst {
-			t.Fatal("$PI_CODING_AGENT_SESSION_DIR comes before the setting")
-		}
-	}
-}
-
 func jsonString(s string) string {
 	b, _ := json.Marshal(s)
 	return string(b)

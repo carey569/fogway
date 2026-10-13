@@ -139,15 +139,6 @@ func TestFirstWordsAreWhatTheUserSaid(t *testing.T) {
 	}
 }
 
-// Copilot's Auto picks a model for what the user said, not a notice.
-func TestLastUserTextSkipsWhatTheAgentPutIn(t *testing.T) {
-	body := `{"model":"m","messages":[{"role":"user","content":"write the parser"},{"role":"assistant","content":"ok"},` +
-		`{"role":"user","content":` + quote(taskNotification) + `}]}`
-	if got := lastUserText(provider.Anthropic, []byte(body)); got != "write the parser" {
-		t.Fatalf("%q", got)
-	}
-}
-
 // An agent's message after the turn is not a turn: the classifier isn't
 // asked about it, and the turn's rule holds (#1826: a TodoWrite nudge sent
 // a 常规 turn to the 复杂 member).

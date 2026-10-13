@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -168,30 +167,6 @@ func TestRefusalRetriesGroup(t *testing.T) {
 		}
 		if r := lastRoute(s); r.Tries[0].Fail != failRefused || r.Tries[0].Rest != nil {
 			t.Fatalf("none %v: tries: %+v", none, r.Tries)
-		}
-	}
-}
-
-// A Claude subscription served through the claude CLI: at RefusalRetries 0
-// the spare account isn't asked, and Claude Code has the refusal with its
-// classifier's category, streamed and whole.
-func TestRefusalRetriesClaudeSubscription(t *testing.T) {
-	log := claudeSubscriptionRefusing(t)
-	refusalRetries(t, 0)
-	s := New()
-	for _, ask := range []string{
-		`{"model":"claude/claude-sonnet-5","max_tokens":50,"stream":true,"messages":[{"role":"user","content":"ping"}]}`,
-		`{"model":"claude/claude-sonnet-5","max_tokens":50,"messages":[{"role":"user","content":"ping again"}]}`,
-	} {
-		os.Remove(log)
-		code, body := sendTo(s, "/v1/messages", ask)
-		b, _ := os.ReadFile(log)
-		if !handedBack(code, body) || strings.Join(strings.Fields(string(b)), ",") != "own" {
-			t.Fatalf("%s: status %d: %s (runs %q)", ask, code, body, b)
-		}
-		r := lastRoute(s)
-		if len(r.Tries) != 1 || r.Tries[0].Fail != failRefused || r.Tries[0].Rest != nil {
-			t.Fatalf("tries: %+v", r.Tries)
 		}
 	}
 }

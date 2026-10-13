@@ -119,8 +119,6 @@ func vscode(home, cfg string) *Agent { return vscodeOf(vscodeStable, home, cfg) 
 
 func vscodeInsidersAgent(home, cfg string) *Agent { return vscodeOf(vscodeInsiders, home, cfg) }
 
-func vscodium(home, cfg string) *Agent { return vscodeOf(vscodiumKind, home, cfg) }
-
 func vscodeOf(k vscodeKind, home, cfg string) *Agent {
 	switch runtime.GOOS {
 	case "darwin":

@@ -146,7 +146,7 @@ type modelRef struct {
 
 // servedRef is a served model as the Routing page lists it
 func servedRef(e provider.Entry) modelRef {
-	return modelRef{ID: e.ID, Name: e.Name, Provider: e.Provider.ID, PName: e.Provider.Name, Icon: e.Provider.Icon, Context: e.Context, Efforts: e.Efforts, CanFast: provider.CanFast(e.Provider, e.Model), OwnFast: provider.OwnFast(e.Provider, e.Model), Images: seesImages(e), ImagesUnknown: imagesUnknown(e), Sub: e.Provider.Account != nil}
+	return modelRef{ID: e.ID, Name: e.Name, Provider: e.Provider.ID, PName: e.Provider.Name, Icon: e.Provider.Icon, Context: e.Context, Efforts: e.Efforts, CanFast: provider.CanFast(e.Provider, e.Model), OwnFast: provider.OwnFast(e.Provider, e.Model), Images: seesImages(e), ImagesUnknown: imagesUnknown(e), Sub: false}
 }
 
 type poolJSON struct {
@@ -175,13 +175,7 @@ func imagesUnknown(e provider.Entry) bool { return e.ImageInput == nil && !e.Ima
 
 // onOf is who a provider's requests spread over: its accounts, or keys.
 func onOf(p provider.Provider) (kind string, who []string) {
-	if p.Account != nil {
-		who = append(who, p.Account.User)
-		for _, q := range p.AlsoOn() {
-			who = append(who, q.Account.User)
-		}
-		return "account", who
-	}
+
 	for _, k := range p.KeysOn() {
 		n := k.Name
 		if n == "" {
@@ -224,9 +218,6 @@ func groupsState() groupsJSON {
 			out.Templates[i].Group.Members = []string{} // one that can't be made has none
 		}
 	}
-	for _, e := range provider.Deciders() {
-		out.Deciders = append(out.Deciders, modelRef{ID: e.ID, Name: e.Name, Provider: e.Provider.ID, PName: e.Provider.Name, Icon: e.Provider.Icon, Sub: e.Provider.Account != nil})
-	}
 	served := provider.Served()
 	for _, e := range served {
 		if e.Group == "" {
@@ -245,7 +236,7 @@ func groupsState() groupsJSON {
 			gj.Members = []string{}
 		}
 		gj.Patterns = append(gj.Patterns, provider.PatternHits(g)...)
-		gj.Decides = g.Decides()
+		gj.Decides = false
 		if g.Classifier != "" {
 			if why, at, ok := classifierFailure(g.Classifier); ok {
 				gj.ClassifierFailed = &classifierFailedJSON{Error: why, At: at}

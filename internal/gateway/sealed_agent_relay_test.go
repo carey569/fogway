@@ -165,31 +165,3 @@ func TestSealedReplyRefusedWhereTheLeadWasNotAnswered(t *testing.T) {
 		t.Fatalf("third asked %d times, other %d", n, m)
 	}
 }
-
-// The case #619 guards: the lead on one of Codex's own models, answered by
-// the ChatGPT account Codex is signed in to, its subagent on a custom
-// provider. The task stays refused with the guidance, and the provider is
-// never asked.
-func TestSealedTaskFromChatGPTLeadStillRefused(t *testing.T) {
-	fresh(t)
-	var native int
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-		io.ReadAll(r.Body)
-		native++
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, sse(`data: {"type":"response.completed","response":{"id":"r1","status":"completed","output":[]}}`))
-	})
-	relay := relayOn(t, "third")
-	s := New()
-	if rec := codexSubTurn(s, "gpt-5.5", "lead-1", "", leadAsk); rec.Code != 200 || native != 1 {
-		t.Fatalf("lead: %d %s (ChatGPT asked %d times)", rec.Code, rec.Body.String(), native)
-	}
-	rec := codexSubTurn(s, "third/gpt-6-astra", "worker-1", "lead-1", sealedHandoff)
-	if rec.Code != 400 || !strings.Contains(rec.Body.String(), "sealed by the ChatGPT backend that answered its lead") ||
-		!strings.Contains(rec.Body.String(), "third/gpt-6-astra is neither") || strings.Contains(rec.Body.String(), "gAAAAA") {
-		t.Fatalf("subagent: %d %s", rec.Code, rec.Body.String())
-	}
-	if n := len(relay.requests()); n != 0 {
-		t.Fatalf("third asked %d times", n)
-	}
-}

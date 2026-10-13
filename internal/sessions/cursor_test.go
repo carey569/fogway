@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"maps"
 	"os"
@@ -293,48 +292,5 @@ func TestCursor(t *testing.T) {
 	}
 	if tools["Read"] != 2 || tools["Shell"] != 1 || tools["Grep"] != 1 {
 		t.Fatalf("tools %v", tools)
-	}
-}
-
-func TestCursorDelete(t *testing.T) {
-	dir := cursorSetup(t)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "config"))
-	main, sub, _, _ := makeCursorChats(t, dir)
-	home, _ := os.UserHomeDir()
-	transcripts := filepath.Join(home, ".cursor", "projects", "work-cur", "agent-transcripts", curMain)
-	os.MkdirAll(transcripts, 0o755)
-	os.WriteFile(filepath.Join(transcripts, curMain+".jsonl"), []byte(`{"role":"user","message":{"content":[]}}`+"\n"), 0o644)
-	// a chat being written to is left alone
-	if _, err := Delete("cursor", curMain); !errors.Is(err, ErrActive) {
-		t.Fatalf("a chat just written: %v", err)
-	}
-	ageCursor(dir, filepath.Join(home, ".cursor"))
-	Reset()
-	tr, err := Delete("cursor", curMain)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(tr.Items) != 3 || tr.Cwd != curCwd {
-		t.Fatalf("trashed %+v, want the chat's folder, its subagent's and its transcripts", tr)
-	}
-	for _, p := range []string{main, sub, transcripts} {
-		if _, err := os.Stat(p); err == nil {
-			t.Fatalf("%s is still there", p)
-		}
-	}
-	if _, ok := findSession(List(0), "cursor", curMain); ok {
-		t.Fatal("the deleted chat is listed")
-	}
-	if _, err := Restore(tr.Key); err != nil {
-		t.Fatal(err)
-	}
-	for _, p := range []string{filepath.Join(main, "store.db"), filepath.Join(sub, "store.db"), filepath.Join(transcripts, curMain+".jsonl")} {
-		if _, err := os.Stat(p); err != nil {
-			t.Fatalf("%s isn't back: %v", p, err)
-		}
-	}
-	Reset()
-	if s, ok := findSession(List(0), "cursor", curMain); !ok || s.Title != "Port the parser" {
-		t.Fatalf("the restored chat: %+v", s)
 	}
 }

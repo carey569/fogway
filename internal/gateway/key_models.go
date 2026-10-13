@@ -263,7 +263,7 @@ func accountAllowed(who access.Identity, c candidate) bool {
 // key may not use. A provider with no key and no account (a local ollama)
 // is itself.
 func (s *Server) onKeys(r *http.Request, p provider.Provider, model, asked string) ([]candidate, int, string) {
-	if p.Account == nil && p.Key == "" {
+	if p.Key == "" {
 		return []candidate{{p: p, model: model, rest: p.ID}}, 0, ""
 	}
 	q := p
@@ -340,4 +340,14 @@ func countHeld(w http.ResponseWriter, r *http.Request, proto provider.Protocol, 
 		return true
 	}
 	return false
+}
+
+// accountServes says some account or key the key may use serves the provider's
+// model: an account of several set to serve other models only (#474) is
+// one the key may use, and none of the key's.
+func accountServes(who access.Identity, p provider.Provider, model string) bool {
+	if len(who.Accounts) == 0 {
+		return true
+	}
+	return accountServesOn(who, p, model, p.AccountIDs())
 }

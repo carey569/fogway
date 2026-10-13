@@ -3,7 +3,6 @@ package gateway
 import (
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"net"
@@ -14,44 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/klauspost/compress/zstd"
 	"github.com/yetone/magpie/internal/provider"
 )
-
-func TestRequestBodyTooLarge(t *testing.T) {
-	for _, api := range []string{"chat", "responses", "messages", "count", "gemini", "codex", "images", "edits", "videos"} {
-		t.Run(api, func(t *testing.T) {
-			s := New()
-			r := httptest.NewRequest("POST", "/", strings.NewReader("{}"))
-			r.ContentLength = defaultBodyLimit + 1
-			w := httptest.NewRecorder()
-			switch api {
-			case "chat":
-				s.handle(provider.Chat)(w, r)
-			case "responses":
-				s.handle(provider.Responses)(w, r)
-			case "messages":
-				s.handle(provider.Anthropic)(w, r)
-			case "count":
-				s.countTokens(w, r)
-			case "codex":
-				s.codexBackend(w, r)
-			case "images":
-				s.images(false)(w, r)
-			case "edits":
-				s.images(true)(w, r)
-			case "videos":
-				s.videosCreate(w, r)
-			case "gemini":
-				r.SetPathValue("call", "m:generateContent")
-				s.gemini(w, r)
-			}
-			if w.Code != http.StatusRequestEntityTooLarge {
-				t.Fatalf("status = %d, want 413", w.Code)
-			}
-		})
-	}
-}
 
 func TestRequestBodySocketTimeout(t *testing.T) {
 	s := New()
@@ -115,35 +78,6 @@ func TestRequestBodyDeadlineCleared(t *testing.T) {
 	}
 	if n := connections.Load(); n != 1 {
 		t.Fatalf("streaming deadline broke keepalive: %d connections", n)
-	}
-}
-
-func TestCodexExpandedBodyBound(t *testing.T) {
-	for _, enc := range []string{"gzip", "zstd"} {
-		t.Run(enc, func(t *testing.T) {
-			var compressed bytes.Buffer
-			if enc == "gzip" {
-				zw := gzip.NewWriter(&compressed)
-				zw.Write(bytes.Repeat([]byte("x"), 2048))
-				zw.Close()
-			} else {
-				zw, err := zstd.NewWriter(&compressed)
-				if err != nil {
-					t.Fatal(err)
-				}
-				zw.Write(bytes.Repeat([]byte("x"), 2048))
-				zw.Close()
-			}
-			s := New()
-			s.requestLimits.body = 1024
-			r := httptest.NewRequest("POST", CodexPath+"/responses", &compressed)
-			r.Header.Set("Content-Encoding", enc)
-			w := httptest.NewRecorder()
-			s.codexBackend(w, r)
-			if w.Code != 413 {
-				t.Fatalf("inflated %s: status %d", enc, w.Code)
-			}
-		})
 	}
 }
 

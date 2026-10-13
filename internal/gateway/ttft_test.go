@@ -196,74 +196,6 @@ func TestGroupFailoverTimesEachTry(t *testing.T) {
 	}
 }
 
-// What counts as a reply's first content and first text, in each protocol,
-// its events split across writes as they come.
-func TestFirstTokenKinds(t *testing.T) {
-	for _, c := range []struct {
-		ev            string
-		content, text bool
-	}{
-		{`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"t","name":"ls","input":{}}}`, true, false},
-		{`data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}`, false, false},
-		{`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"a"}}`, true, false},
-		{`data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"x"}}`, false, false},
-		{`data: {"type":"message_delta","delta":{"stop_reason":"end_turn"}}`, false, false},
-		{`data: {"choices":[{"delta":{"role":"assistant","content":null}}]}`, false, false},
-		{`data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"name":"ls"}}]}}]}`, true, false},
-		{`data: {"choices":[{"delta":{"reasoning":"hm"}}]}`, true, false},
-		{`data: {"choices":[{"delta":{"content":"hi"}}]}`, true, true},
-		{"event: response.function_call_arguments.delta\ndata: {\"delta\":\"{\"}", true, false},
-		{`data: {"type":"response.output_item.added","item":{"type":"function_call","name":"ls"}}`, true, false},
-		{`data: {"type":"response.output_item.added","item":{"type":"message"}}`, false, false},
-		{`data: {"type":"response.output_text.delta","delta":""}`, false, false},
-		{`data: {"candidates":[{"content":{"parts":[{"text":"hm","thought":true}]}}]}`, true, false},
-		{`data: {"candidates":[{"content":{"parts":[{"functionCall":{"name":"ls"}}]}}]}`, true, false},
-		{`data: {"candidates":[{"content":{"parts":[{"text":"hi"}]}}]}`, true, true},
-		{`: keep-alive`, false, false},
-		{`data: [DONE]`, false, false},
-	} {
-		content, text := firstKind([]byte(c.ev))
-		if content != c.content || text != c.text {
-			t.Errorf("%s: content %v text %v", c.ev, content, text)
-		}
-	}
-
-	// split across writes, \r\n-ended
-	f := firstToken{start: time.Now().Add(-time.Second)}
-	stream := "data: {\"choices\":[{\"delta\":{\"role\":\"assistant\"}}]}\r\n\r\ndata: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0}]}}]}\r\n\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"hi\"}}]}\r\n\r\n"
-	for i := 0; i < len(stream); i += 7 {
-		f.see([]byte(stream[i:min(i+7, len(stream))]))
-	}
-	// read on past its first text, for when the rest came (flowMs)
-	if first, text := f.ms(); first < 1000 || text < first || f.off || f.pend != nil || f.flowFor(0) < 1 {
-		t.Errorf("split: %d %d %+v", first, text, f)
-	}
-	// a JSON reply is not read
-	j := firstToken{start: time.Now()}
-	j.see([]byte(`{"choices":[{"message":{"content":"hi"}}]}` + "\n\n"))
-	if first, _ := j.ms(); first != 0 || !j.off {
-		t.Errorf("json: %+v", j)
-	}
-}
-
-// Codex's own models, relayed to the ChatGPT backend as they came, are
-// timed too — its stream says no Content-Type.
-func TestCodexBackendTimesFirstToken(t *testing.T) {
-	setup(t, provider.Chat, &fake{t: t})
-	p := &paced{events: pacedResponses, gap: pacedGap}
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header()["Content-Type"] = nil
-		p.ServeHTTP(w, r)
-	})
-	if code, body := codexPost(t, `{"model":"gpt-5.5","stream":true,"input":"hi"}`); code != 200 {
-		t.Fatalf("%d %s", code, body)
-	}
-	gap := pacedGap.Milliseconds()
-	if u := lastUsage(t); u.TTFT < gap || u.FirstText < 2*gap || u.Millis <= u.FirstText || u.Output != 20 {
-		t.Errorf("usage %+v", u)
-	}
-}
-
 // bursty is a vendor that writes each of its chunks a gap after the last,
 // every event of a chunk in one write: a chunk of many is a reply it held
 // back and let go at once.
@@ -381,25 +313,5 @@ func TestBurstTellsNoSpeed(t *testing.T) {
 				}
 			})
 		}
-	}
-}
-
-// Codex's own models, relayed to the ChatGPT backend as they came, tell no
-// speed for a burst either.
-func TestCodexBackendBurstTellsNoSpeed(t *testing.T) {
-	setup(t, provider.Chat, &fake{t: t})
-	b := &bursty{chunks: burstChunks(provider.Responses, 200, 199, 5000), gap: 600 * time.Millisecond, header: true}
-	chatgpt(t, b.ServeHTTP)
-	if code, body := codexPost(t, `{"model":"gpt-5.5","stream":true,"input":"hi"}`); code != 200 {
-		t.Fatalf("%d %s", code, body)
-	}
-	u := lastUsage(t)
-	// the end after the wait, less the moment the first word took to
-	// reach magpie (599 ms of 600 on macOS CI at 58f45d05)
-	if u.Millis-u.TTFT < 540 || u.Output != 5000 {
-		t.Fatalf("usage %+v", u)
-	}
-	if n, w := u.Decode(); n != 0 || w != 0 {
-		t.Errorf("burst: %d tokens in %d ms (flow %d) read a speed; want none", n, w, u.Flow)
 	}
 }

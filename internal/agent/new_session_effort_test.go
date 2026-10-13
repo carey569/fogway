@@ -100,34 +100,6 @@ func TestCodexNewSessionEffortLastsModelSwitch(t *testing.T) {
 	}
 }
 
-// Grok Build: a model picked without the chosen level starts at its
-// nearest, not at Grok's default.
-func TestGrokNewSessionEffortLastsModelSwitch(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
-	t.Setenv("GROK_HOME", filepath.Join(home, "grok"))
-	effortModels(t)
-	path := filepath.Join(home, "grok", "config.toml")
-	os.MkdirAll(filepath.Dir(path), 0o755)
-	os.WriteFile(path, []byte("[models]\ndefault = \"grok-4.6\"\ndefault_reasoning_effort = \"xhigh\"\n"), 0o644)
-	a := grok(home)
-	if err := a.Field("model").Set("magpie/volc/all-five"); err != nil {
-		t.Fatal(err)
-	}
-	if v := a.Field("effort").Get(); v != "xhigh" {
-		t.Fatalf("xhigh on a model that takes it: %q", v)
-	}
-	if err := a.Field("model").Set("magpie/volc/lo-hi-max"); err != nil {
-		t.Fatal(err)
-	}
-	if v := a.Field("effort").Get(); v != "max" {
-		t.Fatalf("xhigh on lo-hi-max: %q", v)
-	}
-}
-
 // Claude Code: Opus 5.5 reads only its own modelSettings level, and a
 // routing group or another vendor's model picked later in Claude Code reads
 // the top one: the chosen level is written there too, so it starts at it.

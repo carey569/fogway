@@ -75,7 +75,7 @@ func (s *Server) serverReview(p provider.Provider, asked []string, body []byte) 
 // vendor runs Anthropic's classifier, and magpie answers none on its
 // behalf.
 func AutoModeReviewed(p provider.Provider, model string) bool {
-	return p.Account != nil && p.Account.Agent == "claude" || anthropicModel.MatchString(model) || provider.HostOf(p.Base(provider.Anthropic)) == "api.anthropic.com"
+	return anthropicModel.MatchString(model) || provider.HostOf(p.Base(provider.Anthropic)) == "api.anthropic.com"
 }
 
 // classifierRoom is what a model that reasons is given on top of the
@@ -97,17 +97,6 @@ func autoModeClassifier(req *Request) bool {
 			if p.Kind == Text && strings.HasPrefix(strings.TrimSpace(p.Text), "<transcript>") {
 				return true
 			}
-		}
-	}
-	return false
-}
-
-// hasReply reports whether msgs hold a reply: without one, a request is
-// a one-off ask however many user messages it comes in.
-func hasReply(msgs []Message) bool {
-	for _, m := range msgs {
-		if m.Role == "assistant" {
-			return true
 		}
 	}
 	return false

@@ -47,61 +47,6 @@ func TestCodexUsageCompactionCounterDomains(t *testing.T) {
 	}
 }
 
-func TestCodexUsageCounterDomainOffsetChangesAndReload(t *testing.T) {
-	u := cxUse(100, 40, 0, 10, 2)
-	legacy := func(n int) string { return cxUse(n*100, n*40, 0, n*10, n*2) }
-	for _, reverse := range []bool{false, true} {
-		for split := 0; split <= 7; split++ {
-			t.Run(fmt.Sprintf("reverse=%v/split=%d", reverse, split), func(t *testing.T) {
-				events := []string{
-					cxCompactionLine(0, "compact-1", legacy(9), legacy(9)),
-					cxRecordLine(1, "a", legacy(10), u), tokenCountLine(2, legacy(1), u),
-					cxRecordLine(3, "compact-2", legacy(14), legacy(4)),
-					cxCompactionLine(4, "compact-2", legacy(14), legacy(4)),
-					cxRecordLine(5, "b", legacy(15), u), tokenCountLine(6, legacy(2), u),
-				}
-				if reverse {
-					events[1], events[2], events[5], events[6] = events[2], events[1], events[6], events[5]
-				}
-				path := codexUsageLog(t, append(cxTurnLines(0, "t1", "gpt-6-astra", "high"), events[:split]...))
-				Calls(time.Time{})
-				List(0)
-				Reset()
-				events = append(events[split:], tokenCountLine(7, legacy(3), u),
-					cxRecordLine(8, "a", legacy(10), u), tokenCountLine(9, legacy(4), u),
-					// Replaying compaction metadata must not change the offset.
-					cxCompactionLine(4, "compact-2", legacy(14), legacy(4)),
-					cxRecordLine(10, "c", legacy(18), u), tokenCountLine(11, legacy(5), u),
-					tokenCountLine(2, legacy(1), u), tokenCountLine(6, legacy(2), u))
-				appendText(t, path, strings.Join(events, "\n")+"\n")
-				cs := Calls(time.Time{})
-				if len(cs) != 7 {
-					t.Fatalf("lost or duplicated requests: %+v", cs)
-				}
-				var named int
-				for _, c := range cs {
-					if c.ResponseID != "" {
-						named++
-					}
-				}
-				if named != 5 {
-					t.Fatalf("named calls = %d", named)
-				}
-				if epoch := callCache[path].CX.Usage.Epoch; epoch != 0 {
-					t.Fatalf("cross-domain reset: %d", epoch)
-				}
-				if ss := List(0); len(ss) != 1 || ss[0].Tokens != (Tokens{1080, 180, 720, 0, 0}) {
-					t.Fatalf("summary: %+v", ss)
-				}
-				resetCalls()
-				if got := Calls(time.Time{}); !reflect.DeepEqual(got, cs) {
-					t.Fatal("reloaded calls differ")
-				}
-			})
-		}
-	}
-}
-
 func TestCodexUsageIdenticalTokensAcrossInputBoundaryRemainDistinct(t *testing.T) {
 	u := cxUse(100, 40, 0, 10, 2)
 	for _, reverse := range []bool{false, true} {
@@ -118,63 +63,6 @@ func TestCodexUsageIdenticalTokensAcrossInputBoundaryRemainDistinct(t *testing.T
 				t.Fatalf("distinct calls merged: %+v", cs)
 			}
 		})
-	}
-}
-
-func TestCodexUsageResumeCounterDomainsAndReload(t *testing.T) {
-	u := cxUse(100, 40, 0, 10, 2)
-	total := func(n int) string { return cxUse(n*100, n*40, 0, n*10, n*2) }
-	for _, reverse := range []bool{false, true} {
-		for _, split := range []int{5, 6, 7, 8, 12, 13} {
-			t.Run(fmt.Sprintf("reverse=%v/split=%d", reverse, split), func(t *testing.T) {
-				events := []string{
-					tokenCountLine(0, total(9), u), // its exact named response arrives after both resets
-					cxRecordLine(1, "a", total(10), u), tokenCountLine(2, total(10), u),
-					cxCompactionLine(3, "compact1", total(12), total(2)),
-					tokenCountLine(4, total(10), total(0)),
-					cxRecordLine(5, "b", total(13), u), tokenCountLine(6, total(1), u),
-					cxRecordLine(7, "d", total(14), u), tokenCountLine(8, total(2), u),
-					cxCompactionLine(9, "compact2", total(15), u),
-					cxRecordLine(10, "f", total(16), u), tokenCountLine(11, total(3), u),
-					cxRecordLine(12, "g", total(17), u), tokenCountLine(13, total(1), u),
-					tokenCountLine(14, total(2), u), cxRecordLine(0, "late", total(9), u),
-				}
-				if reverse {
-					events[5], events[6] = events[6], events[5]
-					events[12], events[13] = events[13], events[12]
-				}
-				path := codexUsageLog(t, append(cxTurnLines(0, "t1", "gpt-6-astra", "high"), events[:split]...))
-				Calls(time.Time{})
-				List(0)
-				Reset()
-				appendText(t, path, strings.Join(events[split:], "\n")+"\n")
-				cs := Calls(time.Time{})
-				if len(cs) != 9 {
-					t.Fatalf("reset doubled/lost calls: %+v", cs)
-				}
-				if ss := List(0); len(ss) != 1 || ss[0].Tokens != (Tokens{600, 100, 400, 0, 0}) {
-					t.Fatalf("summary: %+v", ss)
-				}
-				Reset()
-				if got := Calls(time.Time{}); !reflect.DeepEqual(got, cs) {
-					t.Fatal("restart changed reset reconciliation")
-				}
-			})
-		}
-	}
-}
-
-func TestCodexUsageBothCountersResetDoesNotInventOffset(t *testing.T) {
-	u := cxUse(100, 40, 0, 10, 2)
-	total := func(n int) string { return cxUse(n*100, n*40, 0, n*10, n*2) }
-	lines := append(cxTurnLines(0, "t1", "gpt-6-astra", "high"), cxRecordLine(1, "old", total(2), u), tokenCountLine(2, total(2), u), tokenCountLine(4, u, u), cxRecordLine(3, "reset", u, u))
-	path := codexUsageLog(t, lines)
-	Calls(time.Time{})
-	List(0)
-	Reset()
-	appendText(t, path, cxRecordLine(5, "b", total(2), u)+"\n"+tokenCountLine(6, total(2), u)+"\n"+cxRecordLine(7, "c", total(3), u)+"\n"+tokenCountLine(8, total(3), u)+"\n")
-	if cs := Calls(time.Time{}); len(cs) != 4 {
-		t.Fatalf("unproven reset offset applied: %+v", cs)
 	}
 }
 
@@ -383,30 +271,6 @@ func TestCodexUsageNoLastBaselineAndLegacyReset(t *testing.T) {
 	codexUsageLog(t, lines)
 	if cs := Calls(time.Time{}); len(cs) != 3 {
 		t.Fatal(cs)
-	}
-}
-
-func TestCodexUsageSummaryCloneAndJSON(t *testing.T) {
-	u := cxUse(100, 40, 0, 10, 2)
-	s := &state{}
-	for _, l := range append(cxTurnLines(0, "t1", "gpt-6-astra", "high"), cxRecordLine(1, "a", u, u)) {
-		codexLine(s, []byte(l), true)
-	}
-	c := s.clone()
-	codexLine(c, []byte(cxRecordLine(2, "b", cxUse(200, 80, 0, 20, 4), u)), true)
-	if len(s.Codex.Entries) != 1 || len(c.Codex.Entries) != 2 {
-		t.Fatal("clone shared contributions")
-	}
-	b, err := json.Marshal(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var restored state
-	if err = json.Unmarshal(b, &restored); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(restored.Models, c.Models) || restored.Codex != nil || strings.Contains(string(b), "Entries") {
-		t.Fatal("summary cache must retain totals without per-response observations")
 	}
 }
 

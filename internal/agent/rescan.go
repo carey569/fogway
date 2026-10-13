@@ -16,19 +16,10 @@ import (
 func Rescan() {
 	proc.Forget()
 
-	cursorLocalSeen.Lock()
-	cursorLocalSeen.at = time.Time{}
-	cursorLocalSeen.Unlock()
-
 	wsl.Lock()
 	wsl.at, wsl.runAt = time.Time{}, time.Time{}
 	// a running distro is asked again, and one that failed is retried now
 	// rather than in ten minutes
 	wsl.probed, wsl.failed = map[string]bool{}, map[string]time.Time{}
 	wsl.Unlock()
-
-	almaRead.Lock()
-	almaRead.at, almaRead.body = nil, nil
-	almaRead.gen++
-	almaRead.Unlock()
 }

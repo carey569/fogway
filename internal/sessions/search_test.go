@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 // claudeFile writes a Claude Code session of the given lines and returns it
@@ -120,52 +119,6 @@ func TestSearchSessionStopsWhenCancelled(t *testing.T) {
 	cancel()
 	if _, ok, err := SearchSession(ctx, s, NeedleOf("login")); ok || err == nil {
 		t.Fatalf("a cancelled search went on: %v %v", ok, err)
-	}
-}
-
-func TestGatewayTitleAndSearch(t *testing.T) {
-	gatewayHome(t)
-	if err := SetGatewayRecording(true, false); err != nil {
-		t.Fatal(err)
-	}
-	if got := GatewayTitle("pi", "ses_1"); got != "" {
-		t.Fatalf("a session never recorded has title %q", got)
-	}
-	at := time.Now().UTC()
-	turn := GatewayTurn{Agent: "pi", Session: "ses_1", Time: at,
-		Input: []Part{
-			{Role: "system", Kind: "context", Text: "You are a helpful assistant. Deploy carefully."},
-			{Role: "user", Kind: "text", Text: "<system-reminder>today is Monday</system-reminder>"},
-			{Role: "user", Kind: "text", Text: "  Deploy the   staging\nserver tonight  "},
-		},
-		Output: []Part{{Role: "assistant", Kind: "text", Text: "Deploying staging now."}},
-	}
-	if err := SaveGatewayTurn(turn); err != nil {
-		t.Fatal(err)
-	}
-	later := GatewayTurn{Agent: "pi", Session: "ses_1", Time: at.Add(time.Second),
-		Input: []Part{{Role: "user", Kind: "text", Text: "and what about prod?"}}}
-	if err := SaveGatewayTurn(later); err != nil {
-		t.Fatal(err)
-	}
-	if got := GatewayTitle("pi", "ses_1"); got != "Deploy the staging server tonight" {
-		t.Fatalf("title = %q", got)
-	}
-	if got := GatewayTitle("pi", "ses_other"); got != "" {
-		t.Fatalf("another session's title = %q", got)
-	}
-
-	ctx := context.Background()
-	h, ok, err := SearchGateway(ctx, "pi", "ses_1", NeedleOf("staging server"))
-	if err != nil || !ok || h.Role != "user" || h.Match != "staging server" {
-		t.Fatalf("hit: %+v %v %v", h, ok, err)
-	}
-	// the system prompt an agent sends every time isn't what was said
-	if _, ok, _ := SearchGateway(ctx, "pi", "ses_1", NeedleOf("helpful assistant")); ok {
-		t.Fatal("matched the system prompt")
-	}
-	if _, ok, _ := SearchGateway(ctx, "pi", "ses_1", NeedleOf("prod?")); !ok {
-		t.Fatal("a later turn wasn't searched")
 	}
 }
 

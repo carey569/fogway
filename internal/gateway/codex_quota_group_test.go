@@ -6,8 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // The ChatGPT backend saying a Codex account is out of its allowance, in
@@ -57,44 +55,6 @@ var grokAnswer = sse(`data: {"id":"c1","choices":[{"index":0,"delta":{"role":"as
 	`data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
 	`data: [DONE]`)
 
-// A routing group with a Codex subscription first and a Grok-like provider
-// after it (Discord, waroy): the Codex account out of its allowance, in any
-// shape the ChatGPT backend says it, hands the turn to the next member, and
-// Codex is answered by it rather than handed the refusal.
-func TestCodexSpentMovesToNextGroupMember(t *testing.T) {
-	for _, x := range codexSpent {
-		for _, path := range []string{CodexPath + "/responses", "/v1/responses"} {
-			t.Run(x.name+" "+path, func(t *testing.T) {
-				codexSignedIn(t)
-				sticks.Lock()
-				sticks.m = map[string]stick{}
-				sticks.Unlock()
-				var tried []string
-				chatgptRefusing(t, &tried, x.refuse)
-				grok := &scripted{replies: []reply{{200, "text/event-stream", grokAnswer}}}
-				scriptedOn(t, "xai", provider.Chat, grok)
-				refusalGroup(t, "codex/gpt-5.5", "xai/m")
-				s := New()
-				rec := codexOn(s, path, codexAsk)
-				if rec.Code != 200 || !strings.Contains(rec.Body.String(), "hello") || len(tried) != 1 || grok.n != 1 {
-					t.Fatalf("status %d: %s (codex %v, grok %d)", rec.Code, rec.Body.String(), tried, grok.n)
-				}
-				r := lastRoute(s)
-				if len(r.Tries) != 2 || r.Tries[0].Status < 400 || r.Tries[1].Status != 200 {
-					t.Fatalf("tries: %+v", r.Tries)
-				}
-
-				// the next turn goes to grok while the account is out
-				tried = nil
-				rec = codexOn(s, path, codexAsk)
-				if rec.Code != 200 || grok.n != 2 {
-					t.Fatalf("second turn %d: %s (codex %v, grok %d)", rec.Code, rec.Body.String(), tried, grok.n)
-				}
-			})
-		}
-	}
-}
-
 // codexOn is Codex, signed in to ChatGPT, asking s at path.
 func codexOn(s *Server, path, body string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
@@ -103,47 +63,6 @@ func codexOn(s *Server, path, body string) *httptest.ResponseRecorder {
 	req.Header.Set("chatgpt-account-id", "acct-1")
 	s.Handler().ServeHTTP(rec, req)
 	return rec
-}
-
-// The same with the conversation begun on the Codex account: its reasoning,
-// sealed by OpenAI, goes to a Grok that can't read it, which is asked again
-// without it.
-func TestCodexSpentMovesToGrokWithSealedReasoning(t *testing.T) {
-	for _, x := range codexSpent {
-		for _, inStream := range []bool{false, true} {
-			t.Run(x.name, func(t *testing.T) {
-				codexSignedIn(t)
-				sticks.Lock()
-				sticks.m = map[string]stick{}
-				sticks.Unlock()
-				refusedSeals.Lock()
-				refusedSeals.m = map[string]sealsRefused{}
-				refusedSeals.Unlock()
-				var tried []string
-				chatgptRefusing(t, &tried, x.refuse)
-				g := &sealer{name: "grok", stream: inStream}
-				gup := httptest.NewServer(g)
-				t.Cleanup(gup.Close)
-				if err := provider.Save(provider.Provider{ID: "grok1", Name: "Grok (SuperGrok)", Key: "k", Models: []string{"grok-4"}, Responses: gup.URL + "/v1"}); err != nil {
-					t.Fatal(err)
-				}
-				refusalGroup(t, "codex/gpt-5.5", "grok1/grok-4")
-				s := New()
-				in := `{"type":"message","role":"user","content":[{"type":"input_text","text":"count the lines"}]},` +
-					`{"type":"reasoning","id":"rs_o","summary":[],"content":null,"encrypted_content":"sealed-by-openai"},` +
-					`{"type":"function_call","call_id":"c1","name":"shell","arguments":"{}"},{"type":"function_call_output","call_id":"c1","output":"ok"}`
-				rec := httptest.NewRecorder()
-				req := httptest.NewRequest("POST", CodexPath+"/responses", strings.NewReader(`{"model":"group/g","stream":true,"input":[`+in+`]}`))
-				req.Header.Set("Authorization", "Bearer chatgpt-token")
-				req.Header.Set("chatgpt-account-id", "acct-1")
-				req.Header.Set("session_id", "thread-1")
-				s.Handler().ServeHTTP(rec, req)
-				if rec.Code != 200 || !strings.Contains(rec.Body.String(), "from grok") {
-					t.Fatalf("stream=%v %d: %s (codex %v, grok %q)", inStream, rec.Code, rec.Body.String(), tried, g.sent())
-				}
-			})
-		}
-	}
 }
 
 // usedUpShapes runs for the shapes of codexSpent saying the allowance is
@@ -155,60 +74,4 @@ func usedUpShapes(t *testing.T, run func(t *testing.T, refuse func(w http.Respon
 		}
 		t.Run(x.name, func(t *testing.T) { run(t, x.refuse) })
 	}
-}
-
-// The turn after the Codex account ran out (Discord, waroy), Grok is busy
-// for a moment: Grok is asked again, as the last that may answer, rather
-// than the turn going to the spent account, whose usage-limit error makes
-// Codex stop taking input.
-func TestCodexSpentGrokBusyIsAskedAgain(t *testing.T) {
-	usedUpShapes(t, func(t *testing.T, refuse func(w http.ResponseWriter)) {
-		codexSignedIn(t)
-		sticks.Lock()
-		sticks.m = map[string]stick{}
-		sticks.Unlock()
-		var tried []string
-		chatgptRefusing(t, &tried, refuse)
-		grok := &scripted{replies: []reply{{200, "text/event-stream", grokAnswer}, {503, "", `{"error":{"message":"upstream busy"}}`}, {200, "text/event-stream", grokAnswer}}}
-		scriptedOn(t, "xai", provider.Chat, grok)
-		refusalGroup(t, "codex/gpt-5.5", "xai/m")
-		s := New()
-		for turn := range 2 {
-			rec := codexOn(s, CodexPath+"/responses", codexAsk)
-			if rec.Code != 200 || !strings.Contains(rec.Body.String(), "hello") {
-				t.Fatalf("turn %d %d: %s (codex %v, grok %d)", turn, rec.Code, rec.Body.String(), tried, grok.n)
-			}
-		}
-		if len(tried) != 1 || grok.n != 3 {
-			t.Fatalf("codex %v, grok %d", tried, grok.n)
-		}
-	})
-}
-
-// And when Grok keeps failing, Codex is told Grok's error, not that its
-// usage is exhausted.
-func TestCodexSpentGrokFailingIsTold(t *testing.T) {
-	usedUpShapes(t, func(t *testing.T, refuse func(w http.ResponseWriter)) {
-		codexSignedIn(t)
-		sticks.Lock()
-		sticks.m = map[string]stick{}
-		sticks.Unlock()
-		var tried []string
-		chatgptRefusing(t, &tried, refuse)
-		grok := &scripted{replies: []reply{{200, "text/event-stream", grokAnswer}, {503, "", `{"error":{"message":"upstream busy"}}`}}}
-		scriptedOn(t, "xai", provider.Chat, grok)
-		refusalGroup(t, "codex/gpt-5.5", "xai/m")
-		s := New()
-		if rec := codexOn(s, CodexPath+"/responses", codexAsk); rec.Code != 200 {
-			t.Fatalf("first turn %d: %s", rec.Code, rec.Body.String())
-		}
-		rec := codexOn(s, CodexPath+"/responses", codexAsk)
-		body := rec.Body.String()
-		if rec.Code != 503 || !strings.Contains(body, "upstream busy") || strings.Contains(strings.ToLower(body), "usage limit") {
-			t.Fatalf("%d: %s (codex %v, grok %d)", rec.Code, body, tried, grok.n)
-		}
-		if r := lastRoute(s); r.Tries[len(r.Tries)-1].ID != "codex" || r.Tries[len(r.Tries)-1].Fail != failQuota {
-			t.Fatalf("tries: %+v", r.Tries)
-		}
-	})
 }

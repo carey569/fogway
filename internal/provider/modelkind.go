@@ -30,8 +30,7 @@ const (
 // images and videos APIs under it. A subscription's account, another magpie
 // (whose own list says) and a decision API's can't.
 func (p Provider) MarksKinds() bool {
-	return p.Account == nil && !p.IsRemoteMagpie() && !p.DecideOnly() &&
-		(p.Base(Chat) != "" || p.Base(Responses) != "")
+	return (p.Base(Chat) != "" || p.Base(Responses) != "")
 }
 
 // ModelKind is what the user said p's model makes: KindImage, KindVideo,

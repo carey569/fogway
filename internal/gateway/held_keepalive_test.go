@@ -2,13 +2,9 @@ package gateway
 
 import (
 	"bufio"
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -131,53 +127,5 @@ func TestHeldThinkingKeepsTheAgentAlive(t *testing.T) {
 	code, body = ask(t, New(), heard)
 	if code != 200 || !strings.Contains(body, "user wants") || !strings.Contains(body, `"stop_reason":"refusal"`) || strings.Count(body, "event: message_start") != 1 {
 		t.Fatalf("refused, nobody left: %d %q", code, body)
-	}
-}
-
-// A stream's last event written after the agent went away reached nobody:
-// the reply isn't whole, and the request is recorded as canceled (499), not
-// as a 200 done (#751, a Claude Code run stopped by Alma's timeout).
-func TestClientGoneRecordedAsCanceled(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	h := newHoldWriter(httptest.NewRecorder(), false)
-	h.ctx = ctx
-	h.Header().Set("Content-Type", "text/event-stream")
-	h.Write([]byte(sse(`event: message_start` + "\n" + `data: {"type":"message_start","message":{"id":"m"}}`)))
-	cancel()
-	h.Write([]byte(sse(`event: message_stop` + "\n" + `data: {"type":"message_stop"}`)))
-	if h.ended {
-		t.Fatal("a stream ended after its agent left taken as whole")
-	}
-
-	// Claude Code's run stopped mid-reply, written to the holdWriter the
-	// gateway gives it: relay still ends the stream it was encoding
-	// (message_stop), which isn't the reply made whole
-	dir := fakeClaudeCalling(t)
-	s := New()
-	t.Cleanup(s.subscription.abortAll)
-	ctx, cancel = context.WithCancel(context.Background())
-	defer cancel()
-	go func() {
-		for deadline := time.Now().Add(3 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-			b, _ := os.ReadFile(filepath.Join(dir, "hang.pid"))
-			if pid, _ := strconv.Atoi(strings.TrimSpace(string(b))); pid != 0 {
-				time.Sleep(200 * time.Millisecond) // its reply under way
-				break
-			}
-		}
-		cancel()
-	}()
-	rec := httptest.NewRecorder()
-	h = newHoldWriter(rec, false)
-	h.ctx = ctx
-	p := provider.Provider{ID: "claude", Account: &provider.Account{Agent: "claude", User: "u"}}
-	body := `{"model":"claude-sonnet-5","max_tokens":100,"stream":true,"messages":[{"role":"user","content":"hang on"}]}`
-	var u Usage
-	s.serveClaudeSubscription(h, httptest.NewRequest("POST", "/v1/messages", strings.NewReader(body)).WithContext(ctx), provider.Anthropic, p, "claude-sonnet-5", []byte(body), &u)
-	if !strings.Contains(rec.Body.String(), "thinking it over") || !strings.Contains(rec.Body.String(), "message_stop") {
-		t.Fatalf("the run's reply: %q", rec.Body.String())
-	}
-	if h.ended {
-		t.Fatal("a Claude Code run stopped as its agent left taken as a whole reply, recorded as a 200")
 	}
 }

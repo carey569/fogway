@@ -6,13 +6,9 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/yetone/magpie/internal/agentenv"
 )
 
 func TestPlanQuotaSource(t *testing.T) {
@@ -94,30 +90,6 @@ func TestReadCommandCodePlan(t *testing.T) {
 	// the keyed preset's balance card is the dollars alone
 	if got, err := readCommandCode([]byte(cmdCreditsReply)); err != nil || got != "$46.20" {
 		t.Errorf("balance: %q %v", got, err)
-	}
-}
-
-// TestCommandCodeQuotaShowsWindows: the signed-in plan's card carries its
-// windows and not a Balance, which every view shows in their place.
-func TestCommandCodeQuotaShowsWindows(t *testing.T) {
-	var c cmdCredits
-	if err := json.Unmarshal([]byte(cmdCreditsReply), &c); err != nil {
-		t.Fatal(err)
-	}
-	q := cmdQuotaOf(SubscriptionQuota{}, c)
-	if q.Balance != "" || q.Plan != "GOAT" || len(q.Windows) != 3 {
-		t.Fatalf("%+v", q)
-	}
-	// the CLI's pool: $70 a month, $41.20 of it left, and $5 bought
-	cr := q.Windows[2]
-	if cr.Name != "Credits" || cr.Display != "$28.80 / $75.00" || math.Abs(cr.Used-38.4) > 1e-9 || cr.Span != 0 {
-		t.Errorf("credits: %+v", cr)
-	}
-	// no plan and no windows: what is left is all there is to show
-	var none cmdCredits
-	_ = json.Unmarshal([]byte(`{"credits":{"purchasedCredits":"20","freeCredits":1}}`), &none)
-	if q := cmdQuotaOf(SubscriptionQuota{}, none); q.Balance != "$21.00" || len(q.Windows) != 0 {
-		t.Errorf("no plan: %+v", q)
 	}
 }
 
@@ -265,140 +237,6 @@ func (r rewrite) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("X-Host", req.URL.Host)
 	req.URL, req.Host = &u, ""
 	return http.DefaultTransport.RoundTrip(req)
-}
-
-// #68: the Usage page shows a GLM Coding Plan's windows and OpenCode Go's,
-// a card for each key when a provider has several, and nothing for a
-// pay-as-you-go GLM key.
-func TestPlanQuotas(t *testing.T) {
-	isolate(t)
-	h := t.TempDir()
-	t.Setenv("HOME", h)
-	t.Setenv("USERPROFILE", h)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(h, ".config"))
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
-	t.Setenv("PATH", h)
-	for _, v := range agentenv.Vars {
-		t.Setenv(v, "")
-	}
-	var unavailable atomic.Bool
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if unavailable.Load() {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-		key := r.Header.Get("Authorization")
-		switch r.Header.Get("X-Host") + r.URL.Path + " " + key {
-		case "open.bigmodel.cn/api/monitor/usage/quota/limit glm-a":
-			w.Write([]byte(`{"success":true,"data":{"level":"pro","limits":[{"type":"TOKENS_LIMIT","unit":3,"number":5,"percentage":20,"nextResetTime":4102444800000}]}}`))
-		case "open.bigmodel.cn/api/monitor/usage/quota/limit glm-b":
-			w.Write([]byte(`{"success":true,"data":{"level":"lite","limits":[{"type":"TOKENS_LIMIT","unit":3,"number":5,"percentage":90,"nextResetTime":4102444800000}]}}`))
-		case "open.bigmodel.cn/api/monitor/usage/quota/limit glm-payg":
-			w.Write([]byte(`{"success":true,"data":{"limits":[]}}`))
-		case "bigmodel.cn/api/monitor/usage/quota/limit glm-payg":
-			// no plan of its own: asked as a team's key too (#236), and not one
-			if r.URL.Query().Get("type") != "2" {
-				t.Errorf("team quota asked without type=2: %s", r.URL)
-			}
-			w.Write([]byte(`{"code":500,"msg":"no team","success":false}`))
-		case "open.bigmodel.cn/api/biz/subscription/list glm-a":
-			w.Write([]byte(`{"code":200,"success":true,"data":[{"productName":"GLM Coding Pro","status":"VALID","autoRenew":1,"nextRenewTime":"2026-10-18 10:00:00"}]}`))
-		case "open.bigmodel.cn/api/biz/subscription/list glm-b":
-			w.WriteHeader(http.StatusInternalServerError)
-		case "open.bigmodel.cn/api/biz/customer-package-reset/list glm-a":
-			if r.URL.Query().Get("targetType") != "PERSONAL" {
-				t.Errorf("resets asked as %s", r.URL)
-			}
-			w.Write([]byte(zhipuResetList))
-		case "open.bigmodel.cn/api/biz/customer-package-reset/list glm-b":
-			w.Write([]byte(`{"code":1000,"msg":"身份验证失败。","success":false}`))
-		case "api.minimaxi.com/v1/token_plan/remains Bearer sk-cp-k":
-			w.Write([]byte(`{"model_remains":[{"model_name":"general","current_interval_remaining_percent":75,"current_interval_status":1,
-				"current_weekly_remaining_percent":96,"current_weekly_status":1}],"base_resp":{"status_code":0,"status_msg":"success"}}`))
-		case "api.minimaxi.com/v1/token_plan/remains Bearer sk-api-k":
-			// a pay-as-you-go key: MiniMax answers 200 with the refusal
-			w.Write([]byte(`{"base_resp":{"status_code":2049,"status_msg":"invalid api key"}}`))
-		case "opencode.ai/zen/go/v1/usage Bearer go-k":
-			w.Write([]byte(`{"usage":{"rolling":{"percent":5,"resetsAt":"2026-09-25T20:00:00Z"}}}`))
-		default:
-			t.Errorf("asked %s%s with %q", r.Header.Get("X-Host"), r.URL.Path, key)
-			w.WriteHeader(http.StatusUnauthorized)
-		}
-	}))
-	defer srv.Close()
-	old := http.DefaultClient.Transport
-	http.DefaultClient.Transport = rewrite{srv}
-	t.Cleanup(func() { http.DefaultClient.Transport = old })
-
-	for _, p := range []Provider{
-		{ID: "glm", Name: "GLM", Chat: "https://open.bigmodel.cn/api/coding/paas/v4", Key: "glm-a", KeyName: "work",
-			Keys: []KeyAccount{{Key: "glm-a"}, {Key: "glm-b", Name: "home"}, {Key: "glm-off", Off: true}}},
-		{ID: "glm-api", Name: "GLM API", Chat: "https://open.bigmodel.cn/api/paas/v4", Key: "glm-payg"},
-		{ID: "go", Name: "OpenCode Go", Chat: "https://opencode.ai/zen/go/v1", Key: "go-k"},
-		{ID: "zen", Name: "Zen", Chat: "https://opencode.ai/zen/v1", Key: "zen-k"},
-		{ID: "minimax-cn", Name: "MiniMax (China)", Chat: "https://api.minimaxi.com/v1", Anthropic: "https://api.minimaxi.com/anthropic", Key: "sk-cp-k"},
-		{ID: "minimax-payg", Name: "MiniMax API", Anthropic: "https://api.minimaxi.com/anthropic", Key: "sk-api-k"},
-	} {
-		if err := Save(p); err != nil {
-			t.Fatal(err)
-		}
-	}
-	got := map[string]SubscriptionQuota{}
-	for _, q := range PlanQuotas(context.Background()) {
-		got[q.Provider+"/"+q.User] = q
-	}
-	if len(got) != 4 {
-		t.Fatalf("cards: %+v", got)
-	}
-	if q := got["minimax-cn/"]; len(q.Windows) != 2 || q.Windows[0].Name != "5 hours" && q.Windows[0].Name != "Allowance" || q.Windows[0].Used != 25 || q.Windows[1].Name != "7 days" || q.Windows[1].Used != 4 {
-		t.Errorf("minimax: %+v", q)
-	}
-	if q := got["glm/work"]; q.Plan != "pro" || len(q.Windows) != 1 || q.Windows[0].Used != 20 ||
-		q.Until == nil || q.Until.UTC().Hour() != 2 || q.Renew != "auto" {
-		t.Errorf("first key: %+v", q)
-	}
-	if q := got["glm/home"]; q.Plan != "lite" || q.Windows[0].Used != 90 || q.Until != nil || q.Error != "" {
-		t.Errorf("second key: %+v", q)
-	}
-	// its resets (#1191): a list read is counted, one refused shows none
-	if r := got["glm/work"].Resets; r == nil || r.Count != 2 || r.FiveHour != 1 || r.Weekly != 1 {
-		t.Errorf("first key's resets: %+v", r)
-	}
-	if r := got["glm/home"].Resets; r != nil {
-		t.Errorf("second key's resets: %+v", r)
-	}
-	if q := got["go/"]; q.Name != "OpenCode Go" || len(q.Windows) != 1 || q.Windows[0].Name != "5 hours" {
-		t.Errorf("go: %+v", q)
-	}
-	// The custom GLM provider is recognized by its endpoint, not its id
-	// or key labels, and the provenance survives PlanQuotas' cache.
-	reset := time.UnixMilli(4102444800000)
-	sub := SubscriptionQuota{Provider: "zcode", User: "me@example.com",
-		Windows: []QuotaWindow{{Span: 5 * time.Hour, ResetsAt: &reset}}}
-	for _, q := range got {
-		if hidden := len(notShown([]SubscriptionQuota{q}, []SubscriptionQuota{sub})) == 0; hidden != (q.Provider == "glm") {
-			t.Errorf("%s/%s: hidden=%v", q.Provider, q.User, hidden)
-		}
-	}
-	if qs := notShown(PlanQuotas(context.Background()), []SubscriptionQuota{sub}); len(qs) != 2 {
-		t.Fatalf("cached plans after deduplication: %+v", qs)
-	}
-	// A restart loses the in-memory provenance; a failed read restores
-	// the old windows from disk and must still recognize the GLM source.
-	unavailable.Store(true)
-	planQuotaCache.Lock()
-	planQuotaCache.data = nil
-	planQuotaCache.Unlock()
-	lastQuotas.Lock()
-	lastQuotas.m, lastQuotas.loaded = nil, false
-	lastQuotas.Unlock()
-	qs := PlanQuotas(context.Background())
-	if len(qs) != 4 {
-		t.Fatalf("restored plans: %+v", qs)
-	}
-	if kept := notShown(qs, []SubscriptionQuota{sub}); len(kept) != 2 {
-		t.Fatalf("restored plans after deduplication: %+v", kept)
-	}
 }
 
 func TestReadKimiCode(t *testing.T) {

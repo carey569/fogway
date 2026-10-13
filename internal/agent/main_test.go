@@ -1,8 +1,6 @@
 package agent
 
 import (
-	"encoding/json"
-	"errors"
 	"os"
 	"testing"
 
@@ -35,13 +33,6 @@ func TestMain(m *testing.M) {
 	// Microsoft Store apps are read from the current user's AppX registry;
 	// never this machine's (a Windows box with the Codex app installed)
 	windowsStorePackages = func() []string { return nil }
-	// Aside's default is changed through the aside binary, which answers for
-	// the account the developer is actually running: a test that picks a
-	// model would change the real Aside's default, and the running one would
-	// keep the old one, so the test would read back a file nothing had
-	// applied. The Aside tests stand in for it themselves.
-	asideSet = func(string, string) error { return errors.New("aside: no Aside in a test") }
-	asideRead = func(string) (map[string]json.RawMessage, error) { return nil, errors.New("aside: no Aside in a test") }
 	// an address an agent is pointed at is tried over the network (Drift,
 	// #1013); never from a test, whose reach tests stand in for it
 	reachProbe = func(string) bool { return true }

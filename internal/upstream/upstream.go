@@ -281,3 +281,10 @@ func read(v Vendor) Status {
 	}
 	return s
 }
+
+// Forget drops every reading, for tests.
+func Forget() {
+	mu.Lock()
+	defer mu.Unlock()
+	kept = map[string]Status{}
+}

@@ -99,14 +99,3 @@ func TestCustomGeminiProvider(t *testing.T) {
 		}
 	}
 }
-
-// Factory's sign-in keeps its own generate route and its Bearer token.
-func TestFactoryGeminiUnchanged(t *testing.T) {
-	p := Provider{ID: "factory", Key: "tok", Account: &Account{}}
-	if !p.FactoryGemini() || p.Base(Gemini) != factoryAPI+"/api/llm/g/v1" {
-		t.Errorf("factory base %q", p.Base(Gemini))
-	}
-	if h := AuthHeaders(p, Gemini); h["Authorization"] != "Bearer tok" || h["x-goog-api-key"] != "" {
-		t.Errorf("factory auth %v", h)
-	}
-}

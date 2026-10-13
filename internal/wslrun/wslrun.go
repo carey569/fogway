@@ -11,10 +11,8 @@ import (
 	"bufio"
 	"context"
 	"net"
-	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"slices"
 	"strconv"
@@ -151,17 +149,6 @@ func Up(distro string) bool {
 	return slices.Contains(names, distro)
 }
 
-// Known is the tool Find found last for name, however long ago, without
-// looking again: for a page to say where it runs without waiting on WSL.
-func Known(name string) (Tool, bool) {
-	found.Lock()
-	defer found.Unlock()
-	if p := found.tools[name]; p != nil {
-		return *p, true
-	}
-	return Tool{}, false
-}
-
 // probeScript prints where name is in the distro, with the PATH it is on,
 // from a login shell, then an interactive one (nvm's node is put on PATH
 // by .bashrc), then where Claude Code's installer puts it; and where
@@ -264,11 +251,6 @@ func (t Tool) Command(ctx context.Context, args ...string) *exec.Cmd {
 	return t.cancelable(proc.CommandContext(ctx, "wsl.exe", t.argv(args)...))
 }
 
-// Probe is Command for a short answer, as proc.ProbeContext runs one.
-func (t Tool) Probe(ctx context.Context, args ...string) *exec.Cmd {
-	return t.cancelable(proc.ProbeContext(ctx, "wsl.exe", t.argv(args)...))
-}
-
 // runVar marks the processes of a run in the distro, which they and what
 // they start have in their environment.
 const runVar = "MAGPIE_WSL_RUN"
@@ -309,87 +291,8 @@ func (t Tool) argv(args []string) []string {
 	return append([]string{"-d", t.Distro, "--exec", "/usr/bin/env", "PATH=" + t.PATH, runVar + "=" + mark, t.Path}, args...)
 }
 
-// Linux is where Windows path win is inside the distro: C:\Users\me is
-// /mnt/c/Users/me. A path on no drive letter is given back as it is.
-func (t Tool) Linux(win string) string {
-	if len(win) < 2 || win[1] != ':' || !isLetter(win[0]) {
-		return win
-	}
-	rest := strings.ReplaceAll(win[2:], `\`, "/")
-	mount := t.Mount
-	if mount == "" {
-		mount = "/mnt/"
-	}
-	return mount + strings.ToLower(win[:1]) + "/" + strings.TrimPrefix(rest, "/")
-}
-
-func isLetter(c byte) bool { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' }
-
 // proxyVars are the proxy variables Env hands on.
 var proxyVars = []string{"HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY", "NO_PROXY", "https_proxy", "http_proxy", "all_proxy", "no_proxy"}
-
-// Env is env for a run of t: WSLENV names the variables of env that go
-// into the distro — those in names, their values Windows paths when they
-// end in /p (WSL then gives the distro's path for them), and the proxy
-// variables, whose proxy on this machine's loopback is the Windows host's
-// address under NAT.
-func (t Tool) Env(env []string, names ...string) []string {
-	have := map[string]bool{}
-	for _, e := range env {
-		k, _, _ := strings.Cut(e, "=")
-		have[k] = true
-	}
-	var pass []string
-	for _, n := range names {
-		if k, _, _ := strings.Cut(n, "/"); have[k] {
-			pass = append(pass, n)
-		}
-	}
-	out := make([]string, 0, len(env)+1)
-	wslenv := ""
-	for _, e := range env {
-		k, v, _ := strings.Cut(e, "=")
-		if strings.EqualFold(k, "WSLENV") {
-			wslenv = v
-			continue
-		}
-		for _, p := range proxyVars {
-			if k == p {
-				if !strings.EqualFold(k, "NO_PROXY") {
-					e = k + "=" + t.proxy(v)
-				}
-				pass = append(pass, k)
-				break
-			}
-		}
-		out = append(out, e)
-	}
-	if wslenv != "" {
-		pass = append([]string{wslenv}, pass...)
-	}
-	return append(out, "WSLENV="+strings.Join(pass, ":"))
-}
-
-// proxy is proxy address v as the distro reaches it.
-func (t Tool) proxy(v string) string {
-	if t.Host == "" {
-		return v
-	}
-	u, err := url.Parse(v)
-	if err != nil || u.Host == "" {
-		return v
-	}
-	switch strings.ToLower(u.Hostname()) {
-	case "127.0.0.1", "localhost", "::1":
-		if p := u.Port(); p != "" {
-			u.Host = net.JoinHostPort(t.Host, p)
-		} else {
-			u.Host = t.Host
-		}
-		return u.String()
-	}
-	return v
-}
 
 // Distros reads wsl.exe -l -q: UTF-16LE (with or without a BOM), or UTF-8
 // under WSL_UTF8. Docker Desktop's own distros are left out.
@@ -419,14 +322,4 @@ func decode(b []byte) string {
 		u[i] = uint16(b[2*i]) | uint16(b[2*i+1])<<8
 	}
 	return string(utf16.Decode(u))
-}
-
-// Exe is magpie's own executable as a run in the distro starts it (a
-// Windows program, which WSL runs on Windows).
-func (t Tool) Exe() (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	return t.Linux(filepath.Clean(exe)), nil
 }

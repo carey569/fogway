@@ -1,17 +1,12 @@
 package gateway
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
 )
@@ -137,71 +132,5 @@ func TestImageToolKeptOverAnotherRefusal(t *testing.T) {
 	}
 	if len(got) != 4 || !hasImageTool(got[2]) {
 		t.Fatalf("sent %d requests; the second turn's first had the tool: %v", len(got), len(got) > 2 && hasImageTool(got[2]))
-	}
-}
-
-// A ChatGPT sign-in is the backend #870 offers the tool for: it gets it on
-// every request, and a 400 from it is its answer, not a sign the tool is
-// what it turned away.
-func TestImageToolKeptForChatGPT(t *testing.T) {
-	tool, err := os.ReadFile("testdata/codex_image_gen_tool.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	body := `{"model":"codex/gpt-6-luna","stream":true,"store":false,"tools":[{"type":"function","name":"exec_command","parameters":{"type":"object","properties":{}}},` +
-		strings.TrimSpace(string(tool)) + `],"input":[{"type":"message","role":"user","content":[{"type":"input_text","text":"只回复 OK"}]}]}`
-	for _, refuse := range []bool{false, true} {
-		home := t.TempDir()
-		t.Setenv("HOME", home)
-		t.Setenv("USERPROFILE", home)
-		t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-		t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
-		restingUntil.Lock()
-		restingUntil.m = map[string]time.Time{}
-		restingUntil.Unlock()
-		claims := func(m map[string]any) string {
-			b, _ := json.Marshal(m)
-			return "h." + base64.RawURLEncoding.EncodeToString(b) + ".s"
-		}
-		os.MkdirAll(filepath.Join(home, ".codex"), 0o755)
-		os.WriteFile(filepath.Join(home, ".codex", "auth.json"), mustJSON(map[string]any{"auth_mode": "chatgpt", "tokens": map[string]any{
-			"id_token": claims(map[string]any{"email": "me@example.com",
-				"https://api.openai.com/auth": map[string]any{"chatgpt_plan_type": "plus"}}),
-			"access_token":  claims(map[string]any{"exp": time.Now().Add(time.Hour).Unix()}),
-			"refresh_token": "r", "account_id": "acct-1"}}), 0o600)
-
-		var mu sync.Mutex
-		var got []string
-		answer := noNamespaces(&got, refuse)
-		up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasSuffix(r.URL.Path, "/models") {
-				io.WriteString(w, `{"models":[{"slug":"gpt-6-luna","visibility":"list"}]}`)
-				return
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			answer(w, r)
-		}))
-		old := provider.CodexBase
-		provider.CodexBase = up.URL + "/backend-api/codex"
-
-		code, out := post(t, "/v1/responses", body)
-		code2, _ := post(t, "/v1/responses", body)
-		provider.CodexBase = old
-		up.Close()
-		mu.Lock()
-		sent := got
-		mu.Unlock()
-		if want := map[bool]int{false: 200, true: 400}[refuse]; code != want || code2 != want {
-			t.Fatalf("refusing %v: %d, %d, want %d: %s", refuse, code, code2, want, out)
-		}
-		if len(sent) == 0 {
-			t.Fatalf("refusing %v: nothing reached the backend", refuse)
-		}
-		for i, b := range sent {
-			if !hasImageTool(b) {
-				t.Fatalf("refusing %v: request %d of %d went without the tool", refuse, i+1, len(sent))
-			}
-		}
 	}
 }

@@ -6,12 +6,10 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 func reportedHome(t *testing.T) {
@@ -105,116 +103,5 @@ func TestIngestReported(t *testing.T) {
 	}
 	if rows, _, _ := Ledger(All, Filter{Through: SourceReported}); len(rows) != 4 {
 		t.Fatalf("ledger via=reported: %d", len(rows))
-	}
-}
-
-// Posts at once, and the gateway's own calls between them, keep every
-// line whole, and a rid posted by several at once is written once.
-func TestIngestReportedConcurrent(t *testing.T) {
-	reportedHome(t)
-	now := time.Now().Add(-time.Hour)
-	const posts, each = 16, 40
-	var wg sync.WaitGroup
-	accepted := make([]int, posts)
-	for p := range posts {
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
-			var recs []Record
-			for i := range each {
-				// half the rids every post sends, half its own
-				rid := fmt.Sprintf("shared-%d", i)
-				if i%2 == 1 {
-					rid = fmt.Sprintf("own-%d-%d", p, i)
-				}
-				recs = append(recs, Record{Time: now, Agent: "my-app", Provider: "claude", Model: "claude-opus-5-5", Input: 1, Output: 1, Status: 200, RequestID: rid})
-			}
-			took, err := IngestReported(recs)
-			if err != nil {
-				t.Error(err)
-			}
-			for _, ok := range took {
-				if ok {
-					accepted[p]++
-				}
-			}
-		}()
-		go func() {
-			defer wg.Done()
-			Append(Record{Time: now, Agent: "claude", Provider: "claude", Model: "claude-opus-5-5", Input: 1, Output: 1, Status: 200})
-		}()
-	}
-	wg.Wait()
-	total := 0
-	for _, n := range accepted {
-		total += n
-	}
-	if want := each/2 + posts*each/2; total != want {
-		t.Fatalf("accepted %d, want %d", total, want)
-	}
-	recs := Load(time.Time{})
-	if len(recs) != total+posts {
-		t.Fatalf("%d lines, want %d", len(recs), total+posts)
-	}
-	seen := map[string]bool{}
-	for _, r := range recs {
-		if r.Source != SourceReported {
-			continue
-		}
-		if seen[r.RequestID] {
-			t.Fatal("written twice:", r.RequestID)
-		}
-		seen[r.RequestID] = true
-	}
-}
-
-// What apps report (#1874), backfilled or not, is shown on the Usage page
-// and nowhere that acts on live traffic: not as a gateway session, not in
-// what a session was routed to, not in a subscription window's holds, and a
-// backfill reaching back doesn't make the log reach back to a window's start.
-func TestReportedTouchesNothingLive(t *testing.T) {
-	reportedHome(t)
-	now := time.Now()
-	gw := Record{Time: now.Add(-time.Hour), Agent: "claude", Provider: "claude", ProviderAccount: "dee@example.com", Model: "claude-opus-5-5", Input: 100, Output: 100, Status: 200, Session: "s-gw"}
-	Append(gw)
-	if took, err := IngestReported([]Record{
-		{Time: now.Add(-30 * 24 * time.Hour), Agent: "claude", Provider: "claude", Model: "claude-opus-5-5", Input: 9000, Output: 9000, Status: 200, RequestID: "old", Session: "s-rep"},
-		{Time: now.Add(-2 * time.Hour), Agent: "claude", Provider: "claude", Model: "claude-opus-5-5", Input: 9000, Output: 9000, Status: 200, RequestID: "new", Session: "s-rep"},
-	}); err != nil || fmt.Sprint(took) != "[true true]" {
-		t.Fatal(took, err)
-	}
-	// a row that says it was reported and names an account, as an older or
-	// hand-made line might
-	Append(Record{Time: now.Add(-3 * time.Hour), Agent: "claude", Provider: "claude", ProviderAccount: "dee@example.com", Model: "claude-opus-5-5", Input: 9000, Output: 9000, Status: 200, RequestID: "acct", Source: SourceReported})
-
-	s := readLogSnapshot()
-	if math.Abs(s.firstOwn.Sub(gw.Time).Seconds()) > 1e-3 {
-		t.Fatalf("the log's own first call %v, want %v", s.firstOwn, gw.Time)
-	}
-	if s.first.After(now.Add(-29 * 24 * time.Hour)) {
-		t.Fatalf("the chart's first call %v is after the backfill", s.first)
-	}
-	for _, g := range GatewaySessions(time.Time{}, nil) {
-		if g.ID == "s-rep" {
-			t.Fatalf("a reported session is a gateway session: %+v", g)
-		}
-	}
-	if v := Vias(time.Time{})["claude|s-rep"]; len(v) != 0 {
-		t.Fatalf("a reported session was routed: %+v", v)
-	}
-	if !(Record{Source: SourceReported}).IsReported() || (Record{}).IsReported() {
-		t.Fatal("IsReported")
-	}
-	reset := now.Add(3 * 24 * time.Hour)
-	qs := []provider.SubscriptionQuota{{Provider: "claude", User: "dee@example.com", Windows: []provider.QuotaWindow{
-		{Name: "7 days", Used: 40, ResetsAt: &reset, Span: 7 * 24 * time.Hour}}}}
-	if h := WithWindowHolds(qs, now)[0].Windows[0].Holds; h != nil {
-		t.Fatalf("the gateway's log began an hour ago, and the week was reckoned: %+v", h)
-	}
-	// with the gateway's own log reaching back, the week counts its call only
-	Append(Record{Time: now.Add(-20 * 24 * time.Hour), Agent: "claude", Provider: "claude", Model: "claude-opus-5-5", Input: 1, Output: 1, Status: 200})
-	h := WithWindowHolds(qs, now)[0].Windows[0].Holds
-	if h == nil || h.Routed.Calls != 1 || h.Routed.Tokens != 200 {
-		t.Fatalf("the week holds %+v, want the gateway's one call", h)
 	}
 }

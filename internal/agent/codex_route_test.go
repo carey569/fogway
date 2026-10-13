@@ -118,32 +118,6 @@ func TestCodexSpacedProviderTable(t *testing.T) {
 	}
 }
 
-// Not signed in, Codex's OpenAI provider can't run, so magpie is a provider
-// of its own; the base URL is magpie's too, for the threads started on the
-// built-in provider (#259).
-func TestCodexSignedOutUsesProvider(t *testing.T) {
-	home, read := codexHome(t, "", "")
-	cx := codex(home)
-	if err := cx.Fields[0].Set("fake/m1"); err != nil {
-		t.Fatal(err)
-	}
-	cfg := read()
-	if !strings.Contains(cfg, `openai_base_url = "`+codexGatewayURL()+`"`) || !strings.Contains(cfg, `model_provider = "magpie"`) ||
-		!strings.Contains(cfg, "[model_providers.magpie]") || !strings.Contains(cfg, "model_catalog_json") {
-		t.Fatalf("\n%s", cfg)
-	}
-	if err := cx.Fields[0].Set(""); err != nil {
-		t.Fatal(err)
-	}
-	if cfg = read(); strings.Contains(cfg, "model =") || strings.Contains(cfg, "openai_base_url") || strings.Contains(cfg, "model_provider =") ||
-		strings.Contains(cfg, "model_catalog_json") || !strings.Contains(cfg, "[model_providers.magpie]") {
-		t.Fatalf("reset:\n%s", cfg)
-	}
-	if _, err := os.Stat(filepath.Join(home, ".codex", "magpie-models.json")); err == nil {
-		t.Error("catalog file left")
-	}
-}
-
 // A ChatGPT account that has used its allowance up keeps the Codex app from
 // sending, so magpie is a provider of Codex's then, as when signed out.
 func TestCodexUsedUpUsesProvider(t *testing.T) {
@@ -391,28 +365,5 @@ func TestCodexLoginAPI(t *testing.T) {
 	}
 	if cfg = read(); !strings.Contains(cfg, `model_provider = "magpie"`) {
 		t.Fatalf("api after default:\n%s", cfg)
-	}
-}
-
-// A Codex routed by base URL whose provider table an older magpie took away
-// gets it back at the next sync, so its threads started on magpie open.
-func TestCodexSyncPutsProviderTableBack(t *testing.T) {
-	home, read := codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`,
-		"model = \"fake/m1\"\nopenai_base_url = \""+codexGatewayURL()+"\"\n")
-	if err := codex(home).Sync(); err != nil {
-		t.Fatal(err)
-	}
-	cfg := read()
-	if !strings.Contains(cfg, "[model_providers.magpie]") || !strings.Contains(cfg, `wire_api = "responses"`) ||
-		strings.Contains(cfg, "model_provider =") {
-		t.Fatalf("\n%s", cfg)
-	}
-	// Codex on its own model, not through magpie: nothing is added
-	home, read = codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, "model = \"gpt-5.5\"\n")
-	if err := codex(home).Sync(); err != nil {
-		t.Fatal(err)
-	}
-	if cfg := read(); cfg != "model = \"gpt-5.5\"\n" {
-		t.Fatalf("own model:\n%s", cfg)
 	}
 }

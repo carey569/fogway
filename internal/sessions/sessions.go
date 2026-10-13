@@ -1483,3 +1483,20 @@ func Get(key string) (Session, bool) {
 	refresh(fs, files)
 	return assemble(fs, pricer())
 }
+
+// Reset forgets the kept parses, in memory only.
+func Reset() {
+	desktopTitles.Lock()
+	desktopTitles.names, desktopTitles.last = nil, nil
+	desktopTitles.Unlock()
+	directoryCache.Lock()
+	directoryCache.entries = map[string]directoryEntry{}
+	directoryCache.Unlock()
+	resetCalls()
+	wslReset()
+	mu.Lock()
+	defer mu.Unlock()
+	saved()
+	cache, loaded = nil, false
+	cacheGeneration++
+}

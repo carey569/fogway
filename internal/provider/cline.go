@@ -175,7 +175,7 @@ func (p Provider) clineFreeModel(model string) bool {
 // cline.bot, or the Cline plugin's (@magpie-community/opencode-cline-auth),
 // whose requests magpie writes before the plugin sends them on.
 func (p Provider) ClinePinnable() bool {
-	return p.IsCline() || p.PluginProvider() == "cline"
+	return p.IsCline()
 }
 
 // ClinePin is the upstream a request for model is pinned to on p

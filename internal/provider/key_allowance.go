@@ -56,7 +56,7 @@ const (
 // vendor whose keys tell their plan's windows (planQuotaSourceOf). Said
 // without asking anything, so any other key costs nothing here.
 func readsKeyWindows(p Provider) bool {
-	if p.Account != nil || p.Key == "" {
+	if p.Key == "" {
 		return false
 	}
 	if sub2APIKeyLimits(p) {

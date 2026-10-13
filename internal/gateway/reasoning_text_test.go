@@ -1,18 +1,14 @@
 package gateway
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
 )
@@ -147,44 +143,5 @@ func TestReasoningTextKeptWhereTaken(t *testing.T) {
 	}
 	if got := u.asked(); len(got) != 1 || reasoningTexts(got[0]) != 1 {
 		t.Fatalf("asked %d times: %v", len(got), got)
-	}
-}
-
-// The group's next member is Codex's GPT on a ChatGPT sign-in, whose
-// backend takes a reasoning item's content only empty: the item never goes
-// there, and the backend is asked once.
-func TestReasoningTextNotSentToCodexAccount(t *testing.T) {
-	fresh(t)
-	home := os.Getenv("HOME")
-	claims := func(m map[string]any) string {
-		b, _ := json.Marshal(m)
-		return "h." + base64.RawURLEncoding.EncodeToString(b) + ".s"
-	}
-	os.MkdirAll(filepath.Join(home, ".codex"), 0o755)
-	os.WriteFile(filepath.Join(home, ".codex", "auth.json"), mustJSON(map[string]any{"auth_mode": "chatgpt", "tokens": map[string]any{
-		"id_token":      claims(map[string]any{"email": "me@example.com"}),
-		"access_token":  claims(map[string]any{"exp": time.Now().Add(time.Hour).Unix()}),
-		"refresh_token": "r", "account_id": "acct-1"}}), 0o600)
-	provider.ForgetAccounts()
-	t.Cleanup(provider.ForgetAccounts)
-	u := &openaiStrict{}
-	srv := httptest.NewServer(u)
-	t.Cleanup(srv.Close)
-	was := provider.CodexBase
-	provider.CodexBase = srv.URL + "/backend-api/codex"
-	t.Cleanup(func() { provider.CodexBase = was })
-	if err := provider.SaveGroup(provider.Group{ID: "medium", Name: "Medium", Members: []string{"codex/gpt-6.1-sol"}, Routing: provider.Ordered}); err != nil {
-		t.Fatal(err)
-	}
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/v1/responses", strings.NewReader(deepseekTurn("group/medium")))
-	req.Header.Set("session_id", "thread-1411")
-	New().Handler().ServeHTTP(rec, req)
-	if rec.Code != 200 {
-		t.Fatalf("%d %s", rec.Code, rec.Body)
-	}
-	got := u.asked()
-	if len(got) != 1 || reasoningTexts(got[0]) != 0 || kinds(got[0])["reasoning"] != 1 || kinds(got[0])["function_call_output"] != 1 {
-		t.Fatalf("the ChatGPT backend was asked %d times: %v", len(got), got)
 	}
 }

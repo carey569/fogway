@@ -2,8 +2,6 @@ package gateway
 
 import (
 	"encoding/json"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -154,30 +152,5 @@ func TestGLMTextCallUnofferedLeftAsText(t *testing.T) {
 	}
 	if !strings.Contains(raw, "rm_rf") {
 		t.Fatalf("text lost: %s", raw)
-	}
-}
-
-// A plugin's model writing GLM's call is read the same: Codex gets its
-// custom tool call.
-func TestPluginGLMTextCall(t *testing.T) {
-	pid := besideFake(t, "glm-local", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/event-stream")
-		for _, part := range []string{glmExec[:15], glmExec[15:]} {
-			b, _ := json.Marshal(map[string]any{"id": "c1", "object": "chat.completion.chunk", "choices": []any{map[string]any{"index": 0, "delta": map[string]any{"content": part}, "finish_reason": nil}}})
-			io.WriteString(w, "data: "+string(b)+"\n\n")
-		}
-		io.WriteString(w, `data: {"id":"c1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`+"\n\ndata: [DONE]\n\n")
-	}))
-	req := httptest.NewRequest("POST", "/v1/responses", strings.NewReader(`{"model":"`+pid+`/fake-1","stream":true,"input":"go","tools":[{"type":"custom","name":"exec"}]}`))
-	req.Header.Set("Authorization", "Bearer magpie")
-	rec := httptest.NewRecorder()
-	New().Handler().ServeHTTP(rec, req)
-	body := rec.Body.String()
-	if rec.Code != 200 || strings.Contains(body, "arg_key") || !strings.Contains(body, `"custom_tool_call"`) {
-		t.Fatalf("%d %s", rec.Code, body)
-	}
-	in, _ := json.Marshal(glmExecInput)
-	if !strings.Contains(body, `"input":`+string(in)) {
-		t.Fatalf("input: %s", body)
 	}
 }

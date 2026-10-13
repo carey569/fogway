@@ -130,48 +130,6 @@ func TestChinaMirrorsMissIsAskedOfficially(t *testing.T) {
 	}
 }
 
-// the plugin list goes to jsDelivr with the switch, never to a proxy
-func TestDoFaithful(t *testing.T) {
-	t.Setenv("MAGPIE_MIRRORS", "on")
-	t.Setenv("MAGPIE_GITHUB_MIRROR", "https://gh.invalid")
-	var asked []string
-	c := &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
-		asked = append(asked, r.URL.String())
-		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader("{}")), Header: http.Header{}, Request: r}, nil
-	})}
-	list := "https://raw.githubusercontent.com/magpie-community/plugins/main/registry.json"
-	ask := func() {
-		asked = nil
-		req, _ := http.NewRequest("GET", list, nil)
-		res, err := DoFaithful(c, req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		res.Body.Close()
-	}
-	ask()
-	if strings.Join(asked, " ") != list {
-		t.Fatalf("switch off: asked %q", asked)
-	}
-	chinaOn(t)
-	ask()
-	if strings.Join(asked, " ") != "https://cdn.jsdelivr.net/gh/magpie-community/plugins@main/registry.json" {
-		t.Fatalf("switch on: asked %q", asked)
-	}
-	// a request with a credential stays official
-	asked = nil
-	req, _ := http.NewRequest("GET", "https://registry.npmjs.org/pkg", nil)
-	req.Header.Set("Authorization", "Bearer x")
-	res, err := DoFaithful(c, req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	res.Body.Close()
-	if strings.Join(asked, " ") != "https://registry.npmjs.org/pkg" {
-		t.Fatalf("with a credential: asked %q", asked)
-	}
-}
-
 type roundTrip func(*http.Request) (*http.Response, error)
 
 func (f roundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }

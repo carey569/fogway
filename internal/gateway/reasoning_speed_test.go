@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"encoding/json"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -279,26 +278,6 @@ func TestGeminiSummaryWithoutThoughtCount(t *testing.T) {
 	f.see([]byte(`data: {"candidates":[{"content":{"parts":[{"text":"visible summary","thought":true}]}}]}` + "\n\n"))
 	if !f.hidesReasoning(provider.Gemini) || f.reasoningMs(provider.Gemini) != 0 {
 		t.Fatal("Gemini summary timed without its hidden thought count")
-	}
-}
-
-func TestCodexBackendHiddenReasoningWithoutCount(t *testing.T) {
-	setup(t, provider.Chat, &fake{t: t})
-	p := &paced{events: []string{
-		`data: {"type":"response.created","response":{"id":"r1","status":"in_progress","output":[]}}`,
-		`~data: {"type":"response.reasoning_summary_text.delta","delta":"summary"}`,
-		`~data: {"type":"response.output_item.done","item":{"type":"reasoning","encrypted_content":"synthetic-seal"}}`,
-		`~data: {"type":"response.function_call_arguments.delta","delta":"{}"}`,
-		`data: {"type":"response.completed","response":{"id":"r1","status":"completed","output":[],"usage":{"input_tokens":5,"output_tokens":120}}}`,
-	}, gap: 150 * time.Millisecond}
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) { p.ServeHTTP(w, r) })
-	if code, body := codexPost(t, `{"model":"gpt-5.5","stream":true,"input":"hi"}`); code != 200 {
-		t.Fatalf("%d %s", code, body)
-	}
-	r := lastUsage(t)
-	n, ms := r.Decode()
-	if !r.ReasoningHidden || n != 0 || ms != 0 {
-		t.Fatalf("Codex hidden reasoning timed with no count: %+v", r)
 	}
 }
 

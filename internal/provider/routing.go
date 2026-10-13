@@ -7,15 +7,10 @@ package provider
 // gone stale — or when an account says it has run out.
 
 import (
-	"context"
-	"fmt"
-	"slices"
 	"sort"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/yetone/magpie/internal/catalog"
 )
 
 // The routings besides the default, smart, in order.
@@ -49,44 +44,6 @@ func SetSink(id string, sink bool) error {
 		return err
 	}
 	p.Sink = sink
-	return Save(*p)
-}
-
-// SetKeepLogin keeps Codex or Claude Code signed in to the account the
-// user made first (Provider.KeepLogin), or lets magpie move it on again.
-// Either way it is no longer kept on one of the user's choosing
-// (KeepLoginAs): it is signed in to the first again.
-func SetKeepLogin(id string, keep bool) error {
-	p, err := Find(id)
-	if err != nil {
-		return err
-	}
-	if p.Account == nil || p.Account.Agent != p.ID || !slices.Contains(switchedAgents, p.ID) {
-		return fmt.Errorf("magpie doesn't sign %s in to another of its accounts", p.Name)
-	}
-	chosen := p.KeepLogin && p.KeepLoginAs != ""
-	p.KeepLogin, p.KeepLoginAs = keep, ""
-	if err := Save(*p); err != nil {
-		return err
-	}
-	if chosen {
-		return signInToFirst(p.ID)
-	}
-	return nil
-}
-
-// SetSwitchOnly has magpie only move Codex's own sign-in between its
-// accounts (Provider.SwitchOnly), its requests never sent through the
-// gateway for account failover, or lets failover go through it again.
-func SetSwitchOnly(id string, on bool) error {
-	p, err := Find(id)
-	if err != nil {
-		return err
-	}
-	if p.Account == nil || p.Account.Agent != p.ID || p.ID != "codex" {
-		return fmt.Errorf("magpie doesn't route %s's own requests for account failover", p.Name)
-	}
-	p.SwitchOnly = on
 	return Save(*p)
 }
 
@@ -176,32 +133,7 @@ type Limit struct {
 // Weekly pace and Smart take it for their renewal when it comes sooner
 // (#717, #718). Zero when none will be.
 func (a Allowance) Restarts(now time.Time) time.Time {
-	for _, l := range a {
-		if !l.ResetRunsOut.IsZero() {
-			stopped, back := a.heldUp()
-			return expiringResetSpent(l.ResetRunsOut, now, stopped, back)
-		}
-	}
 	return time.Time{}
-}
-
-// heldUp is usedUp and BackAt by an allowance: whether a window that
-// stops the account, for every model, is used up, and when the last of
-// those starts again (zero when one doesn't say).
-func (a Allowance) heldUp() (stopped bool, back time.Time) {
-	for _, l := range a {
-		if l.Model != "" || l.matches != nil || l.Used < 100 {
-			continue
-		}
-		if l.Resets.IsZero() {
-			return true, time.Time{}
-		}
-		if !stopped || l.Resets.After(back) {
-			back = l.Resets
-		}
-		stopped = true
-	}
-	return stopped, back
 }
 
 // restarted is when a window that renews at renews (zero: not known) is
@@ -462,91 +394,10 @@ func (a Allowance) Pace(model string, now time.Time) (pace float64, due time.Tim
 	return pace, due
 }
 
-// Allowances is each of an agent's accounts' allowance by user, as last
-// known, asked for again in the background when that was over a minute
-// ago. Only the very first ask waits, and not for long. An account
-// missing is one not known yet.
+// Allowances is each of an agent's accounts' allowance by user. Fogway
+// reads no subscription's: there is none.
 func Allowances(agent string) map[string]Allowance {
-	c := &usedCache
-	c.Lock()
-	if c.m == nil {
-		c.m, c.at, c.loading = map[string]map[string]Allowance{}, map[string]time.Time{}, map[string]chan struct{}{}
-	}
-	done := c.loading[agent]
-	if done == nil && time.Since(c.at[agent]) > time.Minute {
-		done = make(chan struct{})
-		c.loading[agent] = done
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-			share := renewalShare(agent) // read before the lock: it reads providers.json
-			began := time.Now()
-			all := map[string]Allowance{}
-			readings, readAt := loginUsageAt(ctx, agent)
-			for user, q := range readings {
-				if q.Error != "" || len(q.Windows) == 0 {
-					continue
-				}
-				all[user] = allowanceOf(q.Windows, time.Now()).restartedBy(resetRunsOut(agent, user, q.Windows, q.Resets))
-			}
-			c.Lock()
-			now := time.Now()
-			// as old as its oldest reading: one the Usage page made 50s
-			// ago, taken here, is read again in 10s, not kept a minute
-			// more — near its cap an account was sent on a reading two
-			// minutes old (#1295)
-			at := readAt
-			if c.seen == nil {
-				c.seen = map[string]reading{}
-			}
-			var renewed []string
-			for user, a := range all {
-				key := agent + "/" + strings.ToLower(user)
-				if c.renewed[key].After(began) {
-					// started again while this was read: not known till
-					// it is read again, at once
-					delete(all, user)
-					at = time.Time{}
-					continue
-				}
-				if was, ok := c.seen[key]; ok && a.renewedFrom(was.a, was.at, share, now) {
-					renewed = append(renewed, user)
-				}
-				c.seen[key] = reading{a, now}
-			}
-			if c.stale[agent] {
-				// kept, as weigh counts an account not known unused, but
-				// read again at the next ask
-				delete(c.stale, agent)
-				at = time.Time{}
-			}
-			c.m[agent], c.at[agent] = all, at
-			delete(c.loading, agent)
-			c.Unlock()
-			// told once the lock is let go (a hook may ask for these
-			// again), and before those waiting for them are let go
-			for _, user := range renewed {
-				tellRenewed(agent, user)
-			}
-			close(done)
-		}()
-	}
-	_, known := c.m[agent]
-	c.Unlock()
-	if !known && done != nil {
-		select {
-		case <-done:
-		case <-time.After(firstWait):
-		}
-	}
-	c.Lock()
-	m, known := c.m[agent]
-	c.Unlock()
-	if !known {
-		// the first reading is still out: what each account said last
-		return lastAllowances(agent)
-	}
-	return m
+	return nil
 }
 
 // OnRenewed has f told when an account's usage windows were started again
@@ -567,15 +418,6 @@ var renewedHooks struct {
 	fs []func(agent, user string)
 }
 
-// renewedNow tells those OnRenewed asked, and forgets the account's
-// allowance as last read: its windows are not known till read again, and
-// what holds an account at a share of them (a cap, credits not spent)
-// holds it no more.
-func renewedNow(agent, user string) {
-	forgetAllowance(agent, user)
-	tellRenewed(agent, user)
-}
-
 // tellRenewed tells those OnRenewed asked.
 func tellRenewed(agent, user string) {
 	renewedHooks.Lock()
@@ -586,100 +428,13 @@ func tellRenewed(agent, user string) {
 	}
 }
 
-// AwaitAllowance has agent's accounts read again unless a reading is out,
-// and waits, till ctx ends, for one that knows user: after a reset is
-// spent, routing then counts the account's windows started again, rather
-// than not known and behind the rest till a later request reads them
-// (#1491). A reading out already, begun before the reset, doesn't count
-// it, so another is asked for; three at most. It says whether user is
-// known now.
-func AwaitAllowance(ctx context.Context, agent, user string) bool {
-	c := &usedCache
-	knows := func() bool {
-		c.Lock()
-		defer c.Unlock()
-		for u := range c.m[agent] {
-			if strings.EqualFold(u, user) {
-				return true
-			}
-		}
-		return false
-	}
-	for range 3 {
-		Allowances(agent)
-		c.Lock()
-		done := c.loading[agent]
-		c.Unlock()
-		if done != nil {
-			select {
-			case <-done:
-			case <-ctx.Done():
-				return knows()
-			}
-		}
-		if knows() {
-			return true
-		}
-		if done == nil {
-			return false // read lately, and user wasn't in it
-		}
-	}
-	return knows()
-}
-
-// forgetAllowance leaves agent's account user out of the allowances last
-// read, and has the next Allowances read them again.
-func forgetAllowance(agent, user string) {
-	c := &usedCache
-	c.Lock()
-	defer c.Unlock()
-	if c.renewed == nil {
-		c.renewed = map[string]time.Time{}
-	}
-	c.renewed[agent+"/"+strings.ToLower(user)] = time.Now()
-	delete(c.seen, agent+"/"+strings.ToLower(user)) // told already, by renewedNow
-	if c.at != nil {
-		c.at[agent] = time.Time{}
-	}
-	m, ok := c.m[agent]
-	if !ok {
-		return
-	}
-	// a new map: the one handed out is read without the lock
-	kept := make(map[string]Allowance, len(m))
-	for u, a := range m {
-		if !strings.EqualFold(u, user) {
-			kept[u] = a
-		}
-	}
-	c.m[agent] = kept
-}
-
 // StaleAllowance makes the next Allowances ask the vendor again for user's
 // allowance rather than trust what it last said, or what a reading out
 // now, asked before, comes back with: the account just answered that it
 // has run out.
 func StaleAllowance(agent, user string) {
-	key := agent + "/" + strings.ToLower(user)
 	if readsAsked() {
 		markStaleRead(agent, user) // read though allowances are read only when asked (#1518)
-	}
-	loginUsageCache.Lock()
-	delete(loginUsageCache.m, key)
-	delete(loginUsageCache.pending, key) // nor a reading asked for before
-	loginUsageCache.Unlock()
-	// the built-in keeps Grok's usage by home; a Grok moved to its plugin
-	// keeps it as "plugin:grok"'s, the line above
-	if agent == "grok" {
-		gs := grokLogins()
-		grokHomeUsage.Lock()
-		for _, g := range gs {
-			if strings.EqualFold(g.User, user) {
-				delete(grokHomeUsage.m, g.Home)
-				delete(grokHomeUsage.pending, g.Home)
-			}
-		}
-		grokHomeUsage.Unlock()
 	}
 	usedCache.Lock()
 	if usedCache.at != nil {
@@ -695,49 +450,14 @@ func StaleAllowance(agent, user string) {
 	usedCache.Unlock()
 }
 
-// restartedBy marks every window as started again by a reset spent
-// before it runs out at runsOut (Limit.ResetRunsOut); zero leaves a as it
-// is.
-func (a Allowance) restartedBy(runsOut time.Time) Allowance {
-	for i := range a {
-		a[i].ResetRunsOut = runsOut
-	}
-	return a
-}
-
 // allowanceOf keeps the windows that can stop an account.
 func allowanceOf(ws []QuotaWindow, now time.Time) Allowance {
-	// Antigravity keeps the vendor's ids in its windows (and on disk),
-	// while requests can name the collapsed model. Use the same families
-	// as the picker, without needing the live catalog to have been saved.
-	var raw []catalog.Model
-	for _, w := range ws {
-		if w.Family != "" && w.Model != "" && !w.Aside {
-			raw = append(raw, catalog.Model{ID: w.Model})
-		}
-	}
-	families := map[string]map[string]bool{}
-	for _, f := range antigravityFamilies(raw) {
-		if len(f.variants) > 1 {
-			ids := map[string]bool{f.id: true}
-			for _, v := range f.variants {
-				ids[v.ID] = true
-			}
-			for _, v := range f.variants {
-				families[v.ID] = ids
-			}
-		}
-	}
 	var a Allowance
 	for _, w := range ws {
 		if w.Aside {
 			continue
 		}
 		l := Limit{Used: w.Used, Span: w.Span, Model: w.Model, Amount: w.Amount, Of: w.Limit, Unit: w.Unit, matches: w.matches, partial: w.partial, Name: w.Name}
-		if ids := families[w.Model]; ids != nil && w.Family != "" && w.matches == nil {
-			l.Model = ""
-			l.matches = func(model string) bool { return ids[model] }
-		}
 		switch {
 		case w.ResetsAt != nil:
 			l.Resets = *w.ResetsAt

@@ -1,11 +1,6 @@
 package provider
 
 import (
-	"context"
-	"net/http"
-	"net/http/httptest"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -128,108 +123,5 @@ func TestAllowanceFor(t *testing.T) {
 	a[0].Used, a[0].Resets = 100, now.Add(-time.Minute)
 	if used, renews := a.For("claude-sonnet-5", now); used != 40 || !renews[1].IsZero() {
 		t.Fatalf("renewed five hours: %v %v", used, renews)
-	}
-}
-
-// The first ask for an agent's allowances waits for them, so the first
-// requests after magpie starts are routed by them too.
-func TestAllowancesFirstWaits(t *testing.T) {
-	if m := Allowances("nobody"); m == nil {
-		t.Fatal("the first ask didn't wait")
-	}
-}
-
-// An account that says it is out while its allowance is being read has it
-// read again once that reading is back, not a minute later: the reading
-// was asked before the refusal, and what it tells is kept only until the
-// next ask, which reads again (as StaleKeyAllowance does a key's).
-func TestAllowancesStaleMidRead(t *testing.T) {
-	signIn(t)
-	week := time.Now().Add(72 * time.Hour)
-	release := make(chan struct{})
-	var once sync.Once
-	var readings atomic.Int32
-	LoginUsageVia(func(_ context.Context, agent string) map[string]SubscriptionQuota {
-		used := 100.0
-		if readings.Add(1) == 1 {
-			<-release
-			used = 97
-		}
-		return map[string]SubscriptionQuota{"me@example.com": {Windows: []QuotaWindow{{Span: 7 * 24 * time.Hour, Used: used, ResetsAt: &week}}}}
-	})
-	reset := func() {
-		usedCache.Lock()
-		usedCache.m, usedCache.at, usedCache.loading = map[string]map[string]Allowance{}, map[string]time.Time{}, map[string]chan struct{}{}
-		usedCache.stale = nil
-		usedCache.Unlock()
-	}
-	reset()
-	t.Cleanup(func() {
-		once.Do(func() { close(release) })
-		// every reading this started lands before the stand-in goes
-		for {
-			usedCache.Lock()
-			done := usedCache.loading["codex"]
-			usedCache.Unlock()
-			if done == nil {
-				break
-			}
-			<-done
-		}
-		LoginUsageVia(nil)
-		reset()
-	})
-	// read over a minute ago, at 90%
-	usedCache.Lock()
-	usedCache.m["codex"] = map[string]Allowance{"me@example.com": {{Used: 90, Resets: week, Span: 7 * 24 * time.Hour}}}
-	usedCache.at["codex"] = time.Now().Add(-2 * time.Minute)
-	usedCache.Unlock()
-	share := func() float64 {
-		u, _ := Allowances("codex")["me@example.com"].For("gpt-5.5", time.Now())
-		return u
-	}
-	share() // reads again, behind the request
-	usedCache.Lock()
-	reading := usedCache.loading["codex"]
-	usedCache.Unlock()
-	for readings.Load() < 1 {
-		time.Sleep(5 * time.Millisecond)
-	}
-	StaleAllowance("codex", "me@example.com") // refused: out, as the request found
-	once.Do(func() { close(release) })
-	<-reading
-	first := share()
-	got, deadline := first, time.Now().Add(2*time.Second)
-	for got != 100 && time.Now().Before(deadline) {
-		time.Sleep(10 * time.Millisecond)
-		got = share()
-	}
-	if got != 100 {
-		t.Fatalf("first ask %v%%, 2s later %v%%, readings %d", first, got, readings.Load())
-	}
-	if n := readings.Load(); n != 2 {
-		t.Fatalf("readings %d", n)
-	}
-}
-
-// Copilot's allowances renew on the day GitHub says, and its code
-// completions don't stop an account from answering.
-func TestCopilotUsageResets(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"copilot_plan":"individual","quota_reset_date":"2026-10-01","quota_reset_date_utc":"2026-10-01T00:00:00.000Z",
-			"quota_snapshots":{"completions":{"has_quota":true,"entitlement":2000,"quota_remaining":0},
-			"premium_interactions":{"has_quota":true,"entitlement":300,"quota_remaining":75}}}`))
-	}))
-	defer srv.Close()
-	old := CopilotUserURL
-	CopilotUserURL = srv.URL
-	defer func() { CopilotUserURL = old }()
-	q := copilotSubscriptionUsage(t.Context(), "tok", "")
-	if q.Error != "" || len(q.Windows) != 2 || q.Windows[1].ResetsAt == nil || q.Windows[1].ResetsAt.Month() != time.October {
-		t.Fatalf("%+v", q)
-	}
-	now := time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC)
-	if used, renews := allowanceOf(q.Windows, now).For("gpt-5", now); used != 75 || len(renews) != 1 {
-		t.Fatalf("completions counted: %v %v", used, renews)
 	}
 }

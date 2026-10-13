@@ -205,9 +205,8 @@ type rpmKey struct{}
 // provider not planned as a candidate.
 func meterWho(p provider.Provider) string {
 	switch {
-	case p.Account != nil && p.Account.User != "":
-		return candidate{p: p}.restKey()
-	case p.Account == nil && p.Key != "":
+
+	case p.Key != "":
 		return candidate{p: p}.who()
 	}
 	return p.ID

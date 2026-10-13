@@ -2,16 +2,11 @@ package gateway
 
 import (
 	"encoding/json"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 // codexTitleRequest is a title request as Codex's TUI sends one on its own
@@ -60,98 +55,6 @@ func outputText(t *testing.T, body string) (string, int) {
 	return "", 0
 }
 
-// Codex's title requests go where Settings says (#705): as they came to
-// Codex's ChatGPT sign-in by default; turned off, answered here with no
-// title and sent nowhere; or to a model of magpie's, its plain answer
-// handed back as the {"title": …} Codex reads. Each stays a title request
-// in the Usage and Routing views.
-func TestCodexTitlesSetting(t *testing.T) {
-	f := &fake{t: t, reply: sse(
-		`data: {"id":"c1","choices":[{"index":0,"delta":{"content":"Fix login bug"}}]}`,
-		`data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":4}}`,
-		`data: [DONE]`)}
-	setup(t, provider.Chat, f)
-	chatgptCalls := 0
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-		io.ReadAll(r.Body)
-		chatgptCalls++
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, sse(`data: {"type":"response.completed","response":{"id":"r1","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"{\"title\":\"From ChatGPT\"}"}]}],"usage":{"input_tokens":9,"output_tokens":2}}}`))
-	})
-	save := func(v string) {
-		t.Helper()
-		st := settings.Load()
-		st.CodexTitles = v
-		if err := settings.Save(st); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	// default: as before, to Codex's own sign-in
-	s := New()
-	rec := codexTitleRequest(t, s, "")
-	if text, _ := outputText(t, rec.Body.String()); chatgptCalls != 1 || f.calls != 0 || text != `{"title":"From ChatGPT"}` {
-		t.Fatalf("default: chatgpt %d, magpie model %d, %q", chatgptCalls, f.calls, text)
-	}
-
-	// off: nothing goes out, a finished reply with no title in it
-	save("off")
-	for _, sub := range []string{"", "thread_title", "thread_title_reconsideration"} {
-		rec = codexTitleRequest(t, s, sub)
-		text, n := outputText(t, rec.Body.String())
-		if rec.Code != 200 || n != 0 || text != "" || chatgptCalls != 1 || f.calls != 0 {
-			t.Fatalf("off (%q): %d %q, %d items, chatgpt %d, magpie model %d", sub, rec.Code, rec.Body.String(), n, chatgptCalls, f.calls)
-		}
-	}
-
-	// a model of magpie's: it writes the title, in the shape Codex reads
-	save("fake/m1")
-	rec = codexTitleRequest(t, s, "thread_title")
-	if text, _ := outputText(t, rec.Body.String()); rec.Code != 200 || text != `{"title":"Fix login bug"}` || f.calls != 1 || chatgptCalls != 1 {
-		t.Fatalf("routed: %d %q, magpie model %d, chatgpt %d", rec.Code, rec.Body.String(), f.calls, chatgptCalls)
-	}
-	var sent struct {
-		Model string `json:"model"`
-	}
-	json.Unmarshal(f.got, &sent)
-	if sent.Model != "m1" {
-		t.Errorf("the magpie model was asked for %q", sent.Model)
-	}
-
-	// a turn of the conversation is not a title: it goes as before
-	rec = httptest.NewRecorder()
-	req := httptest.NewRequest("POST", CodexPath+"/responses", strings.NewReader(`{"model":"gpt-5.5","stream":true,"input":"hi"}`))
-	req.Header.Set("Authorization", "Bearer chatgpt-token")
-	s.Handler().ServeHTTP(rec, req)
-	if chatgptCalls != 2 || f.calls != 1 {
-		t.Errorf("a plain turn: chatgpt %d, magpie model %d", chatgptCalls, f.calls)
-	}
-
-	// every title request is in the ledger as one: ChatGPT's, the three
-	// answered here, the magpie model's
-	var kinds []string
-	for _, u := range usage.Load(time.Time{}) {
-		kinds = append(kinds, u.Provider+":"+u.Kind)
-		if u.Provider == "magpie" && (!u.IsRejected() || u.Status != 200) {
-			t.Errorf("an answered-here title %+v", u)
-		}
-	}
-	want := "openai:thread_title magpie:thread_title magpie:thread_title magpie:thread_title_reconsideration fake:thread_title openai:"
-	if got := strings.Join(kinds, " "); got != want {
-		t.Errorf("ledger %s\nwant   %s", got, want)
-	}
-	st := s.Trace(t.Context(), 0, 0)
-	titles := 0
-	for _, r := range st.Routes {
-		if isTitleKind(r.Kind) {
-			titles++
-		}
-	}
-	if titles != 5 {
-		t.Errorf("Routing view titles %d, want 5: %+v", titles, st.Routes)
-	}
-}
-
 // codexProviderTitle is a title request as Codex's TUI sends one with
 // magpie as its model provider (model_provider = "magpie", #743): to
 // magpie's own /v1/responses, on the conversation's model, a magpie id —
@@ -170,81 +73,6 @@ func codexProviderTitle(t *testing.T, s *Server, backend bool) *httptest.Respons
 	req.Header.Set("x-codex-turn-metadata", `{"thread_source":"thread_title","parent_thread_id":"main-chat"}`)
 	s.Handler().ServeHTTP(rec, req)
 	return rec
-}
-
-// A title Codex asks one of magpie's models for is one it can read
-// (#743): with magpie as Codex's provider the request comes to /v1, where
-// the Codex titles setting is heeded too, and with no model set there the
-// conversation's model's plain answer — a Chat model is never shown the
-// schema — is handed back as {"title": …}, as it is on the ChatGPT path.
-// An answer with no title in it is in the Routing and Usage views as the
-// failure it is to Codex.
-func TestCodexTitleOnMagpieProvider(t *testing.T) {
-	answer := "Fix login bug"
-	f := &fake{t: t}
-	setup(t, provider.Chat, f)
-	reply := func() string {
-		return sse(
-			`data: {"id":"c1","choices":[{"index":0,"delta":{"content":`+strconvQuote(answer)+`}}]}`,
-			`data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":4}}`,
-			`data: [DONE]`)
-	}
-	save := func(v string) {
-		t.Helper()
-		st := settings.Load()
-		st.CodexTitles = v
-		if err := settings.Save(st); err != nil {
-			t.Fatal(err)
-		}
-	}
-	s := New()
-	for _, backend := range []bool{false, true} {
-		f.reply = reply()
-		rec := codexProviderTitle(t, s, backend)
-		if text, _ := outputText(t, rec.Body.String()); rec.Code != 200 || text != `{"title":"Fix login bug"}` {
-			t.Fatalf("backend %v: %d %q", backend, rec.Code, rec.Body.String())
-		}
-	}
-	calls := f.calls
-
-	// the setting holds on /v1 as well
-	save("off")
-	rec := codexProviderTitle(t, s, false)
-	if text, n := outputText(t, rec.Body.String()); rec.Code != 200 || n != 0 || text != "" || f.calls != calls {
-		t.Fatalf("off on /v1: %d %q, upstream calls %d", rec.Code, rec.Body.String(), f.calls-calls)
-	}
-	save("")
-
-	// a turn of the conversation on /v1 is left as it was
-	f.reply = reply()
-	if code, body := post(t, "/v1/responses", `{"model":"fake/m1","stream":true,"input":"hi"}`); code != 200 || strings.Contains(body, `{\"title\"`) {
-		t.Fatalf("a plain turn: %d %q", code, body)
-	}
-
-	// no title in the answer: none for Codex, and the call says why
-	answer = ""
-	f.reply = reply()
-	rec = codexProviderTitle(t, s, false)
-	if text, n := outputText(t, rec.Body.String()); rec.Code != 200 || n != 0 || text != "" {
-		t.Fatalf("no title: %d %q", rec.Code, rec.Body.String())
-	}
-	var last usage.Record
-	for _, u := range usage.Load(time.Time{}) {
-		last = u
-	}
-	if last.Kind != "thread_title" || !strings.HasPrefix(last.Error, "title: ") || !last.Failed() {
-		t.Errorf("the ledger's no-title call %+v", last)
-	}
-	st := s.Trace(t.Context(), 0, 0)
-	var r Route
-	for _, c := range st.Routes {
-		if c.Seq > r.Seq {
-			r = c
-		}
-	}
-	if !isTitleKind(r.Kind) || !strings.HasPrefix(r.Error, "title: ") {
-		t.Errorf("the Routing view's no-title call %+v", r)
-	}
 }
 
 func strconvQuote(s string) string { b, _ := json.Marshal(s); return string(b) }
@@ -302,56 +130,6 @@ func codexDescriptionRequest(t *testing.T, s *Server) *httptest.ResponseRecorder
 	return rec
 }
 
-func TestCodexDescriptionsSetting(t *testing.T) {
-	f := &fake{t: t, reply: sse(
-		`data: {"id":"c1","choices":[{"index":0,"delta":{"content":"Reviewed the routing change and verified it"}}]}`,
-		`data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":8}}`,
-		`data: [DONE]`)}
-	setup(t, provider.Chat, f)
-	chatgptCalls := 0
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-		io.ReadAll(r.Body)
-		chatgptCalls++
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, sse(`data: {"type":"response.completed","response":{"id":"r1","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"{\"description\":\"From ChatGPT\"}"}]}],"usage":{"input_tokens":9,"output_tokens":2}}}`))
-	})
-	save := func(v string) {
-		t.Helper()
-		st := settings.Load()
-		st.CodexDescriptions = v
-		if err := settings.Save(st); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	s := New()
-	rec := codexDescriptionRequest(t, s)
-	if text, _ := outputText(t, rec.Body.String()); chatgptCalls != 1 || f.calls != 0 || text != `{"description":"From ChatGPT"}` {
-		t.Fatalf("default: chatgpt %d, magpie model %d, %q", chatgptCalls, f.calls, text)
-	}
-
-	save("fake/m1")
-	rec = codexDescriptionRequest(t, s)
-	if text, _ := outputText(t, rec.Body.String()); rec.Code != 200 || text != `{"description":"Reviewed the routing change and verified it"}` || f.calls != 1 || chatgptCalls != 1 {
-		t.Fatalf("routed: %d %q, magpie model %d, chatgpt %d", rec.Code, rec.Body.String(), f.calls, chatgptCalls)
-	}
-	var sent struct {
-		Model string `json:"model"`
-	}
-	json.Unmarshal(f.got, &sent)
-	if sent.Model != "m1" {
-		t.Errorf("the magpie model was asked for %q", sent.Model)
-	}
-	var kinds []string
-	for _, u := range usage.Load(time.Time{}) {
-		kinds = append(kinds, u.Provider+":"+u.Kind)
-	}
-	want := "openai:thread_description fake:thread_description"
-	if got := strings.Join(kinds, " "); got != want {
-		t.Errorf("ledger %s\nwant   %s", got, want)
-	}
-}
-
 func TestCodexDescriptionFallbackOnMagpie(t *testing.T) {
 	for _, path := range []string{"/v1/responses", "/backend-api/codex/responses"} {
 		t.Run(path, func(t *testing.T) {
@@ -371,32 +149,6 @@ func TestCodexDescriptionFallbackOnMagpie(t *testing.T) {
 				t.Fatalf("fallback: %d %q, calls %d", rec.Code, rec.Body.String(), f.calls)
 			}
 		})
-	}
-}
-
-func TestNoDescription(t *testing.T) {
-	f := &fake{t: t, reply: sse(
-		`data: {"id":"c1","choices":[{"index":0,"delta":{"content":"   "}}]}`,
-		`data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":1}}`,
-		`data: [DONE]`)}
-	setup(t, provider.Chat, f)
-	st := settings.Load()
-	st.CodexDescriptions = "fake/m1"
-	if err := settings.Save(st); err != nil {
-		t.Fatal(err)
-	}
-	s := New()
-	rec := codexDescriptionRequest(t, s)
-	text, n := outputText(t, rec.Body.String())
-	if rec.Code != 200 || n != 0 || text != "" {
-		t.Fatalf("empty reply: %d %q, %d items", rec.Code, rec.Body.String(), n)
-	}
-	var last usage.Record
-	for _, u := range usage.Load(time.Time{}) {
-		last = u
-	}
-	if last.Kind != "thread_description" || !strings.HasPrefix(last.Error, "description: ") || !last.Failed() {
-		t.Fatalf("unusable reply was not flagged: %+v", last)
 	}
 }
 

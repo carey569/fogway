@@ -65,10 +65,6 @@ func reverseProxyIsStillMagpie(t *testing.T, proxy string) {
 	managed := claudeManaged
 	claudeManaged = func() string { return filepath.Join(home, "managed-settings.json") }
 	t.Cleanup(func() { claudeManaged = managed })
-	os.MkdirAll(filepath.Join(home, ".hanako", "agents", "hana"), 0o755)
-	os.WriteFile(filepath.Join(home, ".hanako", "agents", "hana", "config.yaml"), []byte("agent:\n  name: Hana\n"), 0o644)
-	t.Setenv("ASTRBOT_ROOT", "")
-	writeFile(t, filepath.Join(home, ".astrbot", "data", "cmd_config.json"), astrbotConfig)
 	setPort(t, 3591)
 	var agents []*Agent
 	for _, a := range All() {
@@ -97,7 +93,7 @@ func reverseProxyIsStillMagpie(t *testing.T, proxy string) {
 		agents = append(agents, a)
 	}
 	moved := filesWith(home, "127.0.0.1:3591")
-	if len(moved) < 20 {
+	if len(moved) < 16 { // every agent Fogway wires has the address in a file of its own
 		t.Fatalf("only %d files have the gateway's address: %v", len(moved), moved)
 	}
 	for _, p := range moved {

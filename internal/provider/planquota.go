@@ -376,7 +376,7 @@ func kimiCodeBase(base string) string {
 // its base_url, /coding/v1, with /search), "" for a provider that isn't a
 // Kimi Code plan with a key.
 func KimiCodeSearch(p Provider) string {
-	if p.Account != nil || p.Key == "" {
+	if p.Key == "" {
 		return ""
 	}
 	for _, base := range []string{p.Chat, p.Anthropic} {
@@ -591,7 +591,7 @@ func PlanQuotas(ctx context.Context) []SubscriptionQuota {
 	}
 	var jobs []job
 	for _, p := range All() {
-		if p.Hidden || p.Off || p.Account != nil || p.Key == "" {
+		if p.Hidden || p.Off || p.Key == "" {
 			continue
 		}
 		src, ok := planQuotaSourceOf(p)
@@ -648,12 +648,8 @@ func PlanQuotas(ctx context.Context) []SubscriptionQuota {
 				k.Key = j.key
 				noteKeyAllowance(k, ws, time.Now())
 				if strings.HasSuffix(j.src.url, "/api/monitor/usage/quota/limit") && !team { // Zhipu, Z.ai
-					// the plan's term and its resets (#1191), asked together
-					root := zcodeRoot(j.src.url)
-					resets := make(chan *ResetCredits, 1)
-					go func() { resets <- zhipuPersonalResets(ctx, root, j.key) }()
-					q.Until, q.Renew = zhipuTerm(ctx, root, j.key)
-					q.Resets = <-resets
+					// the plan's term (#1191)
+					q.Until, q.Renew = zhipuTerm(ctx, zcodeRoot(j.src.url), j.key)
 				}
 			}
 			q = keepReading(ctx, q, tag)
@@ -712,9 +708,7 @@ func (t *ZhipuTeam) normal() *ZhipuTeam {
 // TakesZhipuTeam says p is a key of Zhipu's or Z.ai's, whose editor then
 // offers the team's organization and project (#236).
 func TakesZhipuTeam(p Provider) bool {
-	if p.Account != nil {
-		return false
-	}
+
 	src, ok := planQuotaSourceOf(p)
 	return ok && strings.HasSuffix(src.url, "/api/monitor/usage/quota/limit")
 }

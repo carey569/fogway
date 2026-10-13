@@ -4,14 +4,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/testenv"
 )
 
 // cachingVendor answers in one wire format, whole or streamed, with a
@@ -158,79 +154,6 @@ func TestUsageRecordsCacheTokensOnEveryRoute(t *testing.T) {
 						u.Input, u.Output, u.CacheRead, u.CacheWrite, v.want.in, v.want.read, v.want.write)
 				}
 			})
-		}
-	}
-}
-
-// A subscription moved onto its plugin records the cache as the built-in
-// did: the plugin's fetch hands back the vendor's own reply, whose usage
-// the gateway reads in the wire format the plugin's model speaks.
-func TestPluginUsageRecordsCacheTokens(t *testing.T) {
-	movedFake(t, "factory", cachingVendor{})
-	for _, c := range []struct {
-		model           string
-		in, read, write int
-	}{
-		{"fake-1", 52, 300, 0},       // @ai-sdk/openai-compatible: Chat
-		{"fake-claude", 12, 300, 40}, // @ai-sdk/anthropic: Messages
-		{"fake-gemini", 52, 300, 0},  // @ai-sdk/google: generateContent
-	} {
-		for _, stream := range []bool{false, true} {
-			body := `{"model":"factory/` + c.model + `","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}`
-			if stream {
-				body = strings.Replace(body, `{"model"`, `{"stream":true,"model"`, 1)
-			}
-			rec := httptest.NewRecorder()
-			New().Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/v1/messages", strings.NewReader(body)))
-			if rec.Code != 200 || !strings.Contains(rec.Body.String(), "hi") {
-				t.Fatalf("%s stream=%v: %d %s", c.model, stream, rec.Code, rec.Body)
-			}
-			u := lastUsage(t)
-			if u.Input != c.in || u.CacheRead != c.read || u.CacheWrite != c.write || u.Output != 7 {
-				t.Errorf("%s stream=%v: usage in %d, out %d, cache read %d, cache write %d; want in %d, out 7, cache read %d, cache write %d",
-					c.model, stream, u.Input, u.Output, u.CacheRead, u.CacheWrite, c.in, c.read, c.write)
-			}
-		}
-	}
-}
-
-// The Claude subscription, answered by Claude Code itself, hands the
-// gateway the cache its stream-json tells: what serve records for the
-// request is this usage, for the agent's Messages and for a classifier's
-// Chat alike.
-func TestClaudeSubscriptionUsageKeepsCacheTokens(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("a shell script stands in for Claude Code")
-	}
-	dir := t.TempDir()
-	testenv.Program(t, filepath.Join(dir, "claude"), `#!/bin/sh
-while read -r line; do
-  echo '{"type":"stream_event","event":{"type":"message_start","message":{"id":"m","model":"claude-haiku-4-5","usage":{"input_tokens":12,"cache_read_input_tokens":300,"cache_creation_input_tokens":40,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":40},"output_tokens":1}}}}'
-  echo '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hi"}}}'
-  echo '{"type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":7}}}'
-  echo '{"type":"stream_event","event":{"type":"message_stop"}}'
-  echo '{"type":"result","subtype":"success","is_error":false,"result":""}'
-done
-`)
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	runsEndWithTest(t, dir)
-	s := New()
-	t.Cleanup(s.subscription.abortAll)
-	p := provider.Provider{ID: "claude", Account: &provider.Account{Agent: "claude", User: "u"}}
-	for _, c := range []struct {
-		proto      provider.Protocol
-		path, body string
-	}{
-		{provider.Anthropic, "/v1/messages", `{"model":"claude-haiku-4-5","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}`},
-		{provider.Chat, "/v1/chat/completions", `{"model":"claude-haiku-4-5","temperature":0,"messages":[{"role":"system","content":"classify"},{"role":"user","content":"hi"}]}`},
-	} {
-		var u Usage
-		rec := httptest.NewRecorder()
-		if code, msg := s.serveClaudeSubscription(rec, httptest.NewRequest("POST", c.path, strings.NewReader(c.body)), c.proto, p, "claude-haiku-4-5", []byte(c.body), &u); code != 200 {
-			t.Fatalf("%s: %d %s", c.proto, code, msg)
-		}
-		if u.Input != 12 || u.Output != 7 || u.CacheRead != 300 || u.CacheWrite != 40 || u.CacheWrite1h != 40 {
-			t.Errorf("%s: usage %+v; want in 12, out 7, cache read 300, cache write 40 (all for an hour)", c.proto, u)
 		}
 	}
 }

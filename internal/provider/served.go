@@ -76,9 +76,6 @@ func servedPath() string { return filepath.Join(filepath.Dir(Path()), "served.js
 // by its agent and user ("codex@a@b.c"), a key by its provider and the
 // key's id ("deepseek#k1a2b3c"), else the provider.
 func ServedID(p Provider) string {
-	if a := p.Account; a != nil {
-		return loginProvider(Login{Agent: a.Agent}) + "@" + strings.ToLower(a.User)
-	}
 	if p.Key != "" {
 		return p.ID + "#" + KeyID(p.Key)
 	}
@@ -239,7 +236,7 @@ func cardsServed(subs, plans, balances []SubscriptionQuota, served map[string]ti
 		qs   []SubscriptionQuota
 	}{{"subscription", subs}, {"plan", plans}, {"balance", balances}} {
 		for _, q := range g.qs {
-			if q.From == "" && len(served) > 0 {
+			if len(served) > 0 {
 				if at := by.at(q.Provider, g.kind, q.User); !at.IsZero() {
 					t := at.UTC()
 					q.LastServedAt = &t

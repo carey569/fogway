@@ -8,11 +8,8 @@ import (
 	"net/http/httptest"
 	"net/netip"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"testing"
-
-	"github.com/yetone/magpie/internal/settings"
 )
 
 func TestPublicAddr(t *testing.T) {
@@ -67,112 +64,6 @@ func resolveTo(t *testing.T, names map[string]string) {
 		return was(context.Background(), host)
 	}
 	t.Cleanup(func() { lookupIP = was })
-}
-
-// An image URL a caller sends to be edited is downloaded by magpie for an
-// images API that takes files only. From another computer (a gateway
-// key's holder) it is never downloaded from this computer or its network,
-// however the URL names it.
-func TestEditImageURLNotFetchedFromPrivateAddresses(t *testing.T) {
-	s, e := easeled(t)
-	srv, hits := secret(t, string(pngBytes))
-	port := srv.URL[strings.LastIndex(srv.URL, ":")+1:]
-	resolveTo(t, map[string]string{"inside.test": "127.0.0.1", "nat64.test": "64:ff9b::7f00:1"})
-	for _, u := range []string{
-		srv.URL + "/img.png",
-		"http://localhost:" + port + "/img.png",
-		"http://[::1]:" + port + "/img.png",
-		"http://[::ffff:127.0.0.1]:" + port + "/img.png",
-		"http://inside.test:" + port + "/img.png",
-		"http://nat64.test:" + port + "/img.png",
-		"http://169.254.169.254/latest/meta-data/",
-		"http://10.0.0.1/img.png",
-		"http://0.0.0.0:" + port + "/img.png",
-	} {
-		code, raw := editFrom(t, s, u, nil)
-		if code != 400 || !strings.Contains(raw, "private address") {
-			t.Errorf("%s: %d %s", u, code, raw)
-		}
-	}
-	if n := hits.Load(); n != 0 {
-		t.Fatalf("the private service was asked %d times", n)
-	}
-	if sent := e.got("/v1/images/edits"); len(sent) != 0 {
-		t.Fatalf("the vendor was sent %d edits", len(sent))
-	}
-}
-
-// Through a proxy the dialler can't see where it goes: the proxy is sent
-// the address that was checked, never the name, and a redirect to a
-// private address is refused before it is asked for.
-func TestEditImageURLThroughProxyIsPinnedAndRedirectsChecked(t *testing.T) {
-	s, e := easeled(t)
-	srv, hits := secret(t, string(pngBytes))
-	var mu sync.Mutex
-	var asked []string
-	seen := func() []string { mu.Lock(); defer mu.Unlock(); return append([]string(nil), asked...) }
-	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mu.Lock()
-		asked = append(asked, r.URL.String()+" Host="+r.Host)
-		mu.Unlock()
-		switch r.URL.Path {
-		case "/img.png":
-			w.Write(pngBytes)
-		case "/hop":
-			http.Redirect(w, r, srv.URL+"/img.png", http.StatusFound)
-		case "/far":
-			http.Redirect(w, r, "http://inside.test/img.png", http.StatusFound)
-		}
-	}))
-	t.Cleanup(proxy.Close)
-	st := settings.Load()
-	st.Proxy = proxy.URL
-	if err := settings.Save(st); err != nil {
-		t.Fatal(err)
-	}
-	resolveTo(t, map[string]string{"pics.test": "93.184.216.34", "inside.test": "192.168.1.10"})
-
-	code, raw := editFrom(t, s, "http://pics.test/img.png", nil)
-	if code != 200 || len(e.got("/v1/images/edits")) != 1 {
-		t.Fatalf("a public image: %d %s", code, raw)
-	}
-	if a := seen(); len(a) != 1 || a[0] != "http://93.184.216.34:80/img.png Host=93.184.216.34:80" {
-		t.Fatalf("the proxy was asked %q", a)
-	}
-	for _, u := range []string{"http://pics.test/hop", "http://pics.test/far"} {
-		if code, raw := editFrom(t, s, u, nil); code != 400 || !strings.Contains(raw, "private address") {
-			t.Errorf("%s: %d %s", u, code, raw)
-		}
-	}
-	if a := seen(); hits.Load() != 0 || len(a) != 3 {
-		t.Fatalf("private service asked %d times, proxy asked %q", hits.Load(), a)
-	}
-}
-
-// A request from this computer may name an image on it (a local agent's
-// own server): its sender reaches it anyway. A web page's request, or one
-// come through a tunnel, may not. What is downloaded must be an image.
-func TestEditImageURLFromThisComputer(t *testing.T) {
-	s, e := easeled(t)
-	srv, hits := secret(t, string(pngBytes))
-	local := func(r *http.Request) { r.RemoteAddr = "127.0.0.1:50000" }
-	if code, raw := editFrom(t, s, srv.URL+"/img.png", local); code != 200 || hits.Load() != 1 || len(e.got("/v1/images/edits")) != 1 {
-		t.Fatalf("a local agent's image: %d %s", code, raw)
-	}
-	for name, edit := range map[string]func(*http.Request){
-		"tunnel": func(r *http.Request) { local(r); r.Header.Set("X-Forwarded-For", "203.0.113.9") },
-		"page":   func(r *http.Request) { local(r); r.Header.Set("Sec-Fetch-Mode", "cors") },
-	} {
-		editFrom(t, s, srv.URL+"/img.png", edit)
-		if hits.Load() != 1 {
-			t.Fatalf("%s: the private service was asked %d times", name, hits.Load())
-		}
-	}
-	json, _ := secret(t, `{"admin_token":"s3cret"}`)
-	code, raw := editFrom(t, s, json.URL+"/status", local)
-	if code != 400 || !strings.Contains(raw, "isn't an image") || strings.Contains(raw, "s3cret") || len(e.got("/v1/images/edits")) != 1 {
-		t.Fatalf("not an image: %d %s", code, raw)
-	}
 }
 
 // The dialler checks the address it connects to, whatever name led there.

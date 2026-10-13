@@ -13,8 +13,7 @@ import (
 
 // readsEnv matches the two ways these packages name a variable they read to
 // find an agent's folder: as the argument of a Getenv, a LookupEnv or a
-// place's getenv, and as the env of a table entry, which is how Qoder's two
-// builds are named (read through at.getenv(b.env)).
+// place's getenv, and as the env of a table entry.
 var readsEnv = regexp.MustCompile(`(?:Getenv|LookupEnv|getenv)\("([A-Z][A-Z_0-9]*)"\)|env:\s*"([A-Z][A-Z_0-9]*)"`)
 
 // notAnAgent are the variables the same sources read that are not an agent's
@@ -22,9 +21,6 @@ var readsEnv = regexp.MustCompile(`(?:Getenv|LookupEnv|getenv)\("([A-Z][A-Z_0-9]
 var notAnAgent = map[string]string{
 	"APPDATA":               "Windows' own folder, which a sandbox sets to one of its own rather than clears",
 	"LOCALAPPDATA":          "the same",
-	"PATH":                  "the process' own",
-	"TZ":                    "the process' own",
-	"USER":                  "the process' own",
 	"XDG_CONFIG_HOME":       "magpie's own folder's, which appdir decides",
 	"XDG_DATA_HOME":         "the same",
 	"MAGPIE_ADDR":           "magpie's own",
@@ -32,9 +28,6 @@ var notAnAgent = map[string]string{
 	"MAGPIE_PUBLIC_URL":     "magpie's own public URL",
 	"MAGPIE_TRUST_PROXY":    "magpie's own: a proxy here signs its clients in (#1022)",
 	"MAGPIE_EFFORT_UPDATES": "magpie's own switch for effort updates (#617)",
-	"MAGPIE_SITE_ORIGIN":    "a site origin magpie's Omarchy theme answers, to try the site locally",
-	"MAGPIE_PARTNERS":       "where magpie's own partner list is read from (a URL, or off), not a folder",
-	"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "Claude Code's behaviour flag, not an agent's folder",
 }
 
 // TestFolderVarsAreListed says every variable the packages that find an
@@ -93,10 +86,10 @@ func TestFolderVarsAreListed(t *testing.T) {
 			}
 		}
 	}
-	// One name read each way the pattern matches, so that a change in how a
-	// variable is read empties the scan loudly instead of leaving the test
-	// nothing to complain of.
-	for _, canary := range []string{"CODEX_HOME", "QODER_CONFIG_DIR"} {
+	// One name known to be read, so that a change in how a variable is read
+	// empties the scan loudly instead of leaving the test nothing to
+	// complain of.
+	for _, canary := range []string{"CODEX_HOME"} {
 		if _, ok := found[canary]; !ok {
 			t.Errorf("%s was not found in these sources, so readsEnv no longer matches the way a variable is read", canary)
 		}

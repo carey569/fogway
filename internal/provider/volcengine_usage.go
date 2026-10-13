@@ -44,9 +44,7 @@ const (
 // TakesVolcAccessKey says p is on Volcengine Ark (ark.<region>.volces.com),
 // whose editor then asks for the account's AccessKey ID and Secret.
 func TakesVolcAccessKey(p Provider) bool {
-	if p.Account != nil {
-		return false
-	}
+
 	for _, base := range []string{p.Chat, p.Responses, p.Anthropic} {
 		if h := hostOf(base); strings.HasPrefix(h, "ark.") && strings.HasSuffix(h, ".volces.com") {
 			return true

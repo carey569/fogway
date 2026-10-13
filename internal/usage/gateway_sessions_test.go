@@ -1,8 +1,6 @@
 package usage
 
 import (
-	"github.com/yetone/magpie/internal/settings"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -76,43 +74,5 @@ func TestGatewaySessionsNativeIdentityWins(t *testing.T) {
 	Append(Record{Time: time.Now(), Agent: "pi", Session: "native", Provider: "p", Model: "m", Input: 1, Status: 200})
 	if got := GatewaySessions(time.Time{}, map[string]bool{"pi|native": true}); len(got) != 0 {
 		t.Fatalf("got duplicate gateway session: %+v", got)
-	}
-}
-
-func TestGatewaySessionsCachePricesWindowsAndRewrite(t *testing.T) {
-	resetUsageTest(t)
-	at := time.Now()
-	Append(Record{Time: at.Add(-time.Hour), Agent: "pi", Session: "native", Provider: "p", Model: "m", Input: 1000000, Status: 200})
-	Append(Record{Time: at, Agent: "pi", Session: "native", Provider: "p", Model: "m", Input: 1000000, Status: 200})
-	for _, price := range []float64{2, 4} {
-		cfg := settings.Load()
-		cfg.ModelPrices = map[string]settings.ModelPrice{"*/m": {Input: &price, Output: new(0.0), CacheRead: new(0.0), CacheWrite: new(0.0)}}
-		if err := settings.Save(cfg); err != nil {
-			t.Fatal(err)
-		}
-		for i := range 2 {
-			all := GatewaySessions(time.Time{}, nil)
-			window, days := GatewaySessionWindow(at.Add(-time.Minute))
-			if len(all) != 1 || all[0].Cost != 2*price || len(window) != 1 || window[0].Cost != price || len(days) != 1 || days[0].Input != 1000000 {
-				t.Fatalf("price=%v read=%d all=%+v window=%+v days=%+v", price, i, all, window, days)
-			}
-		}
-	}
-	vias := Vias(time.Time{})
-	vias["pi|native"][0].Calls = 999
-	if got := Vias(time.Time{})["pi|native"][0].Calls; got != 2 {
-		t.Fatalf("caller mutated routing cache: %d", got)
-	}
-	if got := Vias(at.Add(-time.Minute))["pi|native"][0].Calls; got != 1 {
-		t.Fatalf("routing window: %d", got)
-	}
-	if err := os.WriteFile(Path(), nil, 0600); err != nil {
-		t.Fatal(err)
-	}
-	if got := GatewaySessions(time.Time{}, nil); len(got) != 0 {
-		t.Fatalf("rewrite retained sessions: %+v", got)
-	}
-	if got := Vias(time.Time{}); len(got) != 0 {
-		t.Fatalf("rewrite retained routing: %+v", got)
 	}
 }

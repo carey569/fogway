@@ -109,7 +109,7 @@ func usagePriceCacheKey(now time.Time) string {
 	aliases, _ := json.Marshal(provider.Renamed())
 	fmt.Fprint(h, string(prices), string(aliases))
 	for _, current := range provider.All() {
-		fmt.Fprintf(h, "%q:%q:%v:%t:%t:%t;", current.ID, current.Where(), current.Catalogs(), current.IsPlugin(), current.Account == nil, current.Key != "")
+		fmt.Fprintf(h, "%q:%q:%v:%t:%t:%t;", current.ID, current.Where(), current.Catalogs(), false, true, current.Key != "")
 		fmt.Fprint(h, statKey(catalog.LivePath(current.ID)))
 	}
 	meta += fmt.Sprintf("|%x", h.Sum(nil))

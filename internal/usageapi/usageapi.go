@@ -244,9 +244,8 @@ func LedgerPage(p usage.Period, f usage.Filter, offset, limit int) Ledger {
 	access := map[string]string{}
 	for _, pr := range provider.All() {
 		names[pr.ID], icons[pr.ID] = pr.Name, pr.Icon
-		if pr.Account != nil {
-			access[pr.ID] = "subscription"
-		} else if pr.Key != "" {
+
+		if pr.Key != "" {
 			access[pr.ID] = "api"
 		}
 	}

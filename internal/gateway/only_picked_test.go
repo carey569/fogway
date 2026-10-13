@@ -2,8 +2,6 @@ package gateway
 
 import (
 	"encoding/json"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -71,67 +69,5 @@ func TestOnlyPickedModelsList(t *testing.T) {
 	}
 	if got := list(TokenFor("opencode")); !got["fresh/x1"] || got["fake/m2"] {
 		t.Errorf("fresh/x1 ticked: %v", got)
-	}
-}
-
-// Codex's own ChatGPT models follow the switch too: a model the account
-// gains after it is off Codex's list until ticked.
-func TestCodexModelListOnlyPicked(t *testing.T) {
-	codexSignedIn(t)
-	if err := provider.Save(provider.Provider{ID: "codex", Models: []string{"gpt-5.5"}}); err != nil {
-		t.Fatal(err)
-	}
-	slugs := `{"slug":"gpt-5.5","priority":1}`
-	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("ETag", `"v1"`)
-		io.WriteString(w, `{"models":[`+slugs+`]}`)
-	}))
-	defer up.Close()
-	was := provider.CodexBase
-	provider.CodexBase = up.URL + "/backend-api/codex"
-	defer func() { provider.CodexBase = was }()
-	list := func() []string {
-		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", CodexPath+"/models", nil)
-		req.Header.Set("Authorization", "Bearer chatgpt-token")
-		New().Handler().ServeHTTP(rec, req)
-		var got struct {
-			Models []map[string]any `json:"models"`
-		}
-		json.Unmarshal(rec.Body.Bytes(), &got)
-		var native []string
-		for _, m := range got.Models {
-			if slug, _ := m["slug"].(string); strings.HasPrefix(slug, "gpt-") {
-				native = append(native, slug)
-			}
-		}
-		return native
-	}
-	if err := provider.SetOnlyPicked("codex", true); err != nil {
-		t.Fatal(err)
-	}
-	if native := list(); len(native) != 1 || native[0] != "gpt-5.5" {
-		t.Fatalf("switched on: %v", native)
-	}
-	slugs += `,{"slug":"gpt-6","priority":2}`
-	if err := provider.Save(provider.Provider{ID: "codex", Models: []string{"gpt-5.5", "gpt-6"}}); err != nil {
-		t.Fatal(err)
-	}
-	if native := list(); len(native) != 1 || native[0] != "gpt-5.5" {
-		t.Errorf("a model the account gained since: %v", native)
-	}
-	// off: what is shown stays (gpt-6 still off), and one that comes now shows
-	if err := provider.SetOnlyPicked("codex", false); err != nil {
-		t.Fatal(err)
-	}
-	if native := list(); len(native) != 1 || native[0] != "gpt-5.5" {
-		t.Errorf("switched off: %v", native)
-	}
-	slugs += `,{"slug":"gpt-6-mini","priority":3}`
-	if err := provider.Save(provider.Provider{ID: "codex", Models: []string{"gpt-5.5", "gpt-6", "gpt-6-mini"}}); err != nil {
-		t.Fatal(err)
-	}
-	if native := list(); len(native) != 2 || native[1] != "gpt-6-mini" {
-		t.Errorf("switched off, a new model: %v", native)
 	}
 }

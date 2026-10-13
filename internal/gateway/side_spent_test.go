@@ -13,7 +13,6 @@ import (
 
 	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 // restAs rests ids (a provider, a key, or a provider's model) as routing
@@ -107,103 +106,6 @@ func TestAutoVisionPassesOverOneOut(t *testing.T) {
 	restAs(t, failQuota, "cheap/eye")
 	if m := AutoVision(); m != "cheap/other-eye" {
 		t.Fatalf("AutoVision = %q with only cheap/eye out", m)
-	}
-}
-
-// The tier is kept among describers with allowance: a Claude account goes
-// before an API key, but not once its five hours are used up.
-func TestAutoVisionTierAmongThoseWithAllowance(t *testing.T) {
-	codexSignedIn(t)
-	used := map[string]float64{"me@example.com": 20}
-	capUsage(t, used)
-	if err := provider.Save(provider.Provider{ID: "keyed", Name: "keyed", Chat: "http://keyed.invalid/v1", Key: "k", Models: []string{"eye"}}); err != nil {
-		t.Fatal(err)
-	}
-	if err := catalog.SaveLive("keyed", "http://keyed.invalid/v1", []catalog.Model{{ID: "eye", Images: true, ImageInput: imageInputBool(true)}}); err != nil {
-		t.Fatal(err)
-	}
-	if err := catalog.SaveLive("codex", provider.CodexBase, []catalog.Model{{ID: "gpt-6.1-sol", Images: true, ImageInput: imageInputBool(true)}}); err != nil {
-		t.Fatal(err)
-	}
-	if got := AutoVision(); got != "codex/gpt-6.1-sol" {
-		t.Fatalf("AutoVision = %q, want the Codex account's first", got)
-	}
-	used["me@example.com"] = 100
-	if got := AutoVision(); got != "keyed/eye" {
-		t.Fatalf("AutoVision = %q with the Codex account's five hours used up", got)
-	}
-}
-
-// spentModel is out only when every account routing would try is: a
-// spare with room keeps the model, and a pool of one model's own leaves
-// the account's others in theirs.
-func TestSpentModelAcrossAccounts(t *testing.T) {
-	codexSignedIn(t, "spare@example.com")
-	used := map[string]float64{"me@example.com": 100, "spare@example.com": 20}
-	capUsage(t, used)
-	p, err := provider.Find("codex")
-	if err != nil {
-		t.Fatal(err)
-	}
-	now := time.Now()
-	if _, spent := spentModel(*p, "gpt-6.1-sol", provider.Chat, now); spent {
-		t.Fatal("a spare account has allowance")
-	}
-	used["spare@example.com"] = 100
-	if back, spent := spentModel(*p, "gpt-6.1-sol", provider.Chat, now); !spent || back.IsZero() {
-		t.Fatalf("both accounts are out: %v %v", spent, back)
-	}
-
-	claude := provider.Provider{ID: "claude", Account: &provider.Account{Agent: "claude", User: "me@example.com"}}
-	if _, spent := spentModel(claude, "claude-haiku-5-5", provider.Chat, now); !spent {
-		t.Fatal("Haiku kept with Claude's five hours used up")
-	}
-	allowances = func(string) map[string]provider.Allowance {
-		return map[string]provider.Allowance{"me@example.com": {{Used: 100, Resets: now.Add(time.Hour), Model: "opus"}}}
-	}
-	if _, spent := spentModel(claude, "claude-haiku-5-5", provider.Chat, now); spent {
-		t.Fatal("Opus's own pool left Haiku out")
-	}
-	if _, spent := spentModel(claude, "claude-opus-5", provider.Chat, now); !spent {
-		t.Fatal("Opus kept with its own pool used up")
-	}
-}
-
-// With every describer out of allowance, an image isn't sent to magpie's
-// pick to be refused again: the request is turned away saying so, on the
-// gateway and the vision MCP alike, until the window renews. A describer
-// the Settings name is asked as before.
-func TestVisionDoesNotAskSpentDescriber(t *testing.T) {
-	s, u := eyed(t)
-	windows := map[string]provider.Allowance{"key": week(100, time.Now().Add(time.Hour))}
-	keyWindows(t, windows)
-	body := `{"model":"probe/text","messages":[{"role":"user","content":[{"type":"text","text":"read"},{"type":"image_url","image_url":{"url":"data:image/png;base64,aGVsbG8="}}]}]}`
-	code, out := postAs(t, s, "", body)
-	if code < 400 || !strings.Contains(out, "out of its allowance") {
-		t.Fatalf("spent describer: %d %s", code, out)
-	}
-	m := readMCP(t, visionPost(lanGuard(s.Handler()), "127.0.0.1:50000", analyzeCall("data:image/png;base64,aGVsbG8=", "")))
-	if !m.Result.IsError || !strings.Contains(m.Result.Content[0].Text, "out of its allowance") {
-		t.Fatalf("spent MCP describer: %+v", m)
-	}
-	if n := len(u.sent("eye")); n != 0 {
-		t.Fatalf("the describer out of allowance was asked %d times", n)
-	}
-	windows["key"] = week(100, time.Now().Add(-time.Hour))
-	if code, out := postAs(t, s, "", body); code != 200 || len(u.sent("eye")) != 1 {
-		t.Fatalf("renewed describer: %d %s, asked %d", code, out, len(u.sent("eye")))
-	}
-
-	// named in Settings: asked as the user picked it
-	windows["key"] = week(100, time.Now().Add(time.Hour))
-	st := settings.Load()
-	st.Vision = "probe/eye"
-	if err := settings.Save(st); err != nil {
-		t.Fatal(err)
-	}
-	postAs(t, s, "", strings.Replace(body, "aGVsbG8=", "d29ybGQ=", 1))
-	if n := len(u.sent("eye")); n != 2 {
-		t.Fatalf("the describer named in Settings was asked %d times, want 2", n)
 	}
 }
 

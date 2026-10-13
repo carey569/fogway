@@ -3,15 +3,11 @@ package gateway
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/testenv"
 	"github.com/yetone/magpie/internal/usage"
 )
 
@@ -116,80 +112,6 @@ func TestTurnedAwayRequestIsLogged(t *testing.T) {
 	got := lastRecord(t)
 	if !got.Rejected || got.Status != 404 || got.Error != "unknown model" || got.Requested != "nothing/here" || got.Endpoint != "/v1/messages" {
 		t.Errorf("%+v", got)
-	}
-}
-
-// Claude Code says how a request failed: the status its API answered with,
-// its name for the error and the id of the request. The reply is that
-// status, not one guessed from the words, and the log has all three.
-func TestClaudeFailureKeepsClaudeCodesStatus(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("a shell script stands in for Claude Code")
-	}
-	dir := t.TempDir()
-	script := `#!/bin/sh
-while read -r line; do
-  echo '{"type":"assistant","message":{"model":"<synthetic>","content":[{"type":"text","text":"Server is having a moment"}]},"error":"server_error","request_id":"req_011zzz","is_api_error_message":true}'
-  echo '{"type":"result","subtype":"success","is_error":true,"api_error_status":529,"result":"Server is having a moment"}'
-done
-`
-	testenv.Program(t, filepath.Join(dir, "claude"), script)
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	s := New()
-	p := provider.Provider{ID: "claude", Account: &provider.Account{Agent: "claude", User: "u"}}
-	for _, stream := range []string{"true", "false"} {
-		body := `{"model":"claude-sonnet-5","max_tokens":100,"stream":` + stream + `,"messages":[{"role":"user","content":"ping"}]}`
-		type result struct {
-			code int
-			u    Usage
-		}
-		done := make(chan result, 1)
-		go func() {
-			var u Usage
-			code, _ := s.serveClaudeSubscription(httptest.NewRecorder(), httptest.NewRequest("POST", "/v1/messages", strings.NewReader(body)), provider.Anthropic, p, "claude-sonnet-5", []byte(body), &u)
-			done <- result{code, u}
-		}()
-		select {
-		case r := <-done:
-			if r.code != 529 || r.u.ErrType != "server_error" {
-				t.Errorf("stream=%s: status %d, type %q; want 529, server_error", stream, r.code, r.u.ErrType)
-			}
-		case <-time.After(10 * time.Second):
-			t.Fatalf("stream=%s: the reply waited on the CLI", stream)
-		}
-	}
-}
-
-// The id of an answered Claude Code request is the one on its messages,
-// given with its stream's usage.
-func TestClaudeAnswerKeepsClaudeCodesRequestID(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("a shell script stands in for Claude Code")
-	}
-	dir := t.TempDir()
-	script := `#!/bin/sh
-while read -r line; do
-  echo '{"type":"stream_event","event":{"type":"message_start","message":{"id":"m","model":"claude-sonnet-5","usage":{"input_tokens":1}}}}'
-  echo '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hi"}}}'
-  echo '{"type":"assistant","message":{"model":"claude-sonnet-5","content":[{"type":"text","text":"hi"}]},"request_id":"req_011ok"}'
-  echo '{"type":"stream_event","event":{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":3}}}'
-  echo '{"type":"stream_event","event":{"type":"message_stop"}}'
-  echo '{"type":"result","subtype":"success","is_error":false,"result":""}'
-done
-`
-	testenv.Program(t, filepath.Join(dir, "claude"), script)
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	s := New()
-	p := provider.Provider{ID: "claude", Account: &provider.Account{Agent: "claude", User: "u"}}
-	for _, stream := range []string{"true", "false"} {
-		body := `{"model":"claude-sonnet-5","max_tokens":100,"stream":` + stream + `,"messages":[{"role":"user","content":"ping"}]}`
-		var u Usage
-		if code, msg := s.serveClaudeSubscription(httptest.NewRecorder(), httptest.NewRequest("POST", "/v1/messages", strings.NewReader(body)), provider.Anthropic, p, "claude-sonnet-5", []byte(body), &u); code != 200 {
-			t.Fatalf("stream=%s: %d %s", stream, code, msg)
-		}
-		if u.RequestID != "req_011ok" || u.ErrType != "" {
-			t.Errorf("stream=%s: request id %q, type %q", stream, u.RequestID, u.ErrType)
-		}
 	}
 }
 

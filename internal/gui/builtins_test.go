@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/yetone/magpie/internal/pluginrt"
-	"github.com/yetone/magpie/internal/settings"
 	_ "github.com/yetone/magpie/plugins/all"
 )
 
@@ -30,49 +29,34 @@ func postBuiltin(h http.Handler, body string) *httptest.ResponseRecorder {
 }
 
 // A switch is kept in plugins.yml as the user's own choice and the
-// runtime follows it; one in use is refused off and stays on; an unknown
-// one is refused.
+// runtime follows it; an unknown one is refused.
 func TestBuiltinSwitch(t *testing.T) {
 	h := builtinHome(t)
 	if _, err := pluginrt.Settle(true); err != nil {
 		t.Fatal(err)
 	}
-	if rec := postBuiltin(h, `{"id":"library","on":true}`); rec.Code != http.StatusOK {
-		t.Fatalf("library on: %d %s", rec.Code, rec.Body)
+	if rec := postBuiltin(h, `{"id":"sessions","on":false}`); rec.Code != http.StatusOK {
+		t.Fatalf("sessions off: %d %s", rec.Code, rec.Body)
 	} else {
 		var out []builtinJSON
 		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
 			t.Fatal(err)
 		}
-		if len(out) != 5 {
+		if len(out) != 2 {
 			t.Fatalf("the built-ins: %+v", out)
 		}
 		for _, b := range out {
-			if b.On != (b.ID == "library") || b.On != (b.State == pluginrt.Active) {
-				t.Fatalf("after library on: %+v", out)
+			// groups is off until a group is in use (Essentials)
+			if b.On || b.State == pluginrt.Active {
+				t.Fatalf("after sessions off: %+v", out)
 			}
 		}
 	}
-	if !pluginrt.Running().Active("library") || pluginrt.Running().Active("sessions") {
+	if pluginrt.Running().Active("sessions") {
 		t.Fatalf("the runtime: %+v", pluginrt.Running().Statuses())
 	}
 	if rec := postBuiltin(h, `{"id":"nope","on":true}`); rec.Code != http.StatusBadRequest {
 		t.Fatalf("an unknown plugin: %d", rec.Code)
-	}
-	// Observability in use: sending to a collector
-	s := settings.Load()
-	s.OTel.Enabled = true
-	s.OTel.Endpoint = "http://127.0.0.1:4318"
-	if err := settings.Save(s); err != nil {
-		t.Fatal(err)
-	}
-	if rec := postBuiltin(h, `{"id":"otel","on":false}`); rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "in use") {
-		t.Fatalf("otel off while in use: %d %s", rec.Code, rec.Body)
-	}
-	for _, b := range builtinsState() {
-		if b.ID == "otel" && (!b.On || b.Chosen || b.InUse != 1 || b.Use != "Sending to a collector" || b.Source != pluginrt.FromInUse) {
-			t.Fatalf("otel in use: %+v", b)
-		}
 	}
 }
 
@@ -91,37 +75,11 @@ func TestBuiltinBrokenFile(t *testing.T) {
 			t.Fatalf("not told broken: %+v", b)
 		}
 	}
-	if rec := postBuiltin(h, `{"id":"library","on":false}`); rec.Code != http.StatusBadRequest {
+	if rec := postBuiltin(h, `{"id":"sessions","on":false}`); rec.Code != http.StatusBadRequest {
 		t.Fatalf("switched over a broken file: %d", rec.Code)
 	}
 	if b, _ := os.ReadFile(pluginrt.Path()); string(b) != "plugins: [\n" {
 		t.Fatalf("written over: %q", b)
-	}
-}
-
-// boot.js says what is off before the page paints: everything for a new
-// install, nothing for one that ran before.
-func TestBootSaysBuiltinsOff(t *testing.T) {
-	h := builtinHome(t)
-	boot := func() string {
-		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, httptest.NewRequest("GET", "/boot.js", nil))
-		return rec.Body.String()
-	}
-	if _, err := pluginrt.Settle(false); err != nil {
-		t.Fatal(err)
-	}
-	if b := boot(); !strings.Contains(b, `"featuresOff":[]`) {
-		t.Fatalf("an existing user: %s", b)
-	}
-	if err := pluginrt.SetPreset(pluginrt.PresetEssentials); err != nil {
-		t.Fatal(err)
-	}
-	if err := pluginrt.Set("library", true); err != nil {
-		t.Fatal(err)
-	}
-	if b := boot(); !strings.Contains(b, `"featuresOff":["groups","otel","sessions","warmups"]`) {
-		t.Fatalf("a new install: %s", b)
 	}
 }
 

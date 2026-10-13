@@ -93,11 +93,10 @@ func searchFor(ctx context.Context) *CallFor {
 // searchesItself says whether the provider searches the web by itself when
 // asked on this API.
 func searchesItself(p provider.Provider, proto provider.Protocol) bool {
-	if p.Account != nil {
-		// Grok by its id: moved to its plugin, its account is the plugin's;
-		// its plugin beside the built-in (grok-plugin) by the plugin's id
-		return (p.Account.Agent == "codex" || p.ID == "grok" || p.PluginProvider() == "grok") && proto == provider.Responses
-	}
+
+	// Grok by its id: moved to its plugin, its account is the plugin's;
+	// its plugin beside the built-in (grok-plugin) by the plugin's id
+
 	// a relay said to search (#359), on an API it has an address for: one
 	// with only a Chat address would be sent no search tool at all
 	if p.Searches && (proto == provider.Anthropic || proto == provider.Responses) && p.Base(proto) != "" {
@@ -109,7 +108,7 @@ func searchesItself(p provider.Provider, proto provider.Protocol) bool {
 // googleAccount is a Google sign-in, Gemini CLI's or Antigravity's, which
 // asks Code Assist; a plugin's is left to the plugin.
 func googleAccount(p provider.Provider) bool {
-	return p.Account != nil && (p.Account.Agent == "gemini" || p.Account.Agent == "antigravity") && !p.IsPlugin()
+	return false
 }
 
 // codeAssistSearches is whether model, on a Google sign-in, searches with
@@ -142,7 +141,7 @@ func searchesFor(p provider.Provider, proto provider.Protocol, model string, req
 // searchesModel is searchesItself for one model: a Remote magpie searches
 // for the models its list says it does, on any API (search_remote.go).
 func searchesModel(p provider.Provider, proto provider.Protocol, model string) bool {
-	return searchesItself(p, proto) || proto != provider.Gemini && remoteSearch(p, model) != "" || modelSearches(p, proto, model)
+	return searchesItself(p, proto) || modelSearches(p, proto, model)
 }
 
 // searchModels are the models a provider runs web_search for only for some
@@ -169,7 +168,7 @@ var searchModelsHosts = map[string]string{"api.commandcode.ai": "commandcode"}
 // zero-data-retention header (x-cmd-zdr: cmd_zdr_unsupported_tool), so a
 // provider sent that header searches for none.
 func modelSearches(p provider.Provider, proto provider.Protocol, model string) bool {
-	if p.Account != nil || p.Base(proto) == "" {
+	if p.Base(proto) == "" {
 		return false
 	}
 	id := p.Preset
@@ -229,10 +228,7 @@ func searcher() (provider.Provider, string, bool) {
 func searchRank(p provider.Provider) int {
 	p.Searches = false
 	switch {
-	case p.Account != nil && p.Account.Agent == "claude":
-		return 0
-	case p.Account != nil && p.Account.Agent == "codex":
-		return 1
+
 	case searchesItself(p, provider.Anthropic):
 		return 2
 	case searchesItself(p, provider.Responses):
@@ -242,9 +238,9 @@ func searchRank(p provider.Provider) int {
 	case googleAccount(p):
 		// Gemini on a Google sign-in, by googleSearch (#757)
 		return 5
-	case remoteSearchesAny(p):
+
 		// another magpie, with the models it searches natively for
-		return 5
+
 	}
 	return -1
 }
@@ -333,7 +329,7 @@ func chosenSearcher() (*provider.Provider, string, string) {
 		// it searches with no model
 		return &p, "", ""
 	}
-	if model != "" && slices.ContainsFunc(p.Available(), func(m catalog.Model) bool { return m.ID == model }) && searchableModel(p, model) {
+	if model != "" && slices.ContainsFunc(p.Available(), func(m catalog.Model) bool { return m.ID == model }) {
 		return &p, model, ""
 	}
 	if m := searcherModel(p); m != "" {
@@ -361,7 +357,7 @@ func Searchers() []SearcherChoice {
 		}
 		var ms []catalog.Model
 		for _, m := range p.Available() {
-			if !strings.HasPrefix(m.ID, provider.GroupPrefix) && searchableModel(p, m.ID) {
+			if !strings.HasPrefix(m.ID, provider.GroupPrefix) {
 				ms = append(ms, m)
 			}
 		}
@@ -416,7 +412,7 @@ func smallReady(p provider.Provider, keep func(catalog.Model) bool, from provide
 		}
 		l := strings.ToLower(m.ID)
 		// a subscription's list can have what magpie wrote into its agent
-		if strings.HasPrefix(m.ID, provider.GroupPrefix) || (p.Account != nil && strings.Contains(m.ID, "/")) ||
+		if strings.HasPrefix(m.ID, provider.GroupPrefix) ||
 			strings.ContainsAny(l, ":~") || slices.ContainsFunc([]string{"nano", "lite", "image", "audio", "tts", "embed", "free"}, func(w string) bool { return strings.Contains(l, w) }) {
 			continue
 		}
@@ -476,8 +472,8 @@ func searcherModel(p provider.Provider) string {
 // searcherReady is searcherModel, and whether it has allowance left
 // (smallReady).
 func searcherReady(p provider.Provider) (string, bool) {
-	if googleAccount(p) || p.IsRemoteMagpie() {
-		return smallReady(p, func(m catalog.Model) bool { return searchableModel(p, m.ID) }, provider.Anthropic)
+	if googleAccount(p) {
+		return smallReady(p, func(catalog.Model) bool { return true }, provider.Anthropic)
 	}
 	return smallReady(p, nil, provider.Anthropic)
 }

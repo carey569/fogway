@@ -1,16 +1,11 @@
 package usage
 
 import (
-	"encoding/csv"
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -30,104 +25,6 @@ func accountRecs(now time.Time) []Record {
 		{Time: now, Provider: "relay", Model: "m", Host: "relay.example", ProviderKeyID: provider.KeyID("relay-secret"), ProviderKeyName: "Team", Input: 5, Status: 200},
 		// out of the period
 		{Time: now.Add(-40 * 24 * time.Hour), Provider: "cx", Model: "gpt-5", ProviderAccount: "old@example.com", Input: 9999, Status: 200},
-	}
-}
-
-// The usage summary tells each subscription account's calls apart (#557):
-// by provider and the account that answered, priced, an older record by
-// the account its host named, one naming none as its own "not recorded"
-// group, and a keyed provider's calls in no account's.
-func TestSummaryByAccount(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	os.MkdirAll(filepath.Dir(catalog.CachePath()), 0o755)
-	os.WriteFile(catalog.CachePath(), []byte(`{"openai":{"id":"openai","models":{"gpt-5":{"id":"gpt-5","cost":{"input":1,"output":10,"cache_read":0.1}}}}}`), 0o644)
-	catalog.Reset()
-	t.Cleanup(catalog.Reset)
-	if err := provider.Save(provider.Provider{ID: "cx", Name: "Codex", Key: "cx-secret", Chat: "https://chatgpt.example/v1", Catalog: "openai"}); err != nil {
-		t.Fatal(err)
-	}
-	now := time.Now()
-	s := summarize(Month, now, accountRecs(now))
-	got := map[string]Group{}
-	for _, g := range s.Accounts {
-		got[g.ID] = g
-	}
-	if len(s.Accounts) != 4 {
-		t.Fatalf("accounts: %+v", s.Accounts)
-	}
-	a := got["cx@a@example.com"]
-	if a.Provider != "cx" || a.Account != "a@example.com" || a.Calls != 2 || a.Input != 150 || a.CacheRead != 1000 || a.Cost == 0 || a.Unpriced != 0 {
-		t.Fatalf("codex a: %+v", a)
-	}
-	want := (150*1 + 15*10 + 1000*0.1) / 1e6
-	if d := a.Cost - want; d > 1e-12 || d < -1e-12 {
-		t.Fatalf("codex a cost %v, want %v", a.Cost, want)
-	}
-	if b := got["cx@b@example.com"]; b.Calls != 2 || b.Errors != 1 || b.Input != 50 {
-		t.Fatalf("codex b, its older call by its host: %+v", b)
-	}
-	if n := got["cx@"]; n.Account != "" || n.Calls != 1 || n.Input != 7 {
-		t.Fatalf("not recorded: %+v", n)
-	}
-	if c := got["claude@a@example.com"]; c.Calls != 1 || c.Input != 9 {
-		t.Fatalf("the same email on Claude is its own account: %+v", c)
-	}
-	if s.Accounts[0].ID != "cx@a@example.com" {
-		t.Fatalf("most tokens first: %+v", s.Accounts)
-	}
-	for _, g := range s.Accounts {
-		if g.Provider == "relay" || g.Account == "old@example.com" {
-			t.Fatalf("%+v is no account of the period", g)
-		}
-	}
-	encoded, _ := json.Marshal(s)
-	if !strings.Contains(string(encoded), `"accounts":[`) || strings.Contains(string(encoded), "secret") {
-		t.Fatalf("summary JSON: %s", encoded)
-	}
-}
-
-// The ledger keeps one account's calls, the CSV says the account of each,
-// and a search finds them by it.
-func TestLedgerByAccount(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	now := time.Now()
-	recs := accountRecs(now)
-	rows, _, _ := ledger(Month.Since(now), Filter{Account: "b@example.com"}, recs)
-	if len(rows) != 2 {
-		t.Fatalf("account b: %+v", rows)
-	}
-	rows, _, _ = ledger(Month.Since(now), Filter{Account: "a@example.com"}, recs)
-	if len(rows) != 3 {
-		t.Fatalf("account a, on Codex and Claude: %+v", rows)
-	}
-	if rows, _, _ := ledger(Month.Since(now), Filter{Account: "a@example.com", Provider: "claude"}, recs); len(rows) != 1 {
-		t.Fatalf("account a on Claude: %+v", rows)
-	}
-	if rows, _, _ := ledger(Month.Since(now), Filter{Query: "B@EXAMPLE"}, recs); len(rows) != 2 {
-		t.Fatalf("search by account: %+v", rows)
-	}
-	rows, _, _ = ledger(Month.Since(now), Filter{Provider: "cx"}, recs)
-	var b strings.Builder
-	if err := WriteCSV(&b, rows); err != nil {
-		t.Fatal(err)
-	}
-	cells, err := csv.NewReader(strings.NewReader(b.String())).ReadAll()
-	if err != nil || len(cells) != 6 {
-		t.Fatalf("CSV: %v %s", err, b.String())
-	}
-	col := slices.Index(CSVHeader, "provider_account")
-	if col < 0 || col != slices.Index(CSVHeader, "provider_key_name")+1 {
-		t.Fatalf("provider_account belongs with the provider's identity columns: %v", CSVHeader)
-	}
-	var accounts []string
-	for _, c := range cells[1:] {
-		accounts = append(accounts, c[col])
-	}
-	slices.Sort(accounts)
-	if strings.Join(accounts, ",") != ",a@example.com,a@example.com,b@example.com,b@example.com" {
-		t.Fatalf("CSV accounts: %v", accounts)
 	}
 }
 

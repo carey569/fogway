@@ -106,67 +106,6 @@ func fakeDistro(home string, mirrored bool) distro {
 		Has: map[string]bool{"dir:.codex": true}, Gateway: "172.20.0.1", Mirrored: mirrored, Running: true}
 }
 
-// Codex in a distro under NAT, not signed in: magpie as its provider at the
-// Windows host, its catalog named by the distro's path, what was there
-// stashed under the distro's agent.
-func TestWSLCodexProvider(t *testing.T) {
-	home, read := codexHome(t, "", "model = \"gpt-5.5\"\n")
-	d := fakeDistro(home, false)
-	a := wslCodex(d)
-	if a.ID != "codex@wsl:Ubuntu-24.04" || a.Name != "Codex · WSL Ubuntu-24.04" || !a.Detected() || a.Bin != "" {
-		t.Fatalf("%+v", a)
-	}
-	if err := a.Fields[0].Set("fake/m1"); err != nil {
-		t.Fatal(err)
-	}
-	cfg := read()
-	nat := "http://172.20.0.1:" + gateway.Port()
-	if !strings.Contains(cfg, `model_catalog_json = "`+d.Home+`/.codex/magpie-models.json"`) ||
-		!strings.Contains(cfg, `base_url = "`+nat+`/v1"`) || !strings.Contains(cfg, `model_provider = "magpie"`) {
-		t.Fatalf("config:\n%s", cfg)
-	}
-	if _, err := os.Stat(filepath.Join(home, ".codex", "magpie-models.json")); err != nil {
-		t.Fatal(err)
-	}
-	if c := a.Check(); c != "" {
-		t.Fatal(c)
-	}
-	if s := stashLoad(); s["codex@wsl:Ubuntu-24.04.model"] != "gpt-5.5" || s["codex.model"] != "" {
-		t.Fatalf("stash %v", s)
-	}
-	if !strings.Contains(a.Notice(), "mirrored") {
-		t.Error(a.Notice())
-	}
-	if err := a.Fields[0].Set("gpt-5.4"); err != nil {
-		t.Fatal(err)
-	}
-	if cfg := read(); strings.Contains(cfg, "model_provider =") || strings.Contains(cfg, "model_catalog_json") {
-		t.Fatalf("back:\n%s", cfg)
-	}
-}
-
-// Signed in and mirrored: the base URL is 127.0.0.1, as on Windows; under
-// NAT it is the host, and either is known as magpie's again.
-func TestWSLCodexBaseURL(t *testing.T) {
-	for _, mirrored := range []bool{true, false} {
-		home, read := codexHome(t, `{"OPENAI_API_KEY":"sk-x"}`, "model = \"gpt-5.5\"\n")
-		a := wslCodex(fakeDistro(home, mirrored))
-		if err := a.Fields[0].Set("fake/m1"); err != nil {
-			t.Fatal(err)
-		}
-		want := gateway.URL()
-		if !mirrored {
-			want = "http://172.20.0.1:" + gateway.Port()
-		}
-		if cfg := read(); !strings.Contains(cfg, `openai_base_url = "`+want+gateway.CodexPath+`"`) {
-			t.Fatalf("mirrored %v:\n%s", mirrored, cfg)
-		}
-		if c := a.Check(); c != "" {
-			t.Fatalf("mirrored %v: %s", mirrored, c)
-		}
-	}
-}
-
 // Off Windows there are none, and nothing is run.
 func TestWSLAgentsElsewhere(t *testing.T) {
 	if runtime.GOOS == "windows" {

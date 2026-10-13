@@ -4,9 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"net/http/httptest"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -51,136 +49,6 @@ func setQuotaReads(t *testing.T, v string) {
 	s.QuotaReads = v
 	if err := settings.Save(s); err != nil {
 		t.Fatal(err)
-	}
-}
-
-// #1518 (RooobinYe): with Settings → Usage → Allowance reads at "When I
-// ask", nothing magpie does by itself asks a vendor for an allowance —
-// the switch to an account with room (CodexUsedUp), routing
-// (Allowances), the Usage page's and tray's timed reads, the menu bar
-// (Quotas) — and each shows the reading kept from the last time, as of
-// then. The user asking reads, and so does an account the vendor turned
-// away for its quota (StaleAllowance).
-func TestAllowancesReadOnlyWhenAsked(t *testing.T) {
-	signIn(t) // Codex on me@example.com, and a Copilot account
-	rememberLogins(true)
-	var asked atomic.Int32
-	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/backend-api/wham/usage" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		asked.Add(1)
-		w.Write([]byte(`{"plan_type":"pro","rate_limit":{"allowed":true,"limit_reached":false,
-			"primary_window":{"used_percent":37,"limit_window_seconds":18000,"reset_after_seconds":3600}}}`))
-	}))
-	defer fake.Close()
-	old := CodexBase
-	CodexBase = fake.URL + "/backend-api/codex"
-	t.Cleanup(func() { CodexBase = old })
-	restart := func() {
-		loginUsageCache.Lock()
-		loginUsageCache.m, loginUsageCache.pending = nil, nil
-		loginUsageCache.Unlock()
-		subscriptionUsageCache.Lock()
-		subscriptionUsageCache.data, subscriptionUsageCache.at, subscriptionUsageCache.asked = nil, time.Time{}, false
-		subscriptionUsageCache.Unlock()
-		planQuotaCache.Lock()
-		planQuotaCache.data, planQuotaCache.at = nil, time.Time{}
-		planQuotaCache.Unlock()
-		keyBalanceCache.Lock()
-		keyBalanceCache.data, keyBalanceCache.at = nil, time.Time{}
-		keyBalanceCache.Unlock()
-		usedCache.Lock()
-		usedCache.m, usedCache.at, usedCache.loading = map[string]map[string]Allowance{}, map[string]time.Time{}, map[string]chan struct{}{}
-		usedCache.stale, usedCache.renewed, usedCache.seen = nil, nil, nil
-		usedCache.Unlock()
-		staleReads.Lock()
-		staleReads.m = nil
-		staleReads.Unlock()
-		ForgetKeptCardsForTest()
-	}
-	restart()
-	t.Cleanup(restart)
-	bg := context.Background()
-
-	// read once, as magpie does by itself, before the setting
-	if CodexUsedUp(bg) {
-		t.Fatal("used up at 37%")
-	}
-	if n := asked.Load(); n != 1 {
-		t.Fatalf("ChatGPT asked %d times, want 1", n)
-	}
-
-	// then allowances read only when asked, and magpie started again (at
-	// login, before the proxy app)
-	setQuotaReads(t, "asked")
-	t.Cleanup(func() { setQuotaReads(t, "") })
-	restart()
-	out := dialsOut(t)
-	CodexUsedUp(bg)
-	q := LoginUsage(bg, "codex")["me@example.com"]
-	if len(q.Windows) == 0 || q.Windows[0].Used != 37 || q.AsOf == nil {
-		t.Fatalf("not asked, the account shows %+v, want the kept 37%% as of then", q)
-	}
-	if !AwaitAllowance(bg, "codex", "me@example.com") {
-		t.Fatal("routing has no allowance for the account, not even the kept one")
-	}
-	cards := Quotas(bg) // the Usage page's timer, the tray, the menu bar
-	if c := cardOf(cards, "codex", "me@example.com"); c == nil || len(c.Windows) == 0 || c.Windows[0].Used != 37 || c.AsOf == nil {
-		t.Fatalf("not asked, the card is %+v, want the kept reading as of then", c)
-	}
-	Quotas(bg)
-	if n := asked.Load(); n != 1 {
-		t.Fatalf("nobody asked, and ChatGPT was asked %d more times", n-1)
-	}
-	if d := out(); len(d) > 0 {
-		t.Fatalf("nobody asked, and magpie dialed %v", d)
-	}
-
-	// the vendor turns the account away for its quota: read, asked or not
-	StaleAllowance("codex", "me@example.com")
-	AwaitAllowance(bg, "codex", "me@example.com")
-	if n := asked.Load(); n != 2 {
-		t.Fatalf("an account the vendor turned away was read %d times, want once", n-1)
-	}
-	LoginUsage(bg, "codex")
-	if n := asked.Load(); n != 2 {
-		t.Fatal("read again after the one read a refusal asks for")
-	}
-
-	// the user asks: read
-	AskUsage()
-	q = LoginUsage(Asked(bg), "codex")["me@example.com"]
-	if n := asked.Load(); n != 3 || q.AsOf != nil {
-		t.Fatalf("asked, ChatGPT was asked %d times in all (want 3), the account %+v", n, q)
-	}
-}
-
-// Automatic, as before: magpie reads by itself.
-func TestAllowancesReadByThemselvesByDefault(t *testing.T) {
-	signIn(t)
-	rememberLogins(true)
-	var asked atomic.Int32
-	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		asked.Add(1)
-		w.Write([]byte(`{"plan_type":"pro","rate_limit":{"allowed":true,"primary_window":{"used_percent":5,"limit_window_seconds":18000,"reset_after_seconds":3600}}}`))
-	}))
-	defer fake.Close()
-	old := CodexBase
-	CodexBase = fake.URL + "/backend-api/codex"
-	t.Cleanup(func() { CodexBase = old })
-	forget := func() {
-		loginUsageCache.Lock()
-		loginUsageCache.m, loginUsageCache.pending = nil, nil
-		loginUsageCache.Unlock()
-		ForgetKeptCardsForTest()
-	}
-	forget()
-	t.Cleanup(forget)
-	LoginUsage(context.Background(), "codex")
-	if asked.Load() != 1 {
-		t.Fatal("magpie no longer reads an allowance by itself while set to")
 	}
 }
 

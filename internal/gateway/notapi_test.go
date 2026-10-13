@@ -178,20 +178,3 @@ func TestAPIReplyUntouched(t *testing.T) {
 		}
 	}
 }
-
-// Codex's own sign-in, relayed to the ChatGPT backend, is told of a web
-// page served 200 as the 502 it is, not handed the page as its stream.
-func TestCodexBackendWebPage(t *testing.T) {
-	setup(t, provider.Chat, &fake{t: t})
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		io.WriteString(w, cloudflarePage)
-	})
-	req := httptest.NewRequest("POST", CodexPath+"/responses", strings.NewReader(`{"model":"gpt-5.5","stream":true,"input":[]}`))
-	req.Header.Set("Authorization", "Bearer chatgpt-token")
-	rec := httptest.NewRecorder()
-	New().Handler().ServeHTTP(rec, req)
-	if rec.Code != http.StatusBadGateway || strings.Contains(rec.Body.String(), "<html") || !strings.Contains(rec.Body.String(), "OpenAI: answered 200 OK with a web page") {
-		t.Fatalf("%d %s", rec.Code, rec.Body)
-	}
-}

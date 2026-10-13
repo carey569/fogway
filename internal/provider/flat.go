@@ -40,29 +40,3 @@ func unflatIn(entries []Entry, id string) (string, bool) {
 	}
 	return found, found != ""
 }
-
-// Flattened maps each served id that can be spelled flat, and taken back
-// by Unflat, to that spelling; an id two served ids flatten to alike is
-// left out, as is one already without a slash.
-func Flattened() map[string]string {
-	by := map[string]map[string]bool{}
-	for _, e := range Served() {
-		f := FlatID(e.ID)
-		if f == e.ID {
-			continue
-		}
-		if by[f] == nil {
-			by[f] = map[string]bool{}
-		}
-		by[f][e.ID] = true
-	}
-	out := map[string]string{}
-	for f, ids := range by {
-		if len(ids) == 1 {
-			for id := range ids {
-				out[id] = f
-			}
-		}
-	}
-	return out
-}

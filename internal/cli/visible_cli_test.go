@@ -1,11 +1,9 @@
 package cli
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agent"
 	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/settings"
 )
@@ -34,29 +32,5 @@ func TestVisibleKeyLowered(t *testing.T) {
 	}
 	if _, ok := settings.Load().Visible["codex"]; ok {
 		t.Fatal("all took the visibility out under another key than the id lowered")
-	}
-}
-
-// magpie models and magpie visible take a WSL agent by its id, in the
-// distro's own case or any other: before, both lowered what was typed and
-// then matched it exactly against ids that keep the distro's case (#271).
-func TestWSLAgentByIDInModelsAndVisible(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "config"))
-	root := t.TempDir()
-	h := filepath.Join(root, "home", "me", ".claude")
-	if err := os.MkdirAll(h, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(h, "settings.json"), []byte("{}\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(agent.FakeWSL(map[string]string{"Ubuntu": "home:/home/me\ndir:.claude\n"}, map[string]string{"Ubuntu": root}))
-	for _, q := range []string{"claude@wsl:Ubuntu", "claude@wsl:ubuntu", "CLAUDE@WSL:UBUNTU"} {
-		if err := models([]string{q}); err != nil {
-			t.Errorf("models %q: %v", q, err)
-		}
-		if err := visibleCmd([]string{q}); err != nil {
-			t.Errorf("visible %q: %v", q, err)
-		}
 	}
 }

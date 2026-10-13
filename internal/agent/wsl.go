@@ -87,26 +87,6 @@ func (p place) claudeDir() string {
 	return appdir.ClaudeDirIn(p.home)
 }
 
-// hermesHome is Hermes Agent's folder at the place: $HERMES_HOME, else
-// %LOCALAPPDATA%\hermes on Windows and ~/.hermes elsewhere, on this machine
-// (appdir.HermesHome); ~/.hermes in a distro, which is Linux and whose
-// variables magpie can't read.
-func (p place) hermesHome() string {
-	if p.spell != nil {
-		return filepath.Join(p.home, ".hermes")
-	}
-	return appdir.HermesHomeIn(p.home)
-}
-
-// hermesDefault is Hermes's default folder at the place, whatever
-// HERMES_HOME says: the root of its profiles.
-func (p place) hermesDefault() string {
-	if p.spell != nil {
-		return filepath.Join(p.home, ".hermes")
-	}
-	return appdir.HermesDefaultIn(p.home)
-}
-
 // exists is whether there is a file or folder at path, as an agent looks
 // for the one it reads; false at a cold place.
 func (p place) exists(path string) bool {
@@ -314,30 +294,6 @@ var wslKinds = []wslKind{
 			}
 			return nil
 		}},
-	// OmO, a fork of Pi, at its default folder: the distro's variables
-	// that move it aren't read
-	{id: "omo", name: "OmO", dir: ".omo", bin: "omo", in: omoIn,
-		asleep: func(key string) func(map[string]string) []Option {
-			if key == "model" {
-				return func(cur map[string]string) []Option {
-					return append(ownOptions("", cur["model"]), viaMagpie("omo", magpieID+"/")...)
-				}
-			}
-			return nil
-		}},
-	// Prime Agent, Pi's files in a folder of its own, at its default
-	// folder: the distro's variable that moves it isn't read
-	{id: "prime-agent", name: "Prime Agent", dir: ".prime/agent", bin: "prime-agent", in: primeAgentIn,
-		asleep: func(key string) func(map[string]string) []Option {
-			if key == "model" {
-				return func(cur map[string]string) []Option {
-					return append(ownOptions("", cur["model"]), viaMagpie("prime-agent", magpieID+"/")...)
-				}
-			}
-			return nil
-		}},
-	{id: "stepcode", name: "StepCode", dir: ".stepcode", in: stepcodeIn,
-		asleep: wslOwnAsleep("stepcode", "model")},
 	// only its settings.json: its sign-in, sessions and prompt history,
 	// read on this machine for Claude Code here, aren't read in a distro
 	{id: "claude", name: "Claude Code", dir: ".claude", bin: "claude", in: claudeIn,
@@ -374,9 +330,6 @@ var wslKinds = []wslKind{
 	{id: "opencode", name: "OpenCode", dir: ".config/opencode", bin: "opencode", in: opencodeIn,
 		restart: newNotice("{agent} in WSL {distro} reads its config at start-up — restart open opencode sessions to use this."),
 		asleep:  wslOwnAsleep("opencode", "model", "small")},
-	{id: "mimocode", name: "MiMo Code", dir: ".config/mimocode", bin: "mimo", in: mimocodeIn,
-		restart: newNotice("{agent} in WSL {distro} reads its config at start-up — restart open mimo sessions to use this."),
-		asleep:  wslOwnAsleep("mimocode", "model", "small")},
 	// Kimi Code's ~/.kimi-code, or the old kimi-cli's ~/.kimi where that is
 	// all there is; a stopped distro's is looked at once it is started
 	{id: "kimi", name: "Kimi Code", dir: ".kimi-code", bin: "kimi", in: kimiIn,
@@ -414,14 +367,6 @@ var wslKinds = []wslKind{
 	{id: "crush", name: "Crush", dir: ".config/crush", bin: "crush", in: crushIn,
 		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open crush sessions to use this."),
 		asleep:  wslOwnAsleep("crush", "model", "small")},
-	{id: "hermes", name: "Hermes Agent", dir: ".hermes", bin: "hermes", in: hermesIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open Hermes sessions to use this.")},
-	// no bin: morph is other tools' name too
-	{id: "morph", name: "Mister Morph", dir: ".morph", in: morphIn,
-		restart: newNotice("{agent} in WSL {distro} uses this for new tasks in its Console — restart open morph chats to use it there.")},
-	// no bin: grok is also other tools' name, as on this machine
-	{id: "grok", name: "Grok Build", dir: ".grok", in: grokIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open grok sessions to use this.")},
 	{id: "droid", name: "Droid", dir: ".factory", bin: "droid", in: droidIn,
 		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open droid sessions to use this."),
 		asleep: func(key string) func(map[string]string) []Option {
@@ -434,21 +379,6 @@ var wslKinds = []wslKind{
 					own = append(own, Option{Value: c, Icon: modelIcon("", c)})
 				}
 				return append(group("Droid", own), viaMagpie("droid", magpieID+"/")...)
-			}
-		}},
-	// no bin: fx is also the JSON viewer's name
-	{id: "fx", name: "fx", dir: ".fx", in: fxIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open fx sessions to use this.")},
-	{id: "commandcode", name: "Command Code", dir: ".commandcode", bin: "command-code", in: commandCodeIn,
-		restart: newNotice("{agent} in WSL {distro} wants its own sign-in there (cmd login) even for models through magpie, and reads its settings at start-up — restart open Command Code sessions to use this.")},
-	{id: "minimax-code", name: "MiniMax Code", dir: ".minimax", bin: "mcode", in: miniMaxIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open mcode sessions to use this."),
-		asleep: func(key string) func(map[string]string) []Option {
-			if key != "model" {
-				return nil
-			}
-			return func(cur map[string]string) []Option {
-				return append(miniMaxOwnOptions("", cur["model"]), viaMagpie("minimax-code", magpieID+"/")...)
 			}
 		}},
 	{id: "dsh", name: "DeepSeek Harness", dir: ".dsh", bin: "dsh", in: dshIn,
@@ -466,42 +396,11 @@ var wslKinds = []wslKind{
 				return static(dshEfforts...)
 			}
 		}},
-	{id: "empryo", name: "Empryo", dir: ".empryo", bin: "empryo", in: empryoIn,
-		restart: newNotice("{agent} in WSL {distro} reads its config at start-up — restart open empryo sessions to use this.")},
-	// Ante ships macOS and Linux builds alone, and suggests WSL on Windows,
-	// so a Windows machine's Ante is usually this one
-	{id: "ante", name: "Ante", dir: ".ante", bin: "ante", in: anteIn,
-		restart: newNotice("{agent} in WSL {distro} reads its catalog at start-up — restart open ante sessions to use this.")},
-	{id: "muse", name: "Muse Code", dir: ".config/muse", bin: "muse", in: museIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open muse sessions to use this.")},
-	{id: "qoder", name: "Qoder", dir: ".qoder", bin: "qodercli", in: qoderIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings as a session starts — open sessions keep the model they have; new ones use this.")},
-	{id: "qoder-cn", name: "Qoder CN", dir: ".qoder-cn", bin: "qoderclicn", in: qoderCNIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings as a session starts — open sessions keep the model they have; new ones use this.")},
-	// lgtm on Discord: magpie didn't find a CodeBuddy Code installed in WSL
-	{id: "codebuddy", name: "CodeBuddy Code", dir: ".codebuddy", bin: "codebuddy", in: codebuddyIn,
-		restart: newNotice("{agent} in WSL {distro} reads its model when a session starts — restart open codebuddy sessions, or run /clear in them, to use this.")},
 	// Cline's CLI, and its VS Code extension in a Remote - WSL window, which
 	// keep the same ~/.cline
 	{id: "cline", name: "Cline", dir: ".cline", bin: "cline", in: clineIn,
 		restart: newNotice("{agent} in WSL {distro} reads its provider as a session starts — open sessions keep the model they have; new ones use this. Reload VS Code's window for its extension."),
 		asleep:  wslOwnAsleep("cline", "model")},
-	{id: "atomcode", name: "AtomCode", dir: ".atomcode", bin: "atomcode", in: atomcodeIn,
-		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — restart open atomcode sessions to use this."),
-		asleep: func(key string) func(map[string]string) []Option {
-			if key != "model" {
-				return nil
-			}
-			// the models of its config.toml are the distro's files
-			return func(cur map[string]string) []Option {
-				return append(atomcodeOwnModels("", cur["model"]), viaMagpie("atomcode", magpieID+"/")...)
-			}
-		}},
-	// Snow CLI's ~/.snow, its profiles the distro's own; a stopped
-	// distro's are looked at once it is started
-	{id: "snow", name: "Snow CLI", dir: ".snow", bin: "snow", in: snowIn,
-		restart: newNotice("{agent} in WSL {distro} reads its profile at start-up — restart open snow sessions to use this."),
-		asleep:  wslOwnAsleep("snow", "model")},
 	// no dir: Antigravity keeps its folders in ~/.gemini too, so only the
 	// command says Gemini CLI is there
 	{id: "gemini", name: "Gemini CLI", bin: "gemini", in: geminiIn,
@@ -528,41 +427,6 @@ var wslKinds = []wslKind{
 	{id: "goose", name: "Goose", dir: ".config/goose", in: func(at place) *Agent { return gooseIn(at, filepath.Join(at.home, ".config")) },
 		restart: newNotice("{agent} in WSL {distro} loads its providers at start-up — restart open goose sessions to use magpie's models."),
 		asleep:  wslOwnAsleep("goose", "model")},
-	// Reasonix's native CLI (1.39 on), by its command and the version it
-	// gives: the historical npm client is reasonix too, and ~/.reasonix is
-	// both's
-	{id: "reasonix", name: "Reasonix", bin: "reasonix", in: reasonixIn, version: true,
-		accept: func(d distro) bool {
-			v := d.Versions["reasonix"]
-			return strings.HasPrefix(v, "2.") || strings.HasPrefix(v, "1.39.")
-		},
-		restart: newNotice("{agent} in WSL {distro} reads its settings at start-up — start a new reasonix process to use this."),
-		asleep: func(key string) func(map[string]string) []Option {
-			switch key {
-			case "model", "planner":
-				return func(cur map[string]string) []Option {
-					out := append(ownOptions("", cur[key]), viaMagpie("reasonix", magpieID+"/")...)
-					if key == "planner" {
-						out = append([]Option{{Value: "off", Label: "off", Note: "Disable the separate planner"}}, out...)
-					}
-					return out
-				}
-			case "effort":
-				// the levels of magpie's model, as its provider is written them
-				return func(cur map[string]string) []Option {
-					ref, ok := strings.CutPrefix(cur["model"], magpieID+"/")
-					if !ok {
-						return nil
-					}
-					levels := reasonixCatalogAt(magpieModels("reasonix"), ref, "", "").Overrides[ref].Efforts
-					if len(levels) == 0 {
-						return nil
-					}
-					return static(append([]string{"auto"}, levels...)...)
-				}
-			}
-			return nil
-		}},
 }
 
 // wslOwnAsleep is a stopped distro's options for an agent's model fields
@@ -658,7 +522,7 @@ func wslAgent(k wslKind, d distro) *Agent {
 		if k.restart == "" {
 			return ""
 		}
-		return k.restart.say("agent", k.name, "distro", d.Name, "command", provider.CodexDaemonRestart)
+		return k.restart.say("agent", k.name, "distro", d.Name, "command", "codex app-server")
 	}
 	if !d.Running {
 		return asleep(a, k, d)
@@ -841,27 +705,6 @@ func wslHomes() []sessions.WSLHome {
 // agent magpie sets up, but a sign-in it uses (provider.CopilotWSLHomes),
 // so a distro that has only it is kept as one agents are found in (#723).
 const wslCopilotDir = ".copilot"
-
-// copilotWSLHomes are the homes, as magpie opens them, of the running
-// distros the Copilot CLI's folder was found in, for provider to read its
-// sign-in in; none off Windows. A stopped distro is left out: reading it
-// would start it.
-func copilotWSLHomes() []string {
-	var out []string
-	for _, h := range wslHomes() {
-		if h.Running && wslHasCopilot(h.Distro) {
-			out = append(out, h.Home)
-		}
-	}
-	return out
-}
-
-func wslHasCopilot(name string) bool {
-	wsl.Lock()
-	defer wsl.Unlock()
-	d := wsl.seen[name]
-	return d != nil && d.Has["dir:"+wslCopilotDir]
-}
 
 // Only running distros are probed — asking one anything starts it — once
 // each in a process, and again only after a probe that failed. Those an

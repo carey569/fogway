@@ -273,8 +273,6 @@ func failure(status int, body []byte) string {
 	// the words are matched decoded, too
 	body = wordsOf(body)
 	switch {
-	case restrictedSaid(status, body):
-		return failRestricted
 	case overflowed(status, body):
 		// Kimi's "exceeded model token limit" is the conversation's
 		// length, not the plan's
@@ -304,56 +302,9 @@ func failure(status int, body []byte) string {
 	return failOther
 }
 
-// failureOf says why c's reply failed: a Claude account's sign-in that
-// Anthropic refused is told as one (provider/claude_auth.go), passed over
-// till it is signed in again; another vendor saying the same words fails
-// as failure says, and rests as before.
+// failureOf says why c's reply failed, as failure reads status and body.
 func failureOf(c candidate, status int, body []byte) string {
-	if status >= 400 && c.p.Account != nil && c.p.Account.Agent == "claude" && provider.ClaudeSignInRequired(string(body)) {
-		return failAuth
-	}
-	// a subscription's sign-in its vendor revoked (#1793): no wait mends it
-	if provider.RevokedAccount(c.p.Account) && provider.SignInRevoked(status, body) {
-		return failAuth
-	}
-	if restrictedRefused(c.p, status, body) {
-		return failRestricted
-	}
 	return failure(status, body)
-}
-
-// restrictedSaid says an error is one magpie already put in words as an
-// account its vendor restricted: WorkBuddy's 11140 as the built-in
-// translates it, or as the plugin does, both ending in
-// provider.WBRestrictedHint. magpie's own words, which no vendor says, so
-// they are read whoever answered.
-func restrictedSaid(status int, body []byte) bool {
-	return status >= 400 && bytes.Contains(body, []byte(provider.WBRestrictedHint))
-}
-
-// restrictedRefused says p's vendor restricted the account: magpie's words
-// for it (restrictedSaid), or WorkBuddy's own answer as it came — its code
-// 11140 or its displayMsg's words — from a WorkBuddy account, the
-// built-in's or the plugin's. Another vendor's code 11140 is its own, and
-// isn't read so.
-func restrictedRefused(p provider.Provider, status int, body []byte) bool {
-	if restrictedSaid(status, body) {
-		return true
-	}
-	return isWorkBuddy(p) && provider.WBRestricted(status, wordsOf(body))
-}
-
-// isWorkBuddy is whether p is a WorkBuddy account, either build's: the
-// built-in's, or the WorkBuddy plugin's.
-func isWorkBuddy(p provider.Provider) bool {
-	if p.Account == nil {
-		return false
-	}
-	id := p.PluginProvider()
-	if id == "" {
-		id = p.Account.Agent
-	}
-	return id == "workbuddy" || id == provider.WorkBuddyAIID
 }
 
 // openRouterSharedPool says an OpenRouter free model was refused by the
@@ -665,21 +616,15 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 		// Held to the longest an account out of quota sits out: the window
 		// is the vendor's reading, and one read a year off (a /usage date
 		// with no year) would bench the account until someone noticed
-		if t := c.full(now); !t.IsZero() && c.p.Account != nil && !unserved {
+		if t := c.full(now); !t.IsZero() && false && !unserved {
 			d, r.By = min(t.Sub(now), longestQuota), "window"
 		}
 	}
-	// an account is kept by the agent its usage is asked of: a plugin's
-	// by the plugin's provider ("plugin:grok"), not by "plugin"
-	if a := c.p.Account; a != nil && why != failOther && why != failVerify && why != failRestricted {
-		staleAllowance(a.UsageAgent(), a.User) // ask again what it has left
-	} else if a == nil && why != failOther && why != failVerify && why != failRestricted {
-		staleKeyAllowance(c.p) // a key that reads its windows, too
+	if why != failOther && why != failVerify && why != failRestricted {
+		staleKeyAllowance(c.p) // a key that reads its windows: asked again
 	}
 	r.Until = now.Add(d)
-	if a := c.p.Account; a != nil {
-		r.agent, r.user = a.UsageAgent(), a.User
-	} else if why == failQuota {
+	if why == failQuota {
 		// a key out of its own windows is back as soon as they are read
 		// full no more, not only when they start again: its owner may
 		// raise its limit, or reset its usage
@@ -780,10 +725,6 @@ func (c candidate) full(now time.Time) time.Time {
 // account's, or a key's own windows when magpie reads them (a sub2api
 // key's limits, provider.KeyAllowance). ok is false when it isn't known.
 func (c candidate) allowance() (provider.Allowance, bool) {
-	if a := c.p.Account; a != nil {
-		al, ok := allowances(a.UsageAgent())[a.User]
-		return al, ok
-	}
 	return keyAllowance(c.p)
 }
 
@@ -914,8 +855,8 @@ type left struct {
 // learns: c is a subscription whose allowance isn't known yet, of an agent
 // that tells it as it answers (Claude Code's rate_limit_event).
 func learns(c candidate, lefts map[allowanceKey]left) bool {
-	_, known := lefts[c.allowanceKey()]
-	return !known && c.p.Account != nil && c.p.Account.Agent == "claude"
+	_, _ = lefts[c.allowanceKey()]
+	return false
 }
 
 // weigh orders one provider's candidates as its routing says, and tells
@@ -938,23 +879,17 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 	// each account's own agent's: a group weighs accounts of several. One
 	// alone is weighed against nobody, but what it has left is still
 	// told: the Routing page shows it (#1016)
-	known := map[string]map[string]provider.Allowance{}
+	_ = map[string]map[string]provider.Allowance{}
 	now := time.Now()
 	wg.lefts = map[allowanceKey]left{}
 	for _, c := range cs {
 		var a provider.Allowance
 		var ok bool
-		if c.p.Account == nil {
-			// a key that reads its own windows is weighed by them as an
-			// account is; any other key isn't known
-			a, ok = keyAllowance(c.p)
-		} else {
-			ag := c.p.Account.UsageAgent()
-			if _, had := known[ag]; !had {
-				known[ag] = allowances(ag)
-			}
-			a, ok = known[ag][c.p.Account.User]
-		}
+
+		// a key that reads its own windows is weighed by them as an
+		// account is; any other key isn't known
+		a, ok = keyAllowance(c.p)
+
 		if ok {
 			u, r := a.For(c.model, now)
 			pc, due := a.Pace(c.model, now)
@@ -1093,9 +1028,7 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 			if l, ok := lefts[c.allowanceKey()]; ok {
 				return l.pace
 			}
-			if c.p.Account != nil {
-				return provider.FreshPace
-			}
+
 			return 0
 		}
 		tier := func(share float64) int {
@@ -1168,8 +1101,8 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 	default:
 		return cs, wg
 	}
-	if p.Account == nil {
-		sort.SliceStable(cs, func(i, j int) bool { return keyFit(cs[i].p, cs[i].model, from) < keyFit(cs[j].p, cs[j].model, from) })
-	}
+
+	sort.SliceStable(cs, func(i, j int) bool { return keyFit(cs[i].p, cs[i].model, from) < keyFit(cs[j].p, cs[j].model, from) })
+
 	return cs, wg
 }

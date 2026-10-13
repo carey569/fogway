@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/yetone/magpie/internal/agentenv"
-	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/testenv"
 )
 
@@ -66,9 +65,6 @@ func isolatedTests(m *testing.M) (int, error) {
 	// searcher goes out through a proxy that cannot reach the test's
 	// servers.
 	testenv.ClearProxy()
-	// The fakes of ChatGPT's backend read turns plain; codex_zstd_test's
-	// send them zstd, as the real one is sent.
-	provider.CodexZstdForTests(false)
 	// Finding an inert CLI also prevents discovery from falling back to
 	// one installed at an absolute system path. Tests can prepend their
 	// own fakes, as fakeClaude does, and still use ordinary shell tools.

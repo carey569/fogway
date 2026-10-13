@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -25,81 +24,6 @@ func pickEfforts(t *testing.T, vision, searcher string) {
 	st.VisionEffort, st.SearcherEffort = vision, searcher
 	if err := settings.Save(st); err != nil {
 		t.Fatal(err)
-	}
-}
-
-// The reasoning level picked for Image recognition (MOMO on Discord) is
-// what its model is asked at, fitted to the levels it has, with room to
-// think in; Default is magpie's own, the least it has, as before. The
-// model's own requests, from an agent, are sent as they came.
-func TestVisionEffortPicked(t *testing.T) {
-	fresh(t)
-	u := &eyeUp{}
-	up := httptest.NewServer(u)
-	t.Cleanup(up.Close)
-	if err := provider.Save(provider.Provider{ID: "probe", Name: "Probe", Chat: up.URL + "/v1", Key: "key", Models: []string{"eye"}}); err != nil {
-		t.Fatal(err)
-	}
-	if err := catalog.SaveLive("probe", up.URL+"/v1", []catalog.Model{
-		{ID: "eye", Images: true, ImageInput: imageInputBool(true), Efforts: []string{"low", "medium", "high"}},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	st := settings.Load()
-	st.Vision = "probe/eye"
-	if err := settings.Save(st); err != nil {
-		t.Fatal(err)
-	}
-	s := New()
-	h := lanGuard(s.Handler())
-	if got := VisionEfforts(); !slices.Equal(got, []string{"low", "medium", "high"}) {
-		t.Fatalf("the row is offered %q", got)
-	}
-	ask := func(img string) gjson.Result {
-		t.Helper()
-		m := readMCP(t, visionPost(h, "127.0.0.1:50000", analyzeCall("data:image/png;base64,"+img, "")))
-		if m.Result.IsError {
-			t.Fatalf("analyze_image: %+v", m)
-		}
-		sent := u.sent("eye")
-		return gjson.Parse(sent[len(sent)-1])
-	}
-
-	// Default: the least it has, in the reply limit it always had
-	if q := ask("aW1nMQ=="); q.Get("reasoning_effort").String() != "low" || q.Get("max_tokens").Int() != 4096 {
-		t.Fatalf("default sent %s", q.Raw)
-	}
-	if VisionEffortNow() != "" {
-		t.Fatalf("default shows %q", VisionEffortNow())
-	}
-	// picked: the level, with room for its thinking
-	pickEfforts(t, "high", "")
-	if q := ask("aW1nMg=="); q.Get("reasoning_effort").String() != "high" || q.Get("max_tokens").Int() != 4096+24000 {
-		t.Fatalf("high sent %s", q.Raw)
-	}
-	// one the model hasn't is the nearest it has
-	pickEfforts(t, "xhigh", "")
-	if q := ask("aW1nMw=="); q.Get("reasoning_effort").String() != "high" {
-		t.Fatalf("xhigh sent %s", q.Raw)
-	}
-	if VisionEffortNow() != "high" {
-		t.Fatalf("xhigh shows %q", VisionEffortNow())
-	}
-	// an image read before at another level is read again at this one
-	pickEfforts(t, "medium", "")
-	if q := ask("aW1nMw=="); q.Get("reasoning_effort").String() != "medium" {
-		t.Fatalf("medium sent %s", q.Raw)
-	}
-	// an agent's own request to the model is sent as it came
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, func() *http.Request {
-		r := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"probe/eye","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}`))
-		r.RemoteAddr, r.Host = "127.0.0.1:50000", "127.0.0.1:3425"
-		return r
-	}())
-	sent := u.sent("eye")
-	if rec.Code != 200 || strings.Contains(sent[len(sent)-1], "reasoning_effort") {
-		t.Fatalf("the agent's request: %d, sent %s", rec.Code, sent[len(sent)-1])
 	}
 }
 
@@ -300,25 +224,5 @@ func TestSideEffortChecked(t *testing.T) {
 	}
 	if got := settings.Load(); got.SearcherEffort != "high" || got.VisionEffort != "max" {
 		t.Fatalf("saved %+v", got)
-	}
-}
-
-// The reporter's searcher, Gemini 3 Flash on Antigravity, is asked the
-// level picked as its thinkingLevel; at the default it is sent none.
-func TestSearcherEffortOnGemini(t *testing.T) {
-	ag := provider.Provider{ID: "antigravity", Account: &provider.Account{Agent: "antigravity", User: "u"}}
-	level := func(effort string) string {
-		t.Helper()
-		b, _ := json.Marshal(searchBody(ag, "gemini-3-flash", "latest go", effort))
-		r, err := parseAnthropic(b)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return gjson.GetBytes(buildCodeAssist(r, "gemini-3-flash", "antigravity"), "request.generationConfig.thinkingConfig.thinkingLevel").String()
-	}
-	for effort, want := range map[string]string{"": "", "low": "low", "medium": "medium", "high": "high"} {
-		if got := level(effort); got != want {
-			t.Errorf("%q: thinkingLevel %q, want %q", effort, got, want)
-		}
 	}
 }

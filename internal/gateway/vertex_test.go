@@ -666,67 +666,6 @@ func TestVertexGeminiClients(t *testing.T) {
 	}
 }
 
-// What Vertex AI takes that no other upstream does stays Vertex AI's:
-// Factory's generateContent is still sent the model in its body and goes to
-// its own path. Thought signatures are every Gemini path's (#1445), so
-// Vertex AI's calls go back as it signed them and reach the client in
-// their ids.
-func TestVertexOnlyForVertex(t *testing.T) {
-	r := &Request{Messages: []Message{
-		{Role: "user", Parts: []Part{{Kind: Text, Text: "hi"}}},
-		{Role: "assistant", Parts: []Part{
-			{Kind: ToolCall, ID: "call_1", Name: "bash", Args: json.RawMessage(`{}`), Signature: vertexCallSig},
-			{Kind: ToolCall, ID: "call_2", Name: "bash", Args: json.RawMessage(`{}`)}}},
-		{Role: "user", Parts: []Part{{Kind: ToolResult, CallID: "call_1", Text: "a"}, {Kind: ToolResult, CallID: "call_2", Text: "b"}}},
-	}, Effort: "xhigh", Thinking: true}
-	calls := func(b []byte) []any {
-		var m map[string]any
-		json.Unmarshal(b, &m)
-		return m["contents"].([]any)[1].(map[string]any)["parts"].([]any)
-	}
-
-	factory := provider.Provider{ID: "factory", Account: &provider.Account{}} // signed in
-	b, err := buildFor(factory, provider.Gemini, r, "gemini-3.1-pro-preview")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(b), `"model":"gemini-3.1-pro-preview"`) {
-		t.Errorf("Factory's body has no model: %s", b)
-	}
-	if got := upstreamPath(factory, provider.Gemini, "gemini-3.1-pro-preview"); got != "/generate" {
-		t.Errorf("Factory's path %s", got)
-	}
-
-	vertex := provider.Provider{ID: "google-vertex", Preset: provider.VertexPreset}
-	b, _ = buildFor(vertex, provider.Gemini, r, "gemini-3.1-pro-preview")
-	var top map[string]any
-	json.Unmarshal(b, &top)
-	if _, ok := top["model"]; ok {
-		t.Errorf("Vertex AI's body has a model: %s", b)
-	}
-	got := calls(b)
-	if got[0].(map[string]any)["thoughtSignature"] != vertexCallSig || got[1].(map[string]any)["thoughtSignature"] != nil {
-		t.Errorf("Vertex AI was sent %v", got)
-	}
-
-	ids := func(dec func(string, func(Event)) error) []string {
-		var out []string
-		for _, line := range strings.Split(vertexCalls, "\r\n\r\n") {
-			if data, ok := strings.CutPrefix(line, "data: "); ok {
-				dec(data, func(e Event) {
-					if e.Kind == KToolStart {
-						out = append(out, e.ID)
-					}
-				})
-			}
-		}
-		return out
-	}
-	if got := ids(decoder(provider.Gemini)); !slices.Equal(got, []string{signedID("call_463646", vertexCallSig), "call_463649"}) {
-		t.Errorf("Vertex AI's calls came out as %v", got)
-	}
-}
-
 // A Gemini before 2.5 is sent no thinkingConfig, as it doesn't think, and
 // a 2.5 is held to its own budget range whatever effort it is asked for.
 func TestVertexThinkingRange(t *testing.T) {

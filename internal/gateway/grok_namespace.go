@@ -21,49 +21,6 @@ import (
 // for, and a call the model makes to one comes back to Codex under its own
 // name and namespace (#404).
 
-// namespacedIn is the namespaced functions a Responses request offers or
-// has called, by the flat name Grok is given them under.
-func namespacedIn(body []byte) map[string]nsTool {
-	if !bytes.Contains(body, []byte(`"namespace"`)) {
-		return nil
-	}
-	var q struct {
-		Tools []rTool         `json:"tools"`
-		Input json.RawMessage `json:"input"` // a list, or the text alone
-	}
-	if json.Unmarshal(body, &q) != nil {
-		return nil
-	}
-	var items []struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
-	}
-	json.Unmarshal(q.Input, &items)
-	named := map[string]nsTool{}
-	add := func(space, name string) {
-		if space != "" && space != liteNamespace && name != "" {
-			named[flatName(space, name)] = nsTool{Namespace: space, Name: name}
-		}
-	}
-	for _, t := range q.Tools {
-		if t.Type != "namespace" {
-			continue
-		}
-		for _, nt := range t.Tools {
-			if nt.Type == "function" {
-				add(t.Name, nt.Name)
-			}
-		}
-	}
-	for _, it := range items {
-		add(it.Namespace, it.Name)
-	}
-	if len(named) == 0 {
-		return nil
-	}
-	return named
-}
-
 // nsTidy gives, in a relayed Responses reply, the model's calls to a
 // namespaced function their name and namespace back. A stream's lines pass
 // as they came unless one carries such a call; a reply that isn't one is

@@ -247,34 +247,3 @@ func TestRefusedFormatToldInWords(t *testing.T) {
 		t.Fatalf("%d requests, want 3: one refused, then two told in words", n)
 	}
 }
-
-// Gemini's structured output (responseMimeType with responseJsonSchema)
-// is read into the format, and a Gemini upstream (Code Assist, Factory's
-// generateContent) is asked for one in those fields.
-func TestStructuredOutputOnGemini(t *testing.T) {
-	r, err := parseChat([]byte(strings.Replace(sdkChatParse, "%s", "gemini-3-flash", 1)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var built struct {
-		Request struct {
-			GenerationConfig map[string]json.RawMessage `json:"generationConfig"`
-		} `json:"request"`
-	}
-	json.Unmarshal(buildCodeAssist(r, "gemini-3-flash", "gemini"), &built)
-	gc := built.Request.GenerationConfig
-	if string(gc["responseMimeType"]) != `"application/json"` || !sameFormat(t, string(gc["responseJsonSchema"]), calendarSchema) {
-		t.Fatalf("generationConfig = %v", gc)
-	}
-	g, err := parseGemini([]byte(`{"contents":[{"role":"user","parts":[{"text":"Alice and Bob are going to a science fair on Friday."}]}],"generationConfig":{"responseMimeType":"application/json","responseJsonSchema":` + calendarSchema + `}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var chat struct {
-		ResponseFormat json.RawMessage `json:"response_format"`
-	}
-	json.Unmarshal(buildChat(g, "gpt-4o-mini", "openrouter.ai", false), &chat)
-	if !sameFormat(t, string(chat.ResponseFormat), `{"type":"json_schema","json_schema":{"name":"response","schema":`+calendarSchema+`}}`) {
-		t.Fatalf("response_format = %s", chat.ResponseFormat)
-	}
-}

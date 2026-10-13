@@ -756,7 +756,7 @@ func groupEntries(entries []Entry) []Entry {
 			continue
 		}
 		ms := membersIn(entries, all, g)
-		if len(ms) == 0 || DecisionGroup(ms) {
+		if len(ms) == 0 {
 			continue // a decision group answers System One, no agent's conversation
 		}
 		e := Entry{ID: GroupPrefix + g.ID, Model: ms[0].Model, Name: g.Name, Provider: ms[0].Provider, Group: g.ID, Named: !g.Auto}
@@ -771,7 +771,6 @@ func groupEntries(entries []Entry) []Entry {
 		chatgpt := false // a ChatGPT account answers for a member
 		smallest := 0    // the smallest window a member is known to have
 		for i, m := range ms {
-			chatgpt = chatgpt || m.Provider.Account != nil && m.Provider.Account.Agent == "codex"
 			if !slices.ContainsFunc(ms[:i], func(o Member) bool { return o.Provider.ID == m.Provider.ID }) {
 				e.Icons = append(e.Icons, m.Provider.Icon) // each provider once, "" for one without
 			}
@@ -896,7 +895,7 @@ func groupEntries(entries []Entry) []Entry {
 // catalog, no account's list gives it, its vendor and its maker don't list
 // it, and models.dev lists no model of its id at all.
 func levelsUnknown(x Entry) bool {
-	if len(x.Efforts) > 0 || x.Provider.Account != nil && x.Provider.Account.models != nil {
+	if len(x.Efforts) > 0 {
 		return false
 	}
 	if _, ok := catalog.ListedBy(x.Provider.Catalogs(), x.Model); ok {
@@ -994,11 +993,6 @@ func SaveGroup(g Group) error {
 		g.Rules[i].Use = cleanMember(entries, strings.TrimSpace(g.Rules[i].Use))
 	}
 	if err := groupsInGroup(g, groupsIn(entries)); err != nil {
-		return err
-	}
-	// decision models make a group of their own, asked at /v1/systemone,
-	// never one with models that hold conversations (decide_group.go)
-	if err := cleanDecisionGroup(&g, groupsIn(entries)); err != nil {
 		return err
 	}
 	if g.Routing != Ordered && g.Routing != Rotate && g.Routing != LeastUsed && g.Routing != Pace && g.Routing != Weighted && g.Routing != Manual {

@@ -28,7 +28,7 @@ func (b Busy) Any() bool { return b.Requests > 0 || b.Tools > 0 }
 
 // Busy says what is in flight at the gateway now.
 func (s *Server) Busy() Busy {
-	b := Busy{Requests: int(s.inFlight.Load()), Tools: s.subscription.parked()}
+	b := Busy{Requests: int(s.inFlight.Load())}
 	if n := s.lastDone.Load(); n != 0 {
 		b.Last = time.Unix(0, n)
 	}
@@ -55,26 +55,4 @@ func (s *Server) counted(h http.Handler) http.Handler {
 type busyCounters struct {
 	inFlight atomic.Int64
 	lastDone atomic.Int64 // unix ns
-}
-
-// parked is how many runs wait on their caller's tool results.
-func (b *subscriptionBridge) parked() int {
-	if b == nil {
-		return 0
-	}
-	b.mu.Lock()
-	runs := make([]*subscriptionRun, 0, len(b.runs))
-	for _, run := range b.runs {
-		runs = append(runs, run)
-	}
-	b.mu.Unlock()
-	n := 0
-	for _, run := range runs {
-		run.mu.Lock()
-		if !run.closed && !run.parkedAt.IsZero() {
-			n++
-		}
-		run.mu.Unlock()
-	}
-	return n
 }

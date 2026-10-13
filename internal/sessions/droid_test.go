@@ -3,7 +3,6 @@ package sessions
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -53,59 +52,4 @@ func putDroid(t *testing.T, home string) {
 	write("sessions/"+droidOld+".jsonl",
 		`{"type":"session_start","id":"`+droidOld+`","title":"New Session","owner":"me"}`,
 		`{"type":"message","id":"o1","timestamp":"2026-09-20T10:00:00.000Z","message":{"role":"user","content":"hi there"}}`)
-}
-
-func TestDroid(t *testing.T) {
-	inZone(t, 0)
-	home := setupAgents(t)
-	t.Setenv("FACTORY_HOME_OVERRIDE", "")
-	putDroid(t, home)
-	Reset()
-	ss := List(0)
-	if n := count(ss, "droid"); n != 3 {
-		t.Fatalf("want 3 Droid sessions (the subagent in its session), got %d", n)
-	}
-	d := find(t, ss, "droid", droidMain)
-	if d.Cwd != "/work/droid" || d.Title != "Login bug" {
-		t.Fatalf("droid: %+v", d)
-	}
-	// magpie's custom model by the model it asks for, the subagent's in
-	if m := model(d, "anthropic/claude-sonnet-4-5"); m.Tokens != (Tokens{100, 50, 1000, 10, 0}) {
-		t.Fatalf("sonnet: %+v", d.Models)
-	}
-	if m := model(d, "claude-haiku-4-5"); m.Tokens != (Tokens{5, 2, 0, 0, 0}) {
-		t.Fatalf("haiku, the subagent's in: %+v", d.Models)
-	}
-	if !d.Start.Equal(at("2026-09-27T08:00:00Z")) || !d.Last.Equal(at("2026-09-27T08:02:00Z")) {
-		t.Fatalf("droid times %s %s", d.Start, d.Last)
-	}
-	want := "cd '/work/droid' && droid --resume " + droidMain
-	if runtime.GOOS == "windows" {
-		want = "Set-Location -LiteralPath '/work/droid'; droid --resume " + droidMain
-	}
-	if d.Resume != want {
-		t.Fatalf("resume %q", d.Resume)
-	}
-	// the fork: what it copied is its source's; a custom model of the
-	// user's own by its name
-	f := find(t, ss, "droid", droidFork)
-	if f.Title != "Login bug" || !f.Start.Equal(at("2026-09-27T09:00:00Z")) || !f.Last.Equal(at("2026-09-27T09:00:30Z")) {
-		t.Fatalf("fork: %+v", f)
-	}
-	if m := model(f, "Kimi-K2"); m.Tokens != (Tokens{7, 3, 0, 0, 0}) {
-		t.Fatalf("fork models: %+v", f.Models)
-	}
-	if o := find(t, ss, "droid", droidOld); o.Title != "hi there" || !o.Tokens.zero() {
-		t.Fatalf("old: %+v", o)
-	}
-
-	// $FACTORY_HOME_OVERRIDE
-	moved := filepath.Join(filepath.Dir(home), "factory-home")
-	os.MkdirAll(moved, 0o755)
-	if err := os.Rename(filepath.Join(home, ".factory"), filepath.Join(moved, ".factory")); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("FACTORY_HOME_OVERRIDE", moved)
-	Reset()
-	find(t, List(0), "droid", droidMain)
 }

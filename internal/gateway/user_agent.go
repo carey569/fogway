@@ -32,7 +32,7 @@ func userAgentFor(p provider.Provider, ua string) string {
 // agent it draws for before its own (claude-code/2.1.0 magpie-image/1)
 // from what the agent told it, not from a User-Agent the agent sent.
 func magpiesOwn(ua string) bool {
-	return strings.HasPrefix(ua, "magpie/") || strings.HasPrefix(ua, "magpie-") || strings.HasSuffix(ua, " "+DrawAgent)
+	return strings.HasPrefix(ua, "magpie/") || strings.HasPrefix(ua, "magpie-")
 }
 
 // callerUA is the User-Agent the request ctx is for came with (withCaller),
@@ -48,8 +48,6 @@ func callerUA(ctx context.Context) string {
 // account's is left to its signing, as before, and another magpie's is
 // set where it is asked.
 func stampUA(ctx context.Context, p provider.Provider, h http.Header) {
-	if p.Account != nil || p.IsRemoteMagpie() {
-		return
-	}
+
 	h.Set("User-Agent", userAgentFor(p, callerUA(ctx)))
 }

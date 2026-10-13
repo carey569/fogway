@@ -101,14 +101,6 @@ func TestModelListsKeepOutputWithinTheWindow(t *testing.T) {
 		t.Errorf("Cursor's capabilities: %v", c)
 	}
 
-	// Muse Code's limit
-	muse := list("/muse-code/models", "", "muse-build/1.4.2 (non-interactive; macos-aarch64; build 0)")
-	if meta, _ := muse["gx/grok-4.7"]["metadata"].(map[string]any)["muse-code"].(map[string]any); meta == nil {
-		t.Errorf("Muse's list: %v", muse)
-	} else if l, _ := meta["limit"].(map[string]any); num(l["context"]) != 256000 || num(l["output"]) != 256000 {
-		t.Errorf("Muse's limit: %v", meta["limit"])
-	}
-
 	// a group's member is asked for no more than the model's own limit, as
 	// before (withMaxOutput): what is published is the pair, not a new cap
 	// on what is asked

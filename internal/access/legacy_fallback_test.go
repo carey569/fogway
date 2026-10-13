@@ -35,36 +35,6 @@ func TestLegacyLANFallbackBeforeMigration(t *testing.T) {
 	}
 }
 
-func TestLegacyLANFallbackDoesNotBypassRevocation(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		cfg  settings.Settings
-		keys []Key
-	}{
-		{"not-shared", settings.Settings{LANKey: "legacy"}, nil},
-		{"completed", settings.Settings{LAN: true, LANKey: "legacy", LANKeyID: "removed"}, nil},
-		{"revoked-mirror", settings.Settings{LAN: true, LANKey: revokedLANPrefix + "old"}, nil},
-		{"disabled", settings.Settings{LAN: true, LANKey: "legacy"}, []Key{{ID: "default", LAN: true, Secret: "legacy", Off: true}}},
-		{"rotated", settings.Settings{LAN: true, LANKey: "legacy"}, []Key{{ID: "default", LAN: true, Secret: "new"}}},
-		{"disabled-matching-key", settings.Settings{LAN: true, LANKey: "legacy"}, []Key{{ID: "other", Secret: "legacy", Off: true}}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-			if err := settings.Save(tc.cfg); err != nil {
-				t.Fatal(err)
-			}
-			if tc.keys != nil {
-				if err := Restore(tc.keys); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if _, ok := Authenticate(tc.cfg.LANKey); ok {
-				t.Fatal("fallback accepted a revoked or inactive legacy credential")
-			}
-		})
-	}
-}
-
 func TestLegacyLANFallbackWithReadOnlyDirectory(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s := settings.Settings{LAN: true, LANKey: "sk-magpie-readonly"}

@@ -44,7 +44,7 @@ func refuseHeld(w http.ResponseWriter, r *http.Request, msg string) bool {
 	if !heldKey(access.Caller(r.Context())) {
 		return false
 	}
-	writeJSON(w, http.StatusForbidden, map[string]any{"error": map[string]any{"message": msg, "type": "permission_error", "code": provider.KeyHeldCode}})
+	writeJSON(w, http.StatusForbidden, map[string]any{"error": map[string]any{"message": msg, "type": "permission_error", "code": "key_held"}})
 	return true
 }
 

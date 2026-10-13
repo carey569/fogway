@@ -112,9 +112,7 @@ func AddKey(id, name, key string, proto Protocol) error {
 	if err != nil {
 		return err
 	}
-	if p.Account != nil {
-		return errors.New("a signed-in account has no keys")
-	}
+
 	// nothing pasted: the key the provider is asked with when the user has
 	// none (OpenCode Zen's public, #1795); for any other, nothing to add
 	anon := false
@@ -188,9 +186,7 @@ func AddKeys(id string, keys []string, proto Protocol) (added, had int, err erro
 	if err != nil {
 		return 0, 0, err
 	}
-	if p.Account != nil {
-		return 0, 0, errors.New("a signed-in account has no keys")
-	}
+
 	seen := map[string]bool{}
 	for _, k := range p.KeyList() {
 		seen[k.ID] = true

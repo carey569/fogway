@@ -3,8 +3,6 @@ package gui
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -178,22 +176,11 @@ func usageRoutes(mux *http.ServeMux, w Windows) {
 	mux.HandleFunc("GET /api/usage/quotas", func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if r.URL.Query().Get("asked") != "" {
-			provider.AskClaudeUsage()
 			ctx = provider.Asked(ctx)
 		}
 		ctx, cancel := context.WithTimeout(ctx, 12*time.Second)
 		defer cancel()
-		// a WorkBuddy (China) account's card says how its daily check-in
-		// went (#694)
-		qs := provider.WithCheckins(provider.Quotas(ctx))
-		// and what each window holds whole, by what magpie routed in it
-		qs = usage.WithWindowHolds(qs, usage.Clock())
-		// an account's card may be the stale copy a read under way will
-		// replace: the page asks again until it has landed (#959)
-		if provider.SubscriptionUsageReading() {
-			rw.Header().Set("X-Magpie-Reading", "1")
-		}
-		writeJSON(rw, qs)
+		writeJSON(rw, provider.Quotas(ctx))
 	})
 	// One card read again, from its refresh button (#840): ?provider= and,
 	// of a card with several accounts, &user=; the others are left as they
@@ -207,102 +194,13 @@ func usageRoutes(mux *http.ServeMux, w Windows) {
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 		provider.RefreshUsage(ctx, id, r.URL.Query().Get("user"))
-		writeJSON(rw, usage.WithWindowHolds(provider.WithCheckins(provider.Quotas(ctx)), usage.Clock()))
-	})
-	// WorkBuddy's daily check-in pressed now, from the Usage card, for
-	// each account not in yet today, as `magpie accounts checkin` does; the
-	// card is read again after
-	mux.HandleFunc("POST /api/usage/workbuddy-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
-		defer cancel()
-		rs := provider.CheckInWorkBuddy(ctx)
-		if rs == nil {
-			rs = []provider.WorkBuddyCheckin{}
-		}
-		writeJSON(rw, rs)
-	})
-	// and Trae CN's, for each Trae CN account (#694)
-	mux.HandleFunc("POST /api/usage/trae-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
-		defer cancel()
-		rs := provider.CheckInTrae(ctx)
-		if rs == nil {
-			rs = []provider.WorkBuddyCheckin{}
-		}
-		writeJSON(rw, rs)
-	})
-	// and MiniMax Code's, for each MiniMax Code (China) account (#811)
-	mux.HandleFunc("POST /api/usage/minimax-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
-		defer cancel()
-		rs := provider.CheckInMiniMax(ctx)
-		if rs == nil {
-			rs = []provider.WorkBuddyCheckin{}
-		}
-		writeJSON(rw, rs)
-	})
-	// and Qoder's daily credits, for each Qoder and Qoder CN account
-	mux.HandleFunc("POST /api/usage/qoder-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
-		defer cancel()
-		rs := provider.CheckInQoder(ctx)
-		if rs == nil {
-			rs = []provider.WorkBuddyCheckin{}
-		}
-		writeJSON(rw, rs)
-	})
-	// and a plugin's own, for each account of the provider it names
-	mux.HandleFunc("POST /api/usage/plugin-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct{ Provider string }
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Provider == "" {
-			fail(rw, errors.New("no provider"))
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
-		defer cancel()
-		rs := provider.CheckInPlugins(ctx, in.Provider)
-		if rs == nil {
-			rs = []provider.WorkBuddyCheckin{}
-		}
-		writeJSON(rw, rs)
+		writeJSON(rw, provider.Quotas(ctx))
 	})
 	// what was left of each window over time, for the quota cards' curves
 	// (#651); ?days= back
 	mux.HandleFunc("GET /api/usage/quotas/history", func(rw http.ResponseWriter, r *http.Request) {
 		days := r.URL.Query().Get("days")
 		hs := provider.QuotaHistories(provider.QuotaHistorySince(days, time.Now()), "", "")
-		// and a remote magpie's, for its cards (office/codex)
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-		writeJSON(rw, append(hs, provider.RemoteQuotaHistories(ctx, days)...))
-	})
-	// spends one of a Codex account's rate-limit resets, which the page
-	// has asked the user about first; what it did comes back
-	mux.HandleFunc("POST /api/usage/codex-reset", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct{ User string }
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
-		defer cancel()
-		out, err := provider.UseCodexReset(ctx, in.User)
-		if err != nil {
-			fail(rw, err)
-			return
-		}
-		if out.Code == "reset" {
-			// routing and the Providers page know the windows started
-			// again by the time the page hears so, not at a later
-			// request's reading (#1491)
-			who := in.User
-			if who == "" {
-				who, _ = provider.CodexSignedIn()
-			}
-			wait, done := context.WithTimeout(ctx, 10*time.Second)
-			provider.AwaitAllowance(wait, "codex", who)
-			done()
-		}
-		writeJSON(rw, out)
+		writeJSON(rw, hs)
 	})
 }

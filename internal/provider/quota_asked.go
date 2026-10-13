@@ -73,30 +73,6 @@ func markStaleRead(agent, user string) {
 	staleReads.m[agent+"/"+strings.ToLower(user)] = true
 }
 
-// takeStaleRead says whether key is to be read though not asked, and
-// forgets it: one read answers it.
-func takeStaleRead(key string) bool {
-	staleReads.Lock()
-	defer staleReads.Unlock()
-	if staleReads.m[key] {
-		delete(staleReads.m, key)
-		return true
-	}
-	return false
-}
-
-func isStaleRead(key string) bool {
-	staleReads.Lock()
-	defer staleReads.Unlock()
-	return staleReads.m[key]
-}
-
-// holding is whether a read made with ctx sends nothing: held back
-// (heldRead), or made under one that was (quotaReading put the hold on).
-func holding(ctx context.Context) bool {
-	return netproxy.Held(ctx) != nil || heldRead(ctx)
-}
-
 // unheld is ctx for a read that goes out though not asked for: an
 // account the vendor turned away for its quota (StaleAllowance).
 func unheld(ctx context.Context) context.Context {

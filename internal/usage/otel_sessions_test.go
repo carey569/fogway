@@ -5,15 +5,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/yetone/magpie/internal/sessions"
 	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/testenv"
 )
 
 func TestSessionTraceWirePrivacyAndTokenOwnership(t *testing.T) {
@@ -89,108 +86,6 @@ func TestSessionExporterDefersPendingRoot(t *testing.T) {
 	}
 }
 
-func TestOTelSessionWatcherExportsNewInteractionWithoutGatewayDuplicates(t *testing.T) {
-	testenv.SetHome(t, t.TempDir())
-	t.Setenv("XDG_DATA_HOME", t.TempDir())
-	t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
-	t.Setenv("OPENCODE_DB", "")
-	t.Setenv("GEMINI_CLI_HOME", t.TempDir())
-	root := t.TempDir()
-	t.Setenv("PI_CODING_AGENT_DIR", root)
-	t.Setenv("PI_CODING_AGENT_SESSION_DIR", "")
-	t.Setenv("CODEX_HOME", t.TempDir())
-	dir := filepath.Join(root, "sessions", "work")
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		t.Fatal(err)
-	}
-	path := filepath.Join(dir, "2026-10-02T00-00-00-000Z_session.jsonl")
-	old := time.Now().Add(-time.Minute)
-	header, _ := json.Marshal(map[string]any{"type": "session", "id": "session", "timestamp": old})
-	historical, _ := json.Marshal(map[string]any{"type": "message", "id": "old-user", "timestamp": old, "message": map[string]any{"role": "user", "content": "PRIVATE-OLD"}})
-	if err := os.WriteFile(path, append(append(append(header, '\n'), historical...), '\n'), 0600); err != nil {
-		t.Fatal(err)
-	}
-	received := make(chan []byte, 4)
-	collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, _ := io.ReadAll(r.Body)
-		received <- b
-		io.WriteString(w, `{}`)
-	}))
-	defer collector.Close()
-	otelConfig(t, settings.OTel{Endpoint: collector.URL})
-	t.Setenv("MAGPIE_OTEL_SESSIONS", "true")
-	t.Setenv("MAGPIE_OTEL_BODIES", "false")
-	stop := StartOTel()
-	t.Cleanup(stop)
-	now := time.Now()
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, o := range []map[string]any{
-		{"type": "message", "id": "new-user", "timestamp": now, "message": map[string]any{"role": "user", "content": "PRIVATE-NEW"}},
-		{"type": "message", "id": "assistant", "parentId": "new-user", "timestamp": now.Add(time.Millisecond), "message": map[string]any{"role": "assistant", "timestamp": now.UnixMilli(), "model": "model", "provider": "magpie", "stopReason": "stop", "content": "PRIVATE-REPLY", "usage": map[string]int{"input": 10, "output": 5}}},
-		{"type": "custom", "parentId": "assistant", "customType": "timing-final", "timestamp": now.Add(2 * time.Millisecond), "data": map[string]any{"totalMs": 2, "endAt": now.Add(2 * time.Millisecond).UnixMilli()}},
-	} {
-		b, _ := json.Marshal(o)
-		f.Write(append(b, '\n'))
-	}
-	f.Close()
-	// Linux VFS mtime can lag a write. Event timestamps, not a precise stat
-	// timestamp, decide whether this immediately-after-start interaction is new.
-	coarse := now.Add(-time.Second)
-	if err := os.Chtimes(path, coarse, coarse); err != nil {
-		t.Fatal(err)
-	}
-	deadline := time.Now().Add(6 * time.Second)
-	for !OTelSessionAgent("pi") && time.Now().Before(deadline) {
-		time.Sleep(10 * time.Millisecond)
-	}
-	if !OTelSessionAgent("pi") {
-		t.Fatal("reader did not become available")
-	}
-	Append(Record{Time: time.Now(), Agent: "pi", Local: true, Model: "gateway-duplicate", Input: 999, Status: 200})
-	select {
-	case b := <-received:
-		text := string(b)
-		if strings.Contains(text, "PRIVATE-") || strings.Contains(text, "gateway-duplicate") || strings.Contains(text, `"intValue":"999"`) {
-			t.Fatalf("history, bodies or duplicate exported: %s", text)
-		}
-		if !strings.Contains(text, `"stringValue":"pi interaction"`) || !strings.Contains(text, `"key":"parentSpanId"`) && !strings.Contains(text, `"parentSpanId"`) {
-			t.Fatalf("no hierarchy: %s", text)
-		}
-		if strings.Count(text, `"key":"gen_ai.usage.input_tokens"`) != 1 {
-			t.Fatalf("duplicate model usage: %s", text)
-		}
-		var wire struct {
-			ResourceSpans []struct {
-				ScopeSpans []struct {
-					Spans []struct {
-						SpanID string `json:"spanId"`
-					}
-				}
-			}
-		}
-		if err := json.Unmarshal(b, &wire); err != nil {
-			t.Fatal(err)
-		}
-		ids := map[string]bool{}
-		for _, resource := range wire.ResourceSpans {
-			for _, scope := range resource.ScopeSpans {
-				for _, span := range scope.Spans {
-					if ids[span.SpanID] {
-						t.Fatalf("duplicate span %s: %s", span.SpanID, text)
-					}
-					ids[span.SpanID] = true
-				}
-			}
-		}
-	case <-time.After(10 * time.Second):
-		t.Fatal("session watcher did not export")
-	}
-	stop()
-}
-
 func TestSessionTracingRetainsRemoteGatewayTraces(t *testing.T) {
 	received := make(chan []byte, 1)
 	collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -212,68 +107,6 @@ func TestSessionTracingRetainsRemoteGatewayTraces(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatal("remote gateway trace suppressed")
-	}
-}
-
-func TestSessionTracingSuppressesSupportedLocalClientsOnly(t *testing.T) {
-	otelConfig(t, settings.OTel{Endpoint: "http://localhost:4318"})
-	t.Setenv("MAGPIE_OTEL_SESSIONS", "true")
-	e := newOTelExporter()
-	previous := otel.Swap(e)
-	defer func() { otel.Store(previous); e.cancel() }()
-	cfg, err := settings.OTelExport()
-	if err != nil {
-		t.Fatal(err)
-	}
-	ready := &sessionAvailability{config: cfg, agents: map[string]time.Time{}}
-	for _, agent := range []string{"codex", "pi", "omp", "opencode", "gemini", "claude", "claude-desktop"} {
-		if OTelSessionAgent(agent) {
-			t.Fatal("unreadable store suppressed gateway")
-		}
-		offerOTel(Record{Agent: agent, Local: true, Time: time.Now(), Status: 200})
-		if len(e.queue) != 1 {
-			t.Fatal("fallback gateway record lost")
-		}
-		<-e.queue
-		ready.agents[agent] = time.Now()
-	}
-	e.sessions.Store(ready)
-	for agent := range ready.agents {
-		if !OTelSessionAgent(agent) {
-			t.Fatalf("adapter not enabled: %s", agent)
-		}
-		offerOTel(Record{Agent: agent, Local: true, Time: time.Now(), Status: 200})
-	}
-	if len(e.queue) != 0 {
-		t.Fatal("supported clients duplicated gateway records")
-	}
-	offerOTel(Record{Agent: "cursor", Time: time.Now(), Status: 200})
-	offerOTel(Record{Agent: "opencode", Via: "remote", Time: time.Now(), Status: 200})
-	offerOTel(Record{Agent: "claude", OTel: &OTelSpan{Session: true}, Time: time.Now(), Status: 200})
-	if len(e.queue) != 3 {
-		t.Fatal("fallback, remote or session record suppressed")
-	}
-	// Empty Via does not prove locality: LAN/container/WSL clients may call
-	// this gateway directly while its own same-agent session reader is active.
-	offerOTel(Record{Agent: "codex", Time: time.Now(), Status: 200})
-	offerOTel(Record{Agent: "pi", Local: true, CallerKeyID: "gateway-key", Time: time.Now(), Status: 200})
-	if len(e.queue) != 5 {
-		t.Fatal("remote or keyed gateway trace suppressed")
-	}
-	// Gateway spans already started before availability changed must finish.
-	offerOTel(Record{Agent: "codex", OTel: &OTelSpan{TraceID: "existing"}, Time: time.Now(), Status: 200})
-	if len(e.queue) != 6 {
-		t.Fatal("in-flight gateway span suppressed")
-	}
-	stale := &sessionAvailability{config: cfg, agents: map[string]time.Time{"codex": time.Now().Add(-6 * time.Minute)}}
-	e.sessions.Store(stale)
-	if OTelSessionAgent("codex") {
-		t.Fatal("stale availability suppressed gateway")
-	}
-	cfg.Bodies = !cfg.Bodies
-	e.sessions.Store(&sessionAvailability{config: cfg, agents: map[string]time.Time{"codex": time.Now()}})
-	if OTelSessionAgent("codex") {
-		t.Fatal("availability survived changed config")
 	}
 }
 

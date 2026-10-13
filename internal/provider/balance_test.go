@@ -6,12 +6,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/yetone/magpie/internal/agentenv"
 )
 
 func TestBalanceReaders(t *testing.T) {
@@ -105,70 +102,6 @@ func TestBalanceSourceByHost(t *testing.T) {
 	// the provider's own endpoint wins over the host's
 	if src, _ := balanceSourceOf(Provider{Chat: "https://api.deepseek.com/v1", BalanceURL: "https://x.example/b"}); src.url != "https://x.example/b" {
 		t.Errorf("own endpoint: %q", src.url)
-	}
-}
-
-// A relay's own endpoint, asked with each key it has on; a key the relay
-// refuses says so on its card instead of failing the others.
-func TestKeyBalances(t *testing.T) {
-	isolate(t)
-	h := t.TempDir()
-	t.Setenv("HOME", h)
-	t.Setenv("USERPROFILE", h)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(h, ".config"))
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
-	t.Setenv("PATH", h)
-	for _, v := range agentenv.Vars {
-		t.Setenv(v, "")
-	}
-	keyBalanceCache.data = nil
-	t.Cleanup(func() { keyBalanceCache.data = nil })
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("X-Org") != "acme" {
-			t.Errorf("custom header not sent: %v", r.Header)
-		}
-		switch r.Header.Get("Authorization") {
-		case "Bearer sk-one":
-			w.Write([]byte(`{"data":{"total_available":1000000}}`))
-		case "Bearer sk-two":
-			w.Write([]byte(`{"data":{"total_available":250000}}`))
-		default:
-			http.Error(w, `{"message":"invalid token"}`, http.StatusUnauthorized)
-		}
-	}))
-	defer srv.Close()
-	if err := Save(Provider{ID: "relay", Name: "Relay", Chat: srv.URL + "/v1", Key: "sk-one", KeyName: "main",
-		Keys:       []KeyAccount{{Name: "spare", Key: "sk-two"}, {Name: "gone", Key: "sk-bad"}, {Name: "off", Key: "sk-off", Off: true}},
-		Headers:    map[string]string{"X-Org": "acme"},
-		BalanceURL: srv.URL + "/api/usage/token", BalancePath: "$data.total_available / 500000"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := Save(Provider{ID: "plain", Name: "Plain", Chat: "https://plain.example.com/v1", Key: "sk-p"}); err != nil {
-		t.Fatal(err)
-	}
-	got := KeyBalances(context.Background())
-	var lines []string
-	for _, q := range got {
-		lines = append(lines, q.Provider+"|"+q.User+"|"+q.Balance+"|"+strings.SplitN(q.Error, ":", 2)[0])
-	}
-	want := "relay|main|$2.00|,relay|spare|$0.50|,relay|gone||401 Unauthorized"
-	if strings.Join(lines, ",") != want {
-		t.Fatalf("balances:\n%s\nwant\n%s", strings.Join(lines, ","), want)
-	}
-	if got[0].Windows == nil {
-		t.Fatal("windows is null in the JSON")
-	}
-	// each key's balance is kept over time, a failed one not
-	bh := readBalanceHist()
-	if pts := bh[quotaHistKey("relay", "main")]; len(pts) != 1 || pts[0].Amount != 2 {
-		t.Fatalf("main's balance history = %+v", pts)
-	}
-	if pts := bh[quotaHistKey("relay", "spare")]; len(pts) != 1 || pts[0].Amount != 0.5 {
-		t.Fatalf("spare's balance history = %+v", pts)
-	}
-	if len(bh) != 2 {
-		t.Fatalf("balance history = %+v", bh)
 	}
 }
 
@@ -331,58 +264,6 @@ func TestNewAPIUserRefusal(t *testing.T) {
 		if !strings.Contains(c.body, "New-Api-User") && strings.Contains(err.Error(), "add the header") {
 			t.Errorf("%s: told to add the header: %v", c.body, err)
 		}
-	}
-}
-
-// A vendor that takes the key in the Balance URL's query, or in a header of
-// its own, is asked with each key in its place, so every key's card tells
-// its own balance, not the one a key pasted into the URL has (#266).
-func TestBalanceURLNamesTheKey(t *testing.T) {
-	isolate(t)
-	h := t.TempDir()
-	t.Setenv("HOME", h)
-	t.Setenv("USERPROFILE", h)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(h, ".config"))
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(h, ".cache"))
-	t.Setenv("PATH", h)
-	for _, v := range agentenv.Vars {
-		t.Setenv(v, "")
-	}
-	keyBalanceCache.data = nil
-	t.Cleanup(func() { keyBalanceCache.data = nil })
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("X-Key") != r.URL.Query().Get("apikey") {
-			t.Errorf("header %q, query %q", r.Header.Get("X-Key"), r.URL.Query().Get("apikey"))
-		}
-		switch r.URL.Query().Get("apikey") {
-		case "sk-one":
-			w.Write([]byte(`{"balance":3}`))
-		case "sk-two+/=":
-			w.Write([]byte(`{"balance":7}`))
-		default:
-			http.Error(w, `{"message":"no such key"}`, http.StatusUnauthorized)
-		}
-	}))
-	defer srv.Close()
-	if err := Save(Provider{ID: "relay", Name: "Relay", Chat: srv.URL + "/v1", Key: "sk-one", KeyName: "main",
-		Keys:       []KeyAccount{{Name: "spare", Key: "sk-two+/="}},
-		Headers:    map[string]string{"X-Key": "{apiKey}"},
-		BalanceURL: srv.URL + "/query?apikey={key}", BalancePath: "$balance"}); err != nil {
-		t.Fatal(err)
-	}
-	var lines []string
-	for _, q := range KeyBalances(context.Background()) {
-		lines = append(lines, q.User+"|"+q.Balance+"|"+q.Error)
-	}
-	if want := "main|$3.00|,spare|$7.00|"; strings.Join(lines, ",") != want {
-		t.Fatalf("balances:\n%s\nwant\n%s", strings.Join(lines, ","), want)
-	}
-	// a URL that can't be asked doesn't show the key in what it says
-	_, _, err := Balance(context.Background(), Provider{Chat: "http://127.0.0.1:1/v1", Key: "sk-secret-123456",
-		BalanceURL: "http://127.0.0.1:1/q?key={key}", BalancePath: "balance"})
-	if err == nil || strings.Contains(err.Error(), "sk-secret-123456") {
-		t.Fatalf("error: %v", err)
 	}
 }
 

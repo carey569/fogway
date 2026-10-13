@@ -145,9 +145,6 @@ func usedBy(a *agent.Agent, vals map[string]string, e provider.Entry) bool {
 		if v == e.ID || strings.HasSuffix(v, "/"+e.ID) {
 			return true
 		}
-		if acc := e.Provider.Account; e.Group == "" && acc != nil && acc.Agent == a.ListsFor() && v == e.Model {
-			return true
-		}
 	}
 	return false
 }

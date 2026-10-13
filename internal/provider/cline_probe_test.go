@@ -115,33 +115,3 @@ func TestProbeReadsTheStream(t *testing.T) {
 		t.Errorf("not streamed: %+v", r)
 	}
 }
-
-// Which providers' models can each be tested, and why not (ARNO on
-// Discord: 有些provider里的模型可以右击检测，有些却不可以): a key's, and a
-// sign-in's sent requests at an endpoint (Claude, Codex, Copilot), can; a
-// classifier can't, nor a sign-in reached only through its agent's own API.
-func TestModelTest(t *testing.T) {
-	for _, c := range []struct {
-		p    Provider
-		want string
-	}{
-		{Provider{ID: "relay", Chat: "https://relay.test/v1"}, ""},
-		{Provider{ID: "claude", Anthropic: "https://api.anthropic.com", Account: &Account{Agent: "claude"}}, ""},
-		{Provider{ID: "codex", Responses: CodexBase, Account: &Account{Agent: "codex"}}, ""},
-		{Provider{ID: "copilot", Chat: "https://api.githubcopilot.com", Account: &Account{Agent: "copilot"}}, ""},
-		{Provider{ID: "kiro", Key: "k", Account: &Account{Agent: "kiro"}}, "own-api"},
-		{Provider{ID: "cursor", Account: &Account{Agent: "cursor"}}, "own-api"},
-		// System One's models are each asked a question of their own, and
-		// Workers AI's in its envelope
-		{Provider{ID: "jev", Decide: "https://decide.test/v1"}, ""},
-		{Provider{ID: "cf", Decide: "https://api.cloudflare.com/client/v4/accounts/a/ai/run"}, ""},
-	} {
-		if got := c.p.ModelTest(); got != c.want {
-			t.Errorf("%s: %q, want %q", c.p.ID, got, c.want)
-		}
-	}
-	r := Provider{ID: "jev", Decide: "https://decide.test/v1", Chat: "https://decide.test/v1"}.TestModels(context.Background(), []string{"jev-latest"})[0]
-	if r.OK || r.Error == "" {
-		t.Errorf("a classifier's model was tested: %+v", r)
-	}
-}

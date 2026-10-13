@@ -671,7 +671,20 @@ func Tag(ms []catalog.Model) string {
 // tagMark is where a tag starts in an ETag magpie made.
 const tagMark = "+magpie-"
 
+// WithTag is an ETag of the backend's (or none) with magpie's tag in it:
+// W/"abc" becomes W/"abc+magpie-<tag>".
+func WithTag(etag, tag string) string {
+	if strings.HasSuffix(etag, `"`) && len(etag) > 1 {
+		return strings.TrimSuffix(etag, `"`) + tagMark + tag + `"`
+	}
+	return etag + tagMark + tag
+}
+
 // Tagged reports whether an ETag carries this tag.
 func Tagged(etag, tag string) bool {
 	return strings.Contains(etag, tagMark+tag)
 }
+
+// Catalog renders models as a whole models.json, for the effort this
+// machine's Codex starts new sessions at (NewSessionEffort).
+func Catalog(ms []catalog.Model) []byte { return CatalogAt(ms, NewSessionEffort()) }

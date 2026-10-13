@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"context"
-	"crypto/subtle"
 	"log"
 	"net"
 	"net/http"
@@ -278,20 +277,6 @@ var callbacks = struct {
 	tokens map[string]bool
 }{tokens: map[string]bool{}}
 
-// addCallback makes token, a run's callback token (randomToken: 24 bytes
-// from crypto/rand), one ownCallback takes, until dropCallback.
-func addCallback(token string) {
-	callbacks.Lock()
-	callbacks.tokens[token] = true
-	callbacks.Unlock()
-}
-
-func dropCallback(token string) {
-	callbacks.Lock()
-	delete(callbacks.tokens, token)
-	callbacks.Unlock()
-}
-
 // ownCallback: r is the MCP helper of a Claude Code magpie runs handing a
 // tool call back, on the path it was given — POST claudeMCPPath and the
 // callback token of a run now live, nothing else. It is let in without a
@@ -305,22 +290,7 @@ func dropCallback(token string) {
 // file only this user reads, is what lets it in: a wrong, spent or missing
 // one, another method, or any other path is judged as every request is.
 func ownCallback(r *http.Request) bool {
-	if r.Method != http.MethodPost || r.URL.RawPath != "" {
-		return false
-	}
-	token, ok := strings.CutPrefix(r.URL.Path, claudeMCPPath)
-	if !ok || token == "" {
-		return false
-	}
-	callbacks.Lock()
-	defer callbacks.Unlock()
-	found := false
-	for t := range callbacks.tokens {
-		if subtle.ConstantTimeCompare([]byte(t), []byte(token)) == 1 {
-			found = true
-		}
-	}
-	return found
+	return false
 }
 
 // rebound: a browser sent this request to loopback under a hostname that
@@ -435,10 +405,9 @@ func identifyCaller(w http.ResponseWriter, r *http.Request) (*http.Request, bool
 // trace names it (Account.User: an email, a login), never by a token; ""
 // for a key or a provider without an account (#557).
 func accountOf(p provider.Provider) string {
-	if p.Account == nil {
-		return ""
-	}
-	return p.Account.User
+
+	return ""
+
 }
 
 func appendUsage(r *http.Request, rec usage.Record) {

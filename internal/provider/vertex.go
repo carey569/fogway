@@ -589,3 +589,23 @@ func impersonateFor(ctx context.Context, tok, account string, delegates []string
 	}
 	return out.AccessToken, out.ExpireTime, nil
 }
+// VertexForTest points Vertex AI at root, Google's token endpoint at token
+// and IAM Credentials at iam until the returned function runs, and forgets
+// the tokens minted. Tests outside this package use it.
+func VertexForTest(root, token, iam string) func() {
+	oldR, oldT, oldI := vertexRoot, googleTokenURL, googleIAMCredentials
+	vertexRoot = func(string) string { return root }
+	googleTokenURL, googleIAMCredentials = token, iam
+	forgetVertexTokens()
+	return func() {
+		vertexRoot, googleTokenURL, googleIAMCredentials = oldR, oldT, oldI
+		forgetVertexTokens()
+	}
+}
+
+func forgetVertexTokens() {
+	vertexTokens.Lock()
+	vertexTokens.m = map[string]*vertexToken{}
+	vertexTokens.Unlock()
+}
+

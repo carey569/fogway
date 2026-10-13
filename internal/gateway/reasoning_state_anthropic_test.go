@@ -222,27 +222,3 @@ func TestAnthropicSealedThinkingStaysWithMessages(t *testing.T) {
 		t.Fatalf("Anthropic's redacted thinking reached a Responses stream: %s", b)
 	}
 }
-
-// Claude's subscription (Claude Code's stream) is the same sibling: a
-// redacted block and two thinking blocks reach the client apart.
-func TestClaudeSubscriptionKeepsSealedThinking(t *testing.T) {
-	lines := []string{cutStart}
-	for _, l := range anthropicSealedStream[1:] {
-		lines = append(lines, `{"type":"stream_event","event":`+l+`}`)
-	}
-	lines = append(lines, `{"type":"result","subtype":"success","is_error":false,"result":"It's 15 degrees."}`)
-	text, _, _, _, raw, _, _ := claudeReply(t, &subscriptionRun{}, lines, true)
-	if text != "It's 15 degrees." {
-		t.Fatalf("reply %q:\n%s", text, raw)
-	}
-	var starts []string
-	for _, ev := range sseData(t, []byte(raw)) {
-		if ev["type"] == "content_block_start" {
-			b, _ := json.Marshal(ev["content_block"])
-			starts = append(starts, string(b))
-		}
-	}
-	if len(starts) != 4 || !jsonIs(t, json.RawMessage(starts[2]), redactedBlock) {
-		t.Fatalf("blocks %v:\n%s", starts, raw)
-	}
-}

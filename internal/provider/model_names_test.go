@@ -163,7 +163,6 @@ func TestPickedNamesKeepListed(t *testing.T) {
 		picks, want               []string
 	}{
 		{"collision fallback", "picked-collision", "vendor", []catalog.Model{{ID: "flash", Name: "flash"}, {ID: "fast", Name: "fast", Context: 1000000}}, []string{"fast"}, []string{"fast|fast"}},
-		{"Antigravity", "antigravity", "", []catalog.Model{{ID: "fast", Context: 1000000}}, []string{"fast"}, []string{"fast|fast"}},
 		{"listed name", "picked-name", "", []catalog.Model{{ID: "flash", Name: "Flash"}}, []string{"flash", "fast"}, []string{"flash|Flash", "fast|fast"}},
 		{"unpicked name", "unpicked-name", "", []catalog.Model{{ID: "flash", Name: "Flash"}}, []string{"fast"}, []string{"fast|fast"}},
 		{"listed id", "picked-id", "", []catalog.Model{{ID: "listed-id", Name: "Listed custom"}}, []string{"listed-id", "alias"}, []string{"listed-id|Listed custom", "alias|alias"}},

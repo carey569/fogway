@@ -3,7 +3,6 @@ package gateway
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -1073,129 +1072,6 @@ func TestGeminiClientChatUpstream(t *testing.T) {
 
 func mustJSON(v any) []byte { b, _ := json.Marshal(v); return b }
 
-// A signed-in Codex account: the ChatGPT backend only streams and rejects
-// the sampling knobs, so a plain non-streaming Responses call is
-// translated, signed with the account's tokens, and answered as JSON.
-func TestCodexAccountUpstream(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
-	claims := func(m map[string]any) string {
-		b, _ := json.Marshal(m)
-		return "h." + base64.RawURLEncoding.EncodeToString(b) + ".s"
-	}
-	os.MkdirAll(filepath.Join(home, ".codex"), 0o755)
-	auth := fmt.Sprintf(`{"auth_mode":"chatgpt","tokens":{"id_token":%q,"access_token":%q,"refresh_token":"r","account_id":"acct-1"}}`,
-		claims(map[string]any{"email": "me@example.com"}), claims(map[string]any{"exp": time.Now().Add(time.Hour).Unix()}))
-	os.WriteFile(filepath.Join(home, ".codex", "auth.json"), []byte(auth), 0o600)
-
-	f := &fake{t: t, ctype: "none", reply: sse(
-		`data: {"type":"response.created","response":{"id":"r1","model":"gpt-5.5"}}`,
-		`data: {"type":"response.output_text.delta","delta":"pong"}`,
-		`data: {"type":"response.completed","response":{"id":"r1","usage":{"input_tokens":7,"output_tokens":1}}}`)}
-	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			t.Error(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		var request struct {
-			Input []struct {
-				Role string `json:"role"`
-			} `json:"input"`
-		}
-		if err := json.Unmarshal(body, &request); err != nil {
-			t.Error(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		for _, item := range request.Input {
-			if item.Role == "system" {
-				w.WriteHeader(http.StatusBadRequest)
-				fmt.Fprint(w, `{"detail":"System messages are not allowed"}`)
-				return
-			}
-		}
-		r.Body = io.NopCloser(bytes.NewReader(body))
-		f.ServeHTTP(w, r)
-	}))
-	defer up.Close()
-	old := provider.CodexBase
-	provider.CodexBase = up.URL + "/backend-api/codex"
-	defer func() { provider.CodexBase = old }()
-
-	code, body := post(t, "/v1/responses", `{"model":"codex/gpt-5.5","input":"ping","max_output_tokens":20,"temperature":0.3}`)
-	if code != 200 {
-		t.Fatalf("status %d: %s", code, body)
-	}
-	if f.path != "/backend-api/codex/responses" || f.head.Get("chatgpt-account-id") != "acct-1" || !strings.HasPrefix(f.head.Get("Authorization"), "Bearer h.") {
-		t.Fatalf("upstream call: %s %v", f.path, f.head)
-	}
-	var upstream map[string]any
-	json.Unmarshal(f.got, &upstream)
-	if _, ok := upstream["max_output_tokens"]; ok || upstream["temperature"] != nil || upstream["stream"] != true || upstream["store"] != false || upstream["model"] != "gpt-5.5" {
-		t.Fatalf("upstream body: %s", f.got)
-	}
-	var res map[string]any
-	json.Unmarshal([]byte(body), &res)
-	if res["object"] != "response" || !strings.Contains(body, "pong") {
-		t.Fatalf("reply: %s", body)
-	}
-
-	// a streaming call is relayed as-is, minus what the backend rejects
-	f.got, f.head = nil, nil
-	code, body = post(t, "/v1/responses", `{"model":"codex/gpt-5.5","input":"ping","stream":true,"max_output_tokens":20}`)
-	if code != 200 || !strings.Contains(body, "response.output_text.delta") {
-		t.Fatalf("stream: %d %s", code, body)
-	}
-	json.Unmarshal(f.got, &upstream)
-	if _, ok := upstream["max_output_tokens"]; ok {
-		t.Fatalf("relayed body: %s", f.got)
-	}
-	if _, isList := upstream["input"].([]any); !isList {
-		t.Fatalf("relayed input not a list: %s", f.got)
-	}
-
-	for _, tc := range []struct {
-		name string
-		path string
-		body string
-	}{
-		{"anthropic", "/v1/messages", `{"model":"codex/gpt-5.5","max_tokens":20,"system":"Top-level instructions","messages":[{"role":"system","content":"First instruction"},{"role":"user","content":"ping"},{"role":"system","content":"Later instruction"}]}`},
-		{"responses passthrough", "/v1/responses", `{"model":"codex/gpt-5.5","stream":true,"instructions":"Top-level instructions","input":[{"type":"message","role":"system","content":[{"type":"input_text","text":"First instruction"}]},{"role":"user","content":"ping"},{"role":"system","content":"Later instruction"}]}`},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			code, body := post(t, tc.path, tc.body)
-			if code != http.StatusOK || !strings.Contains(body, "pong") {
-				t.Fatalf("system instructions rejected: %d %s", code, body)
-			}
-			var request struct {
-				Instructions string `json:"instructions"`
-				Input        []struct {
-					Role    string          `json:"role"`
-					Content json.RawMessage `json:"content"`
-				} `json:"input"`
-			}
-			if err := json.Unmarshal(f.got, &request); err != nil {
-				t.Fatal(err)
-			}
-			// Codex's instructions go as Codex CLI sends them, the client's first in the input
-			if !strings.HasPrefix(request.Instructions, "You are Codex") || len(request.Input) != 4 {
-				t.Fatalf("instructions lost or reordered: %s", f.got)
-			}
-			for i, want := range []struct{ role, text string }{{"developer", "Top-level instructions"}, {"developer", "First instruction"}, {"user", "ping"}, {"developer", "Later instruction"}} {
-				item := request.Input[i]
-				if item.Role != want.role || stringOrText(item.Content) != want.text {
-					t.Errorf("input[%d]: role=%q content=%s, want %s %q", i, item.Role, item.Content, want.role, want.text)
-				}
-			}
-		})
-	}
-}
-
 func TestConversationID(t *testing.T) {
 	h := http.Header{}
 	h.Set("X-Session-Affinity", "ses_1")
@@ -1452,45 +1328,6 @@ func TestUsagePromptCountsCacheWrites(t *testing.T) {
 	}
 	if g := u.gemini(); g["promptTokenCount"] != 26741 || g["totalTokenCount"] != 26771 {
 		t.Errorf("gemini: %v", g)
-	}
-}
-
-// Reject invalid envelopes before routing, including on passthrough APIs.
-func TestRequestValidationBeforeRouting(t *testing.T) {
-	f := &fake{t: t}
-	setup(t, provider.Responses, f)
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-		t.Error("invalid request reached OpenAI")
-		w.WriteHeader(400)
-	})
-	cases := []struct{ name, body string }{
-		{"empty", ""},
-		{"truncated", `{"model":"fake/m1","input":`},
-		{"null", `null`},
-		{"array", `[]`},
-		{"missing_model", `{}`},
-		{"null_model", `{"model":null}`},
-		{"wrong_model_type", `{"model":7}`},
-		{"blank_model", `{"model":"  "}`},
-		{"empty_provider", `{"model":"/m1"}`},
-		{"empty_vendor_model", `{"model":"fake/"}`},
-		{"trailing_junk", `{"model":"fake/m1"}garbage`},
-		{"second_object", `{"model":"fake/m1"}{}`},
-	}
-	for _, path := range []string{"/v1/responses", "/v1/chat/completions", "/v1/messages", "/v1/messages/count_tokens", CodexPath + "/responses", CodexPath + "/responses/compact"} {
-		t.Run(path, func(t *testing.T) {
-			for _, tc := range cases {
-				t.Run(tc.name, func(t *testing.T) {
-					code, body := post(t, path, tc.body)
-					if code != 400 || !json.Valid([]byte(body)) {
-						t.Fatalf("status %d: %s", code, body)
-					}
-					if f.calls != 0 {
-						t.Fatalf("invalid request reached provider: %d calls", f.calls)
-					}
-				})
-			}
-		})
 	}
 }
 

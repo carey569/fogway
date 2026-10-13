@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/yetone/magpie/internal/provider"
@@ -264,50 +262,5 @@ func TestProvidersShowVertexWithoutProject(t *testing.T) {
 		if strings.Contains(out, "provider key") || strings.Contains(out, "not set  magpie provider key") {
 			t.Errorf("show, %s, asks for a key:\n%s", id, out)
 		}
-	}
-}
-
-// magpie provider test asks Vertex AI with a token minted from the
-// provider's Google credentials, with no key asked for on the way: the
-// smallest generateContent, at its project, to the first of its models.
-func TestProviderTestVertex(t *testing.T) {
-	groupsHome(t)
-	var mu sync.Mutex
-	var asked []string // each request's path and Authorization
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mu.Lock()
-		asked = append(asked, r.URL.Path+" "+r.Header.Get("Authorization"))
-		mu.Unlock()
-		w.Header().Set("Content-Type", "application/json")
-		switch {
-		case r.URL.Path == "/token":
-			io.WriteString(w, `{"access_token":"ya29.vertex-test","expires_in":3599,"scope":"https://www.googleapis.com/auth/cloud-platform","token_type":"Bearer"}`)
-		case strings.HasSuffix(r.URL.Path, ":generateContent"):
-			io.WriteString(w, `{"candidates": [{"content": {"role": "model","parts": [{"text": "Hi"}]},"finishReason": "MAX_TOKENS"}],"usageMetadata": {"promptTokenCount": 1,"candidatesTokenCount": 1,"totalTokenCount": 2,"trafficType": "ON_DEMAND"},"modelVersion": "gemini-3.8-flash","createTime": "2026-10-06T19:24:49.613681Z","responseId": "AUvFarG6Ja6Z4_UP_LrtmQ8"}`)
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	t.Cleanup(srv.Close)
-	t.Cleanup(provider.VertexForTest(srv.URL, srv.URL+"/token", srv.URL+"/iam"))
-	// as `gcloud auth application-default login` writes it
-	creds := filepath.Join(t.TempDir(), "application_default_credentials.json")
-	if err := os.WriteFile(creds, []byte(`{"type":"authorized_user","client_id":"test.apps.googleusercontent.com","client_secret":"test-secret","refresh_token":"1//test-refresh"}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := printed(t, func() error {
-		return providerCmd([]string{"provider", "add", "google-vertex", "project=my-project", "credentials=" + creds})
-	}); err != nil {
-		t.Fatal(err)
-	}
-	out, err := printed(t, func() error { return providerCmd([]string{"provider", "test", "google-vertex"}) })
-	if err != nil || !strings.Contains(out, "✓") || !strings.Contains(out, "gemini-3.8-flash") {
-		t.Fatalf("test said %q (%v)", out, err)
-	}
-	mu.Lock()
-	defer mu.Unlock()
-	want := []string{"/token ", "/v1/projects/my-project/locations/global/publishers/google/models/gemini-3.8-flash:generateContent Bearer ya29.vertex-test"}
-	if strings.Join(asked, "\n") != strings.Join(want, "\n") {
-		t.Fatalf("asked\n%s\nwant\n%s", strings.Join(asked, "\n"), strings.Join(want, "\n"))
 	}
 }

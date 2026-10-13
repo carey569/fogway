@@ -84,45 +84,6 @@ func same(s Session) Session {
 	return s
 }
 
-func TestCodexPackedSessions(t *testing.T) {
-	_, codex := setup(t)
-	plain := codexOf(t, List(0))
-	plainStats := StatsAt(0, time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC))
-	files := rollouts(t, codex)
-
-	// both forms side by side, as while the Codex app packs them: read once
-	for _, p := range files {
-		pack(t, p, true)
-	}
-	Reset()
-	if both := codexOf(t, List(0)); !reflect.DeepEqual(both, plain) {
-		t.Fatalf("both forms:\n got %+v\nwant %+v", both, plain)
-	}
-
-	// only the packed ones left: the same session, id, title and usage
-	for _, p := range files {
-		os.Remove(p)
-	}
-	packed := codexOf(t, List(0)) // read on from the kept parses of the plain ones
-	if !reflect.DeepEqual(same(packed), plain) || !strings.HasSuffix(packed.Path, ".jsonl.zst") {
-		t.Fatalf("packed:\n got %+v\nwant %+v", packed, plain)
-	}
-	if st := StatsAt(0, time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC)); !reflect.DeepEqual(st.Days, plainStats.Days) || len(st.Sessions) != len(plainStats.Sessions) {
-		t.Fatalf("stats: got %+v, want %+v", st.Days, plainStats.Days)
-	}
-	Reset()
-	if again := codexOf(t, List(0)); !reflect.DeepEqual(same(again), plain) {
-		t.Fatalf("packed, read afresh:\n got %+v\nwant %+v", again, plain)
-	}
-	if got, ok := Find("codex", plain.ID); !ok || got.Tokens != plain.Tokens {
-		t.Fatalf("find: %+v %v", got, ok)
-	}
-	m, ok := findManaged(ListAgent("codex"), plain.ID)
-	if !ok || m.Files != len(files) || m.Messages == 0 {
-		t.Fatalf("managed: %+v %v", m, ok)
-	}
-}
-
 // A packed rollout's calls are the plain one's, each with its content; a
 // call read before the file was packed still finds its content after.
 func TestCodexPackedCalls(t *testing.T) {

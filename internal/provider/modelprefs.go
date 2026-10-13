@@ -915,59 +915,7 @@ func antigravitySentID(account, model, effort string) string {
 // a reply naming the id a call went out under is that model answering, and
 // read against the family instead every level of it reads as another
 // model having swapped in, in the routing view and in the ledger alike.
-func AntigravitySentID(model, effort string) string {
-	if base, _, ok := AntigravityBase(model); ok {
-		if effort == "" {
-			return model
-		}
-		model = base
-	}
-	vs, ok := AntigravityVariants(model)
-	if !ok {
-		return model
-	}
-	if effort == "" {
-		return vs[""]
-	}
-	var levels []string
-	for _, l := range Levels {
-		if vs[l] != "" {
-			levels = append(levels, l)
-		}
-	}
-	if id := vs[nearestEffort(effort, levels)]; id != "" {
-		return id
-	}
-	return vs[""]
-}
-
-// nearestEffort is the level of levels nearest want in Levels' order, a tie
-// going up, or want itself where the levels are none or hold it: an effort a
-// family does not take is asked at the level of its own nearest, the rule
-// the gateway fits an effort to a model's levels by on the way out
-// (fitEffort), kept here where a ledger reading a record back can reach it
-// too.
-func nearestEffort(want string, levels []string) string {
-	at := slices.Index(Levels, want)
-	if len(levels) == 0 || at < 0 || slices.Contains(levels, want) {
-		return want
-	}
-	best, dist := want, len(Levels)
-	for _, l := range levels {
-		i := slices.Index(Levels, l)
-		if i < 0 || l == "none" {
-			continue
-		}
-		d := i - at
-		if d < 0 {
-			d = -d
-		}
-		if d < dist || d == dist && i > at {
-			best, dist = l, d
-		}
-	}
-	return best
-}
+func AntigravitySentID(model, effort string) string { return model }
 
 // SetUpstreamName is the name to send a provider for one of its models; an
 // empty name takes the user's away and sends the one magpie knows. A name is
@@ -1028,7 +976,7 @@ func SetUpstreamName(ref, name string) error {
 		return fmt.Errorf("%s has no model %s (magpie provider %s lists them)", p.ID, model, p.ID)
 	}
 	if p.asksOwnBackend() {
-		return fmt.Errorf("%s is %s's own account: magpie asks it for the model by the id it knows, so there is no upstream name to give it", p.Name, p.Account.Agent)
+		return fmt.Errorf("%s asks its own backend for the model by the id it knows, so there is no upstream name to give it", p.Name)
 	}
 	s := settings.Load()
 	if s.ModelWires == nil {
@@ -1148,17 +1096,13 @@ func (p Provider) UpstreamNames() map[string]string {
 // Codex is deliberately not among them: it is served by the ChatGPT backend
 // (codex_backend.go), which has no provider id to key a name by.
 func (p Provider) asksOwnBackend() bool {
-	if p.Account == nil {
-		return false
-	}
-	switch p.Account.Agent {
-	case "claude", "cursor", "devin", "kiro", "zed", CommandCodePlanID:
-		return true
-	}
+
+	return false
+
 	// Qoder is one backend however many sites it is signed in to, and the
 	// gateway's dispatch covers the whole family rather than the site the
 	// account was made on, so the family is asked of rather than one id of
 	// it: a name refused for the one subscription has to be refused for
 	// the other too, which is as much magpie's own there.
-	return slices.Contains(qoderAgents, p.Account.Agent)
+
 }

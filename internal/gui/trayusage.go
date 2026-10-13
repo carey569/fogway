@@ -263,7 +263,7 @@ const trayInUse = "|*"
 
 // trayInUseAccount is the account of an agent's the gateway goes to first;
 // a var for tests.
-var trayInUseAccount = provider.InUseLogin
+var trayInUseAccount = func(agent string) string { return "" } // keys have no sign-in in use
 
 // trayServedFresh is how lately an account must have answered through the
 // gateway for the menu bar to take it as the one in use; a var for tests.
@@ -312,7 +312,7 @@ func trayInUseCard(cards []provider.SubscriptionQuota, pid string, now time.Time
 			q = mine[last]
 		}
 	}
-	if q.User != "" && q.Alias == "" {
+	if q.User != "" {
 		q.Name += " · " + q.User // a named account's name is trayName's
 	}
 	return q, true
@@ -321,9 +321,6 @@ func trayInUseCard(cards []provider.SubscriptionQuota, pid string, now time.Time
 // trayName is how the tooltip names a card: by the name the user gave its
 // account, or the key plan it stands in for, after the card's (#1515).
 func trayName(q provider.SubscriptionQuota) string {
-	if q.Alias != "" {
-		return q.Name + " · " + q.Alias
-	}
 	return q.Name
 }
 

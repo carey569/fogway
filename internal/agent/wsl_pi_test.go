@@ -7,10 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/gateway"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // piDistroHome is a distro's / in a temp dir with a user whose ~/.pi holds
@@ -89,83 +86,6 @@ func TestWSLPiDiscovered(t *testing.T) {
 	if kept["Ubuntu"].Values["pi.model"] != "xai/grok-4.6" || kept["Both"].Values["model"] != "gpt-5.5" ||
 		kept["Both"].Values["pi.model"] != "" || kept["None"] != nil {
 		t.Fatalf("kept %s", readFile(wslStatePath()))
-	}
-}
-
-// Picking one of magpie's models writes Pi's settings.json and models.json
-// in the distro's home, the provider block the same as this machine's Pi
-// gets (thinkingLevelMap and all) but naming the gateway as the distro
-// reaches it: Windows' address under NAT, 127.0.0.1 when mirrored. This
-// machine's ~/.pi is never touched.
-func TestWSLPiPick(t *testing.T) {
-	for _, mirrored := range []bool{false, true} {
-		root, home := piDistroHome(t, `{"defaultProvider": "xai", "defaultModel": "grok-4.6"}`)
-		if err := provider.Save(provider.Provider{ID: "anth", Name: "Anth", Key: "k", Anthropic: "http://127.0.0.1:1",
-			Models: []string{"claude-sonnet-5"}}); err != nil {
-			t.Fatal(err)
-		}
-		if err := provider.Save(provider.Provider{ID: "think", Name: "Think", Key: "k", Chat: "https://example.test/v1",
-			Models: []string{"deep"}}); err != nil {
-			t.Fatal(err)
-		}
-		if err := catalog.SaveLive("think", "https://example.test/v1", []catalog.Model{
-			{ID: "deep", Efforts: []string{"none", "high", "max"}, Context: 1000000, Output: 64000}}); err != nil {
-			t.Fatal(err)
-		}
-		d := distro{Name: "Ubuntu", Root: root, Home: "/home/me", Has: map[string]bool{"dir:.pi": true},
-			Gateway: "172.20.0.1", Mirrored: mirrored, Running: true}
-		a := wslPi(d)
-		if err := a.Field("model").Set("magpie/relay/glm-4.6"); err != nil {
-			t.Fatal(err)
-		}
-		if err := a.Field("effort").Set("high"); err != nil {
-			t.Fatal(err)
-		}
-		dir := filepath.Join(home, ".pi", "agent")
-		settings, models := filepath.Join(dir, "settings.json"), filepath.Join(dir, "models.json")
-		if p, _ := edit.GetJSON(settings, "defaultProvider"); p != "magpie" {
-			t.Fatalf("settings:\n%s", readFile(settings))
-		}
-		if m, _ := edit.GetJSON(settings, "defaultModel"); m != "relay/glm-4.6" {
-			t.Fatalf("settings:\n%s", readFile(settings))
-		}
-		gw := gateway.URL()
-		if !mirrored {
-			gw = "http://172.20.0.1:" + gateway.Port()
-		}
-		var file struct {
-			Providers map[string]map[string]any `json:"providers"`
-		}
-		if err := json.Unmarshal([]byte(readFile(models)), &file); err != nil {
-			t.Fatal(err)
-		}
-		got := file.Providers["magpie"]
-		if got["baseUrl"] != gw+"/v1" || got["apiKey"] != gateway.Token {
-			t.Fatalf("mirrored %v: %v", mirrored, got)
-		}
-		// the same block as native Pi's, the gateway's address aside
-		native, _ := json.Marshal(magpieProviderJSON("pi"))
-		want := strings.ReplaceAll(string(native), `"`+gateway.URL(), `"`+gw)
-		if b, _ := json.Marshal(got); string(b) != want {
-			t.Fatalf("mirrored %v:\n got %s\nwant %s", mirrored, b, want)
-		}
-		if !strings.Contains(want, `"baseUrl":"`+gw+`"`) || !strings.Contains(want, `"thinkingLevelMap":{`) {
-			t.Fatalf("no Anthropic model at the distro's gateway, or no thinking levels: %s", want)
-		}
-		if c := a.Check(); c != "" {
-			t.Fatalf("mirrored %v: %s", mirrored, c)
-		}
-		// a sync keeps the distro's gateway
-		if err := a.Sync(); err != nil || !strings.Contains(readFile(models), `"`+gw+`/v1"`) {
-			t.Fatalf("sync %v:\n%s", err, readFile(models))
-		}
-		if !mirrored && !strings.Contains(a.Notice(), "mirrored") {
-			t.Error(a.Notice())
-		}
-		own, _ := os.UserHomeDir()
-		if _, err := os.Stat(filepath.Join(own, ".pi")); !os.IsNotExist(err) {
-			t.Fatalf("this machine's ~/.pi was touched: %v", err)
-		}
 	}
 }
 

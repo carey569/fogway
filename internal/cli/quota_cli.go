@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,9 +14,6 @@ import (
 )
 
 const quotaUsage = `usage: magpie quota [<provider>…] [--json]
-       magpie quota reset [<codex account>] [--yes]
-       magpie quota auto-reset [<codex account>] [on|off]
-       magpie quota credits [<codex account>] [on|off]
        magpie quota alert [<percent>|off] [--balance <amount>|off]
        magpie quota wait <provider|account> [--timeout <duration>] [--quiet]
        magpie quota history [<provider|account>…] [--days <n>] [--json]
@@ -27,23 +23,6 @@ const quotaUsage = `usage: magpie quota [<provider>…] [--json]
   last answered through the gateway, and last: true on the latest; the gateway answers the same at
   GET http://127.0.0.1:3425/v1/magpie/quotas (on Settings' Gateway port), and to another machine only while magpie is
   shared on the local network, with its key as the API key (Authorization: Bearer or x-api-key)
-  A Codex account that holds rate-limit resets says how many; quota reset spends one,
-  starting the account's current windows again (the one Codex is signed in to unless
-  named). It can't be undone, so it asks first; --yes doesn't. quota auto-reset on lets
-  the account spend one by itself when its weekly window is used up and no other
-  account can take a request, one a week at most (the five hours running out never
-  does), and spend the one about to expire about half an hour before it does, if
-  the account's windows have been used, so what they have left can be used until
-  then and it isn't lost; at once when the account is held up until after then.
-  It is the account's standing setting, held resets or not; off stops it, and alone
-  it says which accounts have it on. It is off until turned on.
-  quota credits off keeps a Codex account from spending its credits: once one of
-  its windows is used up, by magpie's latest reading (refreshed about every
-  minute), routing holds it as used up until that window renews and the request
-  goes to the other accounts, groups and fallbacks, or is refused with why (with
-  auto-reset on, its week used up and no one else left, it spends a reset first).
-  on, the default, lets the vendor answer on its credits then, so the task goes
-  on; alone it says which accounts don't spend theirs.
   quota alert 80 has the magpie app notify when any window of a subscription or plan
   reaches 80% used, once each time the window runs (not windows set aside, such as
   on-demand spending); --balance 5 when a balance falls to 5 or under, in its own
@@ -67,15 +46,6 @@ const quotaUsage = `usage: magpie quota [<provider>…] [--json]
 
 // quotaCmd: magpie quota [<provider>…] [--json]
 func quotaCmd(args []string) error {
-	if len(args) > 1 && args[1] == "reset" {
-		return quotaResetCmd(args[2:])
-	}
-	if len(args) > 1 && args[1] == "auto-reset" {
-		return quotaAutoResetCmd(args[2:])
-	}
-	if len(args) > 1 && args[1] == "credits" {
-		return quotaCreditsCmd(args[2:])
-	}
 	if len(args) > 1 && args[1] == "alert" {
 		return quotaAlertCmd(args[2:])
 	}
@@ -103,7 +73,6 @@ func quotaCmd(args []string) error {
 	ctx, cancel := context.WithTimeout(provider.Asked(context.Background()), 15*time.Second)
 	defer cancel()
 	qs := []provider.Quota{}
-	provider.AskClaudeUsage()
 	for _, q := range provider.QuotaReport(ctx, time.Now()) {
 		if len(only) == 0 || quotaMatches(q, only) {
 			qs = append(qs, q)
@@ -138,9 +107,6 @@ func quotaCmd(args []string) error {
 		if q.Balance != "" {
 			line += "  " + balanceCell(q.Balance, q.Provider, q.User)
 		}
-		if q.Resets != nil {
-			line += "  " + resetsCell(q.Resets, provider.AutoResets(q.Provider, q.User))
-		}
 		if q.Error != "" {
 			line += "  " + muted.Render(q.Error)
 		}
@@ -155,235 +121,7 @@ func quotaCmd(args []string) error {
 // and "· not spent" for a Codex account set not to spend its credits.
 func balanceCell(balance, id, user string) string {
 	cell := bold.Render(balance) + muted.Render(" left")
-	if id == "codex" && user != "" && !provider.CodexCredits(user) {
-		cell += muted.Render(" · not spent")
-	}
 	return cell
-}
-
-// resetsCell is a Codex account's rate-limit resets in a line: "↺ 2
-// resets until Oct 3 14:30", no date when they don't run out, and "· auto"
-// when one is spent by itself once the week is used up.
-func resetsCell(r *provider.ResetCredits, auto bool) string {
-	cell := "↺ " + r.Words()
-	if r.Until != nil {
-		cell += muted.Render(" until " + provider.ResetClock(*r.Until, time.Now()))
-	}
-	if auto {
-		cell += muted.Render(" · auto")
-	}
-	return cell
-}
-
-// quotaResetCmd: magpie quota reset [<codex account>] [--yes] — spends one
-// of the account's rate-limit resets, once the user has said so.
-func quotaResetCmd(args []string) error {
-	yes, user := false, ""
-	for _, a := range args {
-		switch a {
-		case "--yes", "-y":
-			yes = true
-		case "help", "-h", "--help":
-			fmt.Println(quotaUsage)
-			return nil
-		default:
-			if user != "" {
-				return fmt.Errorf("one account at a time: %s or %s", user, a)
-			}
-			user = a
-		}
-	}
-	ctx, cancel := context.WithTimeout(provider.Asked(context.Background()), 20*time.Second)
-	defer cancel()
-	// what the account holds, and whose it is when none was named
-	var held *provider.SubscriptionQuota
-	for _, q := range provider.SubscriptionUsage(ctx) {
-		if q.Provider == "codex" && (user == "" || strings.EqualFold(q.User, user)) {
-			held = &q
-			break
-		}
-	}
-	if held == nil {
-		if user != "" {
-			return fmt.Errorf("no Codex account %s", user)
-		}
-		return fmt.Errorf("Codex isn't signed in")
-	}
-	who := cmp.Or(held.User, "the Codex account")
-	if held.Resets == nil && held.Error == "" {
-		return fmt.Errorf("%s holds no rate-limit reset", who)
-	}
-	if !yes {
-		n := "one of its resets"
-		if held.Resets != nil {
-			n = "one of its " + plural(held.Resets.Count, "reset")
-		}
-		if held.Resets != nil && held.Resets.Until != nil {
-			n += " (the one that runs out first, " + provider.ResetClock(*held.Resets.Until, time.Now()) + ")"
-		}
-		fmt.Printf("Spend %s on %s, starting its current windows again? It can't be undone. [y/N] ", n, who)
-		line, _ := stdin.ReadString('\n')
-		if a := strings.ToLower(strings.TrimSpace(line)); a != "y" && a != "yes" {
-			return fmt.Errorf("nothing spent")
-		}
-	}
-	out, err := provider.UseCodexReset(ctx, held.User)
-	if err != nil {
-		return err
-	}
-	if out.Code != "reset" {
-		return fmt.Errorf("%s: %s", who, out.Text())
-	}
-	fmt.Println(green.Render("✓"), who+":", out.Text())
-	return nil
-}
-
-// quotaAutoResetCmd: magpie quota auto-reset [<codex account>] [on|off] —
-// whether the account spends a reset by itself once its week is used up.
-func quotaAutoResetCmd(args []string) error {
-	user, set, on := "", false, false
-	for _, a := range args {
-		switch strings.ToLower(a) {
-		case "on", "off":
-			set, on = true, strings.EqualFold(a, "on")
-		case "help", "-h", "--help":
-			fmt.Println(quotaUsage)
-			return nil
-		default:
-			if user != "" {
-				return fmt.Errorf("one account at a time: %s or %s", user, a)
-			}
-			user = a
-		}
-	}
-	if !set && user == "" {
-		on := settings.Load().CodexAutoReset
-		if len(on) == 0 {
-			fmt.Println(muted.Render("no Codex account uses a reset by itself ·"), "magpie quota auto-reset <account> on")
-			return nil
-		}
-		for _, u := range on {
-			fmt.Println(green.Render("●"), u, muted.Render("uses a reset by itself when its week runs out, or before one expires"))
-		}
-		return nil
-	}
-	user, err := codexAccountNamed(user)
-	if err != nil {
-		return err
-	}
-	if !set {
-		if provider.CodexAutoReset(user) {
-			fmt.Println(user, "uses a reset by itself when its week runs out, or before one expires")
-		} else {
-			fmt.Println(user, "uses its resets only when told to")
-		}
-		printResetsUsed(user)
-		return nil
-	}
-	if err := provider.SetCodexAutoReset(user, on); err != nil {
-		return err
-	}
-	if on {
-		fmt.Println(green.Render("✓"), user+":", "uses a reset by itself once its week is used up and no other account can answer, one a week at most, and the one about to expire half an hour before it does, or at once when held up past then")
-	} else {
-		fmt.Println(green.Render("✓"), user+":", "no longer uses a reset by itself")
-	}
-	return nil
-}
-
-// printResetsUsed lists the resets of user's magpie spent, newest first,
-// and why: so a reset gone from the account can be told apart from one it
-// ran out of or the user spent elsewhere.
-func printResetsUsed(user string) {
-	used := provider.ResetsUsed(user)
-	if len(used) == 0 {
-		fmt.Println(muted.Render("magpie hasn't used any of its resets in the last 90 days"))
-		return
-	}
-	for _, u := range used {
-		fmt.Println(muted.Render("↺"), u.At.Local().Format("2006-01-02 15:04"), muted.Render(resetUsedWhy(u.Why)))
-	}
-}
-
-// resetUsedWhy says why magpie used a reset, as ResetUse.Why has it.
-func resetUsedWhy(why string) string {
-	switch why {
-	case provider.ResetUsedWeek:
-		return "used by itself: its week was used up and no other account could answer"
-	case provider.ResetUsedExpiring:
-		return "used by itself: it was about to run out unused"
-	}
-	return "used by hand"
-}
-
-// quotaCreditsCmd: magpie quota credits [<codex account>] [on|off] —
-// whether the account spends its credits once its allowance is used up.
-func quotaCreditsCmd(args []string) error {
-	user, set, on := "", false, false
-	for _, a := range args {
-		switch strings.ToLower(a) {
-		case "on", "off":
-			set, on = true, strings.EqualFold(a, "on")
-		case "help", "-h", "--help":
-			fmt.Println(quotaUsage)
-			return nil
-		default:
-			if user != "" {
-				return fmt.Errorf("one account at a time: %s or %s", user, a)
-			}
-			user = a
-		}
-	}
-	if !set && user == "" {
-		off := settings.Load().CodexNoCredits
-		if len(off) == 0 {
-			fmt.Println(muted.Render("every Codex account spends its credits once its allowance is used up ·"), "magpie quota credits <account> off")
-			return nil
-		}
-		for _, u := range off {
-			fmt.Println(muted.Render("○"), u, muted.Render("doesn't spend its credits: held once magpie reads a window used up"))
-		}
-		return nil
-	}
-	user, err := codexAccountNamed(user)
-	if err != nil {
-		return err
-	}
-	if !set {
-		if provider.CodexCredits(user) {
-			fmt.Println(user, "spends its credits once its allowance is used up")
-		} else {
-			fmt.Println(user, "doesn't spend its credits: once magpie reads a window used up it is held till it renews")
-		}
-		return nil
-	}
-	if err := provider.SetCodexCredits(user, on); err != nil {
-		return err
-	}
-	if on {
-		fmt.Println(green.Render("✓"), user+":", "spends its credits once its allowance is used up, so a task goes on")
-	} else {
-		fmt.Println(green.Render("✓"), user+":", "no longer spends its credits: once magpie reads a window used up, requests go to the other accounts till it renews")
-	}
-	return nil
-}
-
-// codexAccountNamed is the Codex account user names, the one Codex is
-// signed in to when "".
-func codexAccountNamed(user string) (string, error) {
-	if user == "" {
-		live, ok := provider.CodexSignedIn()
-		if !ok {
-			return "", fmt.Errorf("Codex isn't signed in: name the account")
-		}
-		return live, nil
-	}
-	if !slices.ContainsFunc(provider.Logins("codex"), func(l provider.Login) bool { return strings.EqualFold(l.User, user) }) {
-		if live, ok := provider.CodexSignedIn(); !ok || !strings.EqualFold(live, user) {
-			return "", fmt.Errorf("no Codex account %s", user)
-		}
-	}
-	return user, nil
 }
 
 // quotaAlertCmd: magpie quota alert [<percent>|off] [--balance <amount>|off]
@@ -459,12 +197,7 @@ func quotaTitle(q provider.Quota) string {
 	if s := provider.PlanTerm(q.Until, q.Renew); s != "" {
 		t += " · " + s
 	}
-	switch {
-	case q.Alias != "" && q.User != "":
-		t += " · " + q.Alias + " (" + q.User + ")"
-	case q.Alias != "":
-		t += " · " + q.Alias
-	case q.User != "":
+	if q.User != "" {
 		t += " · " + q.User
 	}
 	return t
@@ -472,13 +205,7 @@ func quotaTitle(q provider.Quota) string {
 
 func quotaMatches(q provider.Quota, only []string) bool {
 	for _, o := range only {
-		if strings.EqualFold(q.Provider, o) || strings.EqualFold(q.Name, o) || strings.EqualFold(q.Kind, o) || (q.Alias != "" && strings.EqualFold(q.Alias, o)) {
-			return true
-		}
-		// a remote magpie's card: by the remote ("office", or its name)
-		// or by the provider there ("codex" is office/codex too)
-		if rid, there, ok := strings.Cut(q.Provider, "/"); ok && q.From != "" &&
-			(strings.EqualFold(rid, o) || strings.EqualFold(q.From, o) || strings.EqualFold(there, o)) {
+		if strings.EqualFold(q.Provider, o) || strings.EqualFold(q.Name, o) || strings.EqualFold(q.Kind, o) {
 			return true
 		}
 	}
@@ -532,11 +259,7 @@ func quotaHistoryCmd(args []string) error {
 	}
 	now := time.Now()
 	hs := []provider.QuotaHistory{}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	all := provider.QuotaHistories(provider.QuotaHistorySince(days, now), "", "")
-	// and each remote magpie's, as it keeps them (office/codex)
-	all = append(all, provider.RemoteQuotaHistories(ctx, days)...)
 	for _, h := range all {
 		rid, there, _ := strings.Cut(h.Provider, "/")
 		if len(only) == 0 || slices.ContainsFunc(only, func(o string) bool {

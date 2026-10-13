@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -45,34 +44,6 @@ func TestGatewayConversationCapture(t *testing.T) {
 	tr, err = sessions.GatewayTranscript(agent, "s")
 	if err != nil || tr.Captured != 1 || len(tr.Parts) != 2 || tr.Parts[0].Text != "hello" || tr.Parts[1].Text != "done" {
 		t.Fatalf("captured: %+v %v", tr, err)
-	}
-}
-
-func TestGatewayConversationCodexDirectRelay(t *testing.T) {
-	fresh(t)
-	chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(SessionHeader) != "" {
-			t.Error("gateway identity leaked to vendor")
-		}
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, sse(`data: {"type":"response.completed","response":{"id":"r1","status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"direct answer"}]}],"usage":{"input_tokens":9,"output_tokens":2}}}`))
-	})
-	if err := sessions.SetGatewayRecording(true, false); err != nil {
-		t.Fatal(err)
-	}
-	r := httptest.NewRequest("POST", CodexPath+"/responses", strings.NewReader(`{"model":"gpt-5.5","stream":true,"input":"direct question"}`))
-	r.Header.Set("Authorization", "Bearer chatgpt-token")
-	r.Header.Set("User-Agent", "codex/1")
-	r.Header.Set("session_id", "codex-thread")
-	w := httptest.NewRecorder()
-	New().Handler().ServeHTTP(w, r)
-	id := w.Header().Get(SessionHeader)
-	tr, err := sessions.GatewayTranscript("codex", id)
-	if w.Code != 200 || err != nil || tr.Captured != 1 || len(tr.Parts) != 2 || tr.Parts[1].Text != "direct answer" {
-		t.Fatalf("direct relay missing from Sessions: status=%d id=%q transcript=%+v error=%v", w.Code, id, tr, err)
-	}
-	if id != "codex-thread" {
-		t.Fatalf("recorded direct relay should expose Codex's session, got %q", id)
 	}
 }
 

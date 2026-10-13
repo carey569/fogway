@@ -1,15 +1,11 @@
 package gateway
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
 )
@@ -72,43 +68,6 @@ func TestPiResponsesRelayed(t *testing.T) {
 	up := checkPiRelayed(t, f, code, body)
 	if f.path != "/v1/responses" || up["model"] != "m1" || up["max_output_tokens"] != float64(32000) || up["prompt_cache_key"] != "pi-session-1" {
 		t.Errorf("relayed: %s %s", f.path, f.got)
-	}
-}
-
-// A ChatGPT sign-in gets it relayed too, made into the request Codex CLI
-// would send: Codex's instructions, Pi's first in the input, no cap on the
-// reply (the backend rejects one).
-func TestPiResponsesRelayedToChatGPT(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
-	claims := func(m map[string]any) string {
-		b, _ := json.Marshal(m)
-		return "h." + base64.RawURLEncoding.EncodeToString(b) + ".s"
-	}
-	os.MkdirAll(filepath.Join(home, ".codex"), 0o755)
-	auth := fmt.Sprintf(`{"auth_mode":"chatgpt","tokens":{"id_token":%q,"access_token":%q,"refresh_token":"r","account_id":"acct-1"}}`,
-		claims(map[string]any{"email": "me@example.com"}), claims(map[string]any{"exp": time.Now().Add(time.Hour).Unix()}))
-	os.WriteFile(filepath.Join(home, ".codex", "auth.json"), []byte(auth), 0o600)
-	f := &fake{t: t, ctype: "none", reply: piReply}
-	up := httptest.NewServer(f)
-	defer up.Close()
-	old := provider.CodexBase
-	provider.CodexBase = up.URL + "/backend-api/codex"
-	defer func() { provider.CodexBase = old }()
-
-	code, body := post(t, "/v1/responses", fmt.Sprintf(piResponses, "codex/gpt-5.5"))
-	got := checkPiRelayed(t, f, code, body)
-	if f.path != "/backend-api/codex/responses" || got["model"] != "gpt-5.5" {
-		t.Errorf("relayed: %s %s", f.path, f.got)
-	}
-	if _, ok := got["max_output_tokens"]; ok {
-		t.Errorf("cap sent to the backend: %s", f.got)
-	}
-	if ins, _ := got["instructions"].(string); !strings.HasPrefix(ins, "You are Codex") {
-		t.Errorf("instructions: %q", ins)
 	}
 }
 

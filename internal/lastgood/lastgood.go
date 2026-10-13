@@ -238,3 +238,10 @@ func Recovered() []Note {
 	defer notesMu.Unlock()
 	return slices.Clone(notes)
 }
+
+// Reset forgets the notes; for tests.
+func Reset() {
+	notesMu.Lock()
+	notes = nil
+	notesMu.Unlock()
+}

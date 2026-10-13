@@ -169,20 +169,3 @@ func TestGroupRuleIntentCmd(t *testing.T) {
 		t.Fatalf("stored: %v", gs)
 	}
 }
-
-func TestGroupMemberNames(t *testing.T) {
-	g := provider.Group{ID: "x", Members: []string{"a/m", "b/vendor/m", "a/Big", "c/deepseek/deepseek-v4-pro"}}
-	for in, want := range map[string]string{"a/m": "a/m", "magpie/a/m": "a/m", "A/BIG": "a/Big", "big": "a/Big", "vendor/m": "b/vendor/m",
-		"deepseek-v4-pro": "c/deepseek/deepseek-v4-pro", "deepseek/deepseek-v4-pro": "c/deepseek/deepseek-v4-pro"} {
-		if got, err := groupMember(g, in); err != nil || got != want {
-			t.Errorf("%q: %q %v", in, got, err)
-		}
-	}
-	// "m" is a's model by name before b's by its last name
-	if got, err := groupMember(g, "m"); err != nil || got != "a/m" {
-		t.Errorf("m: %q %v", got, err)
-	}
-	if _, err := groupMember(g, "gone"); err == nil || !strings.Contains(err.Error(), "a/m") {
-		t.Errorf("gone: %v", err)
-	}
-}

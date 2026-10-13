@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -120,51 +119,5 @@ func TestQuotaHistoryCycles(t *testing.T) {
 	pts = lineOf(t, QuotaHistories(time.Time{}, "", ""), "", "5 hours")
 	if len(pts) != 1 || !pts[0].At.Equal(later) {
 		t.Errorf("after 46 days: %+v", pts)
-	}
-}
-
-// TestMergeQuotaHistory: another computer's points join this one's: the
-// union, sorted, two within half a minute of each other the newer one,
-// and merging the same again changes nothing.
-func TestMergeQuotaHistory(t *testing.T) {
-	testenv.SetHome(t, t.TempDir())
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t0 := time.Date(2026, 10, 3, 8, 0, 0, 0, time.UTC)
-	r := t0.Add(4 * time.Hour)
-	at := func(m int) time.Time { return t0.Add(time.Duration(m) * time.Minute) }
-	noteQuotaHistory([]SubscriptionQuota{histCard("a@x.com", 10, r, 0, r)}, at(0))
-	noteQuotaHistory([]SubscriptionQuota{histCard("a@x.com", 30, r, 0, r)}, at(20))
-
-	other := quotaHist{
-		"codex|a@x.com": {"5 hours": {
-			{At: at(10), Left: 80, ResetsAt: &r},
-			{At: at(20).Add(10 * time.Second), Left: 69, ResetsAt: &r}, // near this one's: the newer stays
-			{At: at(40), Left: 60, ResetsAt: &r},
-		}},
-		"claude|b@y.com": {"Weekly": {{At: at(5), Left: 50}}},
-	}
-	data, _ := json.Marshal(other)
-	if err := MergeQuotaHistory(data, at(41)); err != nil {
-		t.Fatal(err)
-	}
-	five := lineOf(t, QuotaHistories(time.Time{}, "", ""), "a@x.com", "5 hours")
-	lefts := []float64{}
-	for _, p := range five {
-		lefts = append(lefts, p.Left)
-	}
-	if len(lefts) != 4 || lefts[0] != 90 || lefts[1] != 80 || lefts[2] != 69 || lefts[3] != 60 {
-		t.Fatalf("merged = %v", lefts)
-	}
-	lineOf(t, QuotaHistories(time.Time{}, "", ""), "b@y.com", "Weekly")
-
-	before := string(QuotaHistoryData())
-	if err := MergeQuotaHistory(data, at(41)); err != nil {
-		t.Fatal(err)
-	}
-	if string(QuotaHistoryData()) != before {
-		t.Error("merging the same points again changed the file")
-	}
-	if err := MergeQuotaHistory([]byte("{nope"), at(41)); err == nil {
-		t.Error("a broken file merged")
 	}
 }

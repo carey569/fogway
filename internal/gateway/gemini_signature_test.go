@@ -343,44 +343,6 @@ func TestOldSignedIDsStillRead(t *testing.T) {
 	}
 }
 
-// Every path that takes a signature off an id sends Gemini the skip value,
-// never part of a signature, for an id cut at any length: Chat relayed as
-// it is, magpie's own Chat, Gemini and Code Assist (Antigravity) requests.
-func TestShortenedIDGoesUnsigned(t *testing.T) {
-	for _, c := range sigFixtures() {
-		full := signedID(c.id, c.sig)
-		for n := len(c.id) + 1; n < len(full); n++ {
-			cut := full[:n]
-			body := []byte(`{"messages":[{"role":"user","content":"list files"},
-				{"role":"assistant","tool_calls":[{"id":"` + cut + `","type":"function","function":{"name":"bash","arguments":"{}"}}]},
-				{"role":"tool","tool_call_id":"` + cut + `","content":"a.txt"}]}`)
-			if relayed := string(chatCallSignatures(body, true)); !strings.Contains(relayed, `"thought_signature":"`+skipSignature+`"`) {
-				t.Fatalf("%q cut to %d: relayed as %s", c.id, n, relayed)
-			}
-			r := &Request{Messages: []Message{
-				{Role: "user", Parts: []Part{{Kind: Text, Text: "list files"}}},
-				{Role: "assistant", Parts: []Part{{Kind: ToolCall, ID: cut, Name: "bash"}}},
-				{Role: "user", Parts: []Part{{Kind: ToolResult, CallID: cut, Text: "a.txt"}}},
-			}}
-			unsignCalls(r)
-			if s := r.Messages[1].Parts[0].Signature; s != "" {
-				t.Fatalf("%q cut to %d: the call has a signature of %d characters", c.id, n, len(s))
-			}
-			if out := string(buildChat(r, "gemini-3.8-flash", aiStudioHost, false)); !strings.Contains(out, skipSignature) {
-				t.Fatalf("%q cut to %d: Gemini's Chat was sent %s", c.id, n, out)
-			}
-			if out := string(buildCodeAssist(r, "gemini-3.8-flash", "")); !strings.Contains(out, `"thoughtSignature":"`+skipSignature+`"`) {
-				t.Fatalf("%q cut to %d: Code Assist was sent %s", c.id, n, out)
-			}
-			for _, p := range geminiParts(r.Messages[1].Parts) {
-				if s, ok := p["thoughtSignature"]; ok {
-					t.Fatalf("%q cut to %d: Gemini was sent the signature %v", c.id, n, s)
-				}
-			}
-		}
-	}
-}
-
 // The reporter's case through the gateway: Gemini's call comes back to the
 // client with its signature in the id, the client keeps 40 characters of
 // it, and Gemini is sent skip_thought_signature_validator for the call.

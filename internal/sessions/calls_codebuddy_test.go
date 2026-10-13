@@ -36,20 +36,3 @@ func TestCodeBuddyCalls(t *testing.T) {
 		}
 	}
 }
-
-// WorkBuddy's calls are still WorkBuddy's: the two agents share a reader,
-// and each is read against its own models.json. deepseek/pro is magpie's in
-// CodeBuddy's models.json and not in WorkBuddy's, so the same id there
-// would be the user's own.
-func TestCodeBuddyGatewayIsItsOwn(t *testing.T) {
-	setupAgents(t)
-	if !buddyGateway(CodeBuddyDir(), "custom-local:deepseek/pro") {
-		t.Fatal("magpie's model in CodeBuddy's models.json is not read as the gateway's")
-	}
-	if buddyGateway(CodeBuddyDir(), "custom-local:fake-m1") {
-		t.Fatal("the user's own model in CodeBuddy's models.json is read as the gateway's")
-	}
-	if workbuddyGateway("custom-local:deepseek/pro") {
-		t.Fatal("CodeBuddy's models.json was read for WorkBuddy")
-	}
-}

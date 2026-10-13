@@ -6,44 +6,28 @@ import (
 	"time"
 )
 
-// Quotas is what is left everywhere magpie can ask: the signed-in
-// subscriptions' windows, the plans bought with a key, and the keys'
-// balances, as the Usage page shows them. The vendors are asked at once;
+// Quotas is what is left everywhere magpie can ask: the plans bought with
+// a key, and the keys' balances, as the Usage page shows them. The vendors are asked at once;
 // what doesn't answer before ctx ends comes back with an error.
 func Quotas(ctx context.Context) []SubscriptionQuota {
 	subs, plans, balances := quotas(ctx)
 	return cardsServed(subs, plans, balances, LastServed())
 }
 
-// Allotted is Quotas without the keys' balances: the accounts and plans
-// whose allowance runs out and starts again, which is what magpie quota
-// wait waits on; no key's balance is asked for.
+// Allotted is Quotas without the keys' balances: the plans whose
+// allowance runs out and starts again, which is what magpie quota wait
+// waits on; no key's balance is asked for.
 func Allotted(ctx context.Context) []SubscriptionQuota {
-	plans, subs := seatCards(PlanQuotas(ctx), SubscriptionUsage(ctx))
-	return append(withAccountNames(subs), plans...)
+	return PlanQuotas(ctx)
 }
 
+// quotas reads the plans and the balances at once. Fogway has no
+// subscriptions: subs is always empty.
 func quotas(ctx context.Context) (subs, plans, balances []SubscriptionQuota) {
 	b := make(chan []SubscriptionQuota, 1)
-	p := make(chan []SubscriptionQuota, 1)
-	r := make(chan []SubscriptionQuota, 1)
 	go func() { b <- KeyBalances(ctx) }()
-	go func() { p <- PlanQuotas(ctx) }()
-	go func() { r <- RemoteCards(ctx) }()
-	plans, subs = seatCards(<-p, SubscriptionUsage(ctx))
-	subs, balances = withAccountNames(subs), <-b
-	// a remote magpie's cards, each after this computer's of its kind
-	for _, q := range <-r {
-		switch q.Kind {
-		case "plan":
-			plans = append(plans, q)
-		case "balance":
-			balances = append(balances, q)
-		default:
-			subs = append(subs, q)
-		}
-	}
-	return subs, plans, balances
+	plans = PlanQuotas(ctx)
+	return nil, plans, <-b
 }
 
 // Quota is one account's or key's allowance as magpie quota --json and
@@ -68,23 +52,11 @@ type Quota struct {
 	// "auto", over when "off", either when "".
 	Until *time.Time `json:"until,omitempty"`
 	Renew string     `json:"renew,omitempty"`
-	// Resets are a Codex account's rate-limit resets, when it holds any.
-	Resets *ResetCredits `json:"resets,omitempty"`
-	// ResetsUsed are the Codex account's resets magpie spent, newest
-	// first, by itself or by hand (codex_resets_used.go)
-	ResetsUsed []ResetUse `json:"resetsUsed,omitempty"`
 	// LastServedAt is when the account, plan or key last answered a
 	// request through the gateway, nil when it hasn't in the last 30 days
 	// (served.go); Last is on the latest of them (#570).
 	LastServedAt *time.Time `json:"lastServedAt,omitempty"`
 	Last         bool       `json:"last,omitempty"`
-	// From is the remote magpie whose account this is, by its name here
-	// (remote_quotas.go); "" for this computer's own.
-	From string `json:"from,omitempty"`
-	// Alias is the account's name of the user's own, else Seat: the name
-	// of the key plan whose card this account's stands in for (#1515).
-	Alias string `json:"alias,omitempty"`
-	Seat  string `json:"seat,omitempty"`
 }
 
 // QuotaSpan is one window of an allowance: how much of it is used and
@@ -119,7 +91,7 @@ func quotaReport(subs, plans, balances []SubscriptionQuota, now time.Time) []Quo
 	}{{"subscription", subs}, {"plan", plans}, {"balance", balances}} {
 		for _, q := range g.qs {
 			r := Quota{Provider: q.Provider, Name: q.Name, Kind: g.kind, Plan: q.Plan, User: q.User, AsOf: q.AsOf, ReadAt: q.ReadAt,
-				Windows: []QuotaSpan{}, Balance: q.Balance, Error: q.Error, Until: q.Until, Renew: q.Renew, Resets: q.Resets, ResetsUsed: q.ResetsUsed, From: q.From, Alias: q.Alias, Seat: q.Seat}
+				Windows: []QuotaSpan{}, Balance: q.Balance, Error: q.Error, Until: q.Until, Renew: q.Renew}
 			// a pool's own windows stand in for the models' drawing on it,
 			// as the usage page shows them
 			for _, w := range PooledWindows(q.Windows) {

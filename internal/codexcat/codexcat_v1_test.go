@@ -45,43 +45,6 @@ func versions(t *testing.T, ms []catalog.Model) map[string]any {
 	return out
 }
 
-// With settings.CodexAgentsV1 the OpenAI models magpie hands Codex — the
-// ChatGPT account's own under codex/, and the groups one is in — say
-// multi-agent V1 (#141); a third-party model's entry says nothing, and with
-// the setting off nothing does.
-func TestCodexAgentsV1Entries(t *testing.T) {
-	v1Home(t, `{"etag":"W/\"a\"","models":[{"slug":"gpt-6","multi_agent_version":"v2","base_instructions":"x"}]}`)
-	ms := []catalog.Model{
-		{ID: "codex/gpt-6", Name: "GPT-6 · Codex"},
-		{ID: "codex/gpt-9", Name: "GPT-9 · Codex"},
-		{ID: "group/smart", Name: "smart", Fast: true},
-		{ID: "anthropic/claude-opus", Name: "Opus"},
-	}
-	off := versions(t, ms)
-	if off["codex/gpt-6"] != "v2" || off["codex/gpt-9"] != nil || off["group/smart"] != nil || off["anthropic/claude-opus"] != nil {
-		t.Fatalf("off: %v", off)
-	}
-	tagOff := PolicyTag(Tag(ms))
-
-	setV1(t, true)
-	on := versions(t, ms)
-	if on["codex/gpt-6"] != "v1" || on["codex/gpt-9"] != "v1" || on["group/smart"] != "v1" || on["anthropic/claude-opus"] != nil {
-		t.Fatalf("on: %v", on)
-	}
-	tagOn := PolicyTag(Tag(ms))
-	if tagOn == tagOff || Tagged(WithTag(`W/"a"`, tagOn), tagOff) || Tagged(WithTag(`W/"a"`, tagOff), tagOn) {
-		t.Fatalf("the setting isn't in the list's tag: %q %q", tagOff, tagOn)
-	}
-	if !MarkedV1(WithTag(`W/"a"`, tagOn)) || MarkedV1(WithTag(`W/"v1.x"`, tagOff)) {
-		t.Fatal("MarkedV1")
-	}
-
-	setV1(t, false)
-	if again := versions(t, ms); again["codex/gpt-6"] != "v2" || again["codex/gpt-9"] != nil {
-		t.Fatalf("off again: %v", again)
-	}
-}
-
 // Codex keeps the stamped list in models_cache.json. Read back, it says what
 // the backend did, so turning the setting off undoes it: a version the
 // backend gave comes back, one it didn't give goes.

@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -57,26 +56,5 @@ func TestCodexOwnPickAfterMagpieModelStaysConnected(t *testing.T) {
 	}
 	if cx.Wired() {
 		t.Fatalf("still beside the sign-in after magpie became its provider:\n%s", read())
-	}
-}
-
-// Connected while Codex can't join (the Codex app blocking its ChatGPT
-// account, or a provider of its own in config.toml), Codex stays on the
-// model it was on as magpie serves it on the ChatGPT account, not the first
-// of magpie's other models (#940: it went to Grok 4.7, "magpie doesn't
-// serve the model it was on").
-func TestCodexConnectKeepsItsOwnModelThroughMagpie(t *testing.T) {
-	home, read := codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, "model = \"gpt-b\"\n")
-	os.WriteFile(filepath.Join(home, ".codex", "models_cache.json"), []byte(`{"models":[
-		{"slug":"gpt-a","display_name":"A","priority":1},
-		{"slug":"gpt-b","display_name":"B","priority":2}]}`), 0o644)
-	codexUsedUp = func() bool { return true }
-	cx := codex(home)
-	c, err := cx.ConnectHow()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if c.How != "same" || c.Value != "codex/gpt-b" || !strings.Contains(read(), `model = "codex/gpt-b"`) {
-		t.Fatalf("connected %+v:\n%s", c, read())
 	}
 }

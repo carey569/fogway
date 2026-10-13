@@ -35,10 +35,8 @@ type Result struct {
 // sees, and reports what came back.
 func (p Provider) Test(ctx context.Context) []Result {
 	ctx = p.Via(ctx)
-	if p.DecideOnly() {
-		return p.testDecide(ctx)
-	}
-	_, listErr := p.Fetch(ctx)
+
+	p.Fetch(ctx)
 	if client := testClient(ctx); client != "" {
 		// the one endpoint that agent's requests go to
 		proto := clientProto(client, p.Speaks())
@@ -53,12 +51,7 @@ func (p Provider) Test(ctx context.Context) []Result {
 		url, body := tiny(q, proto, UpstreamName(p, model))
 		return []Result{probe(ctx, q, proto, url, q.tested(asClient(client, proto, body)), model, testWait)}
 	}
-	if p.isClaudeAccount() {
-		return []Result{p.testClaude(ctx, p.testModel(p, Anthropic))}
-	}
-	if p.testsTranslated() {
-		return []Result{p.testTranslated(ctx, p.testModel(p, CodeAssist))}
-	}
+
 	var out []Result
 	for _, proto := range p.Speaks() {
 		q, ok := p.keyFor(proto)
@@ -70,14 +63,9 @@ func (p Provider) Test(ctx context.Context) []Result {
 		url, body := tiny(q, proto, UpstreamName(p, model))
 		out = append(out, probe(ctx, q, proto, url, q.tested(body), model, testWait))
 	}
-	if p.IsRemoteMagpie() {
-		// The model list already checked its key and named its decisions.
-		if model := p.Jev(); listErr == nil && model != "" {
-			out = append(out, Result{Protocol: "decide", Model: model, OK: true, Status: http.StatusOK})
-		}
-	} else if p.Decides() {
-		out = append(out, p.testDecide(ctx)...)
-	}
+
+	// The model list already checked its key and named its decisions.
+
 	return out
 }
 
@@ -85,9 +73,7 @@ func (p Provider) Test(ctx context.Context) []Result {
 // to a backend that only streams.
 func tiny(q Provider, proto Protocol, model string) (url, body string) {
 	url, body = tinyBody(q, proto, model)
-	if q.Account != nil && q.Account.Stream && body != "" {
-		body = strings.TrimSuffix(body, "}") + `,"stream":true}`
-	}
+
 	if q.OpenCodeFree(model) && body != "" {
 		body = zenFreeProbe(proto, body)
 	}
@@ -131,13 +117,8 @@ func clineProbe(body string) string {
 // gateway's translator (testsTranslated). Vertex AI's generateContent is
 // asked as it is.
 func (p Provider) ModelTest() string {
-	if p.DecideOnly() {
-		if p.AsksDecideModels() {
-			return ""
-		}
-		return "decide"
-	}
-	if p.isClaudeAccount() || p.testsTranslated() || p.IsVertex() {
+
+	if p.IsVertex() {
 		return ""
 	}
 	for _, pr := range p.Speaks() {
@@ -155,10 +136,7 @@ func (p Provider) ModelTest() string {
 // wraps it for (ARNO on Discord: cloudflare-jev's models couldn't be
 // tested from their right-click); not Vercel's evaluation models, which
 // name the model in headers of their own.
-func (p Provider) AsksDecideModels() bool {
-	v := p.DecideVia()
-	return p.Decides() && (v == ViaSystemOne || v == ViaVercel || v == ViaCloudflare)
-}
+func (p Provider) AsksDecideModels() bool { return false }
 
 func tinyBody(q Provider, proto Protocol, model string) (url, body string) {
 	switch proto {
@@ -175,10 +153,9 @@ func tinyBody(q Provider, proto Protocol, model string) (url, body string) {
 		if q.IsVertex() {
 			return vertexTest(q, model)
 		}
-		if q.FactoryGemini() {
-			// Factory's generate route. droid sends no stream field.
-			return q.Base(Gemini) + "/generate", fmt.Sprintf(`{"model":%q,"contents":[{"role":"user","parts":[{"text":"hi"}]}]}`, model)
-		}
+
+		// Factory's generate route. droid sends no stream field.
+
 		return q.Gemini + GeminiPath(model, false), `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"generationConfig":{"maxOutputTokens":16}}`
 	}
 	return "", ""
@@ -196,7 +173,7 @@ const (
 // no shape a chat test knows. OpenRouter's image-only models use its /images
 // endpoint; its chat image models still use chat completions.
 func (p Provider) drawsOnImages(model string) bool {
-	return p.Account == nil && p.Chat != "" && catalog.ImagesAPI(model)
+	return p.Chat != "" && catalog.ImagesAPI(model)
 }
 
 // tinyDrawing is the smallest images request for model: one picture of
@@ -241,38 +218,23 @@ func (p Provider) testOne(ctx context.Context, model string) Result {
 		// the user disabled it (#1867): not even a test reaches it
 		return Result{Model: model, Error: fmt.Sprintf("model %s/%s is disabled in magpie (it matches %q in Settings › Models › Disabled models)", p.ID, model, pat)}
 	}
-	if p.DecidesModel(model) && p.AsksDecideModels() {
-		// a decision model is sent the smallest System One question, a
-		// yes-or-no (ARNO on Discord: a System One model typed in by hand
-		// couldn't be tested from its right-click)
-		t0 := time.Now()
-		r := Result{Protocol: "decide", Model: model}
-		err := p.AskSystemOne(ctx, model)
-		r.Millis = time.Since(t0).Milliseconds()
-		if err != nil {
-			r.Error = err.Error()
-			return r
-		}
-		r.OK, r.Status = true, http.StatusOK
-		return r
-	}
+
+	// a decision model is sent the smallest System One question, a
+	// yes-or-no (ARNO on Discord: a System One model typed in by hand
+	// couldn't be tested from its right-click)
+
 	client := testClient(ctx)
 	if why := p.TestsAs(client); why != "" {
 		return Result{Protocol: clientProto(client, p.Speaks()), Model: model, Error: why}
 	}
-	if p.isClaudeAccount() {
-		return p.testClaude(ctx, model)
-	}
-	if p.testsTranslated() {
-		return p.testTranslated(ctx, model)
-	}
+
 	var protos []Protocol
 	for _, pr := range p.Speaks() {
 		if pr == Chat || pr == Responses || pr == Anthropic || pr == Gemini {
 			protos = append(protos, pr)
 		}
 	}
-	if len(protos) == 0 || p.DecidesModel(model) {
+	if len(protos) == 0 {
 		return Result{Model: model, Error: "this provider can't be sent a test request"}
 	}
 	// the endpoint the vendor's list says serves it, else Anthropic's for a
@@ -388,7 +350,7 @@ func (p Provider) testModel(q Provider, proto Protocol) string {
 	} {
 		for _, pool := range pools {
 			for _, m := range pool {
-				if !p.DecidesModel(m.ID) && !off(p.ID, m.ID) && want(m.ID) && (k.Key == "" || p.Serves(k, m.ID)) {
+				if !off(p.ID, m.ID) && want(m.ID) && (k.Key == "" || p.Serves(k, m.ID)) {
 					return m.ID
 				}
 			}
@@ -421,7 +383,7 @@ func AuthHeaders(p Provider, proto Protocol) map[string]string {
 		}
 		return map[string]string{"api-key": p.Key}
 	}
-	if proto == Gemini && !p.FactoryGemini() {
+	if proto == Gemini {
 		// Google's Gemini API takes an API key here, and turns one away as
 		// a Bearer token ("Expected OAuth 2 access token"); relays that
 		// answer as it does read it here too
@@ -584,7 +546,7 @@ var edgeBlocked = regexp.MustCompile(`(?i)request has been blocked|errors\.aliyu
 // EdgeBlocked says whether an error body is a firewall's block page rather
 // than the vendor's API answering, or one already put in plain words.
 func EdgeBlocked(b []byte) bool {
-	return edgeBlocked.Match(b) || bytes.Contains(b, []byte(BlockedHint)) || bytes.Contains(b, []byte(ZCodeStartBlockedHint))
+	return edgeBlocked.Match(b) || bytes.Contains(b, []byte(BlockedHint))
 }
 
 // APIError pulls the human message out of an error body when there is one.

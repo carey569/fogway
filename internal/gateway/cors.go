@@ -110,9 +110,6 @@ func foreignPage(r *http.Request, origin string) bool {
 	if hostPort(u.Host, scheme) == hostPort(r.Host, scheme) {
 		return false
 	}
-	if r.URL.Path == "/v1/magpie/omarchy" && siteOrigin(origin) {
-		return false
-	}
 	return true
 }
 

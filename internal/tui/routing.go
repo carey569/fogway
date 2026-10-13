@@ -189,12 +189,7 @@ type pickMsg struct{ group, newGroup string }
 // memberOptions is every model and group magpie has, but those in skip.
 func memberOptions(skip []string, self string) []agent.Option {
 	var out []agent.Option
-	// a group is of decision models alone, asked at /v1/systemone, or of
-	// models that hold conversations (provider.cleanDecisionGroup): one
-	// holding either is offered more of the same, a new one both
-	g, _ := findGroup(self)
-	decides := self != "" && g.Decides()
-	if !decides {
+	{
 		// every model a group can be made of: those kept out of the lists
 		// agents see too (a provider kept for routing groups, a group's
 		// with listed=no, #1783), as the Routing view's picker offers
@@ -207,13 +202,6 @@ func memberOptions(skip []string, self string) []agent.Option {
 				note = "group · " + e.Name
 			}
 			out = append(out, agent.Option{Value: e.ID, Note: note})
-		}
-	}
-	if self == "" || decides {
-		for _, e := range provider.Deciders() {
-			if !slices.Contains(skip, e.ID) {
-				out = append(out, agent.Option{Value: e.ID, Note: e.Name + " · decision model"})
-			}
 		}
 	}
 	return out

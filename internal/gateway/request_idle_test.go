@@ -64,59 +64,6 @@ func TestRequestBodyProgressRenewsIdleDeadline(t *testing.T) {
 	}
 }
 
-func TestAdditionalBodyReadersHaveDeadlines(t *testing.T) {
-	for _, api := range []string{"systemone", "mcp"} {
-		t.Run(api, func(t *testing.T) {
-			deadlines := []time.Time{}
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest("POST", "/", strings.NewReader(`{}`))
-			if api == "systemone" {
-				New().serveSystemOne(deadlineRecorder{w, &deadlines}, r)
-			} else {
-				r.SetPathValue("token", "run")
-				b := &subscriptionBridge{runs: map[string]*subscriptionRun{"run": {}}}
-				b.mcpCall(deadlineRecorder{w, &deadlines}, r)
-			}
-			if len(deadlines) < 2 || deadlines[0].IsZero() || !deadlines[len(deadlines)-1].IsZero() {
-				t.Fatalf("body deadlines: %v", deadlines)
-			}
-		})
-	}
-}
-
-func TestMCPBodyTooLarge(t *testing.T) {
-	r := httptest.NewRequest("POST", "/", strings.NewReader(`{}`))
-	r.SetPathValue("token", "run")
-	r.ContentLength = 17 << 20
-	w := httptest.NewRecorder()
-	b := &subscriptionBridge{runs: map[string]*subscriptionRun{"run": {}}}
-	b.mcpCall(w, r)
-	if w.Code != 413 {
-		t.Fatalf("oversize MCP: %d", w.Code)
-	}
-}
-
-func TestMediaJSONPastOldBodyLimit(t *testing.T) {
-	payload := append(bytes.Repeat([]byte(" "), 64<<20), []byte(`{"model":"fake/m1","prompt":"tail"}`)...)
-	for _, api := range []string{"images", "videos"} {
-		t.Run(api, func(t *testing.T) {
-			r := httptest.NewRequest("POST", "/", bytes.NewReader(payload))
-			var prompt string
-			var err error
-			if api == "images" {
-				d, e := readDrawing(r)
-				prompt, err = d.Prompt, e
-			} else {
-				f, e := readFilming(r)
-				prompt, err = f.Prompt, e
-			}
-			if err != nil || prompt != "tail" {
-				t.Fatalf("media body: %q, %v", prompt, err)
-			}
-		})
-	}
-}
-
 func TestBodyRejectionErrorShapes(t *testing.T) {
 	for _, tc := range []struct {
 		proto  provider.Protocol

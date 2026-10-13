@@ -25,7 +25,7 @@ var AuthChoices = []string{AuthBoth, AuthXAPIKey, AuthBearer}
 // ones AuthHeader can narrow to one. Anthropic's, Bedrock's, Azure's and
 // Vertex AI's never do, nor a signed-in account's.
 func (p Provider) BothAuth() bool {
-	if p.Account != nil || p.Anthropic == "" {
+	if p.Anthropic == "" {
 		return false
 	}
 	p.AuthHeader = AuthBoth

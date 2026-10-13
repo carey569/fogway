@@ -194,30 +194,6 @@ func TestResponsesRelayCallIDs(t *testing.T) {
 	}
 }
 
-// Codex's own model, on a turn and on a compaction, gives a custom tool's
-// call another vendor answered a ctc_ id too.
-func TestCodexOwnModelCustomCallIDs(t *testing.T) {
-	setup(t, provider.Chat, &fake{t: t})
-	var got []string
-	chatgpt(t, openaiIDs(&got))
-	for _, path := range []string{"/responses", "/responses/compact"} {
-		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("POST", CodexPath+path, strings.NewReader(`{"model":"gpt-5.5","stream":true,"store":false,"input":`+otherVendorsCalls+`}`))
-		req.Header.Set("Authorization", "Bearer chatgpt-token")
-		req.Header.Set("chatgpt-account-id", "acct-1")
-		New().Handler().ServeHTTP(rec, req)
-		if rec.Code != 200 {
-			t.Fatalf("%s: %d %s", path, rec.Code, rec.Body)
-		}
-		last := got[len(got)-1]
-		for _, want := range sentToChatGPT {
-			if !strings.Contains(last, want) {
-				t.Errorf("%s: upstream lacks %s: %s", path, want, last)
-			}
-		}
-	}
-}
-
 // A custom tool's call already OpenAI's leaves the request byte for byte.
 func TestCustomCallIDsUntouched(t *testing.T) {
 	b := `{"model":"gpt-5.5",  "input":[{"type":"custom_tool_call","id":"ctc_1","call_id":"p","name":"apply_patch","input":"x"},{"type":"custom_tool_call","call_id":"q","name":"apply_patch","input":"y"}]}`

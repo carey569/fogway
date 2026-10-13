@@ -5,13 +5,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
 )
@@ -100,57 +97,6 @@ func checkSent(t *testing.T, input []map[string]any) {
 	}
 }
 
-// echo_ts, in Codex: a conversation on Muse Spark (OpenCode), switched to
-// GPT on GitHub Copilot. Muse's items, ids joined with a colon, went to
-// Copilot as Codex sent them, and every turn was turned away "Invalid
-// 'input[1].id'". Copilot checks ids as OpenAI does, so they go as it
-// takes them from the first ask.
-func TestCopilotTakesAnotherVendorsItemIDs(t *testing.T) {
-	fresh(t)
-	cfg := os.Getenv("XDG_CONFIG_HOME")
-	os.MkdirAll(filepath.Join(cfg, "github-copilot"), 0o755)
-	os.WriteFile(filepath.Join(cfg, "github-copilot", "apps.json"), mustJSON(map[string]any{
-		"github.com:Iv1.x": map[string]any{"user": "echo", "oauth_token": "gho_echo"},
-	}), 0o600)
-	up := &idChecker{check: true}
-	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/models":
-			io.WriteString(w, `{"data":[{"id":"gpt-6.1","name":"GPT-6.1","model_picker_enabled":true,"policy":{"state":"enabled"},"supported_endpoints":["/responses"],"capabilities":{"type":"chat","supports":{"reasoning_effort":["low","medium","high"]}}}]}`)
-		case "/responses":
-			up.ServeHTTP(w, r)
-		default:
-			w.WriteHeader(404)
-		}
-	}))
-	defer api.Close()
-	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, "/token") {
-			json.NewEncoder(w).Encode(map[string]any{"token": "sess", "expires_at": time.Now().Add(time.Hour).Unix(), "endpoints": map[string]string{"api": api.URL}})
-			return
-		}
-		io.WriteString(w, `{"copilot_plan":"individual"}`)
-	}))
-	defer gh.Close()
-	oldTok, oldUser := provider.CopilotTokenURL, provider.CopilotUserURL
-	provider.CopilotTokenURL, provider.CopilotUserURL = gh.URL+"/token", gh.URL+"/user"
-	defer func() { provider.CopilotTokenURL, provider.CopilotUserURL = oldTok, oldUser }()
-
-	s := New()
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/v1/responses", strings.NewReader(`{"model":"copilot/gpt-6.1","stream":true,"store":false,"include":["reasoning.encrypted_content"],
-	  "input":[`+museConversation+`,{"type":"message","role":"user","content":[{"type":"input_text","text":"now add a test"}]}]}`))
-	s.Handler().ServeHTTP(rec, req)
-	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "DONE") {
-		t.Fatalf("%d %s", rec.Code, rec.Body.String())
-	}
-	asked := up.asked()
-	if len(asked) != 1 {
-		t.Fatalf("asked Copilot %d times", len(asked))
-	}
-	checkSent(t, asked[0])
-}
-
 // A relay in front of OpenAI, which magpie can't tell from any other
 // upstream, refuses the ids as OpenAI does: asked once more with ids it
 // takes, and from then on asked that way at once.
@@ -199,21 +145,4 @@ func TestMuseKeepsItsOwnItemIDs(t *testing.T) {
 	if !strings.Contains(string(b), `"`+museReasoningID+`"`) || !strings.Contains(string(b), "muse-sealed") {
 		t.Errorf("Muse's reasoning not sent as it was: %s", b)
 	}
-}
-
-// Back on one of Codex's own models, on the ChatGPT backend, which checks
-// ids as OpenAI does.
-func TestCodexOwnModelTakesAnotherVendorsItemIDs(t *testing.T) {
-	setup(t, provider.Chat, &fake{t: t})
-	up := &idChecker{check: true}
-	chatgpt(t, up.ServeHTTP)
-	code, body := codexPost(t, `{"model":"gpt-6-luna","stream":true,"store":false,"input":[`+museConversation+`]}`)
-	if code != 200 || !strings.Contains(body, "DONE") {
-		t.Fatalf("%d %s", code, body)
-	}
-	asked := up.asked()
-	if len(asked) != 1 {
-		t.Fatalf("asked the backend %d times", len(asked))
-	}
-	checkSent(t, asked[0])
 }

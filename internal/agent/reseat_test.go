@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/appdir"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -25,7 +24,7 @@ func reseatHome(t *testing.T) string {
 		}
 	}
 	os.MkdirAll(filepath.Join(home, ".claude"), 0o755)
-	os.MkdirAll(appdir.HermesHomeIn(home), 0o755)
+	os.MkdirAll(filepath.Join(home, ".config", "opencode"), 0o755)
 	return home
 }
 
@@ -83,7 +82,7 @@ func mustApply(t *testing.T, a *Agent, key, v string) {
 // request to be refused.
 func TestReseatOff(t *testing.T) {
 	reseatHome(t)
-	c, h := mustFind(t, "claude"), mustFind(t, "hermes")
+	c, h := mustFind(t, "claude"), mustFind(t, "opencode")
 	mustApply(t, c, "model", "cop/gpt-5")
 	mustApply(t, c, "opus", "cop/claude-sonnet-4.5")
 	mustApply(t, c, "haiku", "cop/only-here")
@@ -102,17 +101,17 @@ func TestReseatOff(t *testing.T) {
 		}
 	}
 	if got := h.Field("model").Get(); got != "" {
-		t.Errorf("hermes: %q, want its own default", got)
+		t.Errorf("opencode: %q, want its own default", got)
 	}
 	got := map[string]Move{}
 	for _, m := range moves {
 		got[m.Agent+" "+m.Field] = m
 	}
 	for k, w := range map[string]Move{
-		"Claude Code model":  {Agent: "Claude Code", Field: "model", From: "cop/gpt-5", To: "ds/gpt-5"},
-		"Claude Code opus":   {Agent: "Claude Code", Field: "opus", From: "cop/claude-sonnet-4.5", To: "ds/claude-sonnet-4-5-20250929"},
-		"Claude Code haiku":  {Agent: "Claude Code", Field: "haiku", From: "cop/only-here"}, // follows the main model
-		"Hermes Agent model": {Agent: "Hermes Agent", Field: "model", From: "cop/only-here"},
+		"Claude Code model": {Agent: "Claude Code", Field: "model", From: "cop/gpt-5", To: "ds/gpt-5"},
+		"Claude Code opus":  {Agent: "Claude Code", Field: "opus", From: "cop/claude-sonnet-4.5", To: "ds/claude-sonnet-4-5-20250929"},
+		"Claude Code haiku": {Agent: "Claude Code", Field: "haiku", From: "cop/only-here"}, // follows the main model
+		"OpenCode model":    {Agent: "OpenCode", Field: "model", From: "cop/only-here"},
 	} {
 		if got[k] != w {
 			t.Errorf("%s: %+v, want %+v", k, got[k], w)
@@ -170,10 +169,10 @@ func TestModelKey(t *testing.T) {
 // panel, the provider still listed, and a second Remove said "no provider".
 func TestReseatUnmovable(t *testing.T) {
 	home := reseatHome(t)
-	c, h := mustFind(t, "claude"), mustFind(t, "hermes")
+	c, h := mustFind(t, "claude"), mustFind(t, "opencode")
 	mustApply(t, c, "model", "cop/only-here")
 	mustApply(t, h, "model", "magpie/cop/only-here")
-	dir := appdir.HermesHomeIn(home)
+	dir := filepath.Join(home, ".config", "opencode")
 	if err := os.Chmod(dir, 0o555); err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +181,7 @@ func TestReseatUnmovable(t *testing.T) {
 		f.Close()
 		t.Skip("a read-only folder is writable here (root?)")
 	}
-	os.Chmod(filepath.Join(dir, "config.yaml"), 0o444)
+	os.Chmod(filepath.Join(dir, "opencode.json"), 0o444)
 
 	moves, err := Reseat(func() error { return provider.Delete("cop") })
 	if err != nil {
@@ -196,7 +195,7 @@ func TestReseatUnmovable(t *testing.T) {
 	}
 	var stuck *Move
 	for i, m := range moves {
-		if m.Agent == "Hermes Agent" {
+		if m.Agent == "OpenCode" {
 			stuck = &moves[i]
 		}
 	}
@@ -213,7 +212,7 @@ func TestReseatUnmovable(t *testing.T) {
 // serving it, however that one spells it, rather than to its own default.
 func TestReseatFoundGroupsOff(t *testing.T) {
 	reseatHome(t)
-	c, h := mustFind(t, "claude"), mustFind(t, "hermes")
+	c, h := mustFind(t, "claude"), mustFind(t, "opencode")
 	mustApply(t, c, "model", "group/auto-gpt-5")
 	mustApply(t, c, "opus", "group/auto-claude-sonnet-4-5")
 	mustApply(t, h, "model", "magpie/group/auto-gpt-5")
@@ -227,7 +226,7 @@ func TestReseatFoundGroupsOff(t *testing.T) {
 		}
 	}
 	if got := h.Field("model").Get(); got != "magpie/cop/gpt-5" {
-		t.Errorf("hermes: %q", got)
+		t.Errorf("opencode: %q", got)
 	}
 	if len(moves) != 3 || moves[0].From != "group/auto-gpt-5" || moves[0].To != "cop/gpt-5" {
 		t.Errorf("moves: %+v", moves)

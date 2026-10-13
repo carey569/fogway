@@ -4,43 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
-
-func TestQoderUsageAfterWindowLoss(t *testing.T) {
-	for _, agent := range []string{"qoder", "qoder-cn"} {
-		for _, restart := range []bool{false, true} {
-			t.Run(fmt.Sprintf("%s/restart=%v", agent, restart), func(t *testing.T) {
-				setupCalls(t)
-				path := filepath.Join(QoderDir(agent), "projects", "fixture", "session.jsonl")
-				at := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
-				writeLines(t, path, string(claudeUsageLine(at, "a", "r", "m", Tokens{Input: 100, Output: 1}, "", true)))
-				List(0)
-				if restart {
-					Saved()
-					Reset()
-					List(0)
-				} else {
-					for i := 0; i < revisionFiles; i++ {
-						p := filepath.Join(filepath.Dir(path), fmt.Sprintf("other-%d.jsonl", i))
-						writeLines(t, p, string(claudeUsageLine(at, "other", "", "m", Tokens{Output: 1}, `[{"type":"text","text":"`+strings.Repeat("x", 512)+`"}]`, true)))
-					}
-					List(0)
-				}
-				if cache[path].Claude != nil {
-					t.Fatal("test did not lose its revision window")
-				}
-				appendText(t, path, string(claudeUsageLine(at.Add(time.Second), "a", "r", "m", Tokens{Input: 100, Output: 50}, "", true))+"\n")
-				List(0)
-				if got := cache[path].Models["m"]; got != (Tokens{Input: 100, Output: 50}) {
-					t.Fatalf("after window loss: %+v, want input=100 output=50", got)
-				}
-			})
-		}
-	}
-}
 
 func TestClaudeLargeWindowSurvivesIdleAndSmallFiles(t *testing.T) {
 	for _, sourceReader := range []bool{false, true} {

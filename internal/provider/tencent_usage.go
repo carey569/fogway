@@ -70,9 +70,7 @@ func AccessKeyVendor(p Provider) string {
 // ap-singapore for tokenhub-intl.tencentmaas.com/plan; ok false for
 // TokenHub's pay as you go, the personal plan or another vendor.
 func tencentPlanRegion(p Provider) (string, bool) {
-	if p.Account != nil {
-		return "", false
-	}
+
 	for _, base := range []string{p.Chat, p.Responses, p.Anthropic} {
 		u, err := url.Parse(base)
 		if err != nil || !strings.HasPrefix(strings.TrimSuffix(u.Path, "/")+"/", "/plan/") {

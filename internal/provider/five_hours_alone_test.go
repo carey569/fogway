@@ -44,15 +44,3 @@ func TestFiveHoursAlone(t *testing.T) {
 		t.Fatalf("no span, not known: %v", r)
 	}
 }
-
-// claudeWindows marks partial what only Claude Code's answers told.
-func TestClaudeHeardOnlyIsPartial(t *testing.T) {
-	e := claudeUsageEntry{ws: []QuotaWindow{{Name: "5 hours", Used: 10, Span: 5 * time.Hour}}}
-	if ws := e.windows(time.Now()); !ws[0].partial {
-		t.Fatal("heard only: partial")
-	}
-	e.whole = true
-	if ws := e.windows(time.Now()); ws[0].partial {
-		t.Fatal("read by /usage: whole")
-	}
-}

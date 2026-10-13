@@ -953,3 +953,7 @@ func NewCoster() func(Record) (float64, bool) {
 		return t.Cost, t.Unpriced == 0
 	}
 }
+
+func ledgerWith(since time.Time, f Filter, recs []Record, logs []sessions.Call) (rows []Row, sum Totals, agents, providers []string) {
+	return ledgerWithShared(since, time.Time{}, f, recs, logs, nil)
+}

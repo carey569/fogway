@@ -17,14 +17,14 @@ import (
 // among them, which the same server serves. An empty addr leaves pr as it
 // is.
 func AtAddress(pr PresetDef, addr string) (PresetDef, error) {
-	err := atAddress(addr, &pr.Chat, &pr.Responses, &pr.Anthropic, &pr.Decide)
+	err := atAddress(addr, &pr.Chat, &pr.Responses, &pr.Anthropic)
 	return pr, err
 }
 
 // AtAddress moves the provider's URLs to addr as the package's AtAddress
 // does; a refused address leaves them as they were.
 func (p *Provider) AtAddress(addr string) error {
-	return atAddress(addr, &p.Chat, &p.Responses, &p.Anthropic, &p.Decide)
+	return atAddress(addr, &p.Chat, &p.Responses, &p.Anthropic)
 }
 
 // AddressOf is the address the URLs are at, the origin of the first one

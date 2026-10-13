@@ -90,3 +90,9 @@ func watchHide() { C.watchHide() }
 // Dock icon: to the Space its window is on, as the user's Mission Control
 // settings say; on the main thread.
 func activateApp() { C.activateApp() }
+
+// movesToActiveSpace says whether it is; on the main thread.
+func movesToActiveSpace(w *application.WebviewWindow) bool {
+	p := w.NativeWindow()
+	return p != nil && C.movesToActiveSpace(p) != 0
+}

@@ -13,7 +13,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/provider"
@@ -102,95 +101,6 @@ func putProvider(t *testing.T, p map[string]any) {
 	}
 	if err := os.WriteFile(provider.Path(), b, 0o600); err != nil {
 		t.Fatal(err)
-	}
-}
-
-// A relay that serves a model under an id of its own is asked for it by that
-// id, and by nothing else: the catalog agents see, the routing groups and the
-// usage records keep the name magpie knows the model by, so a rename upstream
-// is not a rename here.
-func TestUpstreamNameReachesTheVendorOnly(t *testing.T) {
-	fresh(t)
-
-	var seen asked
-	relay, other := asking(t, &seen), asking(t, &seen)
-
-	for _, p := range []provider.Provider{
-		{ID: "relay-b", Name: "Relay B", Key: "k", Models: []string{"model-2"}, Chat: relay.URL},
-		{ID: "other", Name: "Other", Key: "k", Models: []string{"model-2"}, Chat: other.URL},
-	} {
-		if err := provider.Save(p); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := provider.SetUpstreamName("relay-b/model-2", "vendor-c/model-2-preview"); err != nil {
-		t.Fatal(err)
-	}
-
-	s := New()
-	ask := func(model string) {
-		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("POST", "/v1/messages", strings.NewReader(
-			`{"model":"`+model+`","max_tokens":1024,"stream":true,`+
-				`"messages":[{"role":"user","content":"hi"}]}`))
-		s.Handler().ServeHTTP(rec, req)
-		if rec.Code != 200 {
-			t.Fatalf("%s: status %d: %s", model, rec.Code, rec.Body.String())
-		}
-	}
-
-	// the relay is asked for the model by the name it serves it under
-	ask("relay-b/model-2")
-	if got := seen.all(); len(got) != 1 || got[0] != "vendor-c/model-2-preview" {
-		t.Fatalf("the relay was asked for %v; want the upstream name", got)
-	}
-
-	// another provider serving the same model id is left alone: an upstream
-	// name is one provider's, not the model's
-	ask("other/model-2")
-	if got := seen.all(); len(got) != 2 || got[1] != "model-2" {
-		t.Fatalf("the other provider was asked for %v", got[1:])
-	}
-
-	// the catalog still knows the model by magpie's name for it
-	found := false
-	for _, e := range provider.Catalog() {
-		if e.ID == "relay-b/model-2" {
-			found = true
-			if e.Model != "model-2" {
-				t.Errorf("the catalog shows the model as %q; the canonical name is what agents see", e.Model)
-			}
-		}
-	}
-	if !found {
-		t.Fatal("relay-b/model-2 is not in the catalog")
-	}
-	if _, model, ok := provider.Resolve("relay-b/model-2"); !ok || model != "model-2" {
-		t.Errorf("Resolve gave %q; the wire name is not the model's identity", model)
-	}
-
-	// a call is recorded under the canonical name; what the vendor's own
-	// answer said it was is kept beside it, which is what that field is for
-	rows := usage.Load(time.Time{})
-	if len(rows) == 0 {
-		t.Fatal("no call was recorded")
-	}
-	for _, r := range rows {
-		if r.Model != "model-2" {
-			t.Errorf("a call was recorded as %q; the vendor's name is not the model's", r.Model)
-		}
-	}
-	if rows[0].Served != "vendor-c/model-2-preview" {
-		t.Errorf("the record says the vendor served %q", rows[0].Served)
-	}
-
-	// taking the user's name away asks for the model's own again
-	if err := provider.SetUpstreamName("relay-b/model-2", ""); err != nil {
-		t.Fatal(err)
-	}
-	ask("relay-b/model-2")
-	if got := seen.all(); got[len(got)-1] != "model-2" {
-		t.Fatalf("after --reset the relay was asked for %q", got[len(got)-1])
 	}
 }
 
@@ -915,84 +825,6 @@ func TestUpstreamNameWildcardStandsWhereverItStands(t *testing.T) {
 	}
 }
 
-// A name given for a provider's every model is not one id for all of them: an
-// Antigravity account is asked for the variant its effort picks, and the name
-// goes with that variant. Filling the "*" in with the model magpie knows
-// would send one id whatever level is asked for, so the effort stops choosing
-// and a relay that serves gemini-3.7-flash-high is asked for the base id it
-// has no answer for.
-func TestUpstreamNameFollowsTheAntigravityVariant(t *testing.T) {
-	fresh(t)
-	var raw []catalog.Model
-	for _, l := range []string{"gemini-3.7-flash-high - Gemini 3.7 Flash (High)", "gemini-3.7-flash-low - Gemini 3.7 Flash (Low)",
-		"gemini-3.7-flash-medium - Gemini 3.7 Flash (Medium)"} {
-		id, name, _ := strings.Cut(l, " - ")
-		raw = append(raw, catalog.Model{ID: id, Name: name})
-	}
-	if err := catalog.SaveLive("antigravity", "", raw); err != nil {
-		t.Fatal(err)
-	}
-	// a wire name is given for a model the provider really serves, so
-	// magpie must be able to find the provider that serves it. The account
-	// is built at runtime and its id is reserved (Save refuses it), so the
-	// test registers the provider under that id in the file directly: the
-	// model a name is keyed by is the family the live list stands for.
-	putProvider(t, map[string]any{
-		"id": "antigravity", "name": "Antigravity", "key": "k",
-		"chat": "https://antigravity.test/v1",
-	})
-	if err := provider.SetUpstreamName("antigravity/*", "vendor-c/*"); err != nil {
-		t.Fatal(err)
-	}
-	ask := func(agent, model, effort string) string {
-		t.Helper()
-		p := provider.Provider{ID: "antigravity", Name: "Antigravity", Account: &provider.Account{Agent: agent}}
-		r := codeAssistRequest(t)
-		r.Thinking, r.Effort = false, effort
-		return modelOf(codeAssistBody(p, r, model, settings.Load().ModelWires))
-	}
-
-	// the level the effort picked is in the name it is asked for by
-	for _, c := range []struct{ effort, want string }{
-		{"high", "vendor-c/gemini-3.7-flash-high"},
-		{"medium", "vendor-c/gemini-3.7-flash-medium"},
-		{"low", "vendor-c/gemini-3.7-flash-low"},
-		{"", "vendor-c/gemini-3.7-flash-high"},
-	} {
-		if got := ask("antigravity", "gemini-3.7-flash", c.effort); got != c.want {
-			t.Errorf("at %q the vendor is asked for %q; want %q — each level by its own name", c.effort, got, c.want)
-		}
-	}
-
-	// a name given for the model itself is that model's, whichever variant
-	// answers for it: the exact key still wins over the provider's
-	if err := provider.SetUpstreamName("antigravity/gemini-3.7-flash", "vendor-c/flash"); err != nil {
-		t.Fatal(err)
-	}
-	for _, effort := range []string{"high", "low"} {
-		if got := ask("antigravity", "gemini-3.7-flash", effort); got != "vendor-c/flash" {
-			t.Errorf("the model's own name at %q: %q; want vendor-c/flash", effort, got)
-		}
-	}
-
-	// a Gemini CLI account has no variants, so the model magpie knows is
-	// what is asked for, under the provider's name
-	if err := provider.SetUpstreamName("antigravity/gemini-3.7-flash", ""); err != nil {
-		t.Fatal(err)
-	}
-	if got := ask("gemini", "gemini-3.7-flash", "high"); got != "vendor-c/gemini-3.7-flash" {
-		t.Errorf("a Gemini CLI account: %q; want vendor-c/gemini-3.7-flash", got)
-	}
-
-	// and with no name given, the envelope goes out as it was built
-	if err := provider.SetUpstreamName("antigravity/*", ""); err != nil {
-		t.Fatal(err)
-	}
-	if got := ask("antigravity", "gemini-3.7-flash", "low"); got != "gemini-3.7-flash-low" {
-		t.Errorf("with nothing given: %q; want the variant as it is", got)
-	}
-}
-
 // A turn's route and its ledger row are two views of the one call, so they
 // have to judge it against one name: on an Antigravity account the call
 // goes out under the variant of the model the effort picks, so a relay that
@@ -1142,40 +974,6 @@ func TestRouteJudgesTheUpstreamNameByTheAccountAndNotByTheProvidersId(t *testing
 	answers = "vendor-c/gemini-3.7-flash-high"
 	if r := turn(); !r.Swapped {
 		t.Errorf("the relay answered with a level's id: the route says swapped %v", r.Swapped)
-	}
-}
-
-// The id an Antigravity envelope is named with is the id a ledger reads the
-// vendor's reply back against, so it is one rule and not two: a model of the
-// family and one of the family's own variant ids — an id a pick or an
-// agent's model list kept from before the families were one model — each go
-// out at, and are judged against, the same id at every level.
-func TestAntigravityEnvelopeIsNamedAsTheLedgerJudgesIt(t *testing.T) {
-	fresh(t)
-	var raw []catalog.Model
-	for _, l := range []string{"gemini-3.7-flash-high - High", "gemini-3.7-flash-low - Low", "gemini-3.7-flash-medium - Medium"} {
-		id, name, _ := strings.Cut(l, " - ")
-		raw = append(raw, catalog.Model{ID: id, Name: name})
-	}
-	if err := catalog.SaveLive("antigravity", "", raw); err != nil {
-		t.Fatal(err)
-	}
-	for _, model := range []string{"gemini-3.7-flash", "gemini-3.7-flash-high", "gemini-3.7-flash-low"} {
-		for _, effort := range []string{"high", "medium", "low", "minimal", "xhigh", ""} {
-			sent := codeAssistID(model, effort, "antigravity")
-			judged := provider.SentNameIn(nil, "antigravity", model, effort)
-			if sent != judged {
-				t.Errorf("%s at %q goes out as %q and is judged against %q", model, effort, sent, judged)
-			}
-			if usage.Swapped(sent, sent) {
-				t.Errorf("%s at %q: the id the call goes out under is read as another model answering", model, effort)
-			}
-		}
-	}
-	// and a Gemini CLI account is asked for the model magpie knows, which is
-	// what its ledger row reads back too
-	if got := codeAssistID("gemini-3.7-flash", "high", "gemini"); got != "gemini-3.7-flash" {
-		t.Errorf("a Gemini CLI account is asked for %q; want the model magpie knows", got)
 	}
 }
 

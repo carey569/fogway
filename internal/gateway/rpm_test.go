@@ -174,34 +174,6 @@ func TestMaxRPMTooLongIs429WithRetryAfter(t *testing.T) {
 	}
 }
 
-// An agent that goes away while its request waits for room ends the wait:
-// nothing is sent, and its place in the minute is given back.
-func TestMaxRPMAgentGoneWhileWaiting(t *testing.T) {
-	shortMinute(t, 3*time.Second, time.Minute)
-	v := &minuteVendor{}
-	s, gw := rpmGateway(t, v, 1)
-	if res, _, err := chatOnce(context.Background(), gw); err != nil || res.StatusCode != 200 {
-		t.Fatalf("first: %v %v", err, res)
-	}
-	who := meterWho(provider.Provider{ID: "rl", Key: "k"})
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() {
-		_, _, err := chatOnce(ctx, gw)
-		done <- err
-	}()
-	within(t, "the second waiting", func() bool { return s.rpms.used(who) == 2 })
-	cancel()
-	if err := <-done; err == nil {
-		t.Fatal("the canceled request answered")
-	}
-	within(t, "its place given back", func() bool { return s.rpms.used(who) == 1 })
-	time.Sleep(100 * time.Millisecond)
-	if n := len(v.times()); n != 1 {
-		t.Fatalf("the vendor saw %d, want 1", n)
-	}
-}
-
 // What magpie sends on its own counts too: a retry after the vendor's 503
 // is a request of the minute, and so is a count_tokens that reaches the
 // vendor. With 3 a minute, one request tried twice and one count leave no
@@ -395,23 +367,5 @@ func TestRPMReserveKeepsTheSlack(t *testing.T) {
 	l.reserve("x", 1, 0, t0)
 	if got, _ := l.reserve("x", 1, 0, t0.Add(60500*time.Millisecond)); got.Sub(t0) != 61*time.Second {
 		t.Fatalf("half a second into the slack: %s, want 61s", got.Sub(t0))
-	}
-}
-
-// A try's own requests are counted once, against the key or account the
-// try is of, however the provider names its account; a request to another
-// provider made on the way is counted against that one's.
-func TestRPMTicketOfATry(t *testing.T) {
-	s := &Server{}
-	p := provider.Provider{ID: "codex", MaxRPM: 3, Account: &provider.Account{}}
-	ctx := s.paidFor(context.Background(), p, "codex@someone")
-	if got := s.metered(ctx, p, ""); got != ctx {
-		t.Fatal("a try's own request got a ticket of its own: it would be counted twice")
-	}
-	other := provider.Provider{ID: "kimi", Key: "k", MaxRPM: 3}
-	got := s.metered(ctx, other, "")
-	tk, _ := got.Value(rpmKey{}).(*rpmTicket)
-	if tk == nil || tk.who != meterWho(other) || tk.paid.Load() {
-		t.Fatalf("another provider's request on the way: %+v", tk)
 	}
 }

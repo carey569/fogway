@@ -44,10 +44,9 @@ func CleanAccounts(in []string) ([]string, error) {
 			}
 		}
 		if id == "" {
-			if p.Account == nil {
-				return nil, fmt.Errorf("%s has no key %q", p.Name, ref)
-			}
-			return nil, fmt.Errorf("%s has no account %q", p.Name, ref)
+
+			return nil, fmt.Errorf("%s has no key %q", p.Name, ref)
+
 		}
 		kept := p.ID + "/" + id
 		if !slices.ContainsFunc(out, func(o string) bool { return strings.EqualFold(o, kept) }) {

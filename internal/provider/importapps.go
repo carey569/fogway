@@ -23,7 +23,6 @@ import (
 	"github.com/tidwall/jsonc"
 	"github.com/yetone/magpie/internal/appdir"
 	"github.com/yetone/magpie/internal/edit"
-	"github.com/yetone/magpie/internal/plugin"
 	"github.com/yetone/magpie/internal/settings"
 	_ "modernc.org/sqlite"
 )
@@ -148,7 +147,7 @@ func ImportFromApps(picks []AppPick) ([]string, error) {
 			}
 			// a key joins a provider only at its own address: one taken
 			// to another host would be sent there
-			if h.Account != nil || !sameProvider(Provider{Key: p.Key, Chat: h.Chat, Responses: h.Responses, Anthropic: h.Anthropic, Headers: h.Headers}, p) {
+			if !sameProvider(Provider{Key: p.Key, Chat: h.Chat, Responses: h.Responses, Anthropic: h.Anthropic, Headers: h.Headers}, p) {
 				return added, errorf("%s: %s isn't at %s; add it as a provider of its own", p.Name, h.Name, hostOf(firstURL(p)))
 			}
 			if err := AddKey(it.KeyOf, p.Name, p.Key, ""); err != nil {
@@ -193,7 +192,7 @@ func ImportFromApps(picks []AppPick) ([]string, error) {
 // reservedID is an id no imported provider can have: the gateway's own, a
 // subscription's or a plugin's, signed in or not.
 func reservedID(id string) bool {
-	if id == "magpie" || subscriptionID(id) {
+	if id == "magpie" {
 		return true
 	}
 	_, ok := find(Accounts(), id)
@@ -216,9 +215,6 @@ func freeID(id string) string {
 	taken := map[string]bool{"magpie": true}
 	for _, id := range accountIDs {
 		taken[id] = true
-	}
-	for _, pp := range plugin.Cached() { // signed in or not, as a built-in's
-		taken[PluginID(pp.ID)] = true
 	}
 	for _, p := range All() {
 		taken[p.ID] = true
@@ -313,7 +309,7 @@ func sameProvider(a, b Provider) bool {
 		return false
 	}
 	hosts := map[string]bool{}
-	for _, u := range []string{a.Chat, a.Responses, a.Anthropic, a.Decide} {
+	for _, u := range []string{a.Chat, a.Responses, a.Anthropic} {
 		if h := hostOf(u); h != "" {
 			hosts[h] = true
 		}
@@ -374,7 +370,6 @@ func imported(name, key string, e endpoints, models []string) (Provider, string)
 			if r != nil {
 				// at one of its regions: that region's endpoints and pages
 				p.atRegionOf(pr, *r)
-				p.Decide = ""
 			}
 			if n := strings.ToLower(name); n == "" || n == "default" {
 				p.Name = pr.Name

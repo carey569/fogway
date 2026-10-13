@@ -23,13 +23,9 @@ func (p Provider) Concurrency() int {
 // at once, as it lists it now; 0 for none, or for a provider no plugin
 // gives.
 func (p Provider) PluginConcurrency() int {
-	if !p.IsPlugin() {
-		return 0
-	}
-	if cur, ok := PluginOf(p.ID); ok {
-		return max(cur.MaxConcurrency, 0)
-	}
-	return max(p.Account.plugin.MaxConcurrency, 0)
+
+	return 0
+
 }
 
 // One account's or key's own limit (#892: a Claude account kept to two
@@ -54,8 +50,7 @@ const (
 func (p Provider) LaneLimit() int {
 	ref := ""
 	switch {
-	case p.Account != nil:
-		ref = p.Account.User
+
 	case p.Key != "":
 		ref = KeyID(p.Key)
 	}
@@ -63,11 +58,7 @@ func (p Provider) LaneLimit() int {
 		return p.Concurrency()
 	}
 	m := p.AccountConcurrency
-	if m == nil && p.Account != nil {
-		if s, ok := storedPicks(p.ID); ok {
-			m = s.AccountConcurrency
-		}
-	}
+
 	if n, ok := m[accountKey(ref)]; ok {
 		return max(n, 0)
 	}
@@ -100,10 +91,9 @@ func SetAccountConcurrency(id, ref string, limit *int) error {
 	}
 	r, ok := p.accountRef(ref)
 	if !ok {
-		if p.Account == nil {
-			return fmt.Errorf("%s has no key %q", p.Name, ref)
-		}
-		return fmt.Errorf("%s has no account %q", p.Name, ref)
+
+		return fmt.Errorf("%s has no key %q", p.Name, ref)
+
 	}
 	m := map[string]int{}
 	for k, v := range p.AccountConcurrency {
@@ -190,11 +180,7 @@ const MaxRPMLimit = 10000
 // provider's settings: it is read from providers.json then.
 func (p Provider) RPMLimit() int {
 	n := p.MaxRPM
-	if n == 0 && p.Account != nil {
-		if s, ok := storedPicks(p.ID); ok {
-			n = s.MaxRPM
-		}
-	}
+
 	return min(max(n, 0), MaxRPMLimit)
 }
 

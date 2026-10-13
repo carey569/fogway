@@ -7,7 +7,7 @@ package provider
 // Kilo's gateways are sent the client they serve (OwnClient), and another
 // magpie is told magpie by it: none of them takes the agent's in its place.
 func (p Provider) PassesUserAgent() bool {
-	return p.PassUserAgent && p.Account == nil && !p.OwnClient()
+	return p.PassUserAgent && !p.OwnClient()
 }
 
 // OwnClient says magpie's requests to p go as a client the vendor serves,
@@ -15,5 +15,5 @@ func (p Provider) PassesUserAgent() bool {
 // User-Agent, Cline's Cline's, Kilo's the Kilo CLI's, and another magpie
 // magpie's.
 func (p Provider) OwnClient() bool {
-	return p.IsOpenCode() || p.IsCline() || p.IsKilo() || p.IsRemoteMagpie()
+	return p.IsOpenCode() || p.IsCline() || p.IsKilo()
 }

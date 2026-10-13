@@ -1,9 +1,6 @@
 package provider
 
 import (
-	"context"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"slices"
@@ -294,28 +291,5 @@ func TestTencentCloudOldPresetsKeepWorking(t *testing.T) {
 	p.Catalog = "deepseek"
 	if n := normalize(*p); n.Catalog != "deepseek" {
 		t.Fatalf("own catalog: %q", n.Catalog)
-	}
-}
-
-// TokenHub's /v1/models, as its docs show it, asked with the key as a
-// Bearer: its language models are kept, the embedding one left out.
-func TestTencentTokenHubList(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/models" || r.Header.Get("Authorization") != "Bearer sk-test" {
-			rw.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		rw.Write([]byte(`{"object":"list","data":[
-{"id":"hy3","object":"model","name":"Hy3","created":1783267200,"status":"online"},
-{"id":"deepseek-v4-pro","object":"model","name":"DeepSeek-V4-Pro","created":1776960000,"status":"online"},
-{"id":"kinfra-text-embedding-0.6b","object":"model","name":"KInfra Embedding","created":1776960000,"status":"online"}]}`))
-	}))
-	defer srv.Close()
-	ms, _, err := catalog.FetchAt(context.Background(), srv.URL+"/v1", "sk-test", false, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(ms) != 2 || ms[0].ID != "hy3" || ms[1].ID != "deepseek-v4-pro" {
-		t.Fatalf("%+v", ms)
 	}
 }

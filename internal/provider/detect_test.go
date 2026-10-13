@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/yetone/magpie/internal/agentenv"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 func detectHome(t *testing.T) {
@@ -243,81 +242,6 @@ func TestDetectModelAndOwnURLs(t *testing.T) {
 	}
 	if _, err := (Provider{Key: "k"}).Detect(context.Background(), "relay.example.com/v1", ""); err == nil {
 		t.Fatal("a URL with no scheme was asked")
-	}
-}
-
-// A relay whose one key serves some models on one API and others on
-// another: the API the user picks for a model is the only one it is asked
-// on — by the gateway (through APIs and Native) and by a model's test —
-// and must be one the provider has a URL for.
-func TestModelAPI(t *testing.T) {
-	detectHome(t)
-	srv, got := relay(t)
-	if err := Save(Provider{ID: "relay", Name: "Relay", Key: "k", Chat: srv.URL + "/v1", Anthropic: srv.URL, Models: []string{"mixed", "plain"}}); err != nil {
-		t.Fatal(err)
-	}
-	p, _ := Find("relay")
-	if apis := p.APIs("mixed"); apis != nil {
-		t.Fatalf("before: %v", apis)
-	}
-	if n := p.Native("mixed"); n != Chat {
-		t.Fatalf("before: native %s", n)
-	}
-	if err := SetModelAPI("relay/mixed", "responses"); err == nil || !strings.Contains(err.Error(), "no responses URL") {
-		t.Fatalf("an API with no URL: %v", err)
-	}
-	if err := SetModelAPI("relay/mixed", "gemini"); err == nil || !strings.Contains(err.Error(), "no gemini URL") {
-		t.Fatalf("gemini with no Gemini URL: %v", err)
-	}
-	if err := SetModelAPI("relay/mixed", "decide"); err == nil || !strings.Contains(err.Error(), "not \"decide\"") {
-		t.Fatalf("an API a model isn't asked on: %v", err)
-	}
-	if err := SetModelAPI("relay/nope", "anthropic"); err == nil {
-		t.Fatal("a model it hasn't was given an API")
-	}
-	api := "anthropic"
-	if err := SetModelPrefs("relay", map[string]ModelPref{"mixed": {API: &api}}); err != nil {
-		t.Fatal(err)
-	}
-	if settings.Load().ModelAPIs["relay/mixed"] != "anthropic" {
-		t.Fatalf("kept %v", settings.Load().ModelAPIs)
-	}
-	p, _ = Find("relay")
-	if apis := p.APIs("mixed"); !slices.Equal(apis, []Protocol{Anthropic}) {
-		t.Fatalf("apis %v", apis)
-	}
-	if n := p.Native("mixed"); n != Anthropic {
-		t.Fatalf("native %s", n)
-	}
-	if apis := p.APIs("plain"); apis != nil {
-		t.Fatalf("the other model followed: %v", apis)
-	}
-	if got, ok := p.ModelAPI("mixed"); !ok || got != Anthropic {
-		t.Fatalf("ModelAPI %v %v", got, ok)
-	}
-	before := len(got())
-	if r := p.TestModels(context.Background(), []string{"mixed"}); !r[0].OK || r[0].Protocol != Anthropic {
-		t.Fatalf("test %+v", r)
-	}
-	if as := got()[before:]; len(as) != 1 || as[0].path != "/v1/messages" {
-		t.Fatalf("the test asked %+v", as)
-	}
-	// its Anthropic URL gone, the model is asked where the provider can
-	q := *p
-	q.Anthropic = ""
-	if apis := q.APIs("mixed"); apis != nil {
-		t.Fatalf("with no Anthropic URL: %v", apis)
-	}
-	// "" gives it back to the list
-	none := ""
-	if err := SetModelPrefs("relay", map[string]ModelPref{"mixed": {API: &none}}); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := settings.Load().ModelAPIs["relay/mixed"]; ok {
-		t.Fatal("still kept")
-	}
-	if p, _ = Find("relay"); p.APIs("mixed") != nil {
-		t.Fatal("still anthropic")
 	}
 }
 

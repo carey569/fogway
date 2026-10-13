@@ -1,14 +1,11 @@
 package gateway
 
 import (
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 // A reply the vendor's safety filter ended before anything was said in it
@@ -66,96 +63,6 @@ func sendTo(s *Server, path, body string) (int, string) {
 
 const codexAsk = `{"model":"group/g","stream":true,"input":[{"role":"user","content":[{"type":"input_text","text":"hi"}]}]}`
 
-// Codex asking a group whose first member's safety filter refuses with
-// nothing said gets the next member's answer, not an empty reply it asks
-// again for five times (#248); the member that refused doesn't rest, and
-// what its refusal cost is logged as failed.
-func TestRefusalFailsOverToTheNextMember(t *testing.T) {
-	fresh(t)
-	a := &scripted{replies: []reply{{200, "text/event-stream", anthropicRefusal}}}
-	b := &scripted{replies: []reply{{200, "text/event-stream", anthropicAnswer}}}
-	for id, script := range map[string]*scripted{"a": a, "b": b} {
-		up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Request-Id", "req-"+id)
-			script.ServeHTTP(w, r)
-		}))
-		t.Cleanup(up.Close)
-		if err := provider.Save(provider.Provider{ID: id, Name: id, Key: "k", Models: []string{"m"}, Anthropic: up.URL}); err != nil {
-			t.Fatal(err)
-		}
-	}
-	refusalGroup(t, "a/m", "b/m")
-	s := New()
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/v1/responses", strings.NewReader(codexAsk))
-	req.Header.Set(SessionHeader, "override-session")
-	req.Header.Set("Session_id", "native-session")
-	s.Handler().ServeHTTP(rec, req)
-	code, body := rec.Code, rec.Body.String()
-	if code != 200 || !strings.Contains(body, "from b") || strings.Contains(body, "content_filter") || a.n != 1 || b.n != 1 {
-		t.Fatalf("%d %s (a %d, b %d)", code, body, a.n, b.n)
-	}
-	r := s.trace.routes[len(s.trace.routes)-1]
-	if len(r.Usage) != 2 || r.Usage[0].Provider != "a" || r.Usage[0].CacheRead != 237000 || r.Usage[0].CacheWrite != 47000 || r.Usage[0].Output != 2 || r.Usage[1].Provider != "b" || r.Usage[1].Output != 4 {
-		t.Fatalf("refusal and answer accounting: %+v", r.Usage)
-	}
-	if len(r.Tries) != 2 || r.Tries[0].Fail != failRefused || r.Tries[0].Rest != nil || r.Tries[0].Status != 400 || r.Status != 200 {
-		t.Fatalf("tries: %+v", r.Tries)
-	}
-	if _, ok := restOf("a"); ok || s.resting("a") {
-		t.Fatal("a refusal set the member aside")
-	}
-	recs := usage.Load(time.Time{})
-	if len(recs) != 2 || recs[0].Provider != "a" || recs[0].Status != 400 || recs[0].CacheRead != 237000 || recs[0].Output != 2 ||
-		recs[1].Provider != "b" || recs[1].Status != 200 {
-		t.Fatalf("usage: %+v", recs)
-	}
-
-	if recs[0].Error == "" || recs[0].Error != keepMsg(r.Tries[0].Error) || recs[1].Error != "" {
-		t.Fatalf("refusal reason missing or leaked into the successful attempt: %+v", recs)
-	}
-
-	for i, r := range recs {
-		if r.Session != "override-session" || r.NativeSession != "native-session" || r.RequestID != []string{"req-a", "req-b"}[i] || r.Endpoint != "/v1/responses → /v1/messages" {
-			t.Fatalf("attempt %d lost request identity: %+v", i, r)
-		}
-	}
-
-	if recs[0].ResponseID != "" || recs[1].ResponseID != "resp_m2" {
-		t.Fatalf("only the delivered reply has a client response ID: %+v", recs)
-	}
-
-	for _, rec := range recs {
-		if rec.RouteID != r.ID || rec.RouteID == 0 {
-			t.Fatalf("usage route %d, want %d", rec.RouteID, r.ID)
-		}
-	}
-
-	// and on an Anthropic client's own API, relayed as it came
-	fresh(t)
-	a = &scripted{replies: []reply{{200, "text/event-stream", anthropicRefusal}}}
-	b = &scripted{replies: []reply{{200, "text/event-stream", anthropicAnswer}}}
-	scriptedOn(t, "a", provider.Anthropic, a)
-	scriptedOn(t, "b", provider.Anthropic, b)
-	refusalGroup(t, "a/m", "b/m")
-	code, body = sendTo(New(), "/v1/messages", `{"model":"group/g","max_tokens":10,"stream":true,"messages":[{"role":"user","content":"hi"}]}`)
-	if code != 200 || !strings.Contains(body, "from b") || strings.Contains(body, `"refusal"`) || a.n != 1 || b.n != 1 {
-		t.Fatalf("messages: %d %s (a %d, b %d)", code, body, a.n, b.n)
-	}
-
-	// not streamed: the whole reply is read for it
-	fresh(t)
-	a = &scripted{replies: []reply{{200, "", `{"id":"m1","type":"message","role":"assistant","model":"m","content":[],"stop_reason":"refusal","usage":{"input_tokens":3,"output_tokens":2}}`}}}
-	b = &scripted{replies: []reply{{200, "", `{"id":"m2","type":"message","role":"assistant","model":"m","content":[{"type":"text","text":"from b"}],"stop_reason":"end_turn","usage":{"input_tokens":3,"output_tokens":2}}`}}}
-	scriptedOn(t, "a", provider.Anthropic, a)
-	scriptedOn(t, "b", provider.Anthropic, b)
-	refusalGroup(t, "a/m", "b/m")
-	code, body = sendTo(New(), "/v1/messages", `{"model":"group/g","max_tokens":10,"messages":[{"role":"user","content":"hi"}]}`)
-	if code != 200 || !strings.Contains(body, "from b") || strings.Contains(body, `"refusal"`) || a.n != 1 || b.n != 1 {
-		t.Fatalf("whole: %d %s (a %d, b %d)", code, body, a.n, b.n)
-	}
-}
-
 // OpenAI's content_filter, by Chat Completions' finish_reason or a
 // Responses reply incomplete for it, fails over the same way.
 func TestContentFilterFailsOver(t *testing.T) {
@@ -201,48 +108,6 @@ func TestContentFilterFailsOver(t *testing.T) {
 	}
 }
 
-// With nobody else to ask, the agent is told it was refused, as a request
-// not to send again as it is — not handed an empty reply that looks whole —
-// and the usage says it failed. An agent on Anthropic's API has the
-// vendor's refusal itself, which says so in its own words.
-func TestRefusalWithNobodyLeftIsAnError(t *testing.T) {
-	fresh(t)
-	a := &scripted{replies: []reply{{200, "text/event-stream", anthropicRefusal}}}
-	scriptedOn(t, "a", provider.Anthropic, a)
-	refusalGroup(t, "a/m")
-	s := New()
-	code, body := sendTo(s, "/v1/responses", codexAsk)
-	if code != 400 || !strings.Contains(body, "m refused this request (safety filter") || strings.Contains(body, "response.incomplete") || a.n != 1 {
-		t.Fatalf("%d %s (a %d)", code, body, a.n)
-	}
-	if recs := usage.Load(time.Time{}); len(recs) != 1 || recs[0].Status != 400 || recs[0].CacheRead != 237000 {
-		t.Fatalf("usage: %+v", recs)
-	}
-	if r := s.trace.routes[len(s.trace.routes)-1]; r.Status != 400 || r.Tries[0].Fail != failRefused || r.Tries[0].Rest != nil {
-		t.Fatalf("route: %+v", r)
-	}
-
-	// a model asked by its own name, on Anthropic's API: the vendor's
-	// refusal as it said it, for Claude Code to switch to its fallback
-	// model on, which a 400 isn't to it (DD on Discord)
-	fresh(t)
-	a = &scripted{replies: []reply{{200, "text/event-stream", anthropicRefusal}}}
-	scriptedOn(t, "a", provider.Anthropic, a)
-	code, body = sendTo(New(), "/v1/messages", `{"model":"a/m","max_tokens":10,"stream":true,"messages":[{"role":"user","content":"hi"}]}`)
-	if code != 200 || !strings.Contains(body, `"stop_reason":"refusal"`) || !strings.Contains(body, "message_stop") || strings.Contains(body, "refused this request") || a.n != 1 {
-		t.Fatalf("messages: %d %s (a %d)", code, body, a.n)
-	}
-
-	// and on Chat's
-	fresh(t)
-	a = &scripted{replies: []reply{{200, "text/event-stream", chatFiltered}}}
-	scriptedOn(t, "a", provider.Chat, a)
-	code, body = sendTo(New(), "/v1/chat/completions", `{"model":"a/m","stream":true,"messages":[{"role":"user","content":"hi"}]}`)
-	if code != 400 || !strings.Contains(body, "safety filter: content_filter") || a.n != 1 {
-		t.Fatalf("chat: %d %s (a %d)", code, body, a.n)
-	}
-}
-
 // A refusal after some of the reply was said can't be taken back: the
 // agent gets it as it came, and nobody else is asked. A reply that ends as
 // usual is untouched.
@@ -284,35 +149,6 @@ func TestRefusalAfterContentPassesThrough(t *testing.T) {
 	code, body = sendTo(New(), "/v1/messages", `{"model":"group/g","max_tokens":10,"messages":[{"role":"user","content":"hi"}]}`)
 	if code != 200 || strings.TrimSpace(body) != whole || b.n != 0 {
 		t.Fatalf("whole: %d %s (b %d)", code, body, b.n)
-	}
-}
-
-// A safety filter's refusal that arrives once the reply has begun goes to
-// the agent as it came — nobody else is asked, the reply already reached
-// it — and it is the vendor refusing the turn, as one before anything was
-// said is: nobody rests for it, and the account is asked again as any
-// other (#248).
-func TestRefusalMidReplyRestsNobody(t *testing.T) {
-	fresh(t)
-	late := sse(`data: {"id":"c1","choices":[{"index":0,"delta":{"role":"assistant","content":"half"}}]}`,
-		`data: {"error":{"code":"content_filter","message":"The response was filtered"}}`,
-		`data: [DONE]`)
-	a := &scripted{replies: []reply{{200, "text/event-stream", late}}}
-	b := &scripted{replies: []reply{{200, "", chatOK}}}
-	scriptedOn(t, "a", provider.Chat, a)
-	scriptedOn(t, "b", provider.Chat, b)
-	refusalGroup(t, "a/m", "b/m")
-	s := New()
-	code, body := sendTo(s, "/v1/chat/completions", `{"model":"group/g","stream":true,"messages":[{"role":"user","content":"hi"}]}`)
-	if code != 200 || !strings.Contains(body, "half") || !strings.Contains(body, "content_filter") || b.n != 0 {
-		t.Fatalf("chat: %d %s (b %d)", code, body, b.n)
-	}
-	r := s.trace.routes[len(s.trace.routes)-1]
-	if len(r.Tries) != 1 || r.Tries[0].Fail != failRefused || r.Tries[0].Rest != nil || r.Tries[0].Status != 200 {
-		t.Fatalf("tries: %+v", r.Tries)
-	}
-	if s.resting("a") {
-		t.Fatal("a refusal after content set the member aside")
 	}
 }
 

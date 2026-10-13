@@ -325,9 +325,6 @@ func pruneIcons(f file) {
 			used[name] = true
 		}
 	}
-	for _, name := range keptPluginIcons() {
-		used[name] = true
-	}
 	ents, _ := os.ReadDir(IconDir())
 	for _, e := range ents {
 		if !iconName.MatchString(e.Name()) || used[e.Name()] {

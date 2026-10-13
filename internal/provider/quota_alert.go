@@ -173,10 +173,6 @@ func dueReminders(qs []SubscriptionQuota, marks map[string]alertMark, lead time.
 			}
 			out = append(out, QuotaAlert{Provider: q.Provider, Name: q.Name, User: q.User, Window: w.Name, Used: w.Used, ResetsAt: at, Kind: "renews"})
 		}
-		if r := q.Resets; r != nil && r.Count > 0 && r.Until != nil && due(alertPrefix(q)+"c", *r.Until) {
-			at := *r.Until
-			out = append(out, QuotaAlert{Provider: q.Provider, Name: q.Name, User: q.User, ResetsAt: &at, Kind: "expires", Credits: r.Count})
-		}
 	}
 	return out
 }

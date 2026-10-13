@@ -125,35 +125,3 @@ func TestUnfilteredRequiredChoicesStillForward(t *testing.T) {
 		})
 	}
 }
-
-func TestEmptyGeminiAllowlistRejectedBySubscriptionPaths(t *testing.T) {
-	const body = `{"model":"m","contents":[{"role":"user","parts":[{"text":"hi"}]}],"tools":[{"functionDeclarations":[{"name":"known"}]}],"toolConfig":{"functionCallingConfig":{"mode":"ANY","allowedFunctionNames":["unknown"]}}}`
-	for _, tc := range []struct {
-		name string
-		call func(*Server, http.ResponseWriter, *http.Request, *Usage) (int, string)
-	}{
-		{"Kiro", func(s *Server, w http.ResponseWriter, r *http.Request, u *Usage) (int, string) {
-			return s.serveKiro(w, r, provider.Gemini, provider.Provider{ID: "kiro"}, "m", []byte(body), u)
-		}},
-		{"Cursor", func(s *Server, w http.ResponseWriter, r *http.Request, u *Usage) (int, string) {
-			return s.serveCursor(w, r, provider.Gemini, "m", []byte(body), u)
-		}},
-		{"Devin", func(s *Server, w http.ResponseWriter, r *http.Request, u *Usage) (int, string) {
-			return s.serveDevin(w, r, provider.Gemini, "", "m", []byte(body), u)
-		}},
-		{"Claude subscription", func(s *Server, w http.ResponseWriter, r *http.Request, u *Usage) (int, string) {
-			return s.serveClaudeSubscription(w, r, provider.Gemini, provider.Provider{ID: "claude"}, "m", []byte(body), u)
-		}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			fresh(t)
-			rec := httptest.NewRecorder()
-			s := New()
-			u := Usage{}
-			code, _ := tc.call(s, rec, httptest.NewRequest("POST", "/", strings.NewReader(body)), &u)
-			if code != 400 || rec.Code != 400 || !strings.Contains(rec.Body.String(), "callable") {
-				t.Fatalf("code=%d recorder=%d body=%s", code, rec.Code, rec.Body.String())
-			}
-		})
-	}
-}

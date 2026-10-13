@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 
@@ -31,57 +30,6 @@ func agyViewFile(role string, snake bool) string {
 		{"role":"` + role + `","parts":[` + fr + `]}],
 	"tools":[{"functionDeclarations":[{"name":"view_file","description":"View a file",
 		"parameters":{"type":"object","properties":{"AbsolutePath":{"type":"string"}}}}]}]}`
-}
-
-func TestGeminiFunctionResponseImage(t *testing.T) {
-	for _, c := range []struct {
-		role  string
-		snake bool
-	}{{"model", false}, {"user", false}, {"model", true}, {"user", true}} {
-		name := c.role
-		if c.snake {
-			name += " snake_case"
-		}
-		r, err := parseGemini([]byte(agyViewFile(c.role, c.snake)))
-		if err != nil {
-			t.Fatal(err)
-		}
-		last := r.Messages[len(r.Messages)-1]
-		if last.Role != "user" || len(last.Parts) != 1 || last.Parts[0].Kind != ToolResult {
-			t.Fatalf("%s: the last turn: %+v", name, last)
-		}
-		res := last.Parts[0]
-		if !strings.Contains(res.Text, "entire, complete content") || len(res.Images) != 1 ||
-			res.Images[0].Kind != Image || res.Images[0].MediaType != "image/jpeg" || res.Images[0].Data != agyImage {
-			t.Fatalf("%s: the result: %+v", name, res)
-		}
-		// every upstream is given the image
-		var sent struct {
-			Request struct {
-				Contents []struct {
-					Role  string                       `json:"role"`
-					Parts []map[string]json.RawMessage `json:"parts"`
-				} `json:"contents"`
-			} `json:"request"`
-		}
-		if err := json.Unmarshal(buildCodeAssist(r, "gemini-3.8-flash", "antigravity"), &sent); err != nil {
-			t.Fatal(err)
-		}
-		turn := sent.Request.Contents[len(sent.Request.Contents)-1]
-		if turn.Role != "user" || len(turn.Parts) != 2 || turn.Parts[0]["functionResponse"] == nil ||
-			!strings.Contains(string(turn.Parts[1]["inlineData"]), agyImage) {
-			t.Fatalf("%s: Antigravity was sent %+v", name, turn)
-		}
-		for _, via := range []provider.Protocol{provider.Anthropic, provider.Chat, provider.Responses} {
-			b, err := build(via, r, "m", "", false)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !strings.Contains(string(b), agyImage) {
-				t.Fatalf("%s: %s was not given the image: %s", name, via, b)
-			}
-		}
-	}
 }
 
 // Through the gateway: /v1beta with agy's request reaches a Chat upstream

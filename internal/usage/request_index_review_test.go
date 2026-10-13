@@ -2,7 +2,6 @@ package usage
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,48 +11,6 @@ import (
 
 	"github.com/yetone/magpie/internal/sessions"
 )
-
-func TestRequestMatchIndexEquivalent(t *testing.T) {
-	// Repeated token totals, named/unnamed retries, zero-token failures,
-	// ambiguous timestamps, native sessions and local rejections.
-	for seed := int64(0); seed < 40; seed++ {
-		rng := rand.New(rand.NewSource(seed))
-		gateway, local := &rowChunk{}, &rowChunk{Source: sessions.CallSource{Path: "/local"}}
-		now := time.Now().Truncate(time.Second)
-		for i := 0; i < 180; i++ {
-			r := Record{Time: now.Add(time.Duration(rng.Intn(20)) * time.Second), Agent: "codex", Provider: "relay", Session: fmt.Sprint(rng.Intn(4)), Input: rng.Intn(3), Output: rng.Intn(2), Millis: 1000}
-			if i%4 == 0 {
-				r.RequestID = fmt.Sprint(rng.Intn(10))
-			}
-			if i%5 == 0 {
-				r.Status = 500
-			}
-			if i%9 == 0 {
-				r.Provider = ""
-			}
-			if i%7 == 0 {
-				r.NativeSession = r.Session
-				r.Session = "routing override"
-			}
-			gateway.add(Row{Record: r}, "", int64(i), false)
-			r.Time = r.Time.Add(time.Duration(rng.Intn(9)-4) * time.Second)
-			if i%3 == 0 {
-				r.RequestID = ""
-			}
-			if r.NativeSession != "" {
-				r.Session = r.NativeSession
-			}
-			local.add(Row{Record: r, Source: "log"}, "", int64(i), r.Failed())
-		}
-		for _, since := range []time.Time{{}, now.Add(5 * time.Second)} {
-			got := matchedLocal(gateway, []*rowChunk{local}, nil, since)
-			want := matchedLocalLegacy(gateway, []*rowChunk{local}, nil, since)
-			if !reflect.DeepEqual(got, want) {
-				t.Fatalf("seed %d: %d matches, want %d", seed, len(got), len(want))
-			}
-		}
-	}
-}
 
 func TestQueryPageIOOutsideCacheLock(t *testing.T) {
 	pageHome(t)
@@ -119,38 +76,6 @@ func TestRequestModelFilterExact(t *testing.T) {
 		}
 		if !(Filter{Query: "gpt-5"}).keeps(r) {
 			t.Fatal("free-text search changed")
-		}
-	}
-}
-
-func BenchmarkMatchedLocal(b *testing.B) {
-	for _, n := range []int{1000, 4000, 8000} {
-		for _, dense := range []bool{false, true} {
-			g, c := &rowChunk{}, &rowChunk{}
-			now := time.Now().Round(0)
-			for i := 0; i < n; i++ {
-				at := now.Add(time.Duration(i) * 5 * time.Second)
-				if dense {
-					at = now
-				}
-				r := Record{Time: at, Agent: "codex", Provider: "relay", Session: "same", Input: 10, Output: 1}
-				g.add(Row{Record: r}, "", int64(i), false)
-				c.add(Row{Record: r, Source: "log"}, "", int64(i), false)
-			}
-			for _, impl := range []struct {
-				name string
-				f    func(*rowChunk, []*rowChunk, map[rowRef]bool, time.Time) map[rowRef]bool
-			}{{"indexed", matchedLocal}, {"without_index", matchedLocalLegacy}} {
-				b.Run(fmt.Sprintf("%d/dense=%v/%s", n, dense, impl.name), func(b *testing.B) {
-					b.ReportAllocs()
-					for i := 0; i < b.N; i++ {
-						got := impl.f(g, []*rowChunk{c}, nil, time.Time{})
-						if (!dense && len(got) != n) || (dense && len(got) != 0) {
-							b.Fatal(len(got))
-						}
-					}
-				})
-			}
 		}
 	}
 }

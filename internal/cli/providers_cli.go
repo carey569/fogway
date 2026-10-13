@@ -20,7 +20,6 @@ import (
 	"github.com/yetone/magpie/internal/gateway"
 	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/stats"
 )
 
 var amber = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#B45309", Dark: "#F2B544"})
@@ -75,10 +74,6 @@ const providerUsage = `usage:
   e.g. magpie provider add "My Relay" url=https://relay.example.com/v1 key=sk-…
        magpie provider add "Own Claude" anthropic=https://gw.example.com key=sk-… catalog=anthropic
        magpie provider add "My Relay" url=https://relay.example.com/v1 key=sk-… header.X-Org-Id=acme
-       magpie provider add remote-magpie sk-magpie-… url=http://192.168.1.20:3425 id=office
-                                   (another computer's magpie, shared on its network: its models and routing
-                                    groups as office/…, each request sent on in the API the agent spoke)
-       magpie provider add bailian-decision sk-… workspace=<workspace id>   (or region=ap-southeast-1, or region=token-plan with an sk-sp- key)
        magpie provider add bailian-token-plan sk-sp-…   (Bailian's Token Plan: its chat models, and its decision model for routing groups;
                                     qwen-token-plan is the Qwen AI platform's, qwen-decision its pay-as-you-go decision model)
        magpie provider add google-vertex project=my-project impersonate=vertex@my-project.iam.gserviceaccount.com
@@ -119,7 +114,7 @@ func providers() error {
 	// a providers.json that can't be read is not "no providers yet": what
 	// is listed is then the signed-in accounts alone, and it ends in why
 	bad := provider.FileError()
-	if len(all) == 0 && len(provider.Excluded()) == 0 {
+	if len(all) == 0 {
 		if bad != nil {
 			return bad
 		}
@@ -132,14 +127,13 @@ func providers() error {
 	w := [5]int{}
 	for _, p := range all {
 		r := row{name: bold.Render(p.Name), id: muted.Render(p.ID), host: p.Host()}
-		if p.Preset == "" && p.Account == nil {
+		if p.Preset == "" {
 			r.name += " " + faint.Render("custom")
 		}
 		switch {
 		case p.Off:
 			r.key = faint.Render("○ switched off")
-		case p.Account != nil:
-			r.key = green.Render("●") + " " + muted.Render("signed in as "+p.Account.User)
+
 		case p.IsVertex() && !p.Ready():
 			// no project an address can be made of (providers.json edited
 			// by hand): nothing is asked, as the app's row says
@@ -168,9 +162,6 @@ func providers() error {
 		if u := uses[p.ID]; len(u) > 0 {
 			r.uses = green.Render("← " + strings.Join(u, ", "))
 		}
-		if e := p.ListError(); e != "" {
-			r.uses += amber.Render("  ! couldn't list its models: " + e)
-		}
 		if len(p.Fallback) > 0 {
 			r.uses += muted.Render("  ⤷ " + strings.Join(p.Fallback, " → "))
 		}
@@ -182,24 +173,7 @@ func providers() error {
 	for _, r := range rows {
 		fmt.Printf("  %s  %s  %s  %s  %s  %s\n", pad(r.name, w[0]), pad(r.id, w[1]), pad(r.host, w[2]), pad(r.key, w[3]), pad(r.models, w[4]), r.uses)
 	}
-	for _, x := range provider.Excluded() {
-		name := x.Agent
-		if x.Name != "" {
-			name = x.Name
-		} else if a, err := agent.Find(x.Agent); err == nil {
-			name = a.Name
-		}
-		fmt.Println()
-		if x.SignedOut {
-			fmt.Println(" ", amber.Render("!"), name+"'s saved accounts are not offered: "+x.Why)
-			continue
-		}
-		back := ""
-		if x.Provider != "" {
-			back = " · magpie provider add " + x.Provider + " brings it back"
-		}
-		fmt.Println(" ", muted.Render(name+" is signed in but not offered: "+x.Why+back))
-	}
+
 	return bad
 }
 
@@ -231,20 +205,13 @@ func presets() error {
 	kind := provider.Kind("")
 	// partners first, as the app lists them: their heading says they pay
 	all := []provider.PresetDef{}
-	var shown []string
-	for _, pa := range provider.PartnersNow(3 * time.Second) {
-		all = append(all, pa.PresetDef)
-		shown = append(shown, pa.ID)
-	}
-	provider.CountPartner(provider.PartnerShown, shown...)
-	provider.NoticePartners(shown...)
 	for _, pr := range append(all, provider.Presets()...) {
 		if pr.Kind != kind {
 			kind = pr.Kind
-			fmt.Println(faint.Render("  " + map[provider.Kind]string{provider.KindPartner: "partners (sponsors)", provider.KindVendor: "vendors", provider.KindRelay: "relays", provider.KindLocal: "local", provider.KindRemote: "another computer's magpie"}[kind]))
+			fmt.Println(faint.Render("  " + map[provider.Kind]string{provider.KindVendor: "vendors", provider.KindRelay: "relays", provider.KindLocal: "local"}[kind]))
 		}
 		name := bold.Render(pr.Name)
-		if pr.Sponsored && pr.Kind != provider.KindPartner {
+		if pr.Sponsored {
 			name += " " + faint.Render("sponsored")
 		}
 		state := muted.Render("magpie provider add " + pr.ID + " <key>")
@@ -433,7 +400,7 @@ func providerCmd(args []string) error {
 		if err != nil {
 			return err
 		}
-		if p.Account != nil || p.Preset != "" {
+		if p.Preset != "" {
 			return fmt.Errorf("%s has its own icon; only a custom provider takes one", p.Name)
 		}
 		p.Icon = rest[1]
@@ -545,8 +512,6 @@ func providerCmd(args []string) error {
 		return nil
 	case "account-models", "account-model":
 		return accountModelsCmd(rest)
-	case "account-cap", "account-caps":
-		return accountCapCmd(rest)
 	case "account-concurrency", "account-limit":
 		return accountConcurrencyCmd(rest)
 	case "queue":
@@ -654,13 +619,7 @@ func addProvider(rest []string) error {
 	if len(rest) == 0 {
 		return fmt.Errorf("magpie provider add <preset> <key>   or   magpie provider add <name> k=v…\n\n%s", providerUsage)
 	}
-	if len(rest) == 1 && slices.ContainsFunc(provider.Excluded(), func(x provider.Exclusion) bool { return x.Provider == strings.ToLower(rest[0]) }) {
-		// a signed-in account the user removed comes back with its picks
-		if err := provider.ShowAccount(strings.ToLower(rest[0])); err != nil {
-			return err
-		}
-		return announce(strings.ToLower(rest[0]))
-	}
+
 	var p provider.Provider
 	if pr, err := provider.FromPreset(strings.ToLower(rest[0])); err == nil {
 		p = pr
@@ -717,16 +676,13 @@ func announce(id string) error {
 	defer cancel()
 	if ms, err := saved.Fetch(ctx); err == nil {
 		fmt.Println(green.Render("✓"), len(ms), "models from", fetchedFrom(*saved))
-	} else if !saved.DecideOnly() {
+	} else {
 		// the URLs asked and what they said; the base stays as given
 		fmt.Println(amber.Render("!"), muted.Render(err.Error()))
 	}
+
 	n := len(saved.Exposed())
-	if saved.DecideOnly() {
-		fmt.Println("  it routes groups: magpie group set <id> effort=auto classifier="+saved.ID+"/"+saved.Jev(),
-			muted.Render("· or a rule's intent=…"))
-		return nil
-	}
+
 	if n == 0 {
 		fmt.Println(amber.Render("!"), "no models exposed yet ·", "magpie provider models", saved.ID, "<ids…>")
 	} else {
@@ -743,7 +699,7 @@ func showProvider(p provider.Provider) error {
 		}
 	}
 	name := bold.Render(p.Name) + muted.Render("  "+p.ID)
-	if p.Preset == "" && p.Account == nil {
+	if p.Preset == "" {
 		name += faint.Render("  custom")
 	}
 	fmt.Println(" ", name)
@@ -769,19 +725,9 @@ func showProvider(p provider.Provider) error {
 		kv("unmasked", "yes"+muted.Render(why))
 	}
 	switch {
-	case p.Account != nil:
-		who := p.Account.User
-		if p.Account.Plan != "" {
-			who += muted.Render("  " + p.Account.Plan)
-		}
-		from := p.Account.Agent + "'s own sign-in"
-		if p.IsPlugin() {
-			from = p.Name + "'s sign-in"
-			if provider.Moved(p.ID) {
-				from = p.ID + "'s own sign-in" // as the built-in said
-			}
-		}
-		kv("account", who+muted.Render("  from "+from))
+
+	// as the built-in said
+
 	case p.IsVertex():
 		// no key: where its requests go, and the Google credentials that
 		// sign them
@@ -858,7 +804,6 @@ func showProvider(p provider.Provider) error {
 }
 
 func applyPairs(p *provider.Provider, pairs []string) error {
-	workspace := ""
 	for _, kv := range pairs {
 		k, v, ok := strings.Cut(kv, "=")
 		if !ok {
@@ -885,12 +830,6 @@ func applyPairs(p *provider.Provider, pairs []string) error {
 			// a Gemini API's base (…/v1beta), Google's or one that
 			// answers as it does (#1346)
 			p.Gemini = v
-		case "decide":
-			// a System One root (…/systemone is asked under it): the
-			// provider routes groups, its models any name (#647)
-			p.Decide = v
-		case "workspace":
-			workspace = strings.TrimSpace(v)
 		case "project", "location", "credentials", "impersonate":
 			// Google Vertex AI's project and location, and the Google
 			// credentials that sign its requests in place of a key; empty
@@ -938,7 +877,7 @@ func applyPairs(p *provider.Provider, pairs []string) error {
 				return fmt.Errorf("%s=%s: %s's are %s", k, v, pr.Name, strings.Join(ids, ", "))
 			}
 			r := pr.Regions[i]
-			p.Chat, p.Responses, p.Anthropic, p.Decide = r.Chat, r.Responses, r.Anthropic, r.Decide
+			p.Chat, p.Responses, p.Anthropic = r.Chat, r.Responses, r.Anthropic
 			if r.KeysURL != "" {
 				p.KeysURL = r.KeysURL
 			}
@@ -991,9 +930,7 @@ func applyPairs(p *provider.Provider, pairs []string) error {
 			default:
 				return fmt.Errorf("user-agent=agent|magpie, not %q", v)
 			}
-			if on && p.Account != nil {
-				return fmt.Errorf("%s signs in as its own client, which sends the User-Agent it does; user-agent= is for a provider with an API key", p.Name)
-			}
+
 			p.PassUserAgent = on
 		case "search":
 			// yes: the vendor searches the web by itself, a web search a
@@ -1058,13 +995,7 @@ func applyPairs(p *provider.Provider, pairs []string) error {
 			return fmt.Errorf("unknown field %q\n\n%s", k, providerUsage)
 		}
 	}
-	if workspace != "" {
-		// Bailian's decision model is asked at the workspace's own host
-		if !strings.Contains(p.Decide, provider.WorkspaceID) {
-			return fmt.Errorf("workspace= fills in a Bailian workspace's host, and %s's decision API names none", p.Name)
-		}
-		p.Decide = strings.ReplaceAll(p.Decide, provider.WorkspaceID, workspace)
-	}
+
 	return nil
 }
 
@@ -1170,7 +1101,6 @@ func advertisedURL() string {
 // serve: `magpie serve` — the gateway alone, in the foreground.
 func serve() error {
 	s := gateway.New()
-	go stats.Run(version, "serve")
 	go catalog.KeepFresh() // new models' prices, in a gateway left running
 	// a signed-in account's list exists only at its vendor: asked for here
 	// as the app and the terminal ask (#1789), or a headless gateway offered
@@ -1180,9 +1110,6 @@ func serve() error {
 			time.Sleep(time.Minute)
 		}
 	}()
-	// Codex's background app-server, restarted when it has the list from
-	// before a change and no codex session is on it
-	go agent.KeepCodexDaemonCurrent(context.Background())
 	public := advertisedURL()
 	fmt.Println(green.Render("●"), "magpie gateway on", bold.Render(gateway.URL()))
 	fmt.Println(muted.Render("  OpenAI  "), public+"/v1/chat/completions", muted.Render("·"), public+"/v1/responses")
@@ -1199,11 +1126,6 @@ func serve() error {
 		fmt.Println(amber.Render("!"), "no models yet ·", "magpie provider add deepseek sk-…")
 	} else {
 		fmt.Printf("  %d models · %s\n", n, muted.Render("magpie models"))
-	}
-	for _, x := range provider.Excluded() {
-		if x.SignedOut {
-			fmt.Println(amber.Render("!"), x.Agent+":", x.Why)
-		}
 	}
 	return s.ListenAndServe(context.Background())
 }
@@ -1314,111 +1236,6 @@ func accountModelsCmd(rest []string) error {
 		}
 	}
 	return nil
-}
-
-// accountCapCmd shows, or sets with a share or off, the usage cap of a
-// subscription's accounts: the share of each window one is used to at most
-// (provider.AccountCaps); with --window <name>, the share of that window
-// alone (provider.AccountWindowCaps).
-func accountCapCmd(rest []string) error {
-	usage := fmt.Errorf("magpie provider account-cap <id> [account [percent|off]]\n       magpie provider account-cap <id> <account> --window <name> [percent|none|default]")
-	window, windowSet := "", false
-	for i := 0; i < len(rest); i++ {
-		a := rest[i]
-		if v, ok := strings.CutPrefix(a, "--window="); ok {
-			window, windowSet = v, true
-			rest = slices.Delete(slices.Clone(rest), i, i+1)
-			i--
-			continue
-		}
-		if a == "--window" {
-			if i+1 >= len(rest) {
-				return usage
-			}
-			window, windowSet = rest[i+1], true
-			rest = slices.Delete(slices.Clone(rest), i, i+2)
-			i--
-		}
-	}
-	if len(rest) < 1 || windowSet && (len(rest) < 2 || strings.TrimSpace(window) == "") {
-		return usage
-	}
-	p, err := provider.Find(rest[0])
-	if err != nil {
-		return err
-	}
-	if p.Account == nil {
-		return fmt.Errorf("%s has keys, not subscription accounts with usage windows to cap", p.Name)
-	}
-	if len(rest) > 2 {
-		if windowSet {
-			cap, err := parseWindowCap(rest[2])
-			if err != nil {
-				return err
-			}
-			err = provider.SetWindowCap(p.ID, rest[1], window, cap)
-			if err != nil {
-				return err
-			}
-		} else {
-			cap, err := provider.ParseCap(rest[2])
-			if err != nil {
-				return err
-			}
-			if err := provider.SetAccountCap(p.ID, rest[1], cap); err != nil {
-				return err
-			}
-		}
-		if p, err = provider.Find(p.ID); err != nil {
-			return err
-		}
-	}
-	refs := p.AccountRefs()
-	if len(rest) > 1 {
-		refs = slices.DeleteFunc(refs, func(r string) bool { return !strings.EqualFold(r, strings.TrimSpace(rest[1])) })
-		if len(refs) == 0 {
-			return fmt.Errorf("%s has no account %q", p.Name, rest[1])
-		}
-	}
-	if len(refs) == 0 {
-		fmt.Println(muted.Render(p.Name + " has no account"))
-		return nil
-	}
-	for _, r := range refs {
-		caps := p.CapsOf(r)
-		if caps.All > 0 {
-			fmt.Printf("%s · capped at %d%% of each usage window\n", r, caps.All)
-		} else if len(caps.Windows) > 0 {
-			fmt.Println(r, muted.Render("· no cap on its other windows: used to 100%"))
-		} else {
-			fmt.Println(r, muted.Render("· no cap: used to 100%"))
-		}
-		for _, w := range slices.Sorted(maps.Keys(caps.Windows)) {
-			if c := caps.Windows[w]; c >= 100 {
-				fmt.Printf("  %s · no cap on this window\n", w)
-			} else {
-				fmt.Printf("  %s · capped at %d%%\n", w, c)
-			}
-		}
-	}
-	return nil
-}
-
-// parseWindowCap reads a window's own share as the CLI takes it: "50",
-// "50%", none (off, 100) for no cap on that window, default (-) to follow
-// the account's cap.
-func parseWindowCap(s string) (int, error) {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "default", "account", "-", "0":
-		return 0, nil
-	case "none", "off", "no", "100", "100%":
-		return 100, nil
-	}
-	n, err := provider.ParseCap(s)
-	if err != nil {
-		return 0, fmt.Errorf("a window's cap is a share from %d to %d (percent), none for no cap on it, or default to follow the account's cap, not %q", provider.MinCap, provider.MaxCap, s)
-	}
-	return n, nil
 }
 
 // accountConcurrencyCmd shows, or sets, the limit on requests at once of a

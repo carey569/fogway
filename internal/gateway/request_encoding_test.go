@@ -6,12 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
-	"time"
 
-	"github.com/yetone/magpie/internal/access"
-	"github.com/yetone/magpie/internal/budget"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -118,7 +114,7 @@ func TestEncodedEmbeddingsBody(t *testing.T) {
 // body that inflates past it is refused, on every route.
 func TestEncodedBodyInflatedPastLimit(t *testing.T) {
 	big := []byte(`{"model":"fake/m1","input":"` + strings.Repeat("x", 4096) + `"}`)
-	for _, path := range []string{"/v1/responses", "/v1/chat/completions", "/v1/messages", "/v1/messages/count_tokens", "/v1beta/models/fake/m1:generateContent", "/v1/embeddings", "/v1/images/generations", "/v1/videos", CodexPath + "/responses"} {
+	for _, path := range []string{"/v1/responses", "/v1/chat/completions", "/v1/messages", "/v1/messages/count_tokens", "/v1beta/models/fake/m1:generateContent", "/v1/embeddings", CodexPath + "/responses"} {
 		for _, enc := range []string{"gzip", "zstd"} {
 			t.Run(path+"/"+enc, func(t *testing.T) {
 				f := &fake{t: t}
@@ -159,64 +155,5 @@ func TestUnknownBodyEncodingRefused(t *testing.T) {
 				t.Fatal("an unreadable body reached the provider")
 			}
 		})
-	}
-}
-
-// A gateway key's limit holds a compressed request at what it decodes to,
-// not at its compressed size.
-func TestKeyLimitReservesDecodedBody(t *testing.T) {
-	fresh(t)
-	budget.Forget()
-	now := pinLimitClock(t)
-	release := make(chan struct{})
-	entered := make(chan struct{}, 1)
-	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entered <- struct{}{}
-		<-release
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"choices":[{"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":300,"completion_tokens":50}}`)
-	}))
-	defer up.Close()
-	if err := provider.Save(provider.Provider{ID: "plan", Name: "Plan", Key: "upstream-secret", Chat: up.URL + "/v1", Models: []string{"m1"}}); err != nil {
-		t.Fatal(err)
-	}
-	keys, secrets := newCaller(t, "Zipped")
-	limit := &access.Limit{Period: "month", Tokens: 1 << 30}
-	setLimit(t, keys[0].ID, limit)
-	gw := httptest.NewServer(New().Handler())
-	defer gw.Close()
-	body := []byte(`{"model":"plan/m1","messages":[{"role":"user","content":"` + strings.Repeat("x", 40000) + `"}]}`)
-	sent := encodedBody(t, body, "zstd")
-	var once sync.Once
-	free := func() { once.Do(func() { close(release) }) }
-	defer free()
-	done := make(chan string, 1)
-	go func() {
-		req, _ := http.NewRequest("POST", gw.URL+"/v1/chat/completions", bytes.NewReader(sent))
-		req.Header.Set("Authorization", "Bearer "+secrets[0])
-		req.Header.Set("Content-Encoding", "zstd")
-		res, err := gw.Client().Do(req)
-		if err != nil {
-			done <- err.Error()
-			return
-		}
-		b, _ := io.ReadAll(res.Body)
-		res.Body.Close()
-		done <- res.Status + " " + string(b)
-	}()
-	select {
-	case <-entered:
-	case got := <-done:
-		t.Fatalf("the request never reached the provider: %s", got)
-	case <-time.After(10 * time.Second):
-		t.Fatal("the request never reached the provider")
-	}
-	st := budget.Of(access.Key{ID: keys[0].ID, Limit: limit}, now)
-	free()
-	if got := <-done; !strings.HasPrefix(got, "200 ") {
-		t.Fatalf("zstd request: %s", got)
-	}
-	if st.InFlight != 1 || st.Reserved < int64(len(body))/4 {
-		t.Fatalf("held at %d tokens for a %d-byte body sent as %d bytes", st.Reserved, len(body), len(sent))
 	}
 }

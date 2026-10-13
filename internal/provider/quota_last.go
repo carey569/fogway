@@ -95,18 +95,10 @@ func keepLast(q SubscriptionQuota, user string) SubscriptionQuota {
 		}
 		return q
 	}
-	if q.Provider == "claude" && claudeUsageDenied.MatchString(q.Error) {
+	if !passing.MatchString(q.Error) {
 		return q
 	}
-	claudeUnavailable := q.Provider == "claude" && q.Error == errClaudeUsageUnavailable.Error()
-	if !claudeUnavailable && !passing.MatchString(q.Error) {
-		return q
-	}
-	read := c.reading
-	if claudeUnavailable {
-		read = c.reported // keep the reported values, even after their reset
-	}
-	out, ok := read(key)
+	out, ok := c.reading(key)
 	if !ok {
 		return q
 	}
@@ -133,16 +125,7 @@ func (c *lastQuotasT) load() {
 func (c *lastQuotasT) reading(key string) (SubscriptionQuota, bool) {
 	out, ok := c.reported(key)
 	if ok {
-		now := time.Now()
-		// as read, before any window started again (none had by the zero
-		// time)
-		wasUp := usedUp(out, time.Time{})
-		out.Windows = elapsed(out.Windows, now)
-		// a hold that came with a window used up ends when that window
-		// starts again; one with no window used up stands till a fresh read
-		if out.Held && wasUp && !usedUp(out, now) {
-			out.Held = false
-		}
+		out.Windows = elapsed(out.Windows, time.Now())
 	}
 	return out, ok
 }
@@ -165,30 +148,4 @@ func (c *lastQuotasT) reported(key string) (SubscriptionQuota, bool) {
 	at := e.At
 	out.AsOf = &at
 	return out, true
-}
-
-// lastAllowances is each of an agent's accounts' allowance as it last
-// read, kept on disk: what routing goes by while the first reading since
-// magpie started is still out, rather than by none — with none, every
-// account counts as unused and the first in order went first, until the
-// reading came back and put another first, taking conversations off the
-// account that had them cached (vincentzhang on Discord).
-func lastAllowances(agent string) map[string]Allowance {
-	logins, ok := usageLogins(agent)
-	if !ok {
-		return nil
-	}
-	now := time.Now()
-	out := map[string]Allowance{}
-	c := &lastQuotas
-	c.Lock()
-	defer c.Unlock()
-	c.load()
-	for _, l := range logins {
-		q, ok := c.reading(loginProvider(l) + "/" + strings.ToLower(l.User))
-		if ok && len(q.Windows) > 0 {
-			out[l.User] = allowanceOf(q.Windows, now).restartedBy(resetRunsOut(agent, l.User, q.Windows, q.Resets))
-		}
-	}
-	return out
 }

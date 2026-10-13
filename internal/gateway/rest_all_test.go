@@ -143,34 +143,6 @@ func TestOwnQuotaRest(t *testing.T) {
 	}
 }
 
-// Only a 429 or a 402 out of quota is answered from the rest: a 403 whose
-// words read as quota (a key's plan, a region) is asked again as before,
-// and so is a subscription account, whose resets may be spent for it.
-func TestQuotaHeldOnlyForKeysOutOfAllowance(t *testing.T) {
-	deadChain(t, "dead-a")
-	srv := New()
-	body := []byte(`{"error":{"message":"you have reached your weekly usage limit"}}`)
-	key := candidate{p: provider.Provider{ID: "k1"}, rest: "k1"}
-	srv.restAfter(key, 429, nil, body)
-	if _, _, ok := quotaHeld([]candidate{key}); !ok {
-		t.Error("a key out of its allowance isn't held")
-	}
-	forbidden := candidate{p: provider.Provider{ID: "k2"}, rest: "k2"}
-	srv.restAfter(forbidden, 403, nil, []byte(`{"error":{"message":"quota exceeded for this region"}}`))
-	if _, _, ok := quotaHeld([]candidate{key, forbidden}); ok {
-		t.Error("a 403 held")
-	}
-	acct := candidate{p: provider.Provider{ID: "codex", Account: &provider.Account{Agent: "codex", User: "a@b"}}, rest: "codex"}
-	srv.restAfter(acct, 429, nil, body)
-	if _, _, ok := quotaHeld([]candidate{acct}); ok {
-		t.Error("an account held")
-	}
-	fresh := candidate{p: provider.Provider{ID: "k3"}, rest: "k3"}
-	if _, _, ok := quotaHeld([]candidate{key, fresh}); ok {
-		t.Error("held with a key not resting")
-	}
-}
-
 // #1772's providers.json named its first key in "keys" as well as in
 // "key": each key is one candidate, asked once.
 func TestFirstKeyListedTwiceAskedOnce(t *testing.T) {

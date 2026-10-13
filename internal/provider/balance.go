@@ -734,7 +734,7 @@ func Balance(ctx context.Context, p Provider) (amount string, ok bool, err error
 func balanceRead(ctx context.Context, p Provider) (amount string, parts []BalancePart, ws []QuotaWindow, ok bool, err error) {
 	ctx = p.Via(ctx)
 	src, ok := balanceSourceOf(p)
-	if !ok || p.Account != nil || p.Key == "" {
+	if !ok || p.Key == "" {
 		return "", nil, nil, false, nil
 	}
 	if src.token != "" && p.BalanceURL != "" && balanceURLPath(p.BalanceURL) == newAPIKeyUsage {
@@ -880,7 +880,7 @@ func KeyBalances(ctx context.Context) []SubscriptionQuota {
 	}
 	var jobs []job
 	for _, p := range All() {
-		if p.Hidden || p.Off || p.Account != nil || p.Key == "" {
+		if p.Hidden || p.Off || p.Key == "" {
 			continue
 		}
 		src, ok := balanceSourceOf(p)

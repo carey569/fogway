@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -16,7 +14,6 @@ import (
 
 	"github.com/yetone/magpie/internal/gateway"
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/sessions"
 )
 
 // ctxRoute is a done request of agent in session whose prompt holds base
@@ -119,39 +116,6 @@ func TestContextCacheNotKnown(t *testing.T) {
 		if k == "cache-friendly" || k == "cache-misses" {
 			t.Fatalf("tags %v", tagKeys(a))
 		}
-	}
-}
-
-// A session goes by the name the Sessions page shows for it: here the one
-// a Claude Code session was renamed to.
-func TestContextSessionTitles(t *testing.T) {
-	h := sandboxHome(t)
-	claude := filepath.Join(h, ".claude")
-	proj := filepath.Join(claude, "projects", "-work")
-	if err := os.MkdirAll(proj, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	const id = "11111111-2222-3333-4444-555555555555"
-	body := `{"parentUuid":null,"isSidechain":false,"type":"user","message":{"role":"user","content":"hi"},"uuid":"u","timestamp":"2026-09-20T10:00:00.000Z","cwd":"/work","sessionId":"` + id + `"}` + "\n" +
-		`{"parentUuid":"u","isSidechain":false,"message":{"model":"claude-sonnet-5","id":"msg_1","type":"message","role":"assistant","content":[{"type":"text","text":"done"}],"usage":{"input_tokens":10,"output_tokens":2}},"requestId":"req_1","type":"assistant","uuid":"a","timestamp":"2026-09-20T10:00:01.000Z","cwd":"/work","sessionId":"` + id + `"}` + "\n" +
-		`{"type":"custom-title","customTitle":"Port the parser","sessionId":"` + id + `"}` + "\n"
-	if err := os.WriteFile(filepath.Join(proj, id+".jsonl"), []byte(body), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("CLAUDE_CONFIG_DIR", claude)
-	sessions.Reset()
-	t.Cleanup(sessions.Reset)
-
-	out := contextOf([]gateway.Route{
-		ctxRoute(1, "claude", id, 20000, 1000, 200000, 0),
-		ctxRoute(2, "claude", "not-a-session", 20000, 1000, 200000, 0),
-	}, 7)
-	titles := map[string]string{}
-	for _, s := range out.Sessions {
-		titles[s.Key] = s.Title
-	}
-	if titles[id] != "Port the parser" || titles["not-a-session"] != "" {
-		t.Fatalf("titles %v", titles)
 	}
 }
 

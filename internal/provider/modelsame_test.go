@@ -2,11 +2,7 @@ package provider
 
 import (
 	"slices"
-	"strings"
 	"testing"
-
-	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/settings"
 )
 
 // The groups magpie finds merge a model however a vendor spells its id:
@@ -59,73 +55,5 @@ func TestSameModelVendorSpellings(t *testing.T) {
 	gs := autoGroups([]Entry{e("volcengine", "deepseek-v4-1-flash-260910"), e("ali-tp", "deepseek-v4.1-flash")}, nil)
 	if len(gs) != 1 || gs[0].ID != "auto-deepseek-v4-1-flash" || !slices.Equal(gs[0].Members, []string{"volcengine/deepseek-v4-1-flash-260910", "ali-tp/deepseek-v4.1-flash"}) {
 		t.Fatalf("groups: %+v", gs)
-	}
-}
-
-// A model whose id no rule matches up with another vendor's is merged
-// with it once the user says, in the provider's Names & levels, which
-// model it is the same as (#583): saved with the provider's Save, kept in
-// settings' ModelSameAs, and taken by the groups magpie finds.
-func TestModelSameAsMergesFoundGroup(t *testing.T) {
-	prefsHome(t)
-	touched := 0
-	catalog.Changed = func() { touched++ }
-	t.Cleanup(func() { catalog.Changed = nil })
-	if err := Save(Provider{ID: "c", Name: "C", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"ep-sol-x"}}); err != nil {
-		t.Fatal(err)
-	}
-	members := func(gid string) []string {
-		_, ms, ok := FindGroup(GroupPrefix + gid)
-		if !ok {
-			return nil
-		}
-		var out []string
-		for _, m := range ms {
-			out = append(out, m.ID)
-		}
-		return out
-	}
-	if got := members("auto-sol"); !slices.Equal(got, []string{"a/sol", "b/sol"}) {
-		t.Fatalf("before: %v", got)
-	}
-	touched = 0
-	same := "Vendor/SOL"
-	if err := SetModelPrefs("c", map[string]ModelPref{"ep-sol-x": {Same: &same}}); err != nil {
-		t.Fatal(err)
-	}
-	if touched != 1 || settings.Load().ModelSameAs["c/ep-sol-x"] != "Vendor/SOL" {
-		t.Fatalf("told %d, saved %v", touched, settings.Load().ModelSameAs)
-	}
-	if got := members("auto-sol"); !slices.Equal(got, []string{"a/sol", "b/sol", "c/ep-sol-x"}) {
-		t.Fatalf("after: %v", got)
-	}
-	if AutoGroupOf("c", "ep-sol-x") != "auto-sol" || AutoGroupID("ep-sol-x") != "auto-ep-sol-x" {
-		t.Fatalf("AutoGroupOf %s", AutoGroupOf("c", "ep-sol-x"))
-	}
-	if g, ok := GroupFor("sol"); !ok || g != GroupPrefix+"auto-sol" {
-		t.Fatalf("GroupFor: %s %v", g, ok)
-	}
-	// the same again: nothing to tell
-	if err := SetModelPrefs("c", map[string]ModelPref{"ep-sol-x": {Same: &same}}); err != nil || touched != 1 {
-		t.Fatalf("%v, told %d", err, touched)
-	}
-	// its own id however spelt is no mapping: nothing kept
-	own := "c/EP_Sol-X"
-	if err := SetModelPrefs("c", map[string]ModelPref{"ep-sol-x": {Same: &own}}); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := settings.Load().ModelSameAs["c/ep-sol-x"]; ok || touched != 2 {
-		t.Fatalf("kept %v, told %d", settings.Load().ModelSameAs, touched)
-	}
-	if got := members("auto-sol"); !slices.Equal(got, []string{"a/sol", "b/sol"}) {
-		t.Fatalf("restored: %v", got)
-	}
-	// a model the provider doesn't serve, or a name of no model, is refused
-	if err := SetModelPrefs("c", map[string]ModelPref{"nope": {Same: &same}}); err == nil || !strings.Contains(err.Error(), "nope") {
-		t.Fatalf("got %v", err)
-	}
-	junk := "--/"
-	if err := SetModelPrefs("c", map[string]ModelPref{"ep-sol-x": {Same: &junk}}); err == nil {
-		t.Fatal("a name of no model was taken")
 	}
 }

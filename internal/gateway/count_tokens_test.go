@@ -1,9 +1,7 @@
 package gateway
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -249,103 +247,3 @@ func TestCountTokensTransportError(t *testing.T) {
 type countTransport func(*http.Request) (*http.Response, error)
 
 func (f countTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
-
-func TestCountTokensTransportFailover(t *testing.T) {
-	for _, outcome := range []string{"success", "all-failed", "canceled"} {
-		t.Run(outcome, func(t *testing.T) {
-			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-			t.Setenv("XDG_CACHE_HOME", t.TempDir())
-			p := provider.Provider{ID: "transport-" + outcome, Name: "Transport", Key: "first", Anthropic: "http://count.test", Models: []string{"m1"},
-				Keys: []provider.KeyAccount{{Key: "off", Off: true}, {Key: "next"}}}
-			t.Cleanup(func() {
-				for _, k := range p.KeysOn() {
-					id := p.ID + "#" + provider.KeyID(k.Key)
-					restingUntil.Lock()
-					delete(restingUntil.m, id)
-					delete(restingUntil.note, id)
-					restingUntil.Unlock()
-					routed.Lock()
-					delete(routed.failures, id)
-					routed.Unlock()
-				}
-			})
-			if err := provider.Save(p); err != nil {
-				t.Fatal(err)
-			}
-			if err := settings.Save(settings.Settings{RedactPersonal: true}); err != nil {
-				t.Fatal(err)
-			}
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			var seen, bodies []string
-			s := New()
-			s.client = &http.Client{Transport: countTransport(func(r *http.Request) (*http.Response, error) {
-				defer r.Body.Close()
-				body, err := io.ReadAll(r.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-				key := r.Header.Get("x-api-key")
-				seen, bodies = append(seen, key), append(bodies, string(body))
-				if r.URL.Path != "/v1/messages/count_tokens" || modelOf(body) != "m1" || !strings.Contains(string(body), "{{PHONE_") {
-					t.Fatalf("upstream: %s %s", r.URL, body)
-				}
-				if key == "first" {
-					if outcome == "canceled" {
-						cancel()
-						return nil, context.Canceled
-					}
-					return nil, errors.New("first connection broke")
-				}
-				if key != "next" {
-					t.Fatalf("unexpected key: %s", key)
-				}
-				if outcome == "all-failed" {
-					return nil, errors.New("last connection broke")
-				}
-				return &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": {"application/json"}},
-					Body: io.NopCloser(strings.NewReader(`{"input_tokens":17}`))}, nil
-			})}
-			send := func() *httptest.ResponseRecorder {
-				rec := httptest.NewRecorder()
-				s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/v1/messages/count_tokens", strings.NewReader(
-					`{"model":"`+p.ID+`/m1","messages":[{"role":"user","content":"13812345678"}]}`)).WithContext(ctx))
-				return rec
-			}
-			rec := send()
-			want := "first,next"
-			if outcome == "canceled" {
-				want = "first"
-			}
-			if strings.Join(seen, ",") != want {
-				t.Fatalf("tried %v, want %s; reply: %d %s", seen, want, rec.Code, rec.Body)
-			}
-			if len(bodies) == 2 && bodies[0] != bodies[1] {
-				t.Fatalf("retry changed prompt: %v", bodies)
-			}
-			if outcome == "success" {
-				if rec.Code != 200 || rec.Body.String() != `{"input_tokens":17}` {
-					t.Fatalf("count reply: %d %s", rec.Code, rec.Body)
-				}
-				seen = nil
-				if rec = send(); rec.Code != 200 || strings.Join(seen, ",") != "next" {
-					t.Fatalf("failed key did not rest: %d %s, tried %v", rec.Code, rec.Body, seen)
-				}
-			} else {
-				var result struct {
-					Error struct{ Type, Message string }
-				}
-				message := "last connection broke"
-				if outcome == "canceled" {
-					message = "context canceled"
-					if s.resting(p.ID + "#" + provider.KeyID("first")) {
-						t.Fatal("client cancellation rested a key")
-					}
-				}
-				if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil || rec.Code != 502 || result.Error.Type != "api_error" || !strings.Contains(result.Error.Message, message) {
-					t.Fatalf("transport error: %d %s (decode: %v)", rec.Code, rec.Body, err)
-				}
-			}
-		})
-	}
-}

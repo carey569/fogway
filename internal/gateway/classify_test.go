@@ -11,7 +11,6 @@ import (
 
 	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 // clsUp is a Chat vendor that classifies: it answers what answer says,
@@ -93,84 +92,6 @@ func postOK(t *testing.T, s *Server, session, body string) (string, Route) {
 		t.Fatalf("%d %s", code, out)
 	}
 	return out, lastRoute(s)
-}
-
-// A rule with an intent: the classifier is asked as the turn begins, with
-// the user's words only, and the turn goes where its answer says; the
-// turn's tool rounds don't ask again.
-func TestIntentRoutesATurn(t *testing.T) {
-	s, _, _, c := intented(t, provider.Rule{Use: "b/big", Intent: "writing or fixing tests"})
-	c.set("1", 0)
-	msg := "add a unit test for the parser <system-reminder>secret agent context</system-reminder>"
-	out, r := postOK(t, s, "s1", chat(msg, nil, 0, ""))
-	if !strings.Contains(out, "from kb") || r.Rule == nil || r.Rule.N != 1 || r.Rule.Use != "b/big" {
-		t.Fatalf("turn 1: %s %+v", out, r.Rule)
-	}
-	cl := r.Rule.Classified
-	if cl == nil || cl.By != "c/cls" || cl.Intent != "writing or fixing tests" || cl.Error != "" || cl.Cached || len(cl.Intents) != 1 {
-		t.Fatalf("classified %+v", cl)
-	}
-	if len(r.Rule.When) != 1 || r.Rule.When[0] != `intent "writing or fixing tests"` {
-		t.Fatalf("when %v", r.Rule.When)
-	}
-	asked := c.last()
-	if !strings.Contains(asked, `"model":"cls"`) || !strings.Contains(asked, `1. writing or fixing tests`) ||
-		!strings.Contains(asked, "add a unit test for the parser") || strings.Contains(asked, "secret agent context") ||
-		!strings.Contains(asked, `"temperature":0`) {
-		t.Fatalf("asked %s", asked)
-	}
-	// its tool rounds stay, and the classifier isn't asked again
-	out, r = postOK(t, s, "s1", chat(msg, nil, 2, ""))
-	if !strings.Contains(out, "from kb") || !r.Rule.Held || r.Rule.N != 1 || r.Rule.Classified != nil || c.n() != 1 {
-		t.Fatalf("within: %s %+v %d", out, r.Rule, c.n())
-	}
-	// the next turn is another kind: no rule, so it stays where it was
-	// (the group's affinity), with the classifier's answer in the trace
-	c.set("0", 0)
-	_, r = postOK(t, s, "s1", chat(msg, []string{"what does this function return?"}, 0, ""))
-	if r.Rule.N != 0 || r.Rule.Classified == nil || r.Rule.Classified.Intent != "" || c.n() != 2 {
-		t.Fatalf("turn 2: %+v %d", r.Rule, c.n())
-	}
-	if !strings.Contains(c.last(), "what does this function return?") || strings.Contains(c.last(), "add a unit test") {
-		t.Fatalf("turn 2 asked about %s", c.last())
-	}
-	// it was told what the turn before was, for a message that only
-	// carries on from it; after a turn that was none, nothing
-	if r.Rule.Classified.After != "writing or fixing tests" || !strings.Contains(c.last(), "was of kind 1") {
-		t.Fatalf("turn 2 not told of turn 1: %+v %s", r.Rule.Classified, c.last())
-	}
-	_, r = postOK(t, s, "s1", chat(msg, []string{"what does this function return?", "go on"}, 0, ""))
-	if r.Rule.Classified == nil || r.Rule.Classified.After != "" || strings.Contains(c.last(), "was of kind") || c.n() != 3 {
-		t.Fatalf("turn 3: %+v %s", r.Rule.Classified, c.last())
-	}
-	// the classifier's call is magpie's own, in the usage, marked as the
-	// routing classifier's (#1839)
-	var seen bool
-	for _, call := range s.Recent() {
-		if call.Model == "c/cls" && call.Agent == "magpie-router" && call.Kind == "routing" {
-			seen = true
-		}
-	}
-	if !seen {
-		t.Fatal("the classifier's call isn't recorded as magpie-router's routing")
-	}
-	var recs, agents int
-	for _, r := range usage.Load(time.Time{}) {
-		switch {
-		case r.Provider == "c":
-			if r.Kind != "routing" || !r.ByMagpie() || usage.PurposeOf(r.Kind) != "kind:routing" {
-				t.Fatalf("the classifier's record: %+v", r)
-			}
-			recs++
-		case r.ByMagpie() || r.Kind == "routing":
-			t.Fatalf("an agent's record marked magpie's or routing: %+v", r)
-		default:
-			agents++
-		}
-	}
-	if recs != 3 || agents == 0 {
-		t.Fatalf("%d classifier records, %d the agent's", recs, agents)
-	}
 }
 
 // Several intents: the classifier chooses among those of the rules that

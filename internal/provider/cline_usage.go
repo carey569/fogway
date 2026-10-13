@@ -183,5 +183,5 @@ func clineGet(ctx context.Context, key, path string, out any) error {
 // clineKeyCard says the provider's key card is read as Cline's: a Cline
 // API key with no Balance URL of the user's own.
 func clineKeyCard(p Provider) bool {
-	return p.IsCline() && p.Account == nil && p.Key != "" && strings.TrimSpace(p.BalanceURL) == ""
+	return p.IsCline() && p.Key != "" && strings.TrimSpace(p.BalanceURL) == ""
 }

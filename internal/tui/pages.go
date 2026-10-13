@@ -125,10 +125,7 @@ func (m model) updateProviders(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "enter", " ":
 		m.openProviderModels(p.ID)
 	case "e":
-		if p.Account != nil {
-			m.flash, m.flashOK = p.Name+" is a signed-in account: its key is the agent's sign-in", false
-			return m, nil
-		}
+
 		if p.IsVertex() {
 			// its token is minted from the user's Google credentials
 			m.flash, m.flashOK = p.Name+" takes no key · magpie provider set "+p.ID+" credentials=… impersonate=… changes its Google credentials", false
@@ -174,16 +171,16 @@ func (m model) updateProviders(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if now == "" {
 			now = p.Responses
 		}
-		if p.IsRemoteMagpie() {
-			now = p.Anthropic // the address as typed, without /v1
-		}
+
+		// the address as typed, without /v1
+
 		id, name := p.ID, p.Name
 		m.openAsk(endpointAsk(*pr, []string{"providers", name, "address"}, now, func(v string) tea.Cmd {
 			return saveProvider(id, func(p *provider.Provider) {
 				p.Chat, p.Responses = v, v
-				if p.IsRemoteMagpie() {
-					p.Anthropic = "" // put again from the address typed
-				}
+
+				// put again from the address typed
+
 				provider.ForgetBalances()
 			}, name+" address "+v)
 		}))
@@ -274,9 +271,7 @@ func refetchCmd(id string) tea.Cmd {
 		if err != nil {
 			return flashMsg{text: err.Error()}
 		}
-		if p.IsPlugin() {
-			return flashMsg{text: p.Name + "'s models are what its plugin lists"}
-		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		ms, dropped, err := p.Refetch(ctx)
@@ -440,15 +435,6 @@ func kindNote(k provider.Kind) string {
 // Google Vertex AI the project it takes in place of one.
 func (m *model) openPresets() {
 	var items []agent.Option
-	var shown []string
-	for _, d := range provider.Partners() {
-		items = append(items, agent.Option{Value: d.ID, Note: d.Name + " · partner (sponsor)"})
-		shown = append(shown, d.ID)
-	}
-	go func() {
-		provider.CountPartner(provider.PartnerShown, shown...)
-		provider.NoticePartners(shown...)
-	}()
 	for _, d := range provider.Presets() {
 		items = append(items, agent.Option{Value: d.ID, Note: d.Name + " · " + kindNote(d.Kind)})
 	}
@@ -596,10 +582,9 @@ func addCmd(p provider.Provider) tea.Cmd {
 		// Discord)
 		text := "added " + saved.Name
 		ms, err := saved.Fetch(ctx)
-		if err != nil && saved.DecideOnly() {
-			// a System One API: its list isn't what it is for
-			return flashMsg{text: text, ok: true}
-		}
+
+		// a System One API: its list isn't what it is for
+
 		if err != nil {
 			return flashMsg{text: text + " · " + fetchNote(err)}
 		}
@@ -647,8 +632,9 @@ func localAddressAsk(pr provider.PresetDef, crumbs []string, now string, then fu
 		}}
 }
 
-// listError is provider.Provider.ListError; tests stand in for it.
-var listError = provider.Provider.ListError
+// listError is why a provider lists only its defaults: a plugin's account
+// could say so; a key's never does. Tests stand in for it.
+var listError = func(provider.Provider) string { return "" }
 
 func (m model) viewProviders() string {
 	var b strings.Builder
@@ -671,8 +657,7 @@ func (m model) viewProviders() string {
 		switch {
 		case p.Off:
 			r.key = "○ switched off"
-		case p.Account != nil:
-			r.key = "● " + p.Account.User
+
 		case p.IsVertex() && !p.Ready():
 			r.key = "○ needs a project"
 		case p.IsVertex():
@@ -750,197 +735,9 @@ var periodNames = map[usage.Period]string{usage.Today: "today", usage.Week: "7 d
 type quotaMsg []provider.SubscriptionQuota
 
 func quotasCmd() tea.Msg {
-	provider.AskClaudeUsage() // the page opened, or r pressed
 	ctx, cancel := context.WithTimeout(provider.Asked(context.Background()), 12*time.Second)
 	defer cancel()
-	// a WorkBuddy (China) account's line says how its daily check-in went,
-	// as its card in the app does
-	return quotaMsg(provider.WithCheckins(provider.Quotas(ctx)))
-}
-
-// checkinMsg is what came of c, WorkBuddy's daily check-in pressed now.
-type checkinMsg struct {
-	text string
-	ok   bool
-}
-
-// The check-in; vars so tests can stand in for WorkBuddy and Trae CN.
-var (
-	checkinHere  = provider.CheckInWorkBuddy
-	hasWorkBuddy = provider.HasWorkBuddy
-	checkinTrae  = provider.CheckInTrae
-	hasTrae      = provider.HasTrae
-	checkinMM    = provider.CheckInMiniMax
-	hasMiniMax   = provider.HasMiniMax
-	checkinQd    = provider.CheckInQoder
-	hasQoder     = provider.HasQoder
-	checkinPl    = func(ctx context.Context) []provider.WorkBuddyCheckin { return provider.CheckInPlugins(ctx) }
-	hasPlugin    = provider.HasPluginCheckin
-)
-
-// checkinCmd presses WorkBuddy's daily check-in (签到) now for every
-// WorkBuddy (China) account signed in here not in yet today, all at once,
-// as the app's Usage card's "Check in now" and magpie accounts checkin do:
-// the built-in's or the plugin's (akic404 on Discord: the TUI had no way
-// to); and Trae CN's (每日签到) for each Trae CN account (#694), and
-// MiniMax Code's for each MiniMax Code account (#811), and Qoder's daily
-// credits for each Qoder account, and each plugin's own check-in
-// (auth.checkin) for its accounts. It says
-// how each account stands: the credits and streak, in
-// already today, or why not. A shared magpie's accounts are checked in
-// on that magpie, from its own app, TUI or CLI.
-func checkinCmd() tea.Msg {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel()
-	var parts []string
-	failed := 0
-	if hasWorkBuddy() {
-		for _, r := range checkinHere(ctx) {
-			if r.Outcome == provider.CheckinFailed {
-				failed++
-			}
-			parts = append(parts, checkinWords(r))
-		}
-	}
-	if hasTrae() {
-		for _, r := range checkinTrae(ctx) {
-			if r.Outcome == provider.CheckinFailed {
-				failed++
-			}
-			parts = append(parts, checkinWords(r))
-		}
-	}
-	if hasMiniMax() {
-		for _, r := range checkinMM(ctx) {
-			if r.Outcome == provider.CheckinFailed {
-				failed++
-			}
-			parts = append(parts, checkinWords(r))
-		}
-	}
-	if hasQoder() {
-		for _, r := range checkinQd(ctx) {
-			if r.Outcome == provider.CheckinFailed {
-				failed++
-			}
-			parts = append(parts, checkinWords(r))
-		}
-	}
-	if hasPlugin() {
-		for _, r := range checkinPl(ctx) {
-			if r.Outcome == provider.CheckinFailed {
-				failed++
-			}
-			parts = append(parts, checkinWords(r))
-		}
-	}
-	if len(parts) == 0 {
-		return checkinMsg{text: "no WorkBuddy (China), Trae CN, MiniMax Code, Qoder or check-in plugin account is signed in · only they have the daily check-in"}
-	}
-	return checkinMsg{text: strings.Join(parts, "; "), ok: failed == 0}
-}
-
-// checkinWords is how an account's check-in stands, in a few words.
-func checkinWords(r provider.WorkBuddyCheckin) string {
-	who := r.User
-	switch {
-	case r.By == "trae" && who == "":
-		who = "Trae CN"
-	case r.By == "trae":
-		who = "Trae CN " + who
-	case r.By == "minimax" && who == "":
-		who = "MiniMax Code"
-	case r.By == "minimax":
-		who = "MiniMax Code " + who
-	case r.By == "qoder" && who == "":
-		who = "Qoder"
-	case r.By == "qoder":
-		who = "Qoder " + who
-	case r.Vendor != "":
-		who = strings.TrimSpace(r.Vendor + " " + who)
-	case who == "":
-		who = "WorkBuddy"
-	}
-	switch r.Outcome {
-	case provider.CheckinClaimed, provider.CheckinDone:
-		s := who + " checked in today"
-		if r.Credit > 0 {
-			s += fmt.Sprintf(" +%g", r.Credit)
-		}
-		if r.Streak > 0 {
-			s += fmt.Sprintf(" · a %d-day streak", r.Streak)
-		}
-		if r.Outcome == provider.CheckinDone || !r.Asked {
-			s += " · already"
-		}
-		return s
-	case provider.CheckinIneligible:
-		return who + " isn't eligible for the check-in"
-	case provider.CheckinInactive:
-		return who + ": no check-in event now"
-	case provider.CheckinCaptcha:
-		return who + " asks for a captcha: check in in its own app"
-	case provider.CheckinOwnApp:
-		return who + ": " + ownAppWords(r)
-	}
-	msg := r.Msg
-	if msg == "" {
-		msg = "no answer"
-	}
-	return who + " couldn't check in: " + msg
-}
-
-// ownAppName is the vendor whose own app alone gets r's check-in credits.
-func ownAppName(r provider.WorkBuddyCheckin) string {
-	switch {
-	case r.By == "trae":
-		return "Trae CN"
-	case r.Vendor != "":
-		return r.Vendor
-	case r.By == "":
-		return "WorkBuddy"
-	}
-	return "the vendor"
-}
-
-// ownAppWords says a check-in the vendor pays only to its own app
-// (Trae CN's 9074, #808) is to be done in that app.
-func ownAppWords(r provider.WorkBuddyCheckin) string {
-	name := ownAppName(r)
-	return name + " only gives check-in credits to its own app; check in in the " + name + " app"
-}
-
-// checkinCell is a WorkBuddy (China) or Trae CN account's check-in on its
-// line: today's
-// done, with the credits, or not yet; empty for an account without one.
-func checkinCell(q provider.SubscriptionQuota, now time.Time) string {
-	if !q.Checkins {
-		return ""
-	}
-	r := q.Checkin
-	if r == nil || r.Day != provider.CheckinDay(now) {
-		return sMuted.Render("签到 not yet today · c")
-	}
-	switch r.Outcome {
-	case provider.CheckinClaimed, provider.CheckinDone:
-		s := sOK.Render("签到 ✓")
-		if r.Credit > 0 {
-			s += sText.Render(fmt.Sprintf(" +%g", r.Credit))
-		}
-		if r.Streak > 0 {
-			s += sFaint.Render(fmt.Sprintf(" · %d-day streak", r.Streak))
-		}
-		return s
-	case provider.CheckinIneligible:
-		return sMuted.Render("签到 not eligible")
-	case provider.CheckinInactive:
-		return sMuted.Render("签到 no event now")
-	case provider.CheckinCaptcha:
-		return sMuted.Render("签到 needs a captcha · check in in its app")
-	case provider.CheckinOwnApp:
-		return sMuted.Render("签到 only in " + ownAppName(*r) + "'s own app · check in there")
-	}
-	return sBad.Render("签到 failed") + sMuted.Render(" · c tries again")
+	return quotaMsg(provider.Quotas(ctx))
 }
 
 func (m model) updateUsage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -949,10 +746,6 @@ func (m model) updateUsage(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "u":
 		m.qleft = !m.qleft
 		return m, nil
-	case "c":
-		// WorkBuddy's daily check-in, as the app's "Check in now"
-		m.flash, m.flashOK = "checking in…", true
-		return m, checkinCmd
 	case "l", "right":
 		m.period = periods[(i+1)%len(periods)]
 	case "h", "left":
@@ -1189,11 +982,7 @@ func quotaLines(qs []provider.SubscriptionQuota, asked, left bool, width int, no
 			t = sName.Render(trunc(p, tw))
 		}
 		line := padRight(t, tw)
-		// a WorkBuddy (China) account's check-in, after whatever else
-		ci := checkinCell(q, now)
-		if ci != "" {
-			ci = "   " + ci
-		}
+		ci := ""
 		switch {
 		case q.Balance != "" && len(q.Windows) == 0:
 			out = append(out, line+"  "+sText.Render(q.Balance)+sMuted.Render(" left")+ci)
@@ -1214,23 +1003,10 @@ func quotaLines(qs []provider.SubscriptionQuota, asked, left bool, width int, no
 		}
 		if q.Balance != "" {
 			c := sText.Render(q.Balance) + sMuted.Render(" left")
-			if q.Provider == "codex" && q.User != "" && !provider.CodexCredits(q.User) {
-				c += sFaint.Render(" · not spent") // held once a window is used up
-			}
 			cells = append(cells, c)
 		}
 		if ci != "" {
 			cells = append(cells, ci[3:])
-		}
-		if r := q.Resets; r != nil {
-			c := sText.Render("↺ " + r.Words())
-			if r.Until != nil {
-				c += sFaint.Render(" until " + provider.ResetClock(*r.Until, now))
-			}
-			if provider.AutoResets(q.Provider, q.User) {
-				c += sFaint.Render(" · auto") // spent by itself once the week is used up
-			}
-			cells = append(cells, c)
 		}
 		at := tw
 		for _, c := range cells {

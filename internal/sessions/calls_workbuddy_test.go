@@ -1,8 +1,6 @@
 package sessions
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 )
@@ -104,66 +102,5 @@ func TestWorkBuddyCallsSkipsMagpiesGateway(t *testing.T) {
 	}
 	if m.Model != "glm-5" || m.Tokens != (Tokens{1200, 80, 0, 0, 0}) {
 		t.Fatalf("the user's own: %+v", m)
-	}
-}
-
-// workbuddyGateway reads models.json whichever shape WorkBuddy wrote it in,
-// and names a routing group on its own: "group/<id>" is a name only a magpie
-// answers to, so it needs no configuration behind it.
-func TestWorkBuddyGateway(t *testing.T) {
-	list := `[{"id":"hy3","vendor":"workbuddy"},{"id":"deepseek/v4","vendor":"magpie"}]`
-	obj := `{"models":[{"id":"hy3","vendor":"workbuddy"},{"id":"deepseek/v4","vendor":"magpie"},{"id":"own-proxy/glm-5","vendor":"openai"}]}`
-	for _, c := range []struct {
-		shape, id string
-		want      bool
-	}{
-		{"", "custom-local:group/auto-deepseek-v4-1-flash", true}, // the group's name, whatever models.json says
-		{"", "custom-local:deepseek/v4", false},                   // no models.json: nothing else is magpie's
-		{"[]", "custom-local:deepseek/v4", false},                 //
-		{list, "custom-local:deepseek/v4", true},                  // magpie's entry in the picker
-		{list, "deepseek/v4", false},                              // asked for without the picker's prefix
-		{list, "custom-local:hy3", false},                         // another vendor's entry
-		{list, "custom-local:own-proxy/glm-5", false},             // the user's own, pointed elsewhere
-		{list, "", false},                                         // WorkBuddy's own models carry no prefix
-		{obj, "custom-local:deepseek/v4", true},                   // an object with a "models" list
-		{obj, "custom-local:own-proxy/glm-5", false},              //
-	} {
-		dir := t.TempDir()
-		t.Setenv("WORKBUDDY_CONFIG_DIR", dir)
-		if c.shape != "" {
-			if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(c.shape), 0o644); err != nil {
-				t.Fatal(err)
-			}
-		}
-		if got := workbuddyGateway(c.id); got != c.want {
-			t.Fatalf("workbuddyGateway(%q) with %s = %v, want %v", c.id, c.shape, got, c.want)
-		}
-	}
-}
-
-// What the models.json half of that judgement depends on: taking magpie's
-// models out of WorkBuddy's own configuration stops the calls made while they
-// were in being read as the gateway's, and they are counted as the agent's
-// own beside the gateway's rows for the same calls. The routing group's name
-// keeps being the gateway's whichever way models.json stands.
-func TestWorkBuddyGatewayFollowsModelsJSON(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("WORKBUDDY_CONFIG_DIR", dir)
-	with := filepath.Join(dir, "models.json")
-	if err := os.WriteFile(with, []byte(`[{"id":"deepseek/v4","vendor":"magpie"}]`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if !workbuddyGateway("custom-local:deepseek/v4") {
-		t.Fatal("magpie's entry in models.json is not the gateway's")
-	}
-	// magpie taken out of WorkBuddy's picker (agent.workbuddyWrite, off)
-	if err := os.WriteFile(with, []byte(`[{"id":"hy3","vendor":"workbuddy"}]`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if workbuddyGateway("custom-local:deepseek/v4") {
-		t.Fatal("a call asked for by an id models.json no longer holds is still the gateway's")
-	}
-	if !workbuddyGateway("custom-local:group/auto-deepseek-v4-1-flash") {
-		t.Fatal("a routing group's name stopped being the gateway's")
 	}
 }

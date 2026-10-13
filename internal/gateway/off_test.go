@@ -27,9 +27,9 @@ func TestProviderOff(t *testing.T) {
 	catalog := func() string {
 		var ids []string
 		for _, e := range provider.Catalog() {
-			if e.Provider.Account == nil { // signed-in agents the machine may have aside
-				ids = append(ids, e.ID)
-			}
+			// signed-in agents the machine may have aside
+			ids = append(ids, e.ID)
+
 		}
 		return strings.Join(ids, " ")
 	}

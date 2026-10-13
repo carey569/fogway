@@ -220,11 +220,6 @@ type StaleCopy struct {
 // files, and isn't counted.
 func (a *Agent) StaleCopies() []StaleCopy {
 	pats, files, reads := a.startsWith()
-	// Windows lists its processes slowly and without their start: only
-	// the Codex daemon, as KeepCodexDaemonCurrent last found it
-	if a.ID == "codex" && a.WSL == "" && runtime.GOOS == "windows" {
-		return codexDaemonBehind()
-	}
 	if len(pats) == 0 || a.WSL != "" || runtime.GOOS == "windows" {
 		return nil
 	}

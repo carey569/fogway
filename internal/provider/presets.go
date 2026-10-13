@@ -28,7 +28,6 @@ type PresetDef struct {
 	Chat      string   `json:"chat,omitempty"`
 	Responses string   `json:"responses,omitempty"`
 	Anthropic string   `json:"anthropic,omitempty"`
-	Decide    string   `json:"decide,omitempty"` // a decision API: the provider only routes (see decide.go)
 	Catalog   string   `json:"catalog,omitempty"`
 	Website   string   `json:"website,omitempty"`
 	KeysURL   string   `json:"keysUrl,omitempty"`
@@ -93,18 +92,11 @@ type Region struct {
 	Embeddings []string `json:"embeddings,omitempty"`
 	Drawers    []string `json:"drawers,omitempty"`
 	Videos     []string `json:"videos,omitempty"`
-	// Decide is the region's decision API, for a preset that routes groups
-	Decide string `json:"decide,omitempty"`
 }
 
 // WorkspaceID stands in a decision API's address for the user's Bailian
 // workspace id (#647), which the editor and `workspace=` fill in.
 const WorkspaceID = "{WorkspaceId}"
-
-// bailianWorkspace is Bailian's System One root in a workspace of region.
-func bailianWorkspace(region string) string {
-	return "https://" + WorkspaceID + "." + region + ".maas.aliyuncs.com/compatible-mode/v1"
-}
 
 // alibabaPlanModels are the text models of Alibaba's Token Plan, the same
 // on the Qwen AI platform's and on Bailian's, as their overviews list them.
@@ -355,7 +347,6 @@ var presets = []PresetDef{
 	// group can be classified by it
 	{ID: "bailian-token-plan", Name: "Bailian Token Plan", Short: "Bailian Plan", Icon: "bailian-color", Kind: KindVendor,
 		Chat: "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1", Anthropic: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic",
-		Decide:  "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
 		Note:    "Alibaba Cloud Bailian · subscription",
 		Website: "https://help.aliyun.com/zh/model-studio/token-plan-overview", KeysURL: "https://bailian.console.aliyun.com/cn-beijing/subscription/token-plan/personal",
 		Models: alibabaPlanModels},
@@ -409,7 +400,6 @@ var presets = []PresetDef{
 		// its decision models (liquid/d1, cloudflare/clef, Jev …), listed
 		// apart from its chat models, answer System One at /systemone, so
 		// a routing group can be classified by one with the same key
-		Decide:  "https://openrouter.ai/api/v1",
 		Website: "https://openrouter.ai", KeysURL: "https://openrouter.ai/keys",
 		// app attribution, for OpenRouter's rankings and analytics
 		HeaderHints: []string{"HTTP-Referer", "X-OpenRouter-Title"}},
@@ -436,7 +426,6 @@ var presets = []PresetDef{
 		// Zen serves it on System One at /zen/v1/systemone alone, as its
 		// docs' model table says (packages/web/src/content/docs/zen.mdx),
 		// so it routes groups like TypeSafe's own (#609's mixed provider)
-		Decide: "https://opencode.ai/zen/v1",
 		// its free models (-free, big-pickle) are served to OpenCode
 		// alone, which magpie asks them as (OpenCodeFree)
 		Website: "https://opencode.ai/docs/zen", KeysURL: "https://opencode.ai/auth"},
@@ -498,70 +487,12 @@ var presets = []PresetDef{
 			{ID: "cn", Name: "China Mainland", Chat: "https://cn.yylx.io/v1", Anthropic: "https://cn.yylx.io"},
 		}},
 
-	// Jev answers no conversation: it decides which of a routing group's
-	// models takes a turn, and how hard it thinks
-	{ID: "typesafe", Name: "TypeSafe Jev", Icon: "typesafe", Kind: KindVendor,
-		Decide:  "https://api.typesafe.ai/v1",
-		Note:    "routes groups · picks model and effort",
-		Website: "https://typesafe.ai", KeysURL: "https://console.typesafe.ai/keys"},
-	// Jev as the gateways serve it, to a key made there
-	{ID: "vercel-jev", Name: "Jev · Vercel AI Gateway", Icon: "vercel", Kind: KindRelay,
-		Decide:  "https://ai-gateway.vercel.sh/typesafe",
-		Note:    "routes groups · picks model and effort",
-		Website: "https://vercel.com/ai-gateway/models/jev", KeysURL: "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai-gateway%2Fapi-keys"},
-	// Workers AI also serves Cloudflare's own decision models, Clef and
-	// Clef Flash, on the same key
-	{ID: "cloudflare-jev", Name: "Cloudflare Workers AI · Jev, Clef", Icon: "cloudflare-color", Kind: KindRelay,
-		Decide:  "https://api.cloudflare.com/client/v4",
-		Note:    "routes groups · picks model and effort",
-		Website: "https://developers.cloudflare.com/ai/models/typesafe/jev/", KeysURL: "https://dash.cloudflare.com/profile/api-tokens"},
-	// Alibaba Cloud Bailian's decision model (#647), on Jev's System One
-	// API: at the host of the key's workspace (Beijing or Singapore), or
-	// the Token Plan's for its sk-sp- keys
-	{ID: "bailian-decision", Name: "Bailian Decision Model", Short: "Bailian Decision", Icon: "bailian-color", Kind: KindVendor,
-		Decide:      bailianWorkspace("cn-beijing"),
-		Note:        "routes groups · picks model and effort",
-		RegionLabel: "Plan", Regions: []Region{
-			{ID: "cn-beijing", Name: "Workspace · Beijing", Decide: bailianWorkspace("cn-beijing")},
-			{ID: "ap-southeast-1", Name: "Workspace · Singapore", Decide: bailianWorkspace("ap-southeast-1"),
-				KeysURL: "https://modelstudio.console.alibabacloud.com/?tab=playground#/api-key"},
-			{ID: "token-plan", Name: "Token Plan · Beijing", Decide: "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
-				KeysURL: "https://bailian.console.aliyun.com/cn-beijing/subscription/token-plan/personal"},
-		},
-		Website: "https://help.aliyun.com/zh/model-studio/decision-model-preview", KeysURL: "https://bailian.console.aliyun.com/?tab=model#/api-key"},
-	// the same decision model on the Qwen AI platform's pay as you go
-	// (#1506), at maas.qianwenaiapi.com with a key of that platform's
-	{ID: "qwen-decision", Name: "Qwen Decision Model", Short: "Qwen Decision", Icon: "qwen-color", Kind: KindVendor,
-		Decide:  "https://maas.qianwenaiapi.com/compatible-mode/v1",
-		Note:    "routes groups · picks model and effort",
-		Website: "https://www.qianwenai.com/models/decision-model-preview", KeysURL: "https://platform.qianwenai.com/home/api-keys"},
 	{ID: "ollama", Name: "Ollama", Icon: "ollama", Kind: KindLocal, NoKey: true,
 		Chat: "http://localhost:11434/v1", Anthropic: "http://localhost:11434",
 		Note: "your local models", Website: "https://ollama.com"},
 	{ID: "lmstudio", Name: "LM Studio", Icon: "lmstudio", Kind: KindLocal, NoKey: true,
 		Chat: "http://localhost:1234/v1",
 		Note: "local server, port 1234 by default", Website: "https://lmstudio.ai"},
-	// its decision models (Clef, OpenJev), served at /v1/systemone since
-	// 0.7.1, are the ones its /v1/models/status says are (omlx_decide.go)
-	{ID: OMLXPreset, Name: "oMLX", Icon: "omlx", Kind: KindLocal, NoKey: true,
-		Chat: "http://localhost:8000/v1", Responses: "http://localhost:8000/v1", Anthropic: "http://localhost:8000",
-		Decide: "http://localhost:8000/v1",
-		Note:   "local server, port 8000 by default", Website: "https://omlx.ai"},
-	// its decision models (Clef, Clef-Flash, Kev, Laya, D1), served at
-	// /v1/systemone, are marked by capabilities in /v1/models (mlxserve_decide.go)
-	{ID: MLXServePreset, Name: "MLX-Serve", Icon: "mlx-serve", Kind: KindLocal, NoKey: true,
-		Chat: "http://localhost:11234/v1", Responses: "http://localhost:11234/v1", Anthropic: "http://localhost:11234",
-		Decide: "http://localhost:11234/v1",
-		Note:   "local server, port 11234 by default", Website: "https://github.com/ddalcu/mlx-serve"},
-
-	// another computer's magpie, shared on its network (remote_magpie.go):
-	// its providers, routing groups and usage stay there, each request
-	// goes on in the API the agent spoke
-	{ID: RemoteMagpiePreset, Name: "Remote magpie", Icon: "magpie", Kind: KindRemote,
-		Note:           "another computer's magpie, shared on its network",
-		Endpoint:       "http://192.168.1.20:3425",
-		EndpointHint:   "The address and API key the other computer's magpie shows in Settings, under Share on local network. Its models and routing groups are listed here; each request goes on in the API the agent spoke.",
-		EndpointNeeded: "The other magpie's address is needed"},
 }
 
 func bedrockChat(region string) string {
@@ -617,7 +548,7 @@ func Preset(id string) *PresetDef {
 	if pr := builtinPreset(id); pr != nil {
 		return pr
 	}
-	return partnerPreset(id)
+	return nil
 }
 
 // builtinPreset is the preset of that id built into magpie, partners'
@@ -643,7 +574,7 @@ func FromPreset(id string) (Provider, error) {
 	}
 	p := Provider{
 		ID: pr.ID, Name: pr.Name, Icon: pr.Icon, Preset: pr.ID,
-		Chat: pr.Chat, Responses: pr.Responses, Anthropic: pr.Anthropic, Decide: pr.Decide,
+		Chat: pr.Chat, Responses: pr.Responses, Anthropic: pr.Anthropic,
 		Catalog: pr.Catalog, Website: pr.Website, KeysURL: pr.KeysURL,
 	}
 	if a, ok := presetAliases[id]; ok && a.region != "" {
@@ -659,7 +590,7 @@ func FromPreset(id string) (Provider, error) {
 // atRegionOf puts the provider at a region of its preset pr: its
 // endpoints, and its key page, docs and catalog where it has its own.
 func (p *Provider) atRegionOf(pr *PresetDef, r Region) {
-	p.Chat, p.Responses, p.Anthropic, p.Decide = r.Chat, r.Responses, r.Anthropic, cmp.Or(r.Decide, pr.Decide)
+	p.Chat, p.Responses, p.Anthropic = r.Chat, r.Responses, r.Anthropic
 	p.KeysURL = cmp.Or(r.KeysURL, p.KeysURL)
 	p.Website = cmp.Or(r.Website, p.Website)
 	p.Catalog = cmp.Or(r.Catalog, pr.Catalog)

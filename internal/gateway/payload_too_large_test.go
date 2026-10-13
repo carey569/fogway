@@ -2,14 +2,10 @@ package gateway
 
 import (
 	"encoding/json"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync/atomic"
 	"testing"
 
-	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -192,83 +188,6 @@ func TestPayloadTooLargeErrorShapes(t *testing.T) {
 					t.Fatalf("wrong Anthropic error type: %s", w.Body.String())
 				}
 				msg = body.Error.Message
-			}
-		})
-	}
-}
-
-// Exercise Codex's actual endpoint and a moved Factory routing group:
-// Responses is translated to Messages, then the plugin's fetch returns
-// a size refusal. No request goes to a real provider.
-func TestMovedFactoryPayloadTooLarge(t *testing.T) {
-	for _, tc := range []struct{ name, reply string }{
-		{"plain", "Request Entity Too Large"},
-		{"anthropic", `{"error":{"type":"request_too_large","message":"Request exceeds the maximum size"}}`},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			catalog.Reset()
-			t.Cleanup(catalog.Reset)
-			var calls atomic.Int32
-			const system = "Synthetic system instructions."
-			toolOutput := strings.Repeat("synthetic tool output ", 256)
-			movedFake(t, "factory", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				calls.Add(1)
-				body, err := io.ReadAll(r.Body)
-				if err != nil || !strings.HasSuffix(r.URL.Path, "/messages") || len(body) < 2048 {
-					t.Errorf("wrong size-refusal fixture: path %s, bytes %d, error %v", r.URL.Path, len(body), err)
-				}
-				for _, part := range []string{system, toolOutput, pngA, `"tool_use_id":"call_1"`, `"name":"inspect_fixture"`, "continue"} {
-					if !strings.Contains(string(body), part) {
-						t.Errorf("size-refusal fixture lost system, schema, tool output, image or final text")
-					}
-				}
-				t.Logf("synthetic Messages body: %d bytes; tool text: %d bytes; image base64: %d bytes", len(body), len(toolOutput), len(pngA))
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusRequestEntityTooLarge)
-				io.WriteString(w, tc.reply)
-			}))
-			var fallbackCalls atomic.Int32
-			fallback := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fallbackCalls.Add(1)
-				body, _ := io.ReadAll(r.Body)
-				for _, part := range []string{system, toolOutput, pngA, `"tool_use_id":"call_1"`, `"name":"inspect_fixture"`, "continue"} {
-					if !strings.Contains(string(body), part) {
-						t.Errorf("fallback lost system, schema, tool output, image or final text")
-					}
-				}
-				w.Header().Set("Content-Type", "text/event-stream")
-				io.WriteString(w, payloadAnswerStream())
-			}))
-			t.Cleanup(fallback.Close)
-			if err := provider.Save(provider.Provider{ID: "other", Name: "Other", Key: "synthetic", Anthropic: fallback.URL, Models: []string{"m"}}); err != nil {
-				t.Fatal(err)
-			}
-			if err := catalog.SaveLive("other", fallback.URL, []catalog.Model{{ID: "m", Images: true, ImageInput: imageInputBool(true)}}); err != nil {
-				t.Fatal(err)
-			}
-			if err := provider.SaveGroup(provider.Group{ID: "payload", Name: "Payload", Members: []string{"factory/fake-claude", "other/m"}, Routing: provider.Ordered}); err != nil {
-				t.Fatal(err)
-			}
-			body, _ := json.Marshal(map[string]any{
-				"model": "group/payload", "stream": true, "instructions": system,
-				"tools": []any{map[string]any{"type": "function", "name": "inspect_fixture", "parameters": map[string]any{"type": "object", "properties": map[string]any{}}}},
-				"input": []any{
-					map[string]any{"role": "user", "content": "Inspect the fixture."},
-					map[string]any{"type": "function_call", "name": "inspect_fixture", "call_id": "call_1", "arguments": "{}"},
-					map[string]any{"type": "function_call_output", "call_id": "call_1", "output": []any{
-						map[string]any{"type": "input_text", "text": toolOutput},
-						map[string]any{"type": "input_image", "image_url": "data:image/png;base64," + pngA},
-					}},
-					map[string]any{"role": "assistant", "content": "fixture received"},
-					map[string]any{"role": "user", "content": "continue"},
-				},
-			})
-			t.Logf("synthetic Responses body: %d bytes; input items: 5; tool schemas: 1; images: 1", len(body))
-			rec := httptest.NewRecorder()
-			s := New()
-			s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", CodexPath+"/responses", strings.NewReader(string(body))))
-			if rec.Code != 200 || !strings.Contains(rec.Body.String(), "hello") || strings.Contains(rec.Body.String(), "byte limit") || calls.Load() != 1 || fallbackCalls.Load() != 1 {
-				t.Fatalf("size fallback: status %d, Factory calls %d, fallback calls %d, tries %+v", rec.Code, calls.Load(), fallbackCalls.Load(), lastRoute(s).Tries)
 			}
 		})
 	}

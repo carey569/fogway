@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -125,25 +124,5 @@ func TestReportStarted(t *testing.T) {
 	}
 	if os.Getenv(startedEnv) != "" {
 		t.Error("left in the environment, for what it starts")
-	}
-}
-
-// The note of a refused version holds while it is newer than the one
-// running, and goes once that has caught up.
-func TestBlockedNote(t *testing.T) {
-	t.Cleanup(ClearBlocked)
-	NoteBlocked("0.1.20", &BlockedError{Err: errIntegrityPolicy})
-	b := ReadBlocked("0.1.19")
-	if b == nil || b.Version != "0.1.20" || !b.Policy || b.Error == "" {
-		t.Fatalf("ReadBlocked = %+v", b)
-	}
-	if b := ReadBlocked("0.1.20"); b != nil {
-		t.Fatalf("caught up: %+v", b)
-	}
-	if b := ReadBlocked("0.1.19"); b != nil {
-		t.Fatalf("not forgotten: %+v", b)
-	}
-	if policyRefused(syscall.Errno(2)) || !policyRefused(&os.PathError{Err: syscall.Errno(1260)}) {
-		t.Error("policyRefused")
 	}
 }

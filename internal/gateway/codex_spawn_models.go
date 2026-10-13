@@ -2,13 +2,10 @@ package gateway
 
 import (
 	"bytes"
-	"cmp"
 	"encoding/json"
 	"net/http"
-	"slices"
 	"strings"
 
-	"github.com/yetone/magpie/internal/codexcat"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -195,47 +192,9 @@ func moreSpawnModels(t map[string]json.RawMessage, choices []spawnChoice) bool {
 // or at /v1, that a subagent of a lead on lead can work on, in the
 // catalog's order.
 func spawnChoices(r *http.Request, lead string, codexPath bool) []spawnChoice {
-	sealed := !codexcat.V1() && (codexPath && !strings.Contains(lead, "/") || provider.CodexAccountModel(lead))
 	var out []spawnChoice
-	if codexPath {
-		// Codex's own, as its backend lists them to it, less the ones
-		// taken out of its list on the Agents page
-		hidden := provider.CodexNativeHidden()
-		// and the ones kept for routing groups (#1602)
-		all, unlisted := provider.CodexNativeUnlisted()
-		if codexOwnOnly() {
-			all, unlisted = false, nil
-		}
-		type own struct {
-			spawnChoice
-			at int
-		}
-		var owns []own
-		for slug, e := range codexcat.CacheEntries() {
-			if v, _ := e["visibility"].(string); v != "list" || hidden[slug] || all || unlisted[slug] {
-				continue
-			}
-			name, _ := e["display_name"].(string)
-			at, _ := e["priority"].(float64)
-			owns = append(owns, own{spawnChoice{slug, name}, int(at)})
-		}
-		slices.SortFunc(owns, func(a, b own) int { return cmp.Or(a.at-b.at, strings.Compare(a.slug, b.slug)) })
-		for _, o := range owns {
-			out = append(out, o.spawnChoice)
-		}
-		if sealed || codexOwnOnly() {
-			return out
-		}
-		for _, m := range provider.CodexListed() {
-			out = append(out, spawnChoice{m.ID, m.Name})
-		}
-		return out
-	}
 	shown, _ := provider.CatalogFor("codex")
 	for _, m := range provider.CodexCatalog(keyAllowed(r, shown)) {
-		if sealed && !provider.CodexAccountModel(m.ID) {
-			continue
-		}
 		out = append(out, spawnChoice{m.ID, m.Name})
 	}
 	return out

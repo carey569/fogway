@@ -54,12 +54,6 @@ func fresh(t *testing.T) {
 	classified.Lock()
 	classified.m, classified.failed = map[string]classifiedAs{}, map[string]classifyFailure{}
 	classified.Unlock()
-	levelled.Lock()
-	levelled.m = map[string]levelling{}
-	levelled.Unlock()
-	provider.ForgetCopilotForTest()
-	provider.ForgetRemoteCardsForTest()
-	provider.ForgetKeptCardsForTest()
 	remoteRefreshes.Lock()
 	remoteRefreshes.at = map[string]time.Time{}
 	remoteRefreshes.Unlock()
@@ -131,49 +125,6 @@ func (f *openRouterFreeLimit) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	io.WriteString(w, `{"id":"ok","choices":[{"message":{"role":"assistant","content":"from b"}}]}`)
 }
 
-// A shared upstream pool limit on one OpenRouter free model rests it alone:
-// the next group request starts with its sibling, even after that sibling's
-// successful answer cleared the provider-level rest.
-func TestOpenRouterSharedPoolRateLimitRestsOneModel(t *testing.T) {
-	fresh(t)
-	f := &openRouterFreeLimit{body: `{"error":{"message":"Provider returned error","code":429,"metadata":{"limit_source":"upstream_provider_shared_pool"}}}`}
-	up := httptest.NewServer(f)
-	t.Cleanup(up.Close)
-	if err := provider.Save(provider.Provider{
-		ID: "orf", Name: "OpenRouter Free", Preset: "openrouter", Key: "k",
-		Models: []string{"x/a:free", "x/b:free"}, Chat: up.URL + "/v1",
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := provider.SaveGroup(provider.Group{
-		Name: "Free", Members: []string{"orf/x/a:free", "orf/x/b:free"}, Routing: provider.Ordered,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	s := New()
-	body := `{"model":"group/free","messages":[{"role":"user","content":"hi"}]}`
-	rec := httptest.NewRecorder()
-	s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(body)))
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "from b") {
-		t.Fatalf("group reply: %d %s", rec.Code, rec.Body.String())
-	}
-	if rec.Header().Get("X-Magpie-OpenRouter-Limit-Source") != "" {
-		t.Fatal("internal OpenRouter routing detail reached the client")
-	}
-	if first := s.trace.routes[len(s.trace.routes)-1].Tries[0]; first.Rest == nil || first.Rest.Key != "orf/x/a:free" {
-		t.Fatalf("shared-pool rest key: %+v", first)
-	}
-	if code, reply := postAs(t, s, "", body); code != http.StatusOK || !strings.Contains(reply, "from b") {
-		t.Fatalf("second group reply: %d %s", code, reply)
-	}
-	if got := strings.Join(f.tried, " "); got != "x/a:free x/b:free x/b:free" {
-		t.Fatalf("models tried %q, want a b b", got)
-	}
-	if !s.Unrest("orf/x/a:free") || s.resting("orf/x/a:free") {
-		t.Fatal("model rest was not lifted by its key")
-	}
-}
-
 // The routing hint is internal even when this is the only candidate, so the
 // gateway passes the upstream error through to the client.
 func TestOpenRouterSharedPoolDirectReplyHidesRoutingHeader(t *testing.T) {
@@ -237,9 +188,9 @@ func TestRoutingGroups(t *testing.T) {
 
 	var ids []string
 	for _, e := range provider.Catalog() {
-		if e.Provider.Account == nil { // signed-in agents the machine may have aside
-			ids = append(ids, e.ID)
-		}
+		// signed-in agents the machine may have aside
+		ids = append(ids, e.ID)
+
 	}
 	if got := strings.Join(ids, " "); got != "group/auto-m a/m a/only-a b/vendor/m" {
 		t.Fatalf("catalog: %s", got)

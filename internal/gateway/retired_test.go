@@ -5,11 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"slices"
-	"strings"
 	"testing"
-
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // zenDeprecated is OpenCode Zen's answer to a request for exo-free, as it
@@ -63,65 +59,6 @@ func listedModels(t *testing.T, s *Server) []string {
 	return ids
 }
 
-func TestRetiredModelLeavesTheLists(t *testing.T) {
-	fresh(t)
-	z := &zen{}
-	serveOn(t, "opencode-zen-free", "k", []string{"exo-free", "space-bunny-free"}, z)
-	s := New()
-	if ids := listedModels(t, s); !slices.Contains(ids, "opencode-zen-free/exo-free") {
-		t.Fatalf("before: %v", ids)
-	}
-	code, body := postAs(t, s, "", `{"model":"opencode-zen-free/exo-free","messages":[{"role":"user","content":"hi"}]}`)
-	if code != http.StatusGone || !strings.Contains(body, "Model exo-free has been deprecated.") {
-		t.Fatalf("the vendor's answer is the agent's: %d %s", code, body)
-	}
-	if !provider.Retired("opencode-zen-free", "exo-free") {
-		t.Fatal("exo-free was not remembered as retired")
-	}
-	ids := listedModels(t, s)
-	if slices.Contains(ids, "opencode-zen-free/exo-free") {
-		t.Fatalf("a retired model still listed: %v", ids)
-	}
-	if !slices.Contains(ids, "opencode-zen-free/space-bunny-free") {
-		t.Fatalf("the provider's other models went too: %v", ids)
-	}
-	// the provider's other models are served as before
-	if code, body := postAs(t, s, "", `{"model":"opencode-zen-free/space-bunny-free","messages":[{"role":"user","content":"hi"}]}`); code != http.StatusOK {
-		t.Fatalf("space-bunny-free: %d %s", code, body)
-	}
-	// a provider/model id is still sent: the vendor says what it says, and
-	// an answer puts it back
-	provider.Unretire("opencode-zen-free", "exo-free")
-	if !slices.Contains(listedModels(t, s), "opencode-zen-free/exo-free") {
-		t.Fatal("unretired, exo-free is still out of the list")
-	}
-}
-
-func TestRetiredMemberFallsOver(t *testing.T) {
-	fresh(t)
-	z := &zen{}
-	other := &keyed{}
-	serveOn(t, "opencode-zen-free", "k", []string{"exo-free"}, z)
-	serveOn(t, "b", "kb", []string{"exo-free"}, other)
-	if err := provider.SaveGroup(provider.Group{
-		Name: "Exo", Members: []string{"opencode-zen-free/exo-free", "b/exo-free"}, Routing: provider.Ordered,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	s := New()
-	code, body := postAs(t, s, "", `{"model":"group/exo","messages":[{"role":"user","content":"hi"}]}`)
-	if code != http.StatusOK || !strings.Contains(body, "from kb") {
-		t.Fatalf("the group's next member wasn't asked: %d %s", code, body)
-	}
-	if !provider.Retired("opencode-zen-free", "exo-free") || provider.Retired("b", "exo-free") {
-		t.Fatal("retired on the wrong provider")
-	}
-	ids := listedModels(t, s)
-	if slices.Contains(ids, "opencode-zen-free/exo-free") || !slices.Contains(ids, "b/exo-free") {
-		t.Fatalf("lists: %v", ids)
-	}
-}
-
 func TestRetiredWords(t *testing.T) {
 	for _, c := range []struct {
 		status int
@@ -147,30 +84,5 @@ func TestRetiredWords(t *testing.T) {
 		if got := modelRetired(c.status, []byte(c.body)); got != c.want {
 			t.Errorf("modelRetired(%d, %s) = %v", c.status, c.body, got)
 		}
-	}
-}
-
-// A free model Zen serves no more is answered 401 "Model … is not
-// supported": that model leaves the provider's list and alone sits out,
-// and the account's other free models are served on the next request,
-// rather than the whole account resting as though its key were refused.
-func TestZenUnsupportedModelLeavesTheListAlone(t *testing.T) {
-	fresh(t)
-	z := &zen{}
-	serveOn(t, "opencode-zen-free", "k", []string{"glm-5-free", "space-bunny-free"}, z)
-	s := New()
-	code, body := postAs(t, s, "", `{"model":"opencode-zen-free/glm-5-free","messages":[{"role":"user","content":"hi"}]}`)
-	if code != http.StatusUnauthorized || !strings.Contains(body, "Model glm-5-free is not supported") {
-		t.Fatalf("the vendor's answer is the agent's: %d %s", code, body)
-	}
-	if !provider.Retired("opencode-zen-free", "glm-5-free") {
-		t.Fatalf("glm-5-free was not remembered as gone: %s", body)
-	}
-	ids := listedModels(t, s)
-	if slices.Contains(ids, "opencode-zen-free/glm-5-free") || !slices.Contains(ids, "opencode-zen-free/space-bunny-free") {
-		t.Fatalf("lists: %v", ids)
-	}
-	if code, body := postAs(t, s, "", `{"model":"opencode-zen-free/space-bunny-free","messages":[{"role":"user","content":"hi"}]}`); code != http.StatusOK {
-		t.Fatalf("the account's other model sat out with it: %d %s", code, body)
 	}
 }

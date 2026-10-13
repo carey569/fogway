@@ -46,7 +46,7 @@ func CodexSubagentModels() []Entry {
 }
 
 func chatGPTEntry(e Entry) bool {
-	return e.Group == "" && e.Provider.Account != nil && e.Provider.Account.Agent == "codex"
+	return false
 }
 
 // CodexSubagentUnserved says why Codex's subagents can't be put on id now,
@@ -105,6 +105,6 @@ func CodexAccountModel(id string) bool {
 	if pid == "codex" {
 		return true
 	}
-	p, err := Find(pid)
-	return err == nil && p.Account != nil && p.Account.Agent == "codex"
+	_, _ = Find(pid)
+	return false
 }

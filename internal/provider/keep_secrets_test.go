@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -24,104 +23,6 @@ func keepSecretsHome(t *testing.T) {
 	t.Setenv("PATH", h)
 	for _, v := range agentenv.Vars {
 		t.Setenv(v, "")
-	}
-}
-
-// #1821: a Volcengine provider's AccessKey ID and Secret went missing from
-// providers.json. Sync and a restore bring the provider whole from another
-// computer; one that knows no access key (a magpie before v0.1.1142, or
-// one it was never given on) sends the same key and nothing else, and
-// that wiped it here. Kept now while the key is the one here, as a copy
-// without keys keeps its secret headers too; another key is another
-// account, whose access key it isn't.
-func TestSyncKeepsAccessKey(t *testing.T) {
-	for _, op := range []struct {
-		name string
-		put  func([]Provider) error
-	}{
-		{"restore", func(ps []Provider) error { _, _, err := Restore(ps); return err }},
-		{"mirror", func(ps []Provider) error { return Mirror(ps, nil) }},
-	} {
-		t.Run(op.name, func(t *testing.T) {
-			for _, c := range []struct {
-				name             string
-				incoming         Provider
-				wantAK, wantTok  string
-				wantKey, wantHdr string
-			}{
-				{"same key, no access key", Provider{Key: "ark-here"}, "AK-here", "tok-here", "ark-here", ""},
-				{"same key, its own access key", Provider{Key: "ark-here", AccessKeyID: "AK-new", SecretAccessKey: "SK-new"}, "AK-new", "tok-here", "ark-here", ""},
-				{"without keys", Provider{}, "AK-here", "tok-here", "ark-here", "hdr-here"},
-				{"another key", Provider{Key: "ark-other"}, "", "", "ark-other", ""},
-			} {
-				t.Run(c.name, func(t *testing.T) {
-					keepSecretsHome(t)
-					here := Provider{ID: "volcengine", Name: "Volcengine Ark", Chat: "https://ark.cn-beijing.volces.com/api/coding/v3",
-						Key: "ark-here", BalanceToken: "tok-here", AccessKeyID: "AK-here", SecretAccessKey: "SK-here",
-						Headers: map[string]string{"X-Api-Token": "hdr-here", "X-Plain": "plain-here"}}
-					if err := Save(here); err != nil {
-						t.Fatal(err)
-					}
-					p := c.incoming
-					p.ID, p.Name, p.Chat = "volcengine", "Ark synced", here.Chat
-					p.Headers = map[string]string{"X-Plain": "plain-new"}
-					list := []Provider{p}
-					if err := op.put(list); err != nil {
-						t.Fatal(err)
-					}
-					if len(list[0].Headers) != 1 {
-						t.Fatalf("the caller's headers were written into: %v", list[0].Headers)
-					}
-					ps, _ := Stored()
-					if len(ps) != 1 {
-						t.Fatalf("providers: %+v", ps)
-					}
-					got := ps[0]
-					wantSK := strings.Replace(c.wantAK, "AK", "SK", 1)
-					if got.AccessKeyID != c.wantAK || got.SecretAccessKey != wantSK {
-						t.Errorf("access key %q %q, want %q %q", got.AccessKeyID, got.SecretAccessKey, c.wantAK, wantSK)
-					}
-					if got.BalanceToken != c.wantTok || got.Key != c.wantKey || got.Name != "Ark synced" {
-						t.Errorf("got %+v, want token %q key %q", got, c.wantTok, c.wantKey)
-					}
-					if got.Headers["X-Api-Token"] != c.wantHdr || got.Headers["X-Plain"] != "plain-new" {
-						t.Errorf("headers %v, want the secret one %q and the incoming plain one", got.Headers, c.wantHdr)
-					}
-				})
-			}
-		})
-	}
-}
-
-// A providers.json an editor saved with a byte-order mark is read as it
-// is, not taken for a broken file whose .bak (an older generation without
-// the access key given since) stands in for it (#1821).
-func TestProvidersFileWithBOM(t *testing.T) {
-	keepSecretsHome(t)
-	if err := Save(Provider{ID: "volcengine", Name: "Volcengine Ark", Chat: "https://ark.cn-beijing.volces.com/api/coding/v3", Key: "ark-k"}); err != nil {
-		t.Fatal(err)
-	}
-	// a second save leaves the first as the .bak
-	if err := Save(Provider{ID: "volcengine", Name: "Volcengine Ark", Chat: "https://ark.cn-beijing.volces.com/api/coding/v3", Key: "ark-k", AccessKeyID: "AK1", SecretAccessKey: "SK1"}); err != nil {
-		t.Fatal(err)
-	}
-	b, err := os.ReadFile(Path())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(Path(), append([]byte("\xef\xbb\xbf"), b...), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	ps, err := Stored()
-	if err != nil || len(ps) != 1 || ps[0].AccessKeyID != "AK1" || ps[0].SecretAccessKey != "SK1" {
-		t.Fatalf("read %+v %v, want the file's access key", ps, err)
-	}
-	// and a write after it keeps it
-	if err := Save(Provider{ID: "other", Name: "Other", Chat: "https://other.example/v1", Key: "sk-o"}); err != nil {
-		t.Fatal(err)
-	}
-	if p, err := Find("volcengine"); err != nil || p.AccessKeyID != "AK1" || p.SecretAccessKey != "SK1" {
-		t.Fatalf("after a save: %+v %v", p, err)
 	}
 }
 

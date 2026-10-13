@@ -1,9 +1,6 @@
 package agent
 
 import (
-	"context"
-	"encoding/base64"
-	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -16,10 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/edit"
 	"github.com/yetone/magpie/internal/gateway"
 	"github.com/yetone/magpie/internal/netproxy"
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // proxyAs has codexProxyFor read env, sys and goos, and proxyProbe answer
@@ -218,53 +213,6 @@ func socksOnly(t *testing.T) string {
 	return ln.Addr().String()
 }
 
-// Muma102kMichael on X: Codex 502 on every project and every new chat once
-// magpie took it over, its requests for 127.0.0.1 sent through a proxy that
-// didn't pass them on. Failover, which magpie writes uninvited, is never
-// written then, and one written before goes again; once the proxy passes
-// them on, it is.
-func TestCodexFailoverHeldWhileProxyDoesNotPassOn(t *testing.T) {
-	claims := func(m map[string]any) string {
-		b, _ := json.Marshal(m)
-		return "h." + base64.RawURLEncoding.EncodeToString(b) + ".s"
-	}
-	auth := func(email, acct string) map[string]any {
-		return map[string]any{"auth_mode": "chatgpt", "tokens": map[string]any{
-			"id_token":      claims(map[string]any{"email": email}),
-			"access_token":  claims(map[string]any{"exp": time.Now().Add(time.Hour).Unix()}),
-			"refresh_token": "r-" + acct, "account_id": acct}}
-	}
-	me, _ := json.Marshal(auth("me@example.com", "acct-1"))
-	home, read := codexHome(t, string(me), "model = \"gpt-5.5\"\n")
-	b, _ := json.Marshal([]map[string]any{{"agent": "codex", "user": "spare@example.com", "on": true,
-		"seen": time.Now(), "auth": auth("spare@example.com", "acct-2")}})
-	os.MkdirAll(filepath.Dir(provider.Path()), 0o755)
-	os.WriteFile(filepath.Join(filepath.Dir(provider.Path()), "logins.json"), b, 0o600)
-
-	works := false
-	proxyAs(t, nil, netproxy.Proxy{URL: "http://127.0.0.1:7890", HTTP: "http://127.0.0.1:7890", Bypass: []string{"localhost", "127.*"}}, "windows", &works)
-	cx := codex(home)
-	sync := func() string {
-		t.Helper()
-		reachForget()
-		if err := cx.Sync(); err != nil {
-			t.Fatal(err)
-		}
-		return read()
-	}
-	if cfg := sync(); strings.Contains(cfg, "openai_base_url") {
-		t.Fatalf("written while the proxy doesn't pass it on:\n%s", cfg)
-	}
-	works = true
-	if cfg := sync(); !strings.Contains(cfg, `openai_base_url = "`+gateway.URL()) {
-		t.Fatalf("not written once the proxy passes it on:\n%s", cfg)
-	}
-	works = false
-	if cfg := sync(); strings.Contains(cfg, "openai_base_url") || !strings.Contains(cfg, `model = "gpt-5.5"`) {
-		t.Fatalf("kept once the proxy stopped passing it on:\n%s", cfg)
-	}
-}
-
 // Connected to magpie, with the gateway up but Codex's way to it through a
 // proxy that answers 502: the row says so, which proxy and where it is set,
 // rather than connected (kind "proxied"); once the proxy passes it on, or
@@ -328,139 +276,5 @@ func TestCodexProxiedDriftShowsNoCredentials(t *testing.T) {
 		if probed != c.proxy {
 			t.Errorf("%s: probed through %q", c.proxy, probed)
 		}
-	}
-}
-
-// Leon920717 on X: with magpie quit, Codex CLI kept retrying the gateway
-// till magpie was open again. The failover base URL magpie wrote goes as
-// the magpie serving the gateway quits (EndCodexFailover), and the next
-// start's Sync writes it again; a base URL the user wrote stays.
-func TestCodexFailoverEndsWithMagpie(t *testing.T) {
-	claims := func(m map[string]any) string {
-		b, _ := json.Marshal(m)
-		return "h." + base64.RawURLEncoding.EncodeToString(b) + ".s"
-	}
-	auth := func(email, acct string) map[string]any {
-		return map[string]any{"auth_mode": "chatgpt", "tokens": map[string]any{
-			"id_token":      claims(map[string]any{"email": email}),
-			"access_token":  claims(map[string]any{"exp": time.Now().Add(time.Hour).Unix()}),
-			"refresh_token": "r-" + acct, "account_id": acct}}
-	}
-	me, _ := json.Marshal(auth("me@example.com", "acct-1"))
-	home, read := codexHome(t, string(me), "model = \"gpt-5.5\"\n")
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	logins := func(on bool) {
-		b, _ := json.Marshal([]map[string]any{{"agent": "codex", "user": "spare@example.com", "on": on,
-			"seen": time.Now(), "auth": auth("spare@example.com", "acct-2")}})
-		os.MkdirAll(filepath.Dir(provider.Path()), 0o755)
-		os.WriteFile(filepath.Join(filepath.Dir(provider.Path()), "logins.json"), b, 0o600)
-	}
-	logins(true)
-	cx := codex(home)
-	if err := cx.Sync(); err != nil {
-		t.Fatal(err)
-	}
-	if cfg := read(); !strings.Contains(cfg, "openai_base_url") {
-		t.Fatalf("failover not written:\n%s", cfg)
-	}
-	wasKeep := keepCodexDaemon
-	t.Cleanup(func() { keepCodexDaemon = wasKeep })
-	var asked []string
-	keepCodexDaemon = func(_ context.Context, h string, _ time.Time) provider.CodexDaemonCheck {
-		asked = append(asked, h)
-		return provider.CodexDaemonCheck{}
-	}
-	if err := EndCodexFailover(); err != nil {
-		t.Fatal(err)
-	}
-	if cfg := read(); strings.Contains(cfg, "openai_base_url") || !strings.Contains(cfg, `model = "gpt-5.5"`) {
-		t.Fatalf("magpie quit, Codex still pointed at it:\n%s", cfg)
-	}
-	// the app-server keeps the base URL it started with: asked to restart
-	if len(asked) != 1 || asked[0] != filepath.Dir(cx.Path) {
-		t.Fatalf("app-server not brought up to date on quit: %q", asked)
-	}
-	asked = nil
-	if err := cx.Sync(); err != nil {
-		t.Fatal(err)
-	}
-	if cfg := read(); !strings.Contains(cfg, "openai_base_url") {
-		t.Fatalf("not written again on the next start:\n%s", cfg)
-	}
-
-	// the user's own base URL, with no failover on, stays
-	logins(false)
-	if err := cx.Sync(); err != nil {
-		t.Fatal(err)
-	}
-	base := gateway.URL() + gateway.CodexPath
-	if err := edit.SetTOMLTop(cx.Path, edit.KV{Path: "openai_base_url", Value: base}); err != nil {
-		t.Fatal(err)
-	}
-	if err := EndCodexFailover(); err != nil {
-		t.Fatal(err)
-	}
-	if cfg := read(); !strings.Contains(cfg, `openai_base_url = "`+base+`"`) {
-		t.Fatalf("the user's base URL was taken:\n%s", cfg)
-	}
-	if len(asked) != 0 {
-		t.Fatalf("app-server restarted with nothing changed: %q", asked)
-	}
-}
-
-// CC Switch with "unify Codex session history" on (xuxing0727 on X) runs
-// the official sign-in as its "custom" mirror, so failover goes on that
-// table's base_url rather than openai_base_url: it too waits for the proxy
-// to pass Codex on, and goes as the magpie serving the gateway quits.
-func TestCodexMirrorFailoverHeldAndEndsWithMagpie(t *testing.T) {
-	// CC Switch's own bytes (src-tauri services/provider/mod.rs)
-	const unified = "model_provider = \"custom\"\nmodel = \"gpt-5.5\"\n\n" +
-		"[model_providers.custom]\nname = \"OpenAI\"\nrequires_openai_auth = true\nsupports_websockets = true\nwire_api = \"responses\"\n"
-	claims := func(m map[string]any) string {
-		b, _ := json.Marshal(m)
-		return "h." + base64.RawURLEncoding.EncodeToString(b) + ".s"
-	}
-	auth := func(email, acct string) map[string]any {
-		return map[string]any{"auth_mode": "chatgpt", "tokens": map[string]any{
-			"id_token":      claims(map[string]any{"email": email}),
-			"access_token":  claims(map[string]any{"exp": time.Now().Add(time.Hour).Unix()}),
-			"refresh_token": "r-" + acct, "account_id": acct}}
-	}
-	me, _ := json.Marshal(auth("me@example.com", "acct-1"))
-	home, read := codexHome(t, string(me), unified)
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	b, _ := json.Marshal([]map[string]any{{"agent": "codex", "user": "spare@example.com", "on": true,
-		"seen": time.Now(), "auth": auth("spare@example.com", "acct-2")}})
-	os.MkdirAll(filepath.Dir(provider.Path()), 0o755)
-	os.WriteFile(filepath.Join(filepath.Dir(provider.Path()), "logins.json"), b, 0o600)
-	wasKeep := keepCodexDaemon
-	t.Cleanup(func() { keepCodexDaemon = wasKeep })
-	keepCodexDaemon = func(context.Context, string, time.Time) provider.CodexDaemonCheck { return provider.CodexDaemonCheck{} }
-
-	works := false
-	proxyAs(t, map[string]string{"HTTP_PROXY": "http://127.0.0.1:7890"}, netproxy.Proxy{}, "darwin", &works)
-	cx := codex(home)
-	sync := func() string {
-		t.Helper()
-		reachForget()
-		if err := cx.Sync(); err != nil {
-			t.Fatal(err)
-		}
-		return read()
-	}
-	if cfg := sync(); strings.Contains(cfg, "base_url") {
-		t.Fatalf("written while the proxy doesn't pass it on:\n%s", cfg)
-	}
-	works = true
-	if cfg := sync(); !strings.Contains(cfg, `base_url = "`+gateway.URL()) {
-		t.Fatalf("not written once the proxy passes it on:\n%s", cfg)
-	}
-	if err := EndCodexFailover(); err != nil {
-		t.Fatal(err)
-	}
-	if cfg := read(); strings.Contains(cfg, "base_url") || !strings.Contains(cfg, `model_provider = "custom"`) || !strings.Contains(cfg, "supports_websockets = true") {
-		t.Fatalf("magpie quit, CC Switch's mirror still pointed at it:\n%s", cfg)
 	}
 }

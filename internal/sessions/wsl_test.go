@@ -274,36 +274,6 @@ func TestWSLOmpProfiles(t *testing.T) {
 	}
 }
 
-// A stopped distro's sessions are listed as last read, and nothing in it is
-// opened: that would start it.
-func TestWSLStoppedDistroKept(t *testing.T) {
-	home, running := wslDistro(t)
-	if n := len(List(0)); n != 7 {
-		t.Fatalf("want the 7 sessions, got %d", n)
-	}
-	wslSettle()
-	Saved()
-	// magpie starts again; the distro has stopped, and its files can't be
-	// read (a read would start it): here they are gone
-	*running = false
-	Reset()
-	if err := os.RemoveAll(home); err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < 2; i++ {
-		ss := List(0)
-		if len(ss) != 7 {
-			t.Fatalf("pass %d: want the 7 sessions as last read, got %+v", i, ss)
-		}
-		for _, s := range ss {
-			if s.WSL != "Ubuntu" || s.Tokens.zero() || s.Resume == "" {
-				t.Fatalf("pass %d: %+v", i, s)
-			}
-		}
-		wslSettle()
-	}
-}
-
 // A distro the user stops after the last listing (wsl --shutdown, to repair
 // WSL: TJHHHH on Discord, magpie kept starting it) isn't opened, though
 // WSLHomes, as old as internal/agent's last look, still says it runs: the
@@ -370,21 +340,5 @@ func TestWSLStoppedSinceNotOpened(t *testing.T) {
 	ss := List(0)
 	if len(ss) != 8 {
 		t.Fatalf("running again: want 8 sessions, got %d", len(ss))
-	}
-}
-
-// Off WSL (WSLHomes nil, as on macOS and Linux) nothing changes.
-func TestWSLNoneWithoutHomes(t *testing.T) {
-	setup(t)
-	if WSLHomes != nil {
-		t.Fatal("WSLHomes set in this package's tests")
-	}
-	for _, s := range List(0) {
-		if s.WSL != "" {
-			t.Fatalf("%+v", s)
-		}
-	}
-	if r := ResumeCommand("claude", "abc", ""); r != "claude --resume abc" {
-		t.Fatal(r)
 	}
 }

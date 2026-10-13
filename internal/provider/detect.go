@@ -121,9 +121,7 @@ func (p Provider) Detect(ctx context.Context, base, model string, picked ...stri
 // detecting is p with the URL it would be asked at for each API: its own,
 // else base as that API takes it.
 func (p Provider) detecting(base string) (Provider, error) {
-	if p.Account != nil {
-		return p, errors.New("a sign-in is asked on its agent's own API; there is nothing to detect")
-	}
+
 	q := p
 	for _, proto := range detectProtocols {
 		u := strings.TrimSpace(p.Base(proto))
@@ -173,37 +171,6 @@ func (q Provider) detectOne(proto Protocol, m string, wait time.Duration) (Detec
 		u, body := tiny(k, proto, UpstreamName(q, m))
 		return probe(ctx, k, proto, u, k.tested(body), m, wait)
 	}
-}
-
-// DetectDecide asks the System One API at p's decision URL (…/systemone
-// pasted whole is cut to its root) the smallest question for model, or
-// the one p is asked with when none is given, and says how it answered.
-func (p Provider) DetectDecide(ctx context.Context, model string) Detection {
-	p.Decide = strings.TrimSuffix(strings.TrimRight(strings.TrimSpace(p.Decide), "/"), "/systemone")
-	if p.Decide != "" && !strings.Contains(p.Decide, "://") {
-		p.Decide = "https://" + p.Decide
-	}
-	if model = strings.TrimSpace(model); model == "" {
-		model = p.Jev()
-	}
-	d := Detection{Result: Result{Protocol: "decide", Model: model}, Base: p.Decide}
-	switch {
-	case p.Decide == "":
-		d.Error = "no URL to ask"
-		return d
-	case strings.Contains(p.Decide, WorkspaceID):
-		d.Error = "give the workspace ID first"
-		return d
-	}
-	t0 := time.Now()
-	err := p.AskSystemOne(p.Via(ctx), model)
-	d.Millis = time.Since(t0).Milliseconds()
-	if err != nil {
-		d.Error = err.Error()
-		return d
-	}
-	d.OK, d.Status = true, 200
-	return d
 }
 
 // ModelDetection is what each API answered for one model

@@ -153,7 +153,7 @@ func withMessage(b []byte, msg string) []byte {
 // is then asked again at the plan's endpoint as this one was.
 func LearnZhipuCoding(p Provider, from string) {
 	coding, ok := ZhipuCodingBase(from)
-	if !ok || p.ID == "" || p.Account != nil {
+	if !ok || p.ID == "" {
 		return
 	}
 	learnMu.Lock()
@@ -167,7 +167,7 @@ func LearnZhipuCoding(p Provider, from string) {
 		if q.ID != p.ID {
 			continue
 		}
-		if q.Account != nil || len(q.Keys) > 0 || q.Key != p.Key || strings.TrimRight(q.Chat, "/") != strings.TrimRight(from, "/") {
+		if len(q.Keys) > 0 || q.Key != p.Key || strings.TrimRight(q.Chat, "/") != strings.TrimRight(from, "/") {
 			return
 		}
 		q.Chat = coding

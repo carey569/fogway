@@ -6,7 +6,7 @@ import (
 )
 
 // Switched off, a provider is kept as it was, and saving it again keeps it
-// off: an account's too, which keeps only the user's settings.
+// off.
 func TestProviderOffKept(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", t.TempDir())
@@ -48,14 +48,4 @@ func TestProviderOffKept(t *testing.T) {
 		t.Fatal("relay/m not listed once on again")
 	}
 
-	// Kiro with a key is an account whose settings are all magpie keeps
-	if err := Save(Provider{ID: "kiro", Key: "ksk_1", Off: true}); err != nil {
-		t.Fatal(err)
-	}
-	if !slices.ContainsFunc(load().Providers, func(p Provider) bool { return p.ID == "kiro" && p.Off }) {
-		t.Fatalf("kiro saved on: %+v", load().Providers)
-	}
-	if k, err := Find("kiro"); err == nil && !k.Off {
-		t.Fatal("kiro found on")
-	}
 }

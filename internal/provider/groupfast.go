@@ -57,38 +57,13 @@ func (g Group) IsFast(id string) bool {
 // already is (#1234), and one that turns the field away is asked again
 // without it and not sent it again (the gateway's optional fields).
 func CanFast(p Provider, model string) bool {
-	if p.IsPlugin() {
-		// Cursor's plugin runs a model as its fast variant when the chat
-		// request says service_tier "priority". From 0.2.2 it lists a model
-		// once per context size (claude-opus-5-5@300k) and says fast on
-		// the ones Cursor has a fast variant of (#1360); 0.1.x listed the
-		// fast one as a model of its own, -fast, as the built-in does
-		pp, ok := PluginOf(p.ID)
-		if !ok || p.PluginProvider() != "cursor" {
-			return false
-		}
-		if m, ok := pluginModel(pp, model); ok && m.Fast {
-			return true
-		}
-		if strings.HasSuffix(model, "-fast") {
-			return false
-		}
-		_, ok = pluginModel(pp, model+"-fast")
-		return ok
-	}
-	if p.Account != nil {
-		switch p.Account.Agent {
-		case "codex":
-			return strings.HasPrefix(model, "gpt-")
-		case "cursor":
-			if strings.HasSuffix(model, "-fast") {
-				return false
-			}
-			_, ok := CursorVariants(model + "-fast")
-			return ok
-		}
-		return false
-	}
+
+	// Cursor's plugin runs a model as its fast variant when the chat
+	// request says service_tier "priority". From 0.2.2 it lists a model
+	// once per context size (claude-opus-5-5@300k) and says fast on
+	// the ones Cursor has a fast variant of (#1360); 0.1.x listed the
+	// fast one as a model of its own, -fast, as the built-in does
+
 	if p.IsBedrock() {
 		return false
 	}
@@ -119,7 +94,7 @@ func OwnFast(p Provider, model string) bool {
 // address: no preset, no account, no plugin. The tier an agent asks for
 // goes to it as it was asked (the gateway's OwnTier).
 func (p Provider) AddedByAddress() bool {
-	return p.ID != "" && p.Preset == "" && p.Account == nil && !p.IsPlugin()
+	return p.ID != "" && p.Preset == ""
 }
 
 // modelSlug is a model's id as its own vendor names it, as a provider the

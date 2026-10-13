@@ -268,14 +268,7 @@ func quotaWaitCmd(args []string) error {
 	}
 	ctx, stop := interruptContext()
 	defer stop()
-	claude := strings.HasPrefix(strings.ToLower(arg), "claude")
 	read := func(ctx context.Context) []provider.SubscriptionQuota {
-		// a new reading each time: the cached one is what the last look saw
-		if claude {
-			provider.AskClaudeUsage()
-		} else {
-			provider.AskUsage()
-		}
 		rctx, cancel := context.WithTimeout(provider.Asked(ctx), 30*time.Second)
 		defer cancel()
 		return provider.Allotted(rctx)
@@ -288,13 +281,7 @@ func quotaWaitCmd(args []string) error {
 	if err != nil {
 		return exitError{2, err}
 	}
-	claude = strings.EqualFold(t.provider, "claude")
 	skip := func(q provider.SubscriptionQuota) bool {
-		for _, l := range provider.Logins(q.Provider) {
-			if q.User != "" && strings.EqualFold(l.User, q.User) {
-				return !l.On || l.Lapsed != ""
-			}
-		}
 		return false
 	}
 	if t.user == "" && !slices.ContainsFunc(qs, func(q provider.SubscriptionQuota) bool { return t.has(q) && !skip(q) }) {

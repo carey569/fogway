@@ -85,6 +85,9 @@ func codex(home string) *Agent { return codexIn(here(home)) }
 // here — the setting is the user's own to turn off.
 var (
 	codexV1ConflictNotice  = newNotice("Codex's own multi_agent_v2 is on in the config magpie routes, which takes over the multi-agent V1 magpie's models ask for; turn it off in Codex's config to run subagents on magpie's models.")
+	// codexRestartAll is what is said after a change while Codex runs: it
+	// builds its model list at start-up
+	codexRestartAll = newNotice("Codex builds its model list at start-up — restart the Codex app and open codex sessions to see this.")
 	codexV1ReadErrorNotice = newNotice("Codex's multi-agent V1 is on, but magpie couldn't read Codex's config to check its own multi_agent_v2.")
 )
 
@@ -1246,13 +1249,8 @@ func codexIn(at place) *Agent {
 			if w := codexSubAgentsV1Warning(path, routed()); w != "" {
 				out = append(out, w)
 			}
-			if at.spell == nil {
-				if n, ok := codexDaemonNotice(path); ok {
-					return strings.Join(append(out, n), " ")
-				}
-			}
 			if codexRunning() {
-				out = append(out, codexRestartAll)
+				out = append(out, codexRestartAll.String())
 			}
 			return strings.Join(out, " ")
 		},
@@ -1335,9 +1333,6 @@ func codexIn(at place) *Agent {
 							continue
 						}
 						note := e.Provider.Name + " · via magpie"
-						if a := e.Provider.Account; a != nil && a.User != "" {
-							note = a.User + " · via magpie"
-						}
 						out = append(out, Option{Value: e.ID, Label: e.Name, Note: note, Icon: e.Provider.Icon,
 							Group: e.Provider.Name, Ref: e.ID, Context: e.Context})
 					}
@@ -1559,15 +1554,7 @@ func codexOwnViaMagpie(model string) string {
 	if model == "" || isMagpie(model) {
 		return ""
 	}
-	shown, _ := provider.CatalogFor("codex")
-	for _, es := range [][]provider.Entry{shown, provider.Catalog()} {
-		for _, e := range es {
-			if a := e.Provider.Account; e.Group == "" && e.Model == model && a != nil && a.Agent == "codex" {
-				return e.ID
-			}
-		}
-	}
-	return ""
+	return "" // no ChatGPT account serves Codex's own models in Fogway
 }
 
 // codexOwnOf is the model of Codex's own a catalog id serves on a ChatGPT
@@ -1576,11 +1563,7 @@ func codexOwnOf(id string) string {
 	if !isMagpie(id) || strings.HasPrefix(id, provider.GroupPrefix) {
 		return ""
 	}
-	p, model, ok := provider.Resolve(id)
-	if !ok || p.Account == nil || p.Account.Agent != "codex" {
-		return ""
-	}
-	return model
+	return ""
 }
 
 // codexKeptGateway is the gateway's URL for this machine's Codex: the
@@ -1677,7 +1660,7 @@ func codexStaleCache(path, tag string) error {
 // user's Save. KeepOnAnAccountWithRoom asks on its own loop with the time
 // for it, and tells the catalog when the answer changes.
 var codexUsedUp = func() bool {
-	return provider.CodexUsedUpKnown()
+	return false
 }
 
 // codexFailover reports whether Codex is signed in to a ChatGPT account
@@ -1688,10 +1671,8 @@ func codexFailover() bool {
 	if provider.SwitchOnly("codex") {
 		return false
 	}
-	for _, p := range provider.Accounts() {
-		if p.Account != nil && p.Account.Agent == "codex" {
-			return len(p.AlsoOn()) > 0
-		}
+	for range provider.Accounts() {
+
 	}
 	return false
 }
@@ -1715,37 +1696,7 @@ func EndCodexFailover() error {
 	if err := a.EndFailover(); err != nil {
 		return err
 	}
-	codexDaemonCheck(a.Path)
 	return nil
-}
-
-// CodexOwnOnly reports whether the Codex that asks the gateway for its
-// model list there (/backend-api/codex/models) reaches magpie for account
-// failover alone (FailingOver), to be handed only its own models (#1385).
-// That is this machine's Codex; a request doesn't say whether it came from
-// a Codex in a WSL distro instead, so one there connected to magpie (what
-// magpie set on it, or its joined/beside mark in the stash) keeps magpie's
-// models in the list. No distro is probed for it.
-func CodexOwnOnly() bool {
-	home, err := os.UserHomeDir()
-	if err != nil || !codex(home).FailingOver() {
-		return false
-	}
-	appliedMu.Lock()
-	set := appliedLoad()
-	appliedMu.Unlock()
-	for id := range set {
-		if strings.HasPrefix(id, "codex@wsl:") {
-			return false
-		}
-	}
-	// a distro's name may have dots of its own (Ubuntu-24.04)
-	for k, v := range stashLoad() {
-		if strings.HasPrefix(k, "codex@wsl:") && v == "1" && (strings.HasSuffix(k, ".joined") || strings.HasSuffix(k, ".beside")) {
-			return false
-		}
-	}
-	return true
 }
 
 // codexChatGPT reports whether Codex is signed in to a ChatGPT account:

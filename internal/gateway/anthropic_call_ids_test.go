@@ -8,8 +8,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/yetone/magpie/internal/provider"
 )
 
 // chatCallUpstream is a Chat upstream (a plugin's provider, a relay) that
@@ -127,66 +125,4 @@ func callAndAnswer(t *testing.T, s *Server, stream bool, sent func() []string) (
 		t.Fatalf("upstream got %d requests for the answer, want 1", len(got)-before)
 	}
 	return id, got[len(got)-1]
-}
-
-// A call id with a character Claude Code doesn't take, from any upstream
-// (#1304: Devin SWE-2's, here through a Chat provider as a plugin or relay
-// gives it), reaches the Anthropic client of [A-Za-z0-9_-] only, and the
-// upstream gets its own id back on the call and on the result answering it.
-func TestAnthropicCallIDsSafeBothWays(t *testing.T) {
-	fresh(t)
-	up, sent := chatCallUpstream(t, devinRawID)
-	if err := provider.Save(provider.Provider{ID: "up", Name: "Up", Key: "k", Chat: up.URL + "/v1", Models: []string{"m1"}}); err != nil {
-		t.Fatal(err)
-	}
-	s := New()
-	for _, stream := range []bool{true, false} {
-		id, next := callAndAnswer(t, s, stream, sent)
-		if !anthropicSafeID.MatchString(id) {
-			t.Fatalf("stream=%v: call id %q, want one of [A-Za-z0-9_-] only", stream, id)
-		}
-		calls, answers := chatIDsSent(t, next)
-		if len(calls) != 1 || calls[0] != devinRawID || len(answers) != 1 || answers[0] != devinRawID {
-			t.Errorf("stream=%v: upstream got calls %q, results %q; want %q for both", stream, calls, answers, devinRawID)
-		}
-	}
-}
-
-// An id that is safe already goes to the client and back byte for byte, so
-// prompt caching and every upstream that works today see no change;
-// Devin's "dv_…" ids are not encoded a second time.
-func TestAnthropicSafeCallIDsUnchanged(t *testing.T) {
-	for _, id := range []string{"toolu_01A09q90qw90lq917835lq9", "call_abc-123", "dv_QmFzaDowI2E2NWI2YTVl", devinOutID(devinRawID)} {
-		if got := anthropicOutID(id); got != id {
-			t.Errorf("anthropicOutID(%q) = %q, want it as it came", id, got)
-		}
-		if got := anthropicInID(id); got != id {
-			t.Errorf("anthropicInID(%q) = %q, want it as it came", id, got)
-		}
-	}
-	// a client's own id that looks like one of magpie's goes back as it came
-	for _, id := range []string{"mp_", "mp_!!", "mp_abc"} {
-		if anthropicInID(id) != id && anthropicOutID(anthropicInID(id)) != id {
-			t.Errorf("anthropicInID(%q) = %q, which doesn't go back to it", id, anthropicInID(id))
-		}
-	}
-	// an upstream's safe id that begins "mp_" still comes back as it was
-	if out := anthropicOutID("mp_abc"); anthropicInID(out) != "mp_abc" || !anthropicSafeID.MatchString(out) {
-		t.Errorf(`"mp_abc" went out as %q and came back as %q`, out, anthropicInID(out))
-	}
-
-	fresh(t)
-	const safe = "call_9f8e7d6c5b4a"
-	up, sent := chatCallUpstream(t, safe)
-	if err := provider.Save(provider.Provider{ID: "up", Name: "Up", Key: "k", Chat: up.URL + "/v1", Models: []string{"m1"}}); err != nil {
-		t.Fatal(err)
-	}
-	s := New()
-	for _, stream := range []bool{true, false} {
-		id, next := callAndAnswer(t, s, stream, sent)
-		calls, answers := chatIDsSent(t, next)
-		if id != safe || len(calls) != 1 || calls[0] != safe || len(answers) != 1 || answers[0] != safe {
-			t.Errorf("stream=%v: client got %q; upstream got calls %q, results %q; want %q everywhere", stream, id, calls, answers, safe)
-		}
-	}
 }

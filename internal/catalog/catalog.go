@@ -1260,22 +1260,6 @@ func textModel(m mdModel) bool {
 	return true
 }
 
-// draws is whether a models.dev row is a model that makes images: one
-// whose only output is images (gpt-image-1, imagen, flux), or that answers
-// in text and images and is named for them (gemini-2.5-flash-image,
-// gpt-5-image) — not a text model that can also put a chart in its answer
-// (deep-research, openrouter/auto).
-func draws(m mdModel) bool {
-	if !slices.Contains(m.Modalities.Output, "image") {
-		return false
-	}
-	id := strings.ToLower(m.ID)
-	if strings.Contains(id, "deep-research") || strings.HasSuffix(id, "/auto") {
-		return false
-	}
-	return !slices.Contains(m.Modalities.Output, "text") || DrawsID(id)
-}
-
 // DrawsID is whether a model's id names one that makes images, for a model
 // the catalog doesn't know (one typed in, or a vendor's own list's).
 func DrawsID(id string) bool {
@@ -1315,30 +1299,6 @@ func PointsToImagesAPI(text string) bool {
 // images API that names chat completions as where the model draws.
 func PointsToChat(text string) bool {
 	return strings.Contains(strings.ToLower(text), "chat/completions")
-}
-
-// Drawers are the models of one models.dev provider that make images,
-// newest first.
-func Drawers(id string) []Model {
-	p, ok := load()[id]
-	if !ok {
-		return nil
-	}
-	var out []Model
-	for _, m := range p.Models {
-		if !draws(m) {
-			continue
-		}
-		out = append(out, Model{ID: m.ID, Name: m.Name, Provider: id, Released: m.ReleaseDate, Price: m.Cost,
-			Images: slices.Contains(m.Modalities.Input, "image"), ImageInput: imageInput(m.Modalities.Input)})
-	}
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Released != out[j].Released {
-			return out[i].Released > out[j].Released
-		}
-		return out[i].ID < out[j].ID
-	})
-	return out
 }
 
 // CodexHome is where Codex CLI keeps its state: $CODEX_HOME, else ~/.codex.

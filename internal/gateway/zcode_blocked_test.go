@@ -43,36 +43,6 @@ func estimated(t *testing.T, rec *httptest.ResponseRecorder) int {
 	return got.InputTokens
 }
 
-// Claude Code asks count_tokens before each turn; ZCode itself never does,
-// and zcode.z.ai answers it with an error every time. A ZCode account's
-// count is estimated, the vendor not asked.
-func TestZCodeCountTokensEstimated(t *testing.T) {
-	fresh(t)
-	up := &countAsked{}
-	srv := httptest.NewServer(up)
-	t.Cleanup(srv.Close)
-	p := provider.Provider{ID: "zcode", Name: "ZCode", Anthropic: srv.URL + "/api/v1/zcode-plan/anthropic", Models: []string{"glm-5.1"},
-		Account: &provider.Account{Agent: "zcode", User: "trial@example.com", Plan: "Start Plan"}}
-	body := []byte(`{"model":"glm-5.1","messages":[{"role":"user","content":"hello there"}]}`)
-	rec := httptest.NewRecorder()
-	New().countOn(rec, httptest.NewRequest("POST", "/v1/messages/count_tokens", nil), p, "glm-5.1", true, body)
-	if n := estimated(t, rec); n == 999 || len(up.asked()) > 0 {
-		t.Fatalf("zcode.z.ai was asked to count: %v, %d", up.asked(), n)
-	}
-}
-
-// ZCode moved onto its plugin estimates as the built-in does.
-func TestMovedZCodeCountTokensEstimated(t *testing.T) {
-	up := &countAsked{}
-	movedFake(t, "zcode", up)
-	rec := httptest.NewRecorder()
-	New().Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/v1/messages/count_tokens",
-		strings.NewReader(`{"model":"zcode/fake-claude","messages":[{"role":"user","content":"hello there"}]}`)))
-	if n := estimated(t, rec); n == 999 || len(up.asked()) > 0 {
-		t.Fatalf("the vendor was asked to count: %v, %d", up.asked(), n)
-	}
-}
-
 // edgeBlockPage is Alibaba Cloud's ESA block page, as zcode.z.ai served it.
 const edgeBlockPage = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>405</title></head>

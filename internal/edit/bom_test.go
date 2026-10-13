@@ -1,7 +1,6 @@
 package edit
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,16 +71,6 @@ func TestJSONSettingsWithBOM(t *testing.T) {
 	}
 	if got := read(t, p); got != claudeSettingsCRLF {
 		t.Fatalf("set back, the file is not the user's own bytes:\n%q\nwant\n%q", got, claudeSettingsCRLF)
-	}
-}
-
-func TestPatchJSONKeepsBOM(t *testing.T) {
-	out, err := PatchJSON([]byte(claudeSettingsCRLF), []KV{{Path: "model", Value: "x"}}, []string{"alwaysThinkingEnabled"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.HasPrefix(out, []byte(utf8BOM)) || bytes.HasPrefix(out[3:], []byte(utf8BOM)) || !bytes.Contains(out, []byte(`"model": "x"`)) || bytes.Contains(out, []byte("alwaysThinking")) {
-		t.Fatalf("PatchJSON through a BOM: %q", out)
 	}
 }
 

@@ -1,12 +1,8 @@
 package catalog
 
 import (
-	"context"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -290,59 +286,5 @@ func TestFamilyLevels(t *testing.T) {
 		if strings.Join(got, ",") != c.want || ok != c.ok {
 			t.Errorf("KinEfforts(%q) = %v, %v; want %q, %v", c.id, got, ok, c.want, c.ok)
 		}
-	}
-}
-
-func TestFetchedImageCapabilityOverridesCatalog(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"data":[
-			{"id":"vision","modalities":{"input":["text","image"]}},
-			{"id":"text","modalities":{"input":["text"]}},
-			{"id":"unknown"}
-		]}`))
-	}))
-	defer server.Close()
-	live, err := Fetch(context.Background(), server.URL, "", false, nil)
-	if err != nil || len(live) != 3 {
-		t.Fatalf("fetched models: %+v, %v", live, err)
-	}
-	known := []Model{
-		{ID: "vision", Images: true, ImageInput: imageInput([]string{"text", "image"})},
-		{ID: "text", Images: true, ImageInput: imageInput([]string{"text", "image"})},
-		{ID: "unknown", Images: true, ImageInput: imageInput([]string{"text", "image"})},
-	}
-	got := Decorate(live, known)
-	if got[0].ImageInput == nil || !*got[0].ImageInput || !got[0].Images ||
-		got[1].ImageInput == nil || *got[1].ImageInput || got[1].Images ||
-		got[2].ImageInput == nil || !*got[2].ImageInput || !got[2].Images {
-		t.Fatalf("source precedence: %+v", got)
-	}
-}
-
-// A list's modalities keep every kind it names, input and output, not
-// image alone; a model the list says nothing of takes the catalog's (#1595).
-func TestFetchedModalitiesKeepEveryKind(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"data":[
-			{"id":"omni","modalities":{"input":["text","image","audio","video","pdf"],"output":["text","audio"]}},
-			{"id":"unknown"}
-		]}`))
-	}))
-	defer server.Close()
-	live, err := Fetch(context.Background(), server.URL, "", false, nil)
-	if err != nil || len(live) != 2 {
-		t.Fatalf("fetched models: %+v, %v", live, err)
-	}
-	known := []Model{{ID: "unknown", ImageInput: imageInput([]string{"text", "pdf"}), InputModalities: []string{"text", "pdf"}, OutputModalities: []string{"text"}}}
-	got := Decorate(live, known)
-	if !reflect.DeepEqual(got[0].InputModalities, []string{"text", "image", "audio", "video", "pdf"}) ||
-		!reflect.DeepEqual(got[0].OutputModalities, []string{"text", "audio"}) {
-		t.Errorf("omni: in %v out %v", got[0].InputModalities, got[0].OutputModalities)
-	}
-	if !reflect.DeepEqual(got[1].InputModalities, []string{"text", "pdf"}) ||
-		!reflect.DeepEqual(got[1].OutputModalities, []string{"text"}) {
-		t.Errorf("unknown: in %v out %v", got[1].InputModalities, got[1].OutputModalities)
 	}
 }

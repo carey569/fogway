@@ -19,29 +19,13 @@ var wslMore = []struct {
 	id, file, suffix string
 }{
 	{"opencode", ".config/opencode/opencode.json", "/v1"},
-	{"mimocode", ".config/mimocode/mimocode.json", "/v1"},
 	{"kimi", ".kimi-code/config.toml", "/v1"},
 	{"omp", ".omp/agent/models.yml", "/v1"},
 	{"crush", ".config/crush/crush.json", "/v1"},
-	{"hermes", ".hermes/config.yaml", "/v1"},
-	{"morph", ".morph/config.yaml", "/v1"},
-	{"grok", ".grok/config.toml", "/v1"},
 	{"droid", ".factory/settings.json", "/v1"},
-	{"fx", ".fx/settings.json", "/v1"},
-	{"commandcode", ".commandcode/providers.json", "/v1"},
-	{"minimax-code", ".minimax/config.yaml", ""},
 	{"dsh", ".dsh/config.yaml", "/v1"},
-	{"muse", ".config/muse/settings.json", "/v1"},
-	{"qoder", ".qoder/settings.json", "/v1"},
-	{"qoder-cn", ".qoder-cn/settings.json", "/v1"},
-	// lgtm on Discord: a CodeBuddy Code in WSL wasn't found, nor were the
-	// other CLIs magpie set up only on this machine
-	{"codebuddy", ".codebuddy/models.json", "/v1/chat/completions"},
 	{"cline", ".cline/data/settings/providers.json", "/v1"},
-	{"atomcode", ".atomcode/config.toml", "/v1"},
-	{"snow", ".snow/profiles/magpie.json", "/v1"},
 	{"goose", ".config/goose/custom_providers/magpie.json", "/v1"},
-	{"reasonix", ".reasonix/config.toml", "/v1"},
 }
 
 // wslFinds is what a probe of a distro with the agent of kind k prints,

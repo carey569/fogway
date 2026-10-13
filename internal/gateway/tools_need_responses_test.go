@@ -68,43 +68,6 @@ const piChatTools = `{"model":"relay/gpt-6.1-sol","stream":true,"stream_options"
   "messages":[{"role":"developer","content":"You are Pi."},{"role":"user","content":"list the files"}],
   "tools":[{"type":"function","function":{"name":"ls","description":"List files","parameters":{"type":"object","properties":{"path":{"type":"string"}}},"strict":false}}]}`
 
-// A custom provider whose Chat and Responses URLs are the same relay
-// (#1308): Pi asks on Chat Completions with tools, the relay says the model
-// takes tools on Responses alone, and the request goes to the provider's
-// Responses URL instead of the relay's 400 reaching Pi — and later turns
-// go there at once.
-func TestToolsThatNeedResponsesGoThere(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	f := &toolsRelay{}
-	up := httptest.NewServer(f)
-	t.Cleanup(up.Close)
-	if err := provider.Save(provider.Provider{ID: "relay", Name: "Relay", Key: "k", Models: []string{"gpt-6.1-sol"},
-		Chat: up.URL + "/v1", Responses: up.URL + "/v1"}); err != nil {
-		t.Fatal(err)
-	}
-	if n := mustFind(t, "relay").Native("gpt-6.1-sol"); n != provider.Chat {
-		t.Fatalf("Pi is wired on %q for the relay's model, the test assumes chat", n)
-	}
-	handler := New().Handler()
-	for i, want := range []int{1, 2} {
-		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(piChatTools)))
-		if rec.Code != 200 || !strings.Contains(rec.Body.String(), "responses ok") {
-			t.Fatalf("call %d: status %d: %s", i, rec.Code, rec.Body.String())
-		}
-		f.mu.Lock()
-		chat, res, body := f.chatCalls, f.resCalls, string(f.resBody)
-		f.mu.Unlock()
-		if chat != 1 || res != want {
-			t.Fatalf("call %d: chat=%d responses=%d", i, chat, res)
-		}
-		if !strings.Contains(body, `"name":"ls"`) || !strings.Contains(body, `"model":"gpt-6.1-sol"`) {
-			t.Errorf("call %d: Responses request lost the tools or model: %s", i, body)
-		}
-	}
-}
-
 // The sibling on a translated request: Claude Code's Messages turn with
 // tools, spoken to the relay as Chat Completions, goes on to Responses too.
 func TestTranslatedToolsThatNeedResponsesGoThere(t *testing.T) {

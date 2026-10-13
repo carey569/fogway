@@ -1,13 +1,11 @@
 package agent
 
 import (
-	"context"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/settings"
 )
 
@@ -38,7 +36,7 @@ func setAgentsV1(t *testing.T, on bool) {
 // alone and asks no real daemon.
 func codexAgentsHome(t *testing.T, config string) (home string, read func() string) {
 	t.Helper()
-	quietCodex(t, false, provider.CodexDaemonCheck{})
+	quietCodex(t, false)
 	return codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, config)
 }
 
@@ -253,29 +251,9 @@ func TestCodexSubAgentsV1WarningSetting(t *testing.T) {
 
 // quietCodex says whether a Codex runs and what its app-server answers, for
 // the test's length.
-func quietCodex(t *testing.T, running bool, daemon provider.CodexDaemonCheck) {
+func quietCodex(t *testing.T, running bool) {
 	t.Helper()
-	wasRunning, wasKeep := codexRunning, keepCodexDaemon
-	t.Cleanup(func() { codexRunning, keepCodexDaemon = wasRunning, wasKeep })
+	wasRunning := codexRunning
+	t.Cleanup(func() { codexRunning = wasRunning })
 	codexRunning = func() bool { return running }
-	keepCodexDaemon = func(context.Context, string, time.Time) provider.CodexDaemonCheck { return daemon }
-}
-
-// The V2 warning is joined with the restart advice, not put in its place: a
-// user who just switched models while Codex runs still needs "restart Codex"
-// (#1028 review point 2), and the app-server magpie restarted is still said.
-// Joined with a space, as notices are, so the GUI translates both.
-func TestCodexV2WarningJoinsRestart(t *testing.T) {
-	home, read := codexAgentsHome(t, "model = \"gpt-5.5\"\n\n[features]\nmulti_agent_v2 = true\n")
-	cx := codex(home)
-	route(t, cx, read)
-	setAgentsV1(t, true)
-	quietCodex(t, true, provider.CodexDaemonCheck{})
-	if n, want := cx.Notice(), codexV1ConflictNotice.String()+" "+codexRestartAll; n != want {
-		t.Fatalf("Codex running:\n%q\nwant\n%q", n, want)
-	}
-	quietCodex(t, true, provider.CodexDaemonCheck{Behind: true, Restarted: true})
-	if n, want := cx.Notice(), codexV1ConflictNotice.String()+" "+noticeCodexdaemon.String(); n != want {
-		t.Fatalf("app-server restarted:\n%q\nwant\n%q", n, want)
-	}
 }

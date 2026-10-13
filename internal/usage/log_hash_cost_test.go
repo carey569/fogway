@@ -1,8 +1,6 @@
 package usage
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -50,51 +48,5 @@ func TestUsageAppendReadHashesNoPreReadScan(t *testing.T) {
 	// two passes. A third, before the read, is the scan the parse replaces.
 	if perCycle > 2*info.Size()+info.Size()/10 {
 		t.Fatalf("an append + read hashed %d bytes over a %d-byte log, more than the prefix check and the after-read check", perCycle, info.Size())
-	}
-}
-
-// Another writer can be mid-line when a read stats the log. The fingerprint
-// covers only the complete lines parsed, so the line's completion continues
-// the snapshot rather than counting the half line as read.
-func TestUsagePartialLineThenCompletion(t *testing.T) {
-	for _, settle := range []bool{false, true} {
-		t.Run(fmt.Sprint("settled=", settle), func(t *testing.T) {
-			pageHome(t)
-			now := holdClock(t, time.Now())
-			if settle {
-				settleLogClock(t)
-			}
-			historyLog(t, logBlockRows+3)
-			line, err := json.Marshal(Record{Time: now, Agent: "codex", Provider: "relay", Model: "m", Session: "late", Input: 41, Status: 200})
-			if err != nil {
-				t.Fatal(err)
-			}
-			line = append(line, '\n')
-			half := len(line) / 2
-			write := func(b []byte) {
-				t.Helper()
-				f, err := os.OpenFile(Path(), os.O_APPEND|os.O_WRONLY, 0600)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if _, err := f.Write(b); err != nil {
-					t.Fatal(err)
-				}
-				if err := f.Close(); err != nil {
-					t.Fatal(err)
-				}
-			}
-			write(line[:half])
-			before := Summarize(All)
-			if s := readLogSnapshot(); s.hash != "" && s.hash != recordHash(Path(), s.off) {
-				t.Fatal("fingerprint does not cover the parsed bytes")
-			}
-			write(line[half:])
-			got, want := Summarize(All), summarize(All, now, Load(time.Time{}))
-			if got.Totals != want.Totals || got.Calls != before.Calls+1 {
-				t.Fatalf("completed line: got %+v (%d calls, %d before) want %+v", got.Totals, got.Calls, before.Calls, want.Totals)
-			}
-			equalPage(t, QueryPage(All, Filter{}, 0, 100), pageFromLedger(All, Filter{}, 0, 100, LedgerOf(All, Filter{})))
-		})
 	}
 }

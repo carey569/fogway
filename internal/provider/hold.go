@@ -7,7 +7,6 @@ import (
 
 	"github.com/yetone/magpie/internal/catalog"
 	"github.com/yetone/magpie/internal/filememo"
-	"github.com/yetone/magpie/internal/plugin"
 	"github.com/yetone/magpie/internal/settings"
 )
 
@@ -31,8 +30,6 @@ type heldValue struct {
 
 func init() {
 	catalog.Forget = Changed
-	// a plugin's sign-in saved or renewed, a plugin added
-	plugin.OnChange(Changed)
 }
 
 // heldFor is how long a held catalog is used before it is built again,
@@ -92,12 +89,6 @@ func heldOf[T any](key string, build func() T) T {
 func heldEntries(build func() []Entry) []Entry {
 	// clipped: a caller's append copies
 	return heldOf("entries", func() []Entry { return slices.Clip(build()) })
-}
-
-// heldPlugins is plugin.Cached, which reads the plugins' list and
-// sign-ins each time, and PluginOf asks for every model.
-func heldPlugins() []plugin.Provider {
-	return heldOf("plugins", func() []plugin.Provider { return slices.Clip(plugin.Cached()) })
 }
 
 // heldSettings is the settings, read once while a request holds the

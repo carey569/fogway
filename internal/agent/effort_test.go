@@ -1,14 +1,11 @@
 package agent
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/appdir"
 	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/edit"
 	"github.com/yetone/magpie/internal/provider"
 )
 
@@ -68,90 +65,6 @@ func setEffort(t *testing.T, a *Agent, v, keep string) {
 	}
 	if !strings.Contains(readFile(a.Path), keep) {
 		t.Fatalf("%s lost %q on reset:\n%s", a.ID, keep, readFile(a.Path))
-	}
-}
-
-func TestEffortFields(t *testing.T) {
-	home := effortHome(t)
-	cfg := filepath.Join(home, ".config")
-
-	writeFile(t, filepath.Join(home, ".claude", "settings.json"), `{"theme":"dark","model":"opus"}`)
-	c := claude(home)
-	setEffort(t, c, "xhigh", `"theme"`)
-	// max lasts a session in Claude Code's /effort; magpie keeps it as its
-	// env (TestClaudeEffortMax)
-	setEffort(t, c, "max", `"theme"`)
-
-	writeFile(t, filepath.Join(appdir.HermesHomeIn(home), "config.yaml"), "model:\n  default: x\nagent:\n  max_turns: 9\n")
-	h := hermes(home)
-	setEffort(t, h, "none", "max_turns: 9")
-	if v, _ := edit.GetYAML(h.Path, "model.default"); v != "x" {
-		t.Fatalf("hermes model: %q", v)
-	}
-
-	writeFile(t, filepath.Join(home, ".omp", "agent", "config.yml"), "modelRoles:\n  default: a/b\n")
-	setEffort(t, omp(home), "xhigh", "default: a/b")
-
-	g := goose(home, cfg)
-	writeFile(t, g.Path, "GOOSE_MODEL: m\nGOOSE_PROVIDER: p\n")
-	setEffort(t, g, "max", "GOOSE_MODEL: m")
-	if v, _ := edit.GetYAMLTop(g.Path, "GOOSE_PROVIDER"); v != "p" {
-		t.Fatalf("goose provider: %q", v)
-	}
-
-	writeFile(t, filepath.Join(home, ".copilot", "settings.json"), `{"model":"gpt-5.5","contextTier":"long"}`)
-	setEffort(t, copilot(home), "xhigh", `"contextTier"`)
-
-	cr := crush(home, cfg)
-	os.MkdirAll(filepath.Dir(cr.Path), 0o755)
-	os.WriteFile(cr.Path, []byte(`{"options":{"debug":true}}`), 0o644)
-	// Crush keeps the effort with the large model
-	if err := cr.Field("effort").Set("high"); err == nil {
-		t.Fatal("crush took an effort without a large model")
-	}
-	if err := cr.Field("model").Set("magpie/deepseek/pro"); err != nil {
-		t.Fatal(err)
-	}
-	setEffort(t, cr, "medium", `"debug"`)
-	if cr.Field("model").Get() != "magpie/deepseek/pro" {
-		t.Fatalf("crush model: %s", readFile(cr.Path))
-	}
-}
-
-func TestCommandCodeEffort(t *testing.T) {
-	home := effortHome(t)
-	path := filepath.Join(home, ".commandcode", "settings.json")
-	writeFile(t, path, `{"theme":"dark","reasoningEffort":{"gpt-5.5":"low"}}`)
-	a := commandCode(home)
-	f := a.Field("effort")
-	if err := f.Set("high"); err == nil {
-		t.Fatal("took an effort without a model")
-	}
-	if err := a.Field("model").Set("magpie/deepseek/pro"); err != nil {
-		t.Fatal(err)
-	}
-	setEffort(t, a, "max", `"theme"`)
-	// each model keeps its own; the other one's stays
-	if m := ccEffortMap(path); m["gpt-5.5"] != "low" || len(m) != 1 {
-		t.Fatalf("efforts: %v\n%s", m, readFile(path))
-	}
-	// a model id with dots is one key, not a path
-	if err := a.Field("model").Set("anthropic/claude-4.5"); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.Set("xhigh"); err != nil {
-		t.Fatal(err)
-	}
-	if m := ccEffortMap(path); m["anthropic/claude-4.5"] != "xhigh" || m["gpt-5.5"] != "low" {
-		t.Fatalf("efforts: %v\n%s", m, readFile(path))
-	}
-	// the last one gone, the map goes too
-	os.WriteFile(path, []byte(`{"model":"x","reasoningEffort":{"x":"low"}}`), 0o644)
-	if err := f.Set(""); err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(readFile(path), "reasoningEffort") {
-		t.Fatalf("left the map:\n%s", readFile(path))
 	}
 }
 

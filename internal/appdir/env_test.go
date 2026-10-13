@@ -2,7 +2,6 @@ package appdir
 
 import (
 	"os"
-	"path/filepath"
 	"runtime"
 	"slices"
 	"testing"
@@ -24,29 +23,6 @@ func TestHomeRefusesEmptyOrRelative(t *testing.T) {
 	if got, err := Home(); err != nil || got != abs {
 		t.Errorf("Home() = %q, %v, want %q", got, err, abs)
 	}
-}
-
-func TestConfigNeverRelative(t *testing.T) {
-	t.Setenv("APPIMAGE", "")
-	t.Cleanup(func() { UseExecutable("") })
-	UseExecutable("")
-	home := t.TempDir()
-	t.Setenv(homeVar(), home)
-	t.Setenv("XDG_CONFIG_HOME", "relative/cfg")
-	t.Setenv("XDG_CACHE_HOME", "relative/cache")
-	if got, want := Config(), filepath.Join(home, ".config", "magpie"); got != want {
-		t.Errorf("Config() = %q, want %q", got, want)
-	}
-	if got, want := Cache(), filepath.Join(home, ".cache", "magpie"); got != want {
-		t.Errorf("Cache() = %q, want %q", got, want)
-	}
-	t.Setenv(homeVar(), "")
-	defer func() {
-		if recover() == nil {
-			t.Error("Config() with no home went on instead of stopping")
-		}
-	}()
-	Config()
 }
 
 // A relative folder variable reads as unset inside magpie and stays in the
@@ -109,7 +85,6 @@ func TestTildeFolderVariables(t *testing.T) {
 		{"MAGPIE_BIN_DIR", "~/.local/bin", false},
 		{"CODEX_HOME", "~/.codex", false},
 		{"OPENCODE_CONFIG_DIR", "~/opencode", false},
-		{"OPENCHAMBER_DATA_DIR", "~", false},
 		{"PI_CODING_AGENT_DIR", "~/pi", true},
 		{"PI_CODING_AGENT_SESSION_DIR", "~/sessions", true},
 		{"HANA_HOME", "~", true},

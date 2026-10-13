@@ -196,45 +196,6 @@ func TestWebSearchForAModelThatCannot(t *testing.T) {
 	}
 }
 
-func TestWebSearchAskedOfEachAPI(t *testing.T) {
-	for _, c := range []struct {
-		proto provider.Protocol
-		body  string
-		want  bool
-	}{
-		{provider.Responses, `{"model":"m","input":"hi","tools":[{"type":"web_search","external_web_access":false}]}`, true},
-		{provider.Responses, `{"model":"m","input":"hi","tools":[{"type":"web_search_preview"}]}`, true},
-		{provider.Responses, `{"model":"m","input":"hi","tools":[{"type":"function","name":"web_search_x"}]}`, false},
-		{provider.Chat, `{"model":"m","messages":[{"role":"user","content":"hi"}],"web_search_options":{}}`, true},
-		{provider.Chat, `{"model":"m","messages":[{"role":"user","content":"web_search"}]}`, false},
-		{provider.Gemini, `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"tools":[{"googleSearch":{}}]}`, true},
-		{provider.Gemini, `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"tools":[{"google_search":{}}]}`, true},
-		{provider.Anthropic, `{"model":"m","max_tokens":5,"messages":[{"role":"user","content":"hi"}],"tools":[{"type":"web_search_20250305","name":"web_search"}]}`, true},
-	} {
-		if got := searchAsked(c.proto, []byte(c.body)); got != c.want {
-			t.Errorf("%s %s: %v", c.proto, c.body, got)
-		}
-	}
-	r := &Request{Model: "m", Messages: []Message{{Role: "user", Parts: []Part{{Kind: Text, Text: "hi"}}}}, WebSearch: true}
-	if b := string(buildResponses(r, "m", "", false)); !strings.Contains(b, `"tools":[{"type":"web_search"}]`) {
-		t.Errorf("responses: %s", b)
-	}
-	if b := string(buildChat(r, "m", "openrouter.ai", false)); !strings.Contains(b, `"plugins":[{"id":"web"}]`) {
-		t.Errorf("openrouter: %s", b)
-	}
-	if b := string(buildChat(r, "m", "api.deepseek.com", false)); strings.Contains(b, "plugins") {
-		t.Errorf("deepseek: %s", b)
-	}
-	if b := string(buildAnthropic(r, "m")); !strings.Contains(b, `"web_search_20250305"`) {
-		t.Errorf("anthropic: %s", b)
-	}
-	codex := provider.Provider{ID: "codex", Responses: provider.CodexBase, Account: &provider.Account{Agent: "codex"}}
-	if !searchesItself(codex, provider.Responses) || searchesItself(provider.Provider{Chat: "https://api.deepseek.com"}, provider.Chat) ||
-		!searchesItself(provider.Provider{Chat: "https://openrouter.ai/api/v1"}, provider.Chat) {
-		t.Error("searchesItself")
-	}
-}
-
 // Anthropic's own search, streamed: its server tool's input is no call of
 // the client's.
 func TestAnthropicServerToolLeftOut(t *testing.T) {
@@ -359,23 +320,6 @@ func TestZhipuSearchesOnResponses(t *testing.T) {
 				t.Errorf("%s searches by itself on %s", p.Name, proto)
 			}
 		}
-	}
-}
-
-// Grok moved to its plugin searches by itself as the built-in did: it is
-// known by its id, its account being the plugin's.
-func TestMovedGrokSearchesItself(t *testing.T) {
-	for _, agent := range []string{"grok", "plugin"} {
-		p := provider.Provider{ID: "grok", Responses: "plugin://grok/v1", Account: &provider.Account{Agent: agent}}
-		if !searchesItself(p, provider.Responses) {
-			t.Errorf("Grok as %q's account doesn't search by itself", agent)
-		}
-		if searchesItself(p, provider.Chat) {
-			t.Errorf("Grok as %q's account searches by itself on chat", agent)
-		}
-	}
-	if searchesItself(provider.Provider{ID: "fakeco", Responses: "plugin://fakeco/v1", Account: &provider.Account{Agent: "plugin"}}, provider.Responses) {
-		t.Error("another plugin's provider searches by itself")
 	}
 }
 

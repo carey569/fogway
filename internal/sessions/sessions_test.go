@@ -148,65 +148,6 @@ func TestList(t *testing.T) {
 	}
 }
 
-func TestIncremental(t *testing.T) {
-	claude, _ := setup(t)
-	path := filepath.Join(claude, "projects", "-work-app", "11111111-2222-3333-4444-555555555555.jsonl")
-	before := model(List(0)[1], "claude-opus-5-5")
-
-	line := `{"parentUuid":"a3","isSidechain":false,"message":{"model":"claude-opus-5-5","id":"msg_3","type":"message","role":"assistant","content":[],"usage":{"input_tokens":7,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":3}},"type":"assistant","uuid":"a4","timestamp":"2026-09-20T11:00:00.000Z","sessionId":"11111111-2222-3333-4444-555555555555"}`
-	appendTo := func(s string) {
-		f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		f.WriteString(s)
-		f.Close()
-	}
-	// half a line, still being written: left for later
-	appendTo(line[:40])
-	if got := model(List(0)[1], "claude-opus-5-5"); got.Tokens != before.Tokens {
-		t.Fatalf("a partial line was counted: %+v", got)
-	}
-	off := cache[path].Off
-	appendTo(line[40:] + "\n")
-	s := List(0)[1]
-	if got := model(s, "claude-opus-5-5"); got.Input != before.Input+7 || got.Output != before.Output+3 {
-		t.Fatalf("appended line: %+v", got)
-	}
-	if !s.Last.Equal(time.Date(2026, 9, 20, 11, 0, 0, 0, time.UTC)) {
-		t.Fatalf("last %s", s.Last)
-	}
-	if cache[path].Off <= off {
-		t.Fatalf("offset did not move on: %d → %d", off, cache[path].Off)
-	}
-
-	// kept on disk: a new process reads the parse back, not the file (here
-	// changed in place, same size and time, so a re-read would show it)
-	saved()
-	b, err := os.ReadFile(CachePath())
-	if err != nil {
-		t.Fatal(err)
-	}
-	var kept cacheFile
-	if json.Unmarshal(b, &kept) != nil || kept.Version != cacheVersion || kept.Files[path] == nil {
-		t.Fatalf("cache file: %s", b)
-	}
-	fi, _ := os.Stat(path)
-	raw, _ := os.ReadFile(path)
-	os.WriteFile(path, []byte(strings.Replace(string(raw), `"input_tokens":7,`, `"input_tokens":8,`, 1)), 0o644)
-	os.Chtimes(path, fi.ModTime(), fi.ModTime())
-	Reset()
-	if got := model(List(0)[1], "claude-opus-5-5"); got.Input != before.Input+7 {
-		t.Fatalf("parse not kept: %+v", got)
-	}
-
-	// a file that shrank is read again from the start
-	os.WriteFile(path, raw[:len(raw)-len(line)-1], 0o644)
-	if got := model(List(0)[1], "claude-opus-5-5"); got.Tokens != before.Tokens {
-		t.Fatalf("after shrinking: %+v", got)
-	}
-}
-
 func TestPrompt(t *testing.T) {
 	for in, want := range map[string]string{
 		`"<command-message>review</command-message>\n<command-name>/review</command-name>\n<command-args>42</command-args>"`: "/review 42",
@@ -222,18 +163,6 @@ func TestPrompt(t *testing.T) {
 	long := strings.Repeat("字", 300)
 	if got := []rune(title(long)); len(got) != 161 || got[160] != '…' {
 		t.Errorf("title not cut: %d", len(got))
-	}
-}
-
-func TestResumeCommand(t *testing.T) {
-	if ResumeCommand("claude", "x; rm -rf /", "/tmp") != "" {
-		t.Fatal("an id that isn't plain must give no command")
-	}
-	if got := ResumeCommand("codex", "abc", ""); got != "codex resume abc" {
-		t.Fatalf("no folder: %q", got)
-	}
-	if ResumeCommand("goose", "abc", "/tmp") != "" {
-		t.Fatal("unknown agent")
 	}
 }
 

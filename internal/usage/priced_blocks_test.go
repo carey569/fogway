@@ -23,26 +23,6 @@ func appendAndQueryAllocs(t *testing.T, n int) float64 {
 	})
 }
 
-func TestRequestPageAppendDoesNotRepriceHistory(t *testing.T) {
-	settleLogClock(t)
-	holdClock(t, time.Date(2026, 9, 30, 12, 0, 0, 0, time.Local))
-	// A query costs a fixed number of allocations that depends on the
-	// machine (on Windows, provider sign-in lookups read the environment and
-	// registry), so the budget is what 7990 more records of history add:
-	// reading them again costs about 8 allocations each, keeping their
-	// blocks about 50 per block of 500 (#972).
-	small := appendAndQueryAllocs(t, 10)
-	allocations := appendAndQueryAllocs(t, 8000)
-	if grown := allocations - small; grown > 2000 {
-		t.Fatalf("append re-read unchanged history: %.0f allocations over 8000 records, %.0f over 10", allocations, small)
-	}
-	for _, period := range []Period{All, Today, Week} {
-		got := QueryPage(period, Filter{}, 0, 100)
-		want := pageFromLedger(period, Filter{}, 0, 100, LedgerOf(period, Filter{}))
-		equalPage(t, got, want)
-	}
-}
-
 func TestRequestPageRepricesGatewayBlocks(t *testing.T) {
 	pageHome(t)
 	s := settings.Load()

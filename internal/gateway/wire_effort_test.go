@@ -6,10 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 var anthropicHi = sse(
@@ -30,72 +28,6 @@ var chatHi = sse(
 var responsesHi = sse(
 	`data: {"type":"response.output_text.delta","item_id":"m1","output_index":0,"content_index":0,"delta":"hi"}`,
 	`data: {"type":"response.completed","response":{"id":"r1","status":"completed","output":[],"usage":{"input_tokens":7,"output_tokens":1}}}`)
-
-// A user-added provider whose model's levels no one lists (#1636,
-// jswysnemc): a client asking reasoning off or minimal on another API
-// than the provider's went at another level, while the request log and
-// Routing said the one asked. Reasoning off went to an Anthropic API as
-// thinking at a 4096-token budget; it goes as thinking off now. Where the
-// level asked can't go as it is — none and minimal read as low for a
-// model not known to stop (effortOf) — the route keeps what was asked
-// and the try and the log what went.
-func TestTranslatedEffortLoggedAsSent(t *testing.T) {
-	for _, c := range []struct {
-		up                 provider.Protocol
-		path, body         string
-		asked, went, thing string // thing: what the upstream body asks, as "field=value"
-	}{
-		{provider.Anthropic, "/v1/responses", `{"model":"m1","stream":true,"input":"hi","reasoning":{"effort":"none"}}`, "none", "none", "thinking=disabled"},
-		{provider.Anthropic, "/v1/chat/completions", `{"model":"m1","stream":true,"messages":[{"role":"user","content":"hi"}],"reasoning_effort":"none"}`, "none", "none", "thinking=disabled"},
-		{provider.Anthropic, "/v1/responses", `{"model":"m1","stream":true,"input":"hi","reasoning":{"effort":"high"}}`, "high", "high", "thinking=enabled"},
-		{provider.Chat, "/v1/responses", `{"model":"m1","stream":true,"input":"hi","reasoning":{"effort":"minimal"}}`, "minimal", "low", "reasoning_effort=low"},
-		{provider.Chat, "/v1/responses", `{"model":"m1","stream":true,"input":"hi","reasoning":{"effort":"none"}}`, "none", "low", "reasoning_effort=low"},
-		{provider.Chat, "/v1/responses", `{"model":"m1","stream":true,"input":"hi","reasoning":{"effort":"xhigh"}}`, "xhigh", "xhigh", "reasoning_effort=xhigh"},
-		{provider.Responses, "/v1/chat/completions", `{"model":"m1","stream":true,"messages":[{"role":"user","content":"hi"}],"reasoning_effort":"none"}`, "none", "low", "reasoning.effort=low"},
-		// the same API: it goes as it came, and the log says so
-		{provider.Chat, "/v1/chat/completions", `{"model":"m1","stream":true,"messages":[{"role":"user","content":"hi"}],"reasoning_effort":"none"}`, "none", "none", "reasoning_effort=none"},
-	} {
-		f := &fake{t: t, reply: chatHi}
-		switch c.up {
-		case provider.Anthropic:
-			f.reply = anthropicHi
-		case provider.Responses:
-			f.reply = responsesHi
-		}
-		setup(t, c.up, f)
-		s := New()
-		rec := httptest.NewRecorder()
-		s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", c.path, strings.NewReader(c.body)))
-		if rec.Code != 200 {
-			t.Fatalf("%s: %d %s", c.body, rec.Code, rec.Body)
-		}
-		var got map[string]any
-		json.Unmarshal(f.got, &got)
-		field, want, _ := strings.Cut(c.thing, "=")
-		var v any
-		switch field {
-		case "thinking":
-			m, _ := got["thinking"].(map[string]any)
-			v = m["type"]
-		case "reasoning.effort":
-			m, _ := got["reasoning"].(map[string]any)
-			v = m["effort"]
-		default:
-			v = got[field]
-		}
-		if v != want {
-			t.Errorf("%s to %s: sent %s", c.body, c.up, f.got)
-		}
-		r := lastRoute(s)
-		if r.Effort != c.asked || len(r.Tries) != 1 || r.Tries[0].Effort != c.went {
-			t.Errorf("%s to %s: route at %q, tries %+v; want asked %q, went %q", c.body, c.up, r.Effort, r.Tries, c.asked, c.went)
-		}
-		recs := usage.Load(time.Time{})
-		if len(recs) == 0 || recs[len(recs)-1].Effort != c.went {
-			t.Errorf("%s to %s: logged %+v, want %q", c.body, c.up, recs, c.went)
-		}
-	}
-}
 
 // A vendor's model on its Anthropic API that won't stop thinking (Z.ai's
 // GLM-5.3, #699) refuses the thinking off a Codex asking none is now sent

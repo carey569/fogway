@@ -9,11 +9,9 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/settings"
-	"github.com/yetone/magpie/internal/usage"
 )
 
 // library is a vendor with an embeddings model and a reranker; what each
@@ -77,35 +75,6 @@ func postRetrieval(t *testing.T, s *Server, path, body string) (int, string) {
 	req.Header.Set("Content-Type", "application/json")
 	s.Handler().ServeHTTP(rec, req)
 	return rec.Code, rec.Body.String()
-}
-
-// #765: an embeddings request goes to the model's provider as it was sent,
-// the model its own id, and the vendor's answer comes back; the call is
-// in the usage ledger with its tokens.
-func TestEmbeddingsGoToTheModelsProvider(t *testing.T) {
-	s, l := shelved(t)
-	code, raw := postRetrieval(t, s, "/v1/embeddings", `{"model":"lib/embed-1","input":["hello","world"],"encoding_format":"float","dimensions":2}`)
-	if code != 200 || !strings.Contains(raw, `"embedding":[0.1,-0.2]`) || !strings.Contains(raw, `"prompt_tokens":5`) {
-		t.Fatalf("%d %s", code, raw)
-	}
-	sent := l.got("/v1/embeddings")
-	if len(sent) != 1 || !strings.Contains(sent[0], `"model":"embed-1"`) || !strings.Contains(sent[0], `"input":["hello","world"]`) || !strings.Contains(sent[0], `"dimensions":2`) || !strings.Contains(sent[0], `"encoding_format":"float"`) {
-		t.Fatalf("vendor was sent %v", sent)
-	}
-	// the bare /embeddings an SDK given magpie's root as its base posts to
-	if code, raw := postRetrieval(t, s, "/embeddings", `{"model":"embed-1","input":"hi"}`); code != 200 {
-		t.Fatalf("bare path: %d %s", code, raw)
-	}
-	var recs []usage.Record
-	for i := 0; i < 50; i++ {
-		if recs = usage.Load(time.Time{}); len(recs) >= 2 {
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	if len(recs) < 1 || recs[0].Operation != "embeddings" || recs[0].Provider != "lib" || recs[0].Model != "embed-1" || recs[0].Requested != "lib/embed-1" || recs[0].Input != 5 || recs[0].Status != 200 {
-		t.Fatalf("usage %+v", recs)
-	}
 }
 
 func TestVolcengineEmbeddingResponses(t *testing.T) {

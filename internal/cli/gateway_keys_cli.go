@@ -71,7 +71,7 @@ func gatewayKeysTo(out io.Writer, args []string) error {
 		w := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 		fmt.Fprintln(w, "ID\tNAME\tSTATE\tGATEWAY KEY\tLIMIT\tMODELS\tACCOUNTS")
 		now := time.Now()
-		// an account is shown by who is signed in, kept by its stable id (#905)
+		// a key is shown by its name, kept by its fingerprint (#905)
 		names := provider.AccountNames()
 		for _, k := range keys {
 			state := "enabled"
@@ -331,7 +331,7 @@ func gatewayKeyAccounts(out io.Writer, args []string) error {
 		_, err = fmt.Fprintf(out, "%s: every account\n", k.Name)
 		return err
 	}
-	// shown by who is signed in, kept by the account's stable id (#905)
+	// shown by the key's name, kept by its fingerprint (#905)
 	names := provider.AccountNames()
 	shown := make([]string, len(k.Accounts))
 	for i, a := range k.Accounts {

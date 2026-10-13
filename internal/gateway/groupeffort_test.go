@@ -96,21 +96,6 @@ func TestFixedMemberEffortResponses(t *testing.T) {
 	}
 }
 
-// A fixed member's effort wins over the one the group's classifier picks
-// for the turn (effort=auto).
-func TestFixedMemberEffortOverAuto(t *testing.T) {
-	s, a, _, j := jevved(t, provider.EffortAuto)
-	setMembers(t, []string{"a/small:minimal", "b/big"})
-	j.score = 2.4 // high
-	_, r := postOK(t, s, "s1", chat("redesign the scheduler", nil, 0, `,"reasoning_effort":"low"`))
-	if sent := sentBody(t, a); sent["model"] != "small" || sent["reasoning_effort"] != "minimal" {
-		t.Fatalf("sent %v", sent)
-	}
-	if r.Rule == nil || r.Rule.Pick != "high" || r.Tries[0].Fixed != "minimal" || r.Tries[0].Effort != "minimal" || r.Tries[0].Picked {
-		t.Fatalf("traced %+v %+v", r.Rule, r.Tries)
-	}
-}
-
 // The same model at two efforts is two members: a rule sends a turn to
 // one by its effort, and each is sent its own.
 func TestSameModelTwoEfforts(t *testing.T) {

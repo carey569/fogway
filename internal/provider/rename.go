@@ -38,7 +38,7 @@ func Rename(from, to string) error {
 	// subscription itself can't
 	custom := i >= 0 && hasEndpoint(f.Providers[i])
 	_, signedIn := find(Accounts(), from)
-	sub := subscriptionID(from)
+	sub := false
 	if (signedIn || sub) && !custom {
 		return fmt.Errorf("%s is a subscription: its id is its agent's", from)
 	}
@@ -47,8 +47,7 @@ func Rename(from, to string) error {
 		return errors.New(`"magpie" is what agents call the gateway itself; pick another id`)
 	case to == strings.TrimSuffix(GroupPrefix, "/"):
 		return errors.New(`"group" starts the ids of routing groups; pick another id`)
-	case subscriptionID(to):
-		return fmt.Errorf("%q is the id of the %s subscription; pick another", to, to)
+
 	}
 	if i < 0 {
 		return fmt.Errorf("no provider %q", from)
@@ -97,7 +96,6 @@ func Rename(from, to string) error {
 	}
 	// the vendor's list last fetched goes with it
 	os.Rename(catalog.LivePath(from), catalog.LivePath(to))
-	os.Rename(catalog.LivePath(decisionsID(from)), catalog.LivePath(decisionsID(to)))
 	if err := store(f); err != nil {
 		return err
 	}
@@ -171,5 +169,5 @@ func FreeID(id string) string { return freeID(id) }
 // hasEndpoint: a provider of the user's, not a subscription's model picks.
 // Vertex AI's has none of the four: it is asked at its project's address.
 func hasEndpoint(p Provider) bool {
-	return p.Chat != "" || p.Responses != "" || p.Anthropic != "" || p.Gemini != "" || p.Decide != "" || p.IsVertex()
+	return p.Chat != "" || p.Responses != "" || p.Anthropic != "" || p.Gemini != "" || p.IsVertex()
 }

@@ -77,22 +77,15 @@ func (c candidate) label() string {
 	if c.rest == c.p.ID {
 		return c.p.ID
 	}
-	if c.p.Account != nil {
-		return c.p.ID + " (" + c.p.Account.User + ")"
-	}
+
 	if c.p.KeyName != "" {
 		return c.p.ID + " (" + c.p.KeyName + ")"
 	}
 	return c.p.ID + " (" + provider.Mask(c.p.Key) + ")"
 }
 
-// restKey is what a candidate rests by: an account by its user, whether
-// or not the agent is signed in to it — magpie can sign Codex in to the
-// next account when the one it is on is out, and the one out stays out.
+// restKey is what a candidate rests by: its key, or the provider.
 func (c candidate) restKey() string {
-	if a := c.p.Account; a != nil && a.User != "" {
-		return c.p.ID + "@" + strings.ToLower(a.User)
-	}
 	return c.rest
 }
 
@@ -118,10 +111,9 @@ func (c candidate) restID() string {
 // pooled says whether the candidate's subscription, refused for its
 // allowance, is out for its model alone (provider.Allowance.Pooled).
 func (c candidate) pooled(now time.Time) bool {
-	if c.p.Account == nil {
-		return false
-	}
-	return allowances(c.p.Account.UsageAgent())[c.p.Account.User].Pooled(c.model, provider.SpentShareOf(c.p.Routing), now)
+
+	return false
+
 }
 
 // who is the key or account itself, however many the provider has on: a
@@ -131,7 +123,7 @@ func (c candidate) pooled(now time.Time) bool {
 // agent is on by the provider's id alone, which a switch of the agent's
 // account hands to another (#209).
 func (c candidate) who() string {
-	if c.p.Account == nil && c.p.Key != "" {
+	if c.p.Key != "" {
 		return c.p.ID + "#" + provider.KeyID(c.p.Key)
 	}
 	return c.restKey()
@@ -144,73 +136,29 @@ func perKeyBarred(p provider.Provider, model string, from provider.Protocol) (ou
 	if _, off := provider.ModelDisabled(p.ID, model); off || provider.DisabledUnknown() {
 		return nil, nil, nil, nil // the user disabled it (#1867): never planned, a fallback no more than the model asked
 	}
-	if p.Account != nil {
-		also := p.AlsoOn()
-		var all []candidate
-		// the account the agent is signed in to, unless the user paused
-		// it for the others on (#263)
-		if len(also) == 0 || !p.OwnPaused() {
-			all = append(all, candidate{p: p, model: model, rest: p.ID})
-		}
-		for i, q := range also {
-			all = append(all, candidate{p: q, model: model, rest: p.ID + "@" + q.Account.User, rank: i + 1})
-		}
-		// kept signed in to an account of the user's choosing, the one
-		// signed in to stands at its own place in the order, not first
-		// (#524)
-		if ranks := p.LoginRanks(); ranks != nil {
-			at := func(c candidate) int {
-				if r, ok := ranks[strings.ToLower(c.p.Account.User)]; ok {
-					return r
-				}
-				return len(ranks)
-			}
-			slices.SortStableFunc(all, func(a, b candidate) int { return at(a) - at(b) })
-			for i := range all {
-				all[i].rank = i
-			}
-		}
-		all = slices.DeleteFunc(all, func(c candidate) bool {
-			if p.AccountServes(c.p.Account.User, model) {
-				return false
-			}
-			barred = append(barred, c)
-			return true
-		})
-		// an account at its usage cap is used up for routing until the
-		// window it filled renews: never tried, so groups, fallbacks and
-		// the other accounts take the request (provider/account_caps.go);
-		// so is a Codex account at 100% set not to spend its credits
-		// (provider/codex_credits.go)
-		all = slices.DeleteFunc(all, func(c candidate) bool {
-			h := capHeld(p, c.p, model, time.Now())
-			if h == nil {
-				return false
-			}
-			c.capped = h
-			barred = append(barred, c)
-			return true
-		})
-		// an account whose plan lacks the model (a Free one behind a Plus)
-		// would only answer 400; it is tried only when none lists it
-		for _, c := range all {
-			if c.p.Account.Lists(model) {
-				out = append(out, c)
-			} else {
-				left = append(left, c)
-			}
-		}
-		if len(out) == 0 {
-			return all, nil, nil, barred
-		}
-		return out, nil, left, barred
-	}
+
+	// the account the agent is signed in to, unless the user paused
+	// it for the others on (#263)
+
+	// kept signed in to an account of the user's choosing, the one
+	// signed in to stands at its own place in the order, not first
+	// (#524)
+
+	// an account at its usage cap is used up for routing until the
+	// window it filled renews: never tried, so groups, fallbacks and
+	// the other accounts take the request (provider/account_caps.go);
+	// so is a Codex account at 100% set not to spend its credits
+	// (provider/codex_credits.go)
+
+	// an account whose plan lacks the model (a Free one behind a Plus)
+	// would only answer 400; it is tried only when none lists it
+
 	keys := p.KeysOn()
 	var unlisted []candidate
 	var noURL provider.Protocol
 	for i, k := range keys {
 		q := p.WithKey(k)
-		if len(q.Speaks()) == 0 && !q.DecidesModel(model) {
+		if len(q.Speaks()) == 0 {
 			if noURL == "" {
 				noURL = k.Protocol
 			}
@@ -548,33 +496,6 @@ func ownRouting(p provider.Provider, g provider.Group) bool {
 	return p.Routing != "" && p.Routing != g.Routing
 }
 
-// capHeld is how the account acct of p is held at its usage cap for
-// model at now — a window at or past its own cap, else the account's — or
-// at 100% as a Codex account set not to spend its credits; nil when
-// nothing holds it or every window is below its share. Its windows
-// are those last read (allowances), as smart routing weighs them.
-func capHeld(p, acct provider.Provider, model string, now time.Time) *capHold {
-	if acct.Account == nil {
-		return nil
-	}
-	a := acct.Account
-	caps := provider.HoldCaps(p, a.Agent, a.User)
-	if a.Agent == "codex" && freeOnChatGPT(model) {
-		// a call ChatGPT counts in no window spends nothing a usage cap
-		// keeps (#1593); credits set not to be spent still hold it at
-		// 100%, as nothing says the backend answers it there
-		caps = provider.WindowCaps{Credits: caps.Credits}
-	}
-	if !caps.Holds() {
-		return nil
-	}
-	h := allowances(a.UsageAgent())[a.User].CapHeld(model, caps, now)
-	if h == nil {
-		return nil
-	}
-	return &capHold{cap: h.Cap, used: h.Used, back: h.Back, noCredits: h.Credits}
-}
-
 // cappedError says why a request for model went nowhere when every account
 // that could take it is held at its usage cap, as the vendor's own refusal
 // would when all are used up; the soonest one is back is the wait.
@@ -796,7 +717,7 @@ func quotaHeld(cs []candidate) (Rest, time.Time, bool) {
 	var back time.Time
 	for i, c := range cs {
 		r, ok := restingOf(c)
-		if !ok || c.p.Account != nil || r.Why != failQuota && r.Why != failCredit || !quotaStatus(r.Status) || r.said == "" {
+		if !ok || r.Why != failQuota && r.Why != failCredit || !quotaStatus(r.Status) || r.said == "" {
 			return Rest{}, time.Time{}, false
 		}
 		if i == 0 {

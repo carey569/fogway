@@ -12,11 +12,9 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/yetone/magpie/internal/catalog"
-	"github.com/yetone/magpie/internal/plugin"
 	"github.com/yetone/magpie/internal/settings"
 )
 
@@ -26,61 +24,23 @@ func errorf(format string, a ...any) error { return fmt.Errorf(format, a...) }
 const manyModels = 24
 
 // Available lists every model the vendor is known to serve: the list fetched
-// from the vendor itself when there is one, over the models.dev catalog (or,
-// for an account, whatever the agent's own sign-in can see).
+// from the vendor itself when there is one, over the models.dev catalog.
 func (p Provider) Available() []catalog.Model {
-	if p.DecideOnly() {
-		return p.decideModels()
-	}
-	ms := p.available()
-	if p.Decides() {
-		// a gateway's Jev among its chat models, with its window and input
-		ms = slices.Clone(ms)
-		for i, m := range ms {
-			if p.isDecision(m) {
-				ms[i] = withDecideFacts([]catalog.Model{m})[0]
-			}
-		}
-	}
-	return ms
+	return p.available()
 }
 
 func (p Provider) available() []catalog.Model {
-	signedIn := p.Account != nil && p.Account.models != nil
 	var known []catalog.Model
-	if signedIn {
-		known = p.Account.models()
-	} else {
-		seen := map[string]bool{}
-		for _, id := range p.Catalogs() {
-			for _, m := range catalog.Provider(id) {
-				if !seen[m.ID] {
-					seen[m.ID] = true
-					known = append(known, m)
-				}
+	seen := map[string]bool{}
+	for _, id := range p.Catalogs() {
+		for _, m := range catalog.Provider(id) {
+			if !seen[m.ID] {
+				seen[m.ID] = true
+				known = append(known, m)
 			}
 		}
 	}
-	if live, _, ok := p.live(); ok && (p.Account == nil || !p.Account.magpieList) {
-		if p.Account != nil && p.Account.unusable != nil {
-			// a model the list offers that the account was refused
-			// (Copilot's, copilot_refused.go)
-			live = slices.DeleteFunc(slices.Clone(live), func(m catalog.Model) bool { return p.Account.unusable(m.ID) })
-		}
-		switch p.ID {
-		case "cursor":
-			live = withoutCursorCapacity(collapseCursorModels(withCursorContexts(live)))
-		case "devin":
-			live = withDevinContexts(devinCollapse(live, devinCached(), p.Models))
-		case WorkBuddyAIID:
-			// a list saved before its GLM models were known to drop
-			// images says they take them (wbSite.textOnly)
-			live = wbAI.textOnly(live)
-		case "antigravity":
-			// after its names are filled in, and so that a family's
-			// levels aren't taken off by a known model of its id
-			return collapseAntigravityModels(catalog.Decorate(live, known))
-		}
+	if live, _, ok := p.live(); ok {
 		if p.IsAzure() {
 			// a deployment is named as the user named it
 			return catalog.Decorate(live, known)
@@ -94,12 +54,6 @@ func (p Provider) available() []catalog.Model {
 		// an Azure resource serves its deployments alone, named as the
 		// user likes: the catalog only names the ones its list gave
 		return nil
-	}
-	if signedIn {
-		if p.ID == "devin" { // with the variants the user picked
-			return withDevinContexts(devinCollapse(known, nil, p.Models))
-		}
-		return known
 	}
 	if len(known) == 0 {
 		// a plan's models, before its list was fetched
@@ -132,9 +86,7 @@ func (p Provider) Fetched() (time.Time, bool) {
 // Listed is when the models listed now were had from the vendor: fetched
 // for a built-in, listed by its plugin for a plugin's.
 func (p Provider) Listed() (time.Time, bool) {
-	if p.IsPlugin() {
-		return plugin.ListedAt()
-	}
+
 	return p.Fetched()
 }
 
@@ -158,11 +110,9 @@ func (p Provider) live() ([]catalog.Model, time.Time, bool) {
 // lists says whether the provider's fetched list is its own to read: not
 // a plugin's, nor a preset's that lists nothing (Preset.NoList).
 func (p Provider) lists() bool {
-	if p.IsPlugin() {
-		return false
-	}
+
 	pr := Preset(p.Preset)
-	return p.Account != nil || pr == nil || !pr.NoList || strings.TrimSpace(p.ModelsURL) != "" || p.listRegion(pr)
+	return pr == nil || !pr.NoList || strings.TrimSpace(p.ModelsURL) != "" || p.listRegion(pr)
 }
 
 // liveAll is live with the models that draw or make videos too
@@ -195,28 +145,12 @@ func (p Provider) Fetch(ctx context.Context) ([]catalog.Model, error) {
 // A pick the old list didn't have was typed in by hand, and stays; a
 // fetch that fails, or that answers no model at all, changes nothing.
 func (p Provider) Refetch(ctx context.Context) ([]catalog.Model, []string, error) {
-	if p.IsPlugin() {
-		// its plugin's list, read again: a pick it had and has no more
-		// goes as a built-in's does (plugin_relist.go)
-		before := plugin.Cached()
-		ms, err := p.fetch(ctx)
-		if err != nil {
-			return ms, nil, err
-		}
-		return ms, dropGonePluginPicks(before, plugin.Cached())[p.ID], nil
-	}
-	if p.Account != nil || p.DecideOnly() {
-		ms, err := p.fetch(ctx)
-		return ms, nil, err
-	}
+
+	// its plugin's list, read again: a pick it had and has no more
+	// goes as a built-in's does (plugin_relist.go)
+
 	before := liveIDs(p.ID)
 	ms, err := p.fetch(ctx)
-	if err == nil && p.listsDecisions() {
-		// OpenRouter's decision models, listed apart from its chat ones
-		if _, derr := p.fetchDecide(p.Via(ctx)); derr != nil {
-			log.Println(p.ID + ": " + derr.Error())
-		}
-	}
 	if err != nil || len(before) == 0 {
 		return ms, nil, err
 	}
@@ -272,17 +206,10 @@ func dropGonePicks(id string, before, now map[string]bool) ([]string, error) {
 // fetch is Fetch without the picks looked after.
 func (p Provider) fetch(ctx context.Context) ([]catalog.Model, error) {
 	ctx = p.Via(ctx)
-	if p.DecideOnly() {
-		return p.fetchDecide(ctx)
-	}
-	if p.Account != nil && p.Account.fetch != nil {
-		return p.Account.fetch(ctx)
-	}
-	if p.Account != nil && p.Account.models != nil {
-		// a plan with no list to ask (ZCode's, WorkBuddy's): its models
-		// are the ones it has, and its endpoint's /models isn't one
-		return p.Account.models(), nil
-	}
+
+	// a plan with no list to ask (ZCode's, WorkBuddy's): its models
+	// are the ones it has, and its endpoint's /models isn't one
+
 	// a vendor with no list to ask (Bedrock's runtime): the preset's
 	// models are it, unless the user said where one is or the provider
 	// sits at a region that serves one after all
@@ -344,224 +271,20 @@ func (p Provider) List(ctx context.Context) ([]catalog.Model, error) {
 	return catalog.Chat(l.models), nil
 }
 
-// newFetches is when each account with no list from its vendor yet was
-// last asked for one by FetchNew.
-var newFetches = struct {
-	sync.Mutex
-	m map[string]time.Time
-}{m: map[string]time.Time{}}
+// FetchNew asked each signed-in account with no list from its vendor yet
+// for one; FetchNewSoon and FetchNewBehind did so in the background, and
+// FetchingNew said one was under way. Fogway's providers are keys, listed
+// as they are added: there is nothing to ask, and nothing is ever missing.
+func FetchNew(time.Duration) (missing bool) { return false }
 
-// newFetchRetry is how long FetchNew leaves an account whose list it
-// couldn't get before asking again. Short: until it has its list the
-// account offers magpie's fallback (Kiro's Auto alone), and one try that
-// failed — the first after an update, cut short by a page's 8 seconds, or
-// made before the network was up — left it so for ten minutes, while only
-// the Providers page asked again (#422: Auto alone until magpie was
-// restarted by hand).
-var newFetchRetry = time.Minute
+// FetchNewSoon is FetchNew in the background: nothing.
+func FetchNewSoon(time.Duration) {}
 
-// fetchingNew is set while a FetchNew started in the background
-// (FetchNewSoon, FetchNewBehind) picks the accounts due or runs; newSoonAt
-// is when the last one started.
-var (
-	fetchingNew atomic.Bool
-	newSoonAt   atomic.Int64
-)
+// FetchNewBehind is FetchNew in the background: nothing.
+func FetchNewBehind(time.Duration) {}
 
-// newSoonEvery is how often FetchNewSoon starts at most.
-var newSoonEvery = 15 * time.Second
-
-// FetchNewSoon is FetchNew in the background, for a page that shouldn't
-// wait on vendors (the panel, whose model picker otherwise kept an
-// account's fallback list until the Providers page was opened). It does
-// nothing while one runs or within newSoonEvery of the last.
-func FetchNewSoon(timeout time.Duration) {
-	now := time.Now().UnixNano()
-	if now-newSoonAt.Load() < int64(newSoonEvery) || !fetchingNew.CompareAndSwap(false, true) {
-		return
-	}
-	newSoonAt.Store(now)
-	// the panel reads nothing first, and /api/state?last=1 answers at once
-	// (#1519): even the accounts are listed behind it, told by fetchingNew
-	// until FetchNew counts itself
-	go func() {
-		defer fetchingNew.Store(false)
-		FetchNew(timeout)
-	}()
-}
-
-// FetchNewBehind is FetchNew in the background, started at once unless one
-// started so is still running: for the Providers page, which waited on it
-// (#541: ten seconds and more of placeholders, an account at a time and
-// behind start-up's own run). FetchingNew says when it is done.
-func FetchNewBehind(timeout time.Duration) {
-	if !fetchingNew.CompareAndSwap(false, true) {
-		return
-	}
-	newSoonAt.Store(time.Now().UnixNano())
-	fetchNewGo(timeout)
-}
-
-// fetchNewGo is FetchNew in the background, counted in newRunning before
-// it returns when there is work, so a page reading FetchingNew straight
-// after is told; with none nothing is started or counted. Which accounts
-// are due is known at once unless a CLI is still asked who is signed in:
-// then the fetch is counted and waits for it in its goroutine, as the page
-// doesn't wait on a CLI (#541), and isn't told nothing is coming before
-// that account's list does (#1789). The accounts are listed here only once
-// no CLI is left to wait on.
-func fetchNewGo(timeout time.Duration) {
-	run := func(fetch func()) {
-		newRunning.Add(1)
-		go func() {
-			defer newRunning.Add(-1)
-			defer fetchingNew.Store(false)
-			fetch()
-		}()
-	}
-	if !newFetches.TryLock() {
-		// behind a FetchNew under way, which the page doesn't wait on
-		run(func() { FetchNew(timeout) })
-		return
-	}
-	behind := func() {
-		run(func() {
-			defer newFetches.Unlock()
-			fetchNewHeld(timeout)
-		})
-	}
-	if identitiesUnsettled() {
-		behind()
-		return
-	}
-	// no CLI left to ask, unless one was forgotten while they were listed
-	// (a sign-in just finished): asked behind the page, as left out
-	ps := All()
-	if identitiesUnsettled() {
-		behind()
-		return
-	}
-	due, _ := newDue(ps)
-	if len(due) == 0 {
-		newFetches.Unlock()
-		fetchingNew.Store(false)
-		return
-	}
-	run(func() {
-		defer newFetches.Unlock()
-		fetchDue(due, timeout)
-	})
-}
-
-// newRunning counts the FetchNew calls under way, those started in the
-// background included.
-var newRunning atomic.Int32
-
-// FetchingNew reports whether a FetchNew is under way (start-up's, or one
-// started behind a page): accounts' lists may be on their way still. One
-// started behind a page counts from its start, while it still picks the
-// accounts due: a page whose FetchNewBehind found it so returned at once,
-// and was told none was on its way until the one picking counted itself.
-func FetchingNew() bool { return newRunning.Load() > 0 || fetchingNew.Load() }
-
-// FetchNew asks each signed-in account whose vendor list magpie hasn't
-// fetched yet for it, each for at most timeout. Start-up does this for the
-// accounts there then; an account signed in while magpie runs (in magpie or
-// in the agent's own app) otherwise showed magpie's built-in list, fewer
-// models than the vendor serves, until Refresh was clicked (#204). One that
-// fails is asked again after newFetchRetry, not each time. It reports
-// whether an account is left without its list (one that failed, or that
-// failed less than newFetchRetry ago), for a caller with no page to ask
-// again from (the terminal, magpie serve) to try once more later.
-func FetchNew(timeout time.Duration) (missing bool) {
-	newRunning.Add(1)
-	defer newRunning.Add(-1)
-	newFetches.Lock()
-	defer newFetches.Unlock()
-	return fetchNewHeld(timeout)
-}
-
-// fetchNewHeld is FetchNew with newFetches held.
-func fetchNewHeld(timeout time.Duration) (missing bool) {
-	// listing them asks a CLI who is signed in, if never asked: one that
-	// hasn't answered yet is waited for, and they are listed again
-	answered := identitiesAnswered()
-	ps := All()
-	// one answered since, while they were listed (its look gave up
-	// waiting) or after: an account it says is signed in was left out
-	if waited, unknown := awaitIdentities(timeout); unknown {
-		missing = true
-	} else if waited || answered != identitiesAnswered() {
-		ps = All()
-	}
-	due, skipped := newDue(ps)
-	if fetchDue(due, timeout) {
-		missing = true
-	}
-	// one waiting to be asked again, unless another's fetch listed it
-	for _, f := range skipped {
-		if _, ok := f.p.Listed(); !ok || f.decide {
-			missing = true
-		}
-	}
-	return missing
-}
-
-// newFetch is a provider FetchNew asks for its list, and whether for its
-// decision models.
-type newFetch struct {
-	p      Provider
-	decide bool
-}
-
-// newDue is those of ps FetchNew asks for their lists now, and those
-// skipped as they failed less than newFetchRetry ago; newFetches held.
-func newDue(ps []Provider) (due, skipped []newFetch) {
-	for _, p := range ps {
-		// a list of decision models fetched before magpie kept their
-		// windows and input, or not fetched yet (ARNO on Discord)
-		decide := p.decideListDue()
-		if !decide && (p.Account == nil || !p.Ready()) {
-			continue
-		}
-		// a plugin's accounts were listed with the plugin's providers
-		if _, ok := p.Listed(); ok && !decide {
-			continue
-		}
-		if t, ok := newFetches.m[p.ID]; ok && time.Since(t) < newFetchRetry {
-			skipped = append(skipped, newFetch{p, decide})
-			continue
-		}
-		due = append(due, newFetch{p, decide})
-	}
-	return due, skipped
-}
-
-// fetchDue asks each of due for its list, each for at most timeout, and
-// reports whether one failed; newFetches held.
-func fetchDue(due []newFetch, timeout time.Duration) (failed bool) {
-	for _, f := range due {
-		p := f.p
-		// listed since by another's fetch, as a plugin's accounts are
-		if _, ok := p.Listed(); ok && !f.decide {
-			continue
-		}
-		newFetches.m[p.ID] = time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		var err error
-		if f.decide && p.Account == nil {
-			_, err = p.fetchDecide(p.Via(ctx))
-		} else {
-			_, err = p.Fetch(ctx)
-		}
-		if err != nil {
-			log.Println(p.ID + ": " + err.Error())
-			failed = true
-		}
-		cancel()
-	}
-	return failed
-}
+// FetchingNew reports whether a FetchNew is under way: never.
+func FetchingNew() bool { return false }
 
 // a fetched list: every endpoint's models merged, the base kept for
 // routing, what each endpoint listed of its own (sides), and which of them
@@ -588,7 +311,7 @@ func (p Provider) fetchOne(ctx context.Context) (fetched, error) {
 		if anthropic {
 			ctx = p.listAuth(ctx)
 		}
-		ms, err := catalog.FetchURL(ctx, u, p.Key, anthropic, p.listHeaders())
+		ms, err := catalog.FetchURL(ctx, u, p.Key, anthropic, p.Headers)
 		if err != nil {
 			return fetched{}, err
 		}
@@ -639,7 +362,7 @@ func (p Provider) fetchOne(ctx context.Context) (fetched, error) {
 			// listed as the Gemini API lists them, the key in its header,
 			// and merged like any other protocol's list (#1346)
 			asked[protoBase] = true
-			ms, _, err := catalog.FetchGemini(ctx, protoBase, p.Key, p.listHeaders())
+			ms, _, err := catalog.FetchGemini(ctx, protoBase, p.Key, p.Headers)
 			if err != nil {
 				if !slices.Contains(errs, err.Error()) {
 					errs = append(errs, err.Error())
@@ -685,7 +408,7 @@ func (p Provider) fetchOne(ctx context.Context) (fetched, error) {
 			continue
 		}
 		asked[protoBase] = true
-		ms, u, err := catalog.FetchAtListed(lctx, protoBase, p.Key, proto == Anthropic, p.listHeaders(), listed)
+		ms, u, err := catalog.FetchAtListed(lctx, protoBase, p.Key, proto == Anthropic, p.Headers, listed)
 		if err == nil && proto == Anthropic && HostOf(protoBase) == openRouterHost {
 			// the pages of the list are followed to its end, and what
 			// comes back is still not a list of models to serve
@@ -1336,22 +1059,22 @@ func (p Provider) Exposed() []catalog.Model {
 		return out
 	}
 	picks := p.Models
-	if _, _, ok := p.live(); ok && p.Account != nil && p.Account.unusable != nil {
-		// A Copilot account is served what its list offers it, less what
-		// it was refused: a pick its list doesn't have (#371: gpt-6-luna,
-		// not in a Student plan's) or that it was refused is left out;
-		// with none left, as if none were picked.
-		picks = slices.DeleteFunc(slices.Clone(picks), func(id string) bool { _, ok := byID[id]; return !ok })
-	} else if p.Account != nil && p.Account.unusable != nil {
-		// with no list fetched, a pick the account can't be served (a
-		// ZCode Start Plan account's GLM-5.3) is left out all the same
-		picks = slices.DeleteFunc(slices.Clone(picks), p.Account.unusable)
+	{
+		_, _, _ = p.live()
 	}
+	// A Copilot account is served what its list offers it, less what
+	// it was refused: a pick its list doesn't have (#371: gpt-6-luna,
+	// not in a Student plan's) or that it was refused is left out;
+	// with none left, as if none were picked.
+
+	// with no list fetched, a pick the account can't be served (a
+	// ZCode Start Plan account's GLM-5.3) is left out all the same
+
 	if len(picks) > 0 {
 		return pick(p.withNewlyListed(picks, avail))
 	}
 	// another magpie's list is already the models its user exposed
-	if len(avail) <= manyModels || p.IsRemoteMagpie() {
+	if len(avail) <= manyModels {
 		return avail
 	}
 	// More than an agent's picker wants. Show the first slice of the
@@ -1484,13 +1207,6 @@ func (p Provider) Known(model string) []string {
 			return effortsOf(m)
 		}
 	}
-	// one of Devin's variants an agent was set to, which the list offers as
-	// its family: the one effort its id runs at, whatever effort is asked
-	if p.ID == "devin" {
-		if l := devinEffortOf(model); l != "" {
-			return []string{l}
-		}
-	}
 	return p.knownElsewhere(model)
 }
 
@@ -1577,9 +1293,6 @@ var makerCatalogs = sync.OnceValue(func() []string {
 // account is at Anthropic's. A remote magpie's is what that magpie counts
 // the model at, as its list says (remotePrice).
 func (p Provider) ListPrice(model string) (catalog.Price, bool) {
-	if pr, ok := p.remotePrice(model); ok {
-		return pr, true
-	}
 	if p.clineFreeModel(model) || p.kiloFreeModel(model) {
 		// served at no cost: not at the price of the model it is free of
 		return catalog.Price{}, true
@@ -1625,10 +1338,9 @@ var cursorFastPrices = map[string]catalog.Price{
 // servedByCursor is whether p is a Cursor account: the built-in's or the
 // Cursor plugin's.
 func (p Provider) servedByCursor() bool {
-	if p.Account == nil {
-		return false
-	}
-	return p.Account.Agent == "cursor" || p.PluginProvider() == "cursor"
+
+	return false
+
 }
 
 // cursorFastPrice is Cursor's price for its fast id of a Grok model
@@ -2033,14 +1745,14 @@ func entriesOff(off func(pid, model string) bool) []Entry {
 	s := settings.Load()
 	gone := retiredNow() // its vendor said it is retired (retired.go)
 	for _, p := range All() {
-		if !p.On() || p.DecideOnly() { // a dedicated decision API only routes
+		if !p.On() { // a dedicated decision API only routes
 			continue
 		}
 		for _, m := range p.Exposed() {
 			if off(p.ID, m.ID) { // the user turned it off (#1867)
 				continue
 			}
-			if !p.isDecision(m) && !gone[p.ID+"/"+m.ID] {
+			if !gone[p.ID+"/"+m.ID] {
 				out = append(out, entryFor(p, m, s))
 			}
 		}
@@ -2083,10 +1795,10 @@ func entryFor(p Provider, m catalog.Model, s settings.Settings) Entry {
 	// already. Its subagents take their tasks as text from a magpie-served
 	// lead, so Codex is told V2 for it, where Ultra hands work to them
 	// (codexcat.Entries).
-	if p.Account == nil || p.Account.Agent != "codex" {
-		e.Efforts = withUltra(m.ID, e.Efforts)
-		e.AgentsV2 = slices.Contains(e.Efforts, "ultra")
-	}
+
+	e.Efforts = withUltra(m.ID, e.Efforts)
+	e.AgentsV2 = slices.Contains(e.Efforts, "ultra")
+
 	return e
 }
 
@@ -2191,9 +1903,9 @@ func resolveIn(entries []Entry, id string) (Provider, string, bool) {
 	// not exposed, but some provider lists it
 	var found []Provider
 	for _, p := range heldOf("listed", listedBy)[id] {
-		if !p.DecidesModel(id) {
-			found = append(found, p)
-		}
+
+		found = append(found, p)
+
 	}
 	if len(found) == 1 {
 		return found[0], id, true
@@ -2284,11 +1996,6 @@ func (p Provider) replyLimit(m catalog.Model, s settings.Settings) int {
 	}
 	if n := outputOf(s, p.ID, m.ID); n > 0 {
 		output = n
-	}
-	// an agent asks for the reply limit it is told, and Command Code
-	// refuses one above its own
-	if p.ID == CommandCodePlanID && output > CommandCodeMaxOutput {
-		output = CommandCodeMaxOutput
 	}
 	return output
 }

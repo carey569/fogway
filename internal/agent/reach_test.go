@@ -255,30 +255,3 @@ func TestWSLWas(t *testing.T) {
 		}
 	}
 }
-
-// The same for every agent in a WSL distro under NAT, pointed at Windows as
-// WSL sees it: answering only while the gateway listens beyond loopback, it
-// is told when nothing does; one in mirrored networking is on 127.0.0.1
-// and never probed.
-func TestWSLAgentAddressNotAnswering(t *testing.T) {
-	win := "http://172.20.0.1:" + gateway.Port()
-	fakeReach(t, map[string]bool{gateway.URL(): true})
-	for _, mirrored := range []bool{false, true} {
-		reachForget()
-		home, _ := codexHome(t, `{"OPENAI_API_KEY":"sk-x"}`, "model = \"gpt-5.5\"\n")
-		a := wslCodex(fakeDistro(home, mirrored))
-		if err := a.Fields[0].Set("fake/m1"); err != nil {
-			t.Fatal(err)
-		}
-		d := driftSettled(t, a)
-		if mirrored {
-			if d != nil {
-				t.Fatalf("mirrored: %+v", d)
-			}
-			continue
-		}
-		if d == nil || d.Kind != "unreachable" || d.Addr != win || !strings.Contains(d.Detail, "Share on local network") || !strings.Contains(d.Detail, "portproxy") || !strings.Contains(d.Detail, "firewall") {
-			t.Fatalf("drift %+v", d)
-		}
-	}
-}

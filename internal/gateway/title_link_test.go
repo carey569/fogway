@@ -1,12 +1,9 @@
 package gateway
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -14,9 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/klauspost/compress/zstd"
-
-	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/sessions"
 	"github.com/yetone/magpie/internal/settings"
 )
@@ -388,111 +382,6 @@ func BenchmarkTitleLinkRequest(b *testing.B) {
 			p.observe(req, body, m, "", time.Time{})
 		}
 	})
-}
-
-// Real gateway requests, not pre-filled parentSession fields: both native
-// Codex and Magpie's title wrapper retain enough evidence for the GUI.
-func TestTitleLinkGatewayTransports(t *testing.T) {
-	for _, tc := range []struct {
-		name           string
-		native, schema bool
-		images         int
-	}{
-		{name: "native", native: true},
-		{name: "translated"},
-		{name: "translated clipped title and description", schema: true},
-		{name: "native one image", native: true, images: 1},
-		{name: "native two images", native: true, images: 2},
-		{name: "translated two images", images: 2},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			native := tc.native
-			appliedTitle := "完成标题关联测试"
-			if tc.schema {
-				appliedTitle = "完成标题"
-			}
-			t.Setenv("CODEX_HOME", t.TempDir())
-			f := &fake{t: t, reply: sse(`data: {"id":"c1","choices":[{"index":0,"delta":{"content":"完成标题关联测试"}}]}`, `data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":4}}`, `data: [DONE]`)}
-			setup(t, provider.Chat, f)
-			titleTestKey(t)
-			chatgpt(t, func(w http.ResponseWriter, r *http.Request) {
-				io.ReadAll(r.Body)
-				w.Header().Set("Content-Type", "text/event-stream")
-				io.WriteString(w, sse(`data: {"type":"response.completed","response":{"id":"resp_test","output":[{"type":"message","content":[{"type":"output_text","text":"{\"title\":\"完成标题关联测试\"}"}]}],"usage":{"input_tokens":30,"output_tokens":4}}}`))
-			})
-			s := New()
-			send := func(id, kind, model, path, prompt string) {
-				var body map[string]any
-				rawBody := linkBody(prompt)
-				if kind == "user" && tc.images > 0 {
-					rawBody = imageLinkBody(prompt, tc.images)
-				}
-				json.Unmarshal(rawBody, &body)
-				body["model"], body["stream"] = model, true
-				if tc.schema && kind == "thread_title" {
-					body["text"] = map[string]any{"format": map[string]any{"type": "json_schema", "schema": map[string]any{
-						"type": "object", "properties": map[string]any{"title": map[string]any{"type": "string", "maxLength": 4}, "description": map[string]string{"type": "string"}},
-						"required": []string{"title", "description"},
-					}}}
-				}
-				meta, _ := json.Marshal(sessionMetadata{Source: kind, Installation: "test-installation"})
-				body["client_metadata"] = map[string]string{"x-codex-turn-metadata": string(meta)}
-				raw, _ := json.Marshal(body)
-				encoder, _ := zstd.NewWriter(nil)
-				compressed := encoder.EncodeAll(raw, nil)
-				encoder.Close()
-				if !strings.HasPrefix(path, CodexPath) {
-					compressed = raw
-				}
-				r := httptest.NewRequest("POST", path, bytes.NewReader(compressed))
-				r.RemoteAddr = "127.0.0.1:1"
-				r.Header.Set("Session-Id", id)
-				r.Header.Set("User-Agent", "codex/1.0")
-				if strings.HasPrefix(path, CodexPath) {
-					r.Header.Set("Content-Encoding", "zstd")
-				}
-				if native && kind == "thread_title" {
-					r.Header.Set("Authorization", "Bearer test-token")
-				}
-				w := httptest.NewRecorder()
-				s.Handler().ServeHTTP(w, r)
-				if w.Code != 200 {
-					t.Fatalf("request %s: %d %s", kind, w.Code, w.Body)
-				}
-				if kind == "thread_title" && titleReplyDigest(w.Body.Bytes(), nil) != sessions.CodexTitleDigest(appliedTitle) {
-					t.Fatal("caller received a different title from the recorded association evidence")
-				}
-			}
-			mainPath := "/v1/responses"
-			if native {
-				mainPath = CodexPath + "/responses"
-			}
-			send("main-test", "user", "fake/m1", mainPath, "标题关联测试：请只回答测试完成。")
-			model, path := "fake/m1", "/v1/responses"
-			if native {
-				model, path = "gpt-5.6-luna", CodexPath+"/responses"
-			}
-			send("hidden-title-test", "thread_title", model, path, titleTemplate+"标题关联测试：请只回答测试完成。")
-			rows := s.Trace(context.Background(), 0, 0).Routes
-			if len(rows) != 2 || rows[0].TitleLink == nil || rows[1].TitleLink == nil || rows[1].TitleLink.Reply == "" || rows[1].ParentSession != "" {
-				t.Fatalf("transport evidence: %+v", rows)
-			}
-			if got := s.ResolveTitleParents(rows); got[1].ParentSession != "" {
-				t.Fatal("inferred before Codex applied title")
-			}
-			line := fmt.Sprintf("{\"id\":\"main-test\",\"thread_name\":%q,\"updated_at\":%q}\n", appliedTitle, time.Now().UTC().Format(time.RFC3339Nano))
-			os.WriteFile(filepath.Join(sessions.CodexDir(), "session_index.jsonl"), []byte(line), 0600)
-			if got := s.ResolveTitleParents(rows); got[1].ParentSession != "main-test" || !got[1].ParentMatched {
-				t.Fatalf("transport did not resolve: %+v", got[1])
-			}
-			if native && tc.images == 2 && os.Getenv("TITLE_LINK_FIXTURE_FILE") != "" {
-				data, _ := json.MarshalIndent(rows, "", "  ")
-				if err := os.WriteFile(os.Getenv("TITLE_LINK_FIXTURE_FILE"), data, 0600); err != nil {
-					t.Fatal(err)
-				}
-			}
-		})
-	}
 }
 
 func BenchmarkTitleParentResolution(b *testing.B) {

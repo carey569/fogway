@@ -248,37 +248,6 @@ func DesktopTiers() map[string]string {
 	return out
 }
 
-// SetDesktopTier picks the model (a catalog id) Claude Desktop runs a tier
-// on; "" takes the pick away.
-func SetDesktopTier(tier, id string) error {
-	tiers := DesktopTiers()
-	if id == "" {
-		delete(tiers, tier)
-	} else {
-		tiers[tier] = id
-	}
-	if len(tiers) == 0 {
-		if err := os.Remove(desktopTiersPath()); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		return nil
-	}
-	b, _ := json.MarshalIndent(tiers, "", "  ")
-	if err := os.MkdirAll(settings.Dir(), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(desktopTiersPath(), append(b, '\n'), 0o600)
-}
-
-// DesktopCatalogID is the catalog id of a model as Claude Desktop names it:
-// one of its aliases or the catalog id itself.
-func DesktopCatalogID(id string) string {
-	if c, ok := aliased(id); ok {
-		return c
-	}
-	return id
-}
-
 // claudeTier is the tier a model id is a Claude model of (claude-opus-4-8,
 // a provider's anthropic/claude-sonnet-5), "" when it is none.
 func claudeTier(id string) string {

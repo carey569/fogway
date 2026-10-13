@@ -130,9 +130,6 @@ func keyLimitsHome(t *testing.T) {
 				busy = busy || e.loading
 			}
 			keyAllowances.Unlock()
-			devinStatus.Lock()
-			busy = busy || devinStatus.refreshing
-			devinStatus.Unlock()
 		}
 		restart()
 	})
@@ -451,27 +448,6 @@ func TestKeyAllowanceSeededFromItsCard(t *testing.T) {
 	// the week renews on the reset sub2api told, not a week from now
 	if r := a.Renewal("gpt-6-astra", now); len(r) != 2 || !r[0].Equal(week) {
 		t.Fatalf("renewal = %v", r)
-	}
-}
-
-// Only a key whose Balance URL is sub2api's /v1/usage is asked: any other
-// key, or an account, costs nothing.
-func TestKeyAllowanceOnlyForSub2APIKeys(t *testing.T) {
-	keyLimitsHome(t)
-	srv, asked := sub2apiServer(t, func() ([]byte, int) { return sub2apiUsage(t, true), 200 })
-	for _, p := range []Provider{
-		{ID: "relay", Chat: srv.URL + "/v1", Key: "sk-limited", BalanceURL: srv.URL + "/api/usage/token"},
-		{ID: "plain", Chat: srv.URL + "/v1", Key: "sk-limited"},
-		{ID: "sub2api", Chat: srv.URL + "/v1", BalanceURL: srv.URL + "/v1/usage"},
-		{ID: "codex", Chat: srv.URL + "/v1", Key: "sk-limited", BalanceURL: srv.URL + "/v1/usage", Account: &Account{Agent: "codex", User: "a@example.com"}},
-	} {
-		if a, ok := KeyAllowance(p); ok || a != nil {
-			t.Errorf("%s: %+v", p.ID, a)
-		}
-	}
-	time.Sleep(20 * time.Millisecond)
-	if n := asked.Load(); n != 0 {
-		t.Fatalf("asked %d times", n)
 	}
 }
 

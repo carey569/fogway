@@ -1,14 +1,11 @@
 package gateway
 
 import (
-	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 
@@ -51,59 +48,6 @@ func askClaudeModel(s *Server, text string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
 	s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/v1/messages", strings.NewReader(body)))
 	return rec
-}
-
-// An account Anthropic refused goes to the next one at once, with no rest
-// to wait out and then fail again: its sign-in is not run again.
-func TestClaudeAuthFailureFallsBackWithoutRetryingTheLogin(t *testing.T) {
-	claudeMadeFirst(t, false)
-	s := New()
-	t.Cleanup(s.subscription.abortAll)
-	calls := filepath.Join(t.TempDir(), "calls")
-	claudeRefuses(t, calls, "tok-a")
-	for _, text := range []string{"first", "second"} {
-		if rec := askClaudeModel(s, text); rec.Code != 200 || !strings.Contains(rec.Body.String(), "healthy account") {
-			t.Fatalf("%s: %d %s", text, rec.Code, rec.Body.String())
-		}
-	}
-	if b, _ := os.ReadFile(calls); strings.Count(string(b), "tok-a\n") != 1 {
-		t.Fatalf("refused login run again: %s", b)
-	}
-	routes := s.Trace(context.Background(), 0, 0).Routes
-	slices.SortFunc(routes, func(a, b Route) int { return int(a.Seq - b.Seq) })
-	for i, route := range routes {
-		if len(route.Tries) != 2 || route.Tries[0].Fail != failAuth || route.Tries[0].Rest != nil {
-			t.Fatalf("request %d: the refusal not told as one, or rested: %+v", i, route.Tries)
-		}
-	}
-	if !strings.Contains(routes[0].Tries[0].Error, "OAuth session expired") || !strings.Contains(routes[1].Tries[0].Error, "sign in again") {
-		t.Fatalf("errors told: %q, %q", routes[0].Tries[0].Error, routes[1].Tries[0].Error)
-	}
-}
-
-// With every account refused, the agent is told to sign in again, not that
-// nothing is ready.
-func TestClaudeAllRefusedSaysSignInAgain(t *testing.T) {
-	claudeMadeFirst(t, false)
-	loginFile := filepath.Join(filepath.Dir(provider.Path()), "logins.json")
-	var logins []map[string]any
-	raw, _ := os.ReadFile(loginFile)
-	if err := json.Unmarshal(raw, &logins); err != nil {
-		t.Fatal(err)
-	}
-	for _, l := range logins {
-		l["on"] = false
-	}
-	if err := os.WriteFile(loginFile, mustJSON(logins), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	claudeRefuses(t, filepath.Join(t.TempDir(), "calls"))
-	s := New()
-	t.Cleanup(s.subscription.abortAll)
-	askClaudeModel(s, "first")
-	if rec := askClaudeModel(s, "second"); rec.Code == 200 || !strings.Contains(rec.Body.String(), "sign in again") {
-		t.Fatalf("not told to sign in again: %d %s", rec.Code, rec.Body.String())
-	}
 }
 
 // Another vendor saying a Claude sign-in's words (an OpenCode plugin on

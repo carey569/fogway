@@ -771,11 +771,6 @@ type aMessage struct {
 // pairToolItems make for the Chat and Responses paths.
 const interruptedTool = "[The result of this tool call is unavailable: the turn was interrupted.]"
 
-// buildAnthropic renders a request for an Anthropic-style upstream.
-func buildAnthropic(r *Request, model string) []byte {
-	return anthropicBody(r, model, false)
-}
-
 // anthropicBody is buildAnthropic; with replay, for an upstream that wants
 // a turn's thinking back (anthropicReplaysThinking), thinking with no
 // signature goes as its text instead of being left out.
@@ -1626,3 +1621,9 @@ func stopDetails(raw json.RawMessage) json.RawMessage {
 	}
 	return raw
 }
+
+// buildAnthropic renders a request for an Anthropic-style upstream.
+func buildAnthropic(r *Request, model string) []byte {
+	return anthropicBody(r, model, false)
+}
+

@@ -118,7 +118,7 @@ func TestProxiedLoopbackRoutes(t *testing.T) {
 	if c := call("GET", "/v1/magpie/quotas"); c != 200 {
 		t.Fatal("quotas on loopback:", c)
 	}
-	for _, p := range []string{"/v1/magpie/quotas", "/v1/magpie/quotas/history", "/v1/models", "/v1/magpie/omarchy"} {
+	for _, p := range []string{"/v1/magpie/quotas", "/v1/magpie/quotas/history", "/v1/models"} {
 		if c := call("GET", p, cf...); c != http.StatusForbidden {
 			t.Fatal(p, "through a tunnel, not shared:", c)
 		}
@@ -132,9 +132,6 @@ func TestProxiedLoopbackRoutes(t *testing.T) {
 	}
 	if c := call("GET", "/v1/magpie/quotas", append([]string{"x-api-key", secrets[0]}, cf...)...); c != 200 {
 		t.Fatal("quotas through a tunnel with the key:", c)
-	}
-	if c := call("GET", "/v1/magpie/omarchy", append([]string{"x-api-key", secrets[0]}, cf...)...); c != http.StatusForbidden {
-		t.Fatal("the Omarchy theme is this machine's only:", c)
 	}
 	if c := call("POST", "/mcp/docs", cf...); c != http.StatusUnauthorized {
 		t.Fatal("MCP through a tunnel without the key:", c)

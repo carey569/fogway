@@ -20,8 +20,6 @@ package gateway
 
 import (
 	"html"
-	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -67,34 +65,6 @@ func workPlace(req *Request) (dir, git string) {
 		}
 	}
 	return dir, git
-}
-
-// tellWorkPlace puts on a request to a plugin's provider the folder its
-// agent works in (provider.WorkDirHeader, percent-encoded) and whether
-// it is in a git repository (provider.WorkGitHeader), as far as body, in
-// protocol to, says: a plugin that tells its vendor the user's
-// environment, as ZCode's Start Plan does, says the agent's own and not
-// magpie's (magpie-community/plugins#86). A folder not said leaves both
-// off: unknown. Whether it is a git repository is the agent's word, else
-// looked at on disk.
-func tellWorkPlace(h http.Header, to provider.Protocol, body []byte) {
-	h.Del(provider.WorkDirHeader)
-	h.Del(provider.WorkGitHeader)
-	req, err := parse(to, body)
-	if err != nil {
-		return
-	}
-	dir, git := workPlace(req)
-	if dir == "" {
-		return
-	}
-	if git == "" {
-		git = provider.GitOnDisk(dir)
-	}
-	h.Set(provider.WorkDirHeader, url.PathEscape(dir))
-	if git != "" {
-		h.Set(provider.WorkGitHeader, git)
-	}
 }
 
 // workDirIn is the last folder text says, else dir.

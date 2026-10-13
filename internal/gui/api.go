@@ -453,25 +453,6 @@ type settingsJSON struct {
 	// the ChatGPT accounts signed in, each of which can have a daily
 	// warm-up time of its own (#957)
 	CodexUsers []string `json:"codexUsers,omitempty"`
-	// whether a WorkBuddy (China) account is signed in, and each one's
-	// last daily check-in
-	WorkBuddy         bool                        `json:"workbuddy"`
-	WorkBuddyCheckins []provider.WorkBuddyCheckin `json:"workbuddyCheckins,omitempty"`
-	// and a Trae CN account (its plugin's), and theirs (#694)
-	Trae         bool                        `json:"trae"`
-	TraeCheckins []provider.WorkBuddyCheckin `json:"traeCheckins,omitempty"`
-	// and a MiniMax Code (China) account (its plugin's), and theirs (#811)
-	MiniMax         bool                        `json:"minimax"`
-	MiniMaxCheckins []provider.WorkBuddyCheckin `json:"minimaxCheckins,omitempty"`
-	// and a Qoder or Qoder CN account (its plugin's), and theirs
-	Qoder         bool                        `json:"qoder"`
-	QoderCheckins []provider.WorkBuddyCheckin `json:"qoderCheckins,omitempty"`
-	// every account each vendor's daily check-in reaches, and whether the
-	// user left it out (#1902)
-	CheckinAccounts []provider.CheckinAccount `json:"checkinAccounts,omitempty"`
-	// and the plugins' providers that check in themselves (auth.checkin),
-	// each with its switch and its accounts' last check-ins
-	CheckinPlugins []provider.PluginCheckin `json:"checkinPlugins,omitempty"`
 	// FX is the dollar-to-yuan rate the cny currency choice shows costs at
 	FX fxJSON `json:"fx"`
 	// NotifyProblem is why a usage alert set wouldn't be seen: "denied"
@@ -603,14 +584,6 @@ func settingsState() settingsJSON {
 	if s.LAN {
 		s.LANURLs, s.LANContainer = gateway.LANURLs(), gateway.ContainerAddrs()
 	}
-	s.CodexWarmed, s.ClaudeWarmed = latest(provider.CodexWarmed()), latest(provider.ClaudeWarmed())
-	s.CodexUsers = codexUsers()
-	s.WorkBuddy, s.WorkBuddyCheckins = provider.HasWorkBuddy(), provider.WorkBuddyCheckins()
-	s.Trae, s.TraeCheckins = provider.HasTrae(), provider.TraeCheckins()
-	s.MiniMax, s.MiniMaxCheckins = provider.HasMiniMax(), provider.MiniMaxCheckins()
-	s.Qoder, s.QoderCheckins = provider.HasQoder(), provider.QoderCheckins()
-	s.CheckinPlugins = provider.PluginCheckins()
-	s.CheckinAccounts = provider.CheckinAccounts()
 	s.VisionAuto, s.VisionModels, s.VisionMissing = gateway.AutoVision(), []modelRef{}, gateway.VisionMissing()
 	s.VisionEfforts, s.VisionEffortNow = gateway.VisionEfforts(), gateway.VisionEffortNow()
 	for _, e := range provider.Served() {
@@ -630,7 +603,7 @@ func settingsState() settingsJSON {
 		s.DisabledHits[pat] = provider.DisabledHits(pat)
 	}
 	for _, e := range provider.Served() {
-		if e.Group != "" || e.Provider.Ready() && !e.Provider.DecideOnly() {
+		if e.Group != "" || e.Provider.Ready() {
 			m := modelRef{ID: e.ID, Name: e.Name, Provider: e.Provider.ID, PName: e.Provider.Name, Icon: e.Provider.Icon}
 			if e.Group != "" {
 				m.Provider, m.PName = "", e.Group
@@ -639,22 +612,7 @@ func settingsState() settingsJSON {
 		}
 	}
 	searchState(&s)
-	s.ImageGenAuto, s.ImageGenModels, s.ImageGenMissing = gateway.AutoDrawer(), []modelRef{}, gateway.DrawerMissing()
-	for _, p := range provider.All() {
-		if !p.On() || p.DecideOnly() {
-			continue
-		}
-		for _, m := range gateway.Drawers(p) {
-			name := m.Name
-			if name == "" {
-				name = m.ID
-			}
-			s.ImageGenModels = append(s.ImageGenModels, modelRef{ID: p.ID + "/" + m.ID, Name: name, Provider: p.ID, PName: p.Name, Icon: p.Icon, VendorPicks: gateway.VendorPicksDrawer(p)})
-		}
-	}
-	if v := gateway.ListedDrawer(s.ImageGen); v != s.ImageGen {
-		s.ImageGenShown = v
-	}
+	s.ImageGenModels = []modelRef{}
 	// the Codex subagents row's warning: magpie's multi-agent V1 doesn't reach
 	// Codex where its own multi_agent_v2 is on in the config magpie routes, and
 	// magpie writes nothing there — the setting is the user's to turn off
@@ -663,17 +621,6 @@ func settingsState() settingsJSON {
 		s.Notice = agent.CodexSubAgentsV1Warning()
 	}
 	return s
-}
-
-// latest is the latest of ts, nil when there is none.
-func latest(ts map[string]time.Time) *time.Time {
-	var out *time.Time
-	for _, t := range ts {
-		if out == nil || t.After(*out) {
-			out = &t
-		}
-	}
-	return out
 }
 
 // onDock puts the app in the Mac's Dock or takes it out as the settings say,
@@ -1294,25 +1241,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		}
 		writeJSON(rw, settingsState())
 	})
-	// whether agents' sign-ins are read and served as subscriptions
-	// (#1535): saved, the accounts read before are forgotten at once
-	mux.HandleFunc("POST /api/settings/account-discovery", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct {
-			Off bool `json:"off"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		s := settings.Load()
-		s.NoAccountDiscovery = in.Off
-		if err := settings.Save(s); err != nil {
-			fail(rw, err)
-			return
-		}
-		provider.ForgetAccounts()
-		writeJSON(rw, settingsState())
-	})
 	// the version the header's Update pill is hidden for, until a newer one
 	// is out: set from the pill, cleared ("") from Settings
 	mux.HandleFunc("POST /api/settings/update-skip", func(rw http.ResponseWriter, r *http.Request) {
@@ -1545,62 +1473,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 			}
 		}
 		if err := provider.SetCodexAutoReview(v); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// whether a Codex account spends one of its resets by itself once its
-	// week is used up, the Usage card's toggle, set on its own
-	// a Codex account's own daily warm-up time: "06:00", "off", or "" to
-	// follow the one for all (#957)
-	mux.HandleFunc("POST /api/settings/codex-warm-at", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct{ User, At string }
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		if err := provider.SetCodexWarmAt(in.User, in.At); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	mux.HandleFunc("POST /api/settings/codex-auto-reset", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct {
-			User string
-			On   bool
-		}
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		if strings.TrimSpace(in.User) == "" {
-			fail(rw, fmt.Errorf("which Codex account?"))
-			return
-		}
-		if err := provider.SetCodexAutoReset(in.User, in.On); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// whether a Codex account spends its credits once its allowance is
-	// used up, the Usage card's toggle, set on its own
-	mux.HandleFunc("POST /api/settings/codex-credits", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct {
-			User string
-			On   bool
-		}
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		if strings.TrimSpace(in.User) == "" {
-			fail(rw, fmt.Errorf("which Codex account?"))
-			return
-		}
-		if err := provider.SetCodexCredits(in.User, in.On); err != nil {
 			fail(rw, err)
 			return
 		}
@@ -2187,10 +2059,6 @@ func fail(rw http.ResponseWriter, err error) {
 		out["code"] = "no_models"
 		out["agent"] = noModels.Agent
 	}
-	var signedIn *provider.SignedInError
-	if errors.As(err, &signedIn) {
-		out["code"], out["agent"], out["user"] = "signed_in", signedIn.Agent, signedIn.User
-	}
 	// a text that isn't a group to import (laincatx on X), said in the
 	// reader's language
 	var share *provider.ShareError
@@ -2217,17 +2085,6 @@ func tilde(p string) string {
 		return "~" + p[len(home):]
 	}
 	return p
-}
-
-// codexUsers is the ChatGPT accounts signed in, by name, each once.
-func codexUsers() []string {
-	var out []string
-	for _, l := range provider.Logins("codex") {
-		if l.User != "" && !slices.ContainsFunc(out, func(u string) bool { return strings.EqualFold(u, l.User) }) {
-			out = append(out, l.User)
-		}
-	}
-	return out
 }
 
 // editRedactRule is rules with the one at at, which must still be was,

@@ -1,13 +1,8 @@
 package usage
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/csv"
-	"encoding/json"
 	"os"
 	"path/filepath"
-	"slices"
 	"testing"
 	"time"
 
@@ -95,96 +90,6 @@ func TestDesktopSessionAccountMetadata(t *testing.T) {
 	}
 }
 
-func TestLedgerResolvesOAuthIdentityAndExportsIt(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("OPENAI_BASE_URL", "")
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("CODEX_HOME", filepath.Join(home, ".codex"))
-	t.Setenv("CLAUDE_CONFIG_DIR", filepath.Join(home, ".claude"))
-	t.Setenv("APPDATA", filepath.Join(home, "AppData", "Roaming"))
-	t.Setenv("LOCALAPPDATA", filepath.Join(home, "AppData", "Local"))
-	if err := os.MkdirAll(sessions.CodexDir(), 0700); err != nil {
-		t.Fatal(err)
-	}
-	claims := `{"email":"matched@example.com","https://api.openai.com/auth":{"chatgpt_account_id":"a","chatgpt_user_id":"u"}}`
-	jwt := "h." + base64.RawURLEncoding.EncodeToString([]byte(claims)) + ".sig"
-	auth, _ := json.Marshal(map[string]any{"auth_mode": "chatgpt", "tokens": map[string]string{"account_id": "a", "id_token": jwt}})
-	os.WriteFile(filepath.Join(sessions.CodexDir(), "auth.json"), auth, 0600)
-	os.WriteFile(filepath.Join(sessions.CodexDir(), "config.toml"), []byte("[model_providers.custom]\nrequires_openai_auth = true\n"), 0600)
-	call := sessions.Call{Time: time.Now(), Agent: "codex", Model: "gpt-6-sol", Upstream: "custom", AccountID: "a", UserID: "u", Tokens: sessions.Tokens{Input: 10, Output: 2}}
-	rows, sum, _, providers := ledgerWith(time.Time{}, Filter{}, nil, []sessions.Call{call})
-	if len(rows) != 1 || rows[0].Provider != UnknownProvider || rows[0].Host != "" || rows[0].SessionAccount != "matched@example.com" || sum.Calls != 1 || len(providers) != 1 {
-		t.Fatalf("ledger attribution %+v", rows)
-	}
-	filtered, _, _, _ := ledgerWith(time.Time{}, Filter{Provider: UnknownProvider}, nil, []sessions.Call{call})
-	if len(filtered) != 1 {
-		t.Fatal("provider filter lost attributed session")
-	}
-	var out bytes.Buffer
-	if err := WriteCSV(&out, rows); err != nil {
-		t.Fatal(err)
-	}
-	data, err := csv.NewReader(&out).ReadAll()
-	if err != nil || len(data) != 2 || data[1][3] != UnknownProvider || data[1][4] != "" || data[1][slices.Index(CSVHeader, "session_provider")] != "custom" || data[1][slices.Index(CSVHeader, "session_account")] != "matched@example.com" || data[1][slices.Index(CSVHeader, "session_official_login")] != "true" {
-		t.Fatal("CSV lost the resolved provider/account")
-	}
-}
-
-func TestModelsNeverEstablishProviderOrAccount(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("OPENAI_BASE_URL", "")
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("CODEX_HOME", filepath.Join(home, ".codex"))
-	t.Setenv("CLAUDE_CONFIG_DIR", filepath.Join(home, ".claude"))
-	t.Setenv("APPDATA", filepath.Join(home, "AppData", "Roaming"))
-	t.Setenv("LOCALAPPDATA", filepath.Join(home, "AppData", "Local"))
-	at := time.Now()
-	logs := []sessions.Call{
-		{Time: at, Agent: "claude", Model: "claude-opus-5", Requested: "claude-opus-5[1m]"},
-		{Time: at, Agent: "codex", Model: "gpt-6-astra", Upstream: "relay"},
-		{Time: at, Agent: "claude", Model: "deepseek-review", Requested: "claude-sonnet-5"},
-	}
-	rows, _, _, providers := ledgerWith(time.Time{}, Filter{}, nil, logs)
-	if len(rows) != len(logs) || len(providers) != 1 || providers[0] != UnknownProvider {
-		t.Fatalf("models changed actual provider groups: %v", providers)
-	}
-	for _, row := range rows {
-		if row.Provider != UnknownProvider || row.Host != "" || row.SessionAccount != "" {
-			t.Fatalf("model falsely attributed route/account: %+v", row)
-		}
-	}
-	if rows[1].SessionProvider != "relay" || rows[2].Served != "deepseek-review" {
-		t.Fatal("recorded upstream or returned model lost")
-	}
-	for _, official := range []string{"session-openai", "session-anthropic", "codex", "claude"} {
-		if known, _, _, _ := ledgerWith(time.Time{}, Filter{Provider: official}, nil, logs); len(known) != 0 {
-			t.Fatalf("model-only calls counted as official %s calls", official)
-		}
-	}
-	var out bytes.Buffer
-	if err := WriteCSV(&out, rows[1:2]); err != nil {
-		t.Fatal(err)
-	}
-	data, err := csv.NewReader(&out).ReadAll()
-	if err != nil || data[1][3] != UnknownProvider || data[1][slices.Index(CSVHeader, "session_provider")] != "relay" || data[1][slices.Index(CSVHeader, "session_account")] != "" || data[1][slices.Index(CSVHeader, "session_official_login")] != "false" {
-		t.Fatalf("unconfirmed CSV route misattributed %+v: %v", data, err)
-	}
-	gateway := []Record{
-		{Time: at, Agent: "opencode", Provider: "relay", Host: "relay.example", Model: "gpt-6-astra", Input: 1, Status: 200},
-		{Time: at, Agent: "claude", Provider: "third-api", Host: "third.example", Model: "claude-opus-5", Input: 1, Status: 200},
-	}
-	for _, provider := range []string{"relay", "third-api"} {
-		actual, _, _, _ := ledgerWith(time.Time{}, Filter{Provider: provider}, gateway, logs)
-		if len(actual) != 1 || actual[0].Provider != provider || actual[0].Host == "" || actual[0].Source != "" {
-			t.Fatalf("third-party gateway route changed: %+v", actual)
-		}
-	}
-}
-
 func TestLocalSessionAccountsDoNotEstablishProviders(t *testing.T) {
 	account, org := "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
 	r := &sessionResolver{
@@ -217,77 +122,5 @@ func TestLocalSessionAccountsDoNotEstablishProviders(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", got, tc.want)
 			}
 		})
-	}
-}
-
-func TestLedgerKeepsLocalAccountsSeparateFromGatewayProviders(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("OPENAI_BASE_URL", "")
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("CODEX_HOME", filepath.Join(home, ".codex"))
-	t.Setenv("CLAUDE_CONFIG_DIR", filepath.Join(home, ".claude"))
-	t.Setenv("APPDATA", filepath.Join(home, "AppData", "Roaming"))
-	t.Setenv("LOCALAPPDATA", filepath.Join(home, "AppData", "Local"))
-	if err := os.MkdirAll(sessions.CodexDir(), 0700); err != nil {
-		t.Fatal(err)
-	}
-	claims := `{"email":"mine@example.com","https://api.openai.com/auth":{"chatgpt_account_id":"a","chatgpt_user_id":"u","chatgpt_plan_type":"plus"}}`
-	jwt := "h." + base64.RawURLEncoding.EncodeToString([]byte(claims)) + ".sig"
-	auth, _ := json.Marshal(map[string]any{"auth_mode": "chatgpt", "tokens": map[string]string{"account_id": "a", "id_token": jwt, "access_token": jwt, "refresh_token": "r"}})
-	os.WriteFile(filepath.Join(sessions.CodexDir(), "auth.json"), auth, 0600)
-	os.WriteFile(filepath.Join(sessions.CodexDir(), "config.toml"), []byte("model_provider = \"custom\"\n[model_providers.custom]\nname = \"OpenAI\"\nrequires_openai_auth = true\n"), 0600)
-	at := time.Now()
-	gateway := []Record{{Time: at.Add(-time.Minute), Agent: "opencode", Provider: "codex", Host: "mine@example.com", Model: "gpt-6-sol", Input: 5, Output: 1, Status: 200}}
-	logs := []sessions.Call{
-		{Time: at, Agent: "codex", Model: "gpt-6-sol", Upstream: "openai", AccountID: "a", UserID: "u", Tokens: sessions.Tokens{Input: 10, Output: 2}},
-		{Time: at, Agent: "codex", Model: "gpt-6-sol", Upstream: "openai", AccountID: "someone-else", Tokens: sessions.Tokens{Input: 7, Output: 1}},
-	}
-	rows, _, _, providers := ledgerWith(time.Time{}, Filter{}, gateway, logs)
-	if len(rows) != 3 || !slices.Equal(providers, []string{"codex", UnknownProvider}) {
-		t.Fatalf("providers %v", providers)
-	}
-	for _, b := range Breakdown(rows, "provider") {
-		want := 2
-		if b.ID == "codex" {
-			want = 1
-		}
-		if b.Calls != want {
-			t.Fatalf("local calls merged into a supplier: %+v", b)
-		}
-	}
-	for _, row := range rows {
-		if row.Source == "log" {
-			if row.Provider != UnknownProvider || row.Host != "" {
-				t.Fatalf("local call inferred a provider: %+v", row)
-			}
-		} else if row.Provider != "codex" || row.Host != "mine@example.com" {
-			t.Fatalf("gateway metadata changed: %+v", row)
-		}
-	}
-	if rows[0].SessionAccount != "mine@example.com" || rows[1].SessionAccount != "" {
-		t.Fatalf("local identity was lost or guessed: %+v", rows)
-	}
-}
-
-// An OpenCode reply names only the model it was sent to, and the effort
-// picked for its prompt (#680): the row's requested model and effort, not a
-// served model the file never saw.
-func TestOpenCodeSessionCallIsWhatItAskedFor(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("APPDATA", filepath.Join(home, "AppData", "Roaming"))
-	t.Setenv("LOCALAPPDATA", filepath.Join(home, "AppData", "Local"))
-	logs := []sessions.Call{{Time: time.Now(), Agent: "opencode", Model: "space-bunny-free", Upstream: "opencode", Effort: "high",
-		Tokens: sessions.Tokens{Input: 10, Output: 2}}}
-	rows, _, _, _ := ledgerWith(time.Time{}, Filter{}, nil, logs)
-	if len(rows) != 1 {
-		t.Fatalf("rows %+v", rows)
-	}
-	if r := rows[0]; r.Requested != "space-bunny-free" || r.Model != "space-bunny-free" || r.Served != "" || r.Effort != "high" {
-		t.Fatalf("an OpenCode call: requested %q model %q served %q effort %q", r.Requested, r.Model, r.Served, r.Effort)
 	}
 }

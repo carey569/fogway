@@ -118,7 +118,7 @@ func cleanExtraBody(e ExtraBody) ExtraBody {
 // package's comment says; session is the conversation's id for
 // ${sessionId}. A body that isn't a JSON object goes as it came.
 func (p Provider) WithExtraBody(body []byte, session string) []byte {
-	if len(p.ExtraBody) == 0 || p.Account != nil {
+	if len(p.ExtraBody) == 0 {
 		return body
 	}
 	dec := json.NewDecoder(bytes.NewReader(body))
@@ -178,5 +178,5 @@ func withSession(v any, session string) any {
 // out: the extra fields, on a session of the test's own, then what the
 // backend adjusts.
 func (p Provider) tested(body string) []byte {
-	return p.Prepare(p.WithExtraBody([]byte(body), "magpie-test-"+strings.ToLower(rand.Text()[:12])))
+	return p.WithExtraBody([]byte(body), "magpie-test-"+strings.ToLower(rand.Text()[:12]))
 }

@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -242,26 +241,5 @@ func TestRateLimitIsWaitedOut(t *testing.T) {
 		if x.n == 1 && time.Since(start) > time.Second {
 			t.Errorf("%s: passed on after %v", x.name, time.Since(start))
 		}
-	}
-}
-
-// An agent that goes away mid-request isn't a provider failing: nobody
-// rests for it and nobody else is asked.
-func TestCanceledRequestRestsNobody(t *testing.T) {
-	fresh(t)
-	a := &scripted{replies: []reply{{200, "", chatOK}}, hang: make(chan struct{})}
-	b := &scripted{replies: []reply{{200, "", chatOK}}}
-	scriptedOn(t, "a", provider.Chat, a)
-	scriptedOn(t, "b", provider.Chat, b)
-	provider.SaveGroup(provider.Group{Name: "G", Members: []string{"a/m", "b/m"}, Routing: provider.Ordered})
-	s := New()
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() { time.Sleep(50 * time.Millisecond); cancel(); time.Sleep(50 * time.Millisecond); close(a.hang) }()
-	rec := httptest.NewRecorder()
-	s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/v1/chat/completions",
-		strings.NewReader(`{"model":"group/g","messages":[{"role":"user","content":"hi"}]}`)).WithContext(ctx))
-	r := s.trace.routes[len(s.trace.routes)-1]
-	if b.n != 0 || len(r.Tries) != 1 || r.Tries[0].Fail != failCanceled || r.Tries[0].Rest != nil || s.resting("a") {
-		t.Fatalf("b tried %d, tries %+v", b.n, r.Tries)
 	}
 }

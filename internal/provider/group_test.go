@@ -79,27 +79,3 @@ func TestGroupImagesFromAMemberThatSees(t *testing.T) {
 		t.Fatalf("group with a member that sees lost images: %+v", groups)
 	}
 }
-
-// A group whose first member is a ChatGPT account's model is still magpie's
-// to list to a signed-in Codex: the backend lists the model, not the group.
-func TestCodexListedKeepsGroups(t *testing.T) {
-	acct := Provider{ID: "codex-me", Account: &Account{Agent: "codex"}}
-	ms := codexListed([]Entry{
-		{ID: GroupPrefix + "fast", Model: "gpt-5.5", Name: "fast", Provider: acct, Group: "fast"},
-		{ID: "codex-me/gpt-5.5", Model: "gpt-5.5", Provider: acct},
-		{ID: "or/glm-5.3", Model: "glm-5.3", Provider: Provider{ID: "or"}},
-	}, func(id string) []Member {
-		return []Member{{Provider: Provider{ID: "or"}, Model: "glm-5.3"}, {Provider: acct, Model: "gpt-5.5"}}
-	}, false)
-	var ids []string
-	for _, m := range ms {
-		ids = append(ids, m.ID)
-	}
-	if len(ids) != 2 || ids[0] != GroupPrefix+"fast" || ids[1] != "or/glm-5.3" {
-		t.Errorf("listed %v", ids)
-	}
-	// Codex offers /fast on the group, a ChatGPT GPT model being in it
-	if !ms[0].Fast || ms[1].Fast {
-		t.Errorf("fast: group %v, model %v", ms[0].Fast, ms[1].Fast)
-	}
-}
