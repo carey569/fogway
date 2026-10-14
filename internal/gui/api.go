@@ -1784,8 +1784,17 @@ func held(h http.Handler) http.Handler {
 	})
 }
 
+// pageSettings are the settings as the page is given them with the state:
+// the LAN key, a credential kept on disk for older versions, left out, as
+// settingsState leaves it out of Settings' own read. The page reads none.
+func pageSettings() settings.Settings {
+	s := settings.Load()
+	s.LANKey = ""
+	return s
+}
+
 func state() stateJSON {
-	s := stateJSON{Agents: []agentJSON{}, Profiles: []profileJSON{}, Catalog: catalog.Source(), Settings: settings.Load()}
+	s := stateJSON{Agents: []agentJSON{}, Profiles: []profileJSON{}, Catalog: catalog.Source(), Settings: pageSettings()}
 	// state() is asked for after nearly every click, so the rate — a
 	// network fetch once every TTL — is only worth its rare latency when
 	// cny is actually chosen; usd never looks at it

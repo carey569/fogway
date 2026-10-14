@@ -82,8 +82,12 @@ func TestLastKnownState(t *testing.T) {
 	if !last.Last || !hasCodex(last) {
 		t.Fatalf("last-known state: last=%v codex=%v", last.Last, hasCodex(last))
 	}
-	if last.Settings.Theme != "dark" || last.Settings.LANKey != "sk-lan-secret1519" {
-		t.Errorf("last-known state's settings are not today's: theme %q key %q", last.Settings.Theme, last.Settings.LANKey)
+	if last.Settings.Theme != "dark" {
+		t.Errorf("last-known state's settings are not today's: theme %q", last.Settings.Theme)
+	}
+	// nor is the LAN key told the page, here or in a fresh read
+	if last.Settings.LANKey != "" || strings.Contains(get("/api/state"), "sk-lan-secret1519") {
+		t.Error("the state tells the page the LAN key")
 	}
 
 	// another version's is not drawn
