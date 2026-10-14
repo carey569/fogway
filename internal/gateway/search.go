@@ -66,10 +66,6 @@ type CallFor struct {
 	// model that described is the one fogway picks in its place
 	// (VisionMissing), and the Routing view names both.
 	Missing string `json:"missing,omitempty"`
-	// MCP, on a web search or an image's description, is that the agent
-	// called fogway's MCP server (SearchMCPPath, VisionMCPPath) itself, for
-	// no model of fogway's.
-	MCP bool `json:"mcp,omitempty"`
 	// Instead, on a web search, is the searcher asked first that failed
 	// or found nothing (Why, NothingFound): the searcher that did search
 	// was the next one fogway tried in its place, and the Routing view

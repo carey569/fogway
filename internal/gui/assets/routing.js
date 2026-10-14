@@ -1909,16 +1909,13 @@
     // (Gearclickist on Discord: Grok picked, Codex's model searched)
     if (r.kind === "web_search" && r.for?.instead) {
       const f = r.for;
-      const whom = f.mcp ? t("{agent}'s call to fogway's web_search MCP tool", { agent: agentName(f.agent) })
-        : f.model ? t("{agent}'s {model}", { agent: agentName(f.agent), model: f.model })
+      const whom = f.model ? t("{agent}'s {model}", { agent: agentName(f.agent), model: f.model })
         : t("a model that can't search the web by itself");
       const why = f.notSearched ? t("it answered without searching the web, so its account or plan may not offer web search") : f.nothingFound ? t("its reply named no page it found") : f.why || t("it failed");
       return f.picked
         ? t("{failed}, the searcher picked in Settings › Models › Web search, didn't search for {whom}: {why}. So fogway had {searcher}, the next searcher it can use, search in its place. Not a turn of the conversation.", { failed: f.instead, whom, why, searcher: r.model })
         : t("{failed}, the searcher fogway picked, didn't search for {whom}: {why}. So fogway had {searcher}, the next searcher it can use, search in its place. Not a turn of the conversation.", { failed: f.instead, whom, why, searcher: r.model });
     }
-    // the agent called fogway's web search MCP server itself, for no model
-    if (r.kind === "web_search" && r.for?.mcp) return t("{agent} called fogway's web_search MCP tool: {searcher} searched for it. Not a turn of the conversation.", { agent: agentName(r.for.agent), searcher: r.model });
     if (r.kind === "web_search") return r.for
       ? t("fogway ran this web search for {agent}'s {model}, which can't search the web by itself: {searcher} searched, and {model} goes on answering once it has what was found. Not a turn of the conversation.", { agent: agentName(r.for.agent), model: r.for.model, searcher: r.model })
       : t("fogway ran this web search for a model that can't search the web by itself: {searcher} searched, and that model goes on answering once it has what was found. Not a turn of the conversation.", { searcher: r.model });
@@ -1927,8 +1924,6 @@
     // went to Codex's GPT, and nothing said why or where to change it)
     // the Image recognition model the user picked is missing: the one
     // fogway picks described in its place, and the row says so
-    // the agent called fogway's image recognition MCP server itself
-    if (r.kind === "vision" && r.for?.mcp) return t("{agent} called fogway's analyze_image MCP tool: {describer} looked at the image for it. Not a turn of the conversation.", { agent: agentName(r.for.agent), describer: r.model });
     if (r.kind === "vision" && r.for?.missing) return t("{picked}, the Image recognition model picked in Settings, isn't set up any more, so fogway had {describer}, its automatic choice, describe an image for {agent}'s {model} in its place. Pick another in Settings › Models › Image recognition. Not a turn of the conversation.", { picked: r.for.missing, agent: agentName(r.for.agent), model: r.for.model, describer: r.model });
     if (r.kind === "vision" && r.for?.unknown) return t("fogway had {describer} describe an image for {agent}'s {model}: nothing fogway knows says {model} can see images, so it is counted as text-only and given the description in the image's place. If it does see them, tick “Accepts images” for it in its provider's models. Settings › Models › Image recognition picks the model that describes. Not a turn of the conversation.", { agent: agentName(r.for.agent), model: r.for.model, describer: r.model });
     if (r.kind === "vision") return r.for

@@ -11,8 +11,8 @@ const { fixture } = require("./fixtures/caller-keys.cjs");
 // the snippets with it, and About shows it beside the local address agents
 // here use. An address the user picked, this computer's included, still
 // wins after a reload. Served to other machines (fogway web), the
-// gateway's address and Settings' MCP server show the public URL too; in
-// the app they stay this computer's. Without FOGWAY_PUBLIC_URL nothing
+// gateway's address shows the public URL too; in the app it stays this
+// computer's. Without FOGWAY_PUBLIC_URL nothing
 // changes: Connect starts at this computer's.
 const PUBLIC = "https://fogway.example.com";
 const LOCAL = "http://127.0.0.1:3999";
@@ -81,21 +81,17 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await shown("#publicURLRow code"), PUBLIC);
         assert.match(await shown("#about"), /127\.0\.0\.1:3999/);
         await fits("About");
-        await settingsTab("models");
-        assert.equal(await shown("#searchMcpRow code"), LOCAL + "/mcp/fogway/web-search");
         assert.deepEqual(errors, []);
       });
     }
   }
   for (const width of [1100, 420]) {
     test(`${engine} ${width}: fogway web shows FOGWAY_PUBLIC_URL as the gateway's address`, async (t) => {
-      const { page, errors, open, shown, settingsTab } = await setup(t, engine, "en", width, { lanURLs: [PUBLIC], publicURL: PUBLIC, web: true });
+      const { page, errors, open, shown } = await setup(t, engine, "en", width, { lanURLs: [PUBLIC], publicURL: PUBLIC, web: true });
       await open();
       assert.equal(await shown("#connectAddress"), PUBLIC + "/v1");
       await keyed(page, PUBLIC + "/v1");
       assert.equal(await shown("#gateway .url code"), PUBLIC);
-      await settingsTab("models");
-      assert.equal(await shown("#searchMcpRow code"), PUBLIC + "/mcp/fogway/web-search");
       assert.deepEqual(errors, []);
     });
   }

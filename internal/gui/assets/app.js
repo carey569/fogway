@@ -19099,23 +19099,6 @@ function renderImages(s, keep) {
     "the least it has", (e) => savePrefs({ ...keep, visionEffort: e }));
   r.append(who, val);
   box.append(r);
-  // the same image recognition as an MCP server of the gateway's (JonahFu
-  // on X), for an agent to mount as its analyze_image tool
-  const mcpURL = mcpAddress(s, "/mcp/fogway/vision");
-  const mcp = el("div", "row pref");
-  const mwho = el("div", "who");
-  mwho.append(el("div", "name", t("Image recognition MCP server")), el("div", "sub", t("Agents can add image recognition as an MCP server (Streamable HTTP) with one analyze_image tool, which reads an image with the Image recognition model from a file path, a URL or a data URL. From another computer, send a gateway key as Authorization: Bearer <key> and the image as a URL or data URL.")));
-  const mval = el("div", "val");
-  mval.append(el("code", "", mcpURL), copyBtn(mcpURL, t("Address")));
-  mcp.append(mwho, mval);
-  mcp.id = "visionMcpRow";
-  box.append(mcp);
-}
-
-// mcpAddress: where one of the gateway's own MCP servers is, at path. A
-// page other machines open (fogway web) shows FOGWAY_PUBLIC_URL's (#1551).
-function mcpAddress(s, path) {
-  return ((web && s.publicURL) || s.gateway || providers?.gateway?.url || `http://127.0.0.1:${s.port || 3725}`).replace(/\/+$/, "") + path;
 }
 
 // renderSearch: the web search APIs a model's search goes to when no
@@ -19243,12 +19226,6 @@ function renderSearch(s, keep) {
         (v) => savePrefs({ ...keep, searchFirst: v === "api" ? "api" : "" })));
     r.id = "searchFirstRow";
   }
-  // the same search as an MCP server of the gateway's (Kayphoon on
-  // Discord), for an agent to mount as its web_search tool
-  const mcpURL = mcpAddress(s, "/mcp/fogway/web-search");
-  const mcp = row(t("MCP server"), t("Cursor, Claude Desktop and other agents can add this search as an MCP server (Streamable HTTP) with one web_search tool. From another computer, send a gateway key as Authorization: Bearer <key>."),
-    el("code", "", mcpURL), copyBtn(mcpURL, t("Address")));
-  mcp.id = "searchMcpRow";
 }
 
 // renderSearcher: the provider that searches the web for a model that

@@ -27,7 +27,7 @@ var limitClock = time.Now
 func keyLimited(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		who := access.Caller(r.Context())
-		if !who.Limit.Limited() || r.Method != http.MethodPost || strings.HasPrefix(r.URL.Path, "/_fogway/") || strings.HasPrefix(r.URL.Path, "/mcp/") || strings.HasSuffix(r.URL.Path, "/count_tokens") {
+		if !who.Limit.Limited() || r.Method != http.MethodPost || strings.HasPrefix(r.URL.Path, "/_fogway/") || strings.HasSuffix(r.URL.Path, "/count_tokens") {
 			next.ServeHTTP(w, r)
 			return
 		}
