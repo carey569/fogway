@@ -12,89 +12,6 @@
   const page = $("#view-local");
   if (!page) return;
 
-  Object.assign((I18N.zh ||= {}), {
-    "Switched off": "已关闭",
-    "This computer": "本机",
-    "RAM": "内存",
-    "The model on this computer": "本机模型",
-    "Runs a small model on this computer with llama.cpp, pulled from Hugging Face. Fogway serves it as local/…, and group/auto sends each turn to it or to the cloud.": "用 llama.cpp 在本机运行一个小模型，模型从 Hugging Face 拉取。Fogway 以 local/… 提供它，group/auto 按轮把任务分给它或云端。",
-    "Getting llama.cpp ready": "正在准备 llama.cpp",
-    "Downloading the model": "正在下载模型",
-    "Loading the model": "正在加载模型",
-    "Serving": "运行中",
-    "Stopped": "已停止",
-    "Recommended for this computer": "本机推荐",
-    "Another model on Hugging Face": "Hugging Face 上的其他模型",
-    "Download from": "下载源",
-    "Hugging Face": "Hugging Face 官方",
-    "hf-mirror.com (China)": "hf-mirror.com（国内镜像）",
-    "about {gb}": "约 {gb}",
-    "tight on memory": "内存吃紧",
-    "The memory shown is taken as the model loads, whether the window fills or not. A long conversation is slow to read the first time: the 4B took about 15 minutes over 140K tokens on an M4 Pro; after that only what is new is read.": "所示内存在模型加载时就会占用，不论窗口是否用满。很长的对话第一次读入会很慢：在 M4 Pro 上，4B 读 14 万 token 用了约 15 分钟；之后每轮只读新增的部分。",
-    "too much for this computer": "本机内存不够",
-    "Save and restart": "保存并重启",
-    "Apple silicon, memory shared with the GPU": "Apple 芯片，内存与 GPU 共享",
-    "llama.cpp build": "llama.cpp 构建",
-    "Its log": "运行日志",
-    "Edge-cloud route": "端云路由",
-    "Each user turn is judged by the local model as it begins: what it can do stays here, the rest goes to the cloud. A turn stays where it went; a local turn that fails goes on in the cloud.": "每轮对话开始时由本地模型判断：它能做的留在本机，其余交给云端。一轮之内不换模型；本地失败时由云端接着完成。",
-    "Cloud models": "云端模型",
-    "Masking": "脱敏",
-    "On: a sensitive turn the local model can do stays here even if it fails; one it can't goes to the cloud with what is sensitive masked by the local model, and comes back unmasked.": "开启后：本地能做的敏感任务只在本机完成（失败也不上云）；本地做不了的，由本地模型脱敏后发往云端，回复再还原。",
-    "Point agents at group/auto on the Agents page to use it.": "在 Agents 页把 Agent 的模型设为 group/auto 即可使用。",
-    "No edge-cloud group yet: it is made once the local model serves and a cloud provider is added.": "还没有端云路由组：本地模型运行起来、并添加了云端 provider 后会自动创建。",
-    "This computer's assessment": "本机评测",
-    "Assess again": "重新评测",
-    "Assessing…": "正在评测…",
-    "Recommended: {model}": "推荐安装：{model}",
-    "A local model isn't recommended for this computer": "不建议在本机运行本地模型",
-    "Spark X2.5 1.7B": "星火 X2.5 1.7B",
-    "Spark X2.5 4B": "星火 X2.5 4B",
-    "Qwen3.5 2B": "通义千问 Qwen3.5 2B",
-    "Qwen3.5 4B": "通义千问 Qwen3.5 4B",
-    "Qwen3.5 9B": "通义千问 Qwen3.5 9B",
-    "{big} judges a turn in about {bj} s here and writes {bg} tokens a second.": "{big} 在本机判断一轮约 {bj} 秒，每秒生成 {bg} 个 token，运行流畅。",
-    "{big} would take {bneed}, too much of this computer's {ram}; {small} judges a turn in about {sj} s.": "{big} 需要约 {bneed} 内存，占本机 {ram} 的比例过高；{small} 判断一轮约 {sj} 秒。",
-    "The disk has {disk} free, too little for {big} ({bsize}); {small} judges a turn in about {sj} s.": "磁盘只剩 {disk}，放不下{big}（{bsize}）；{small} 判断一轮约 {sj} 秒。",
-    "{big} would take about {bj} s to judge each turn; {small} about {sj} s.": "{big} 判断一轮约需 {bj} 秒，偏慢；{small} 约 {sj} 秒。",
-    "Even {small} would take {sneed}, too much of this computer's {ram}.": "本机内存 {ram}，连{small}（约 {sneed}）也放不下或过于吃紧。",
-    "The disk has {disk} free, too little for {small} ({ssize}). Free some space first.": "磁盘只剩 {disk}，放不下{small}（{ssize}），请先清理磁盘空间。",
-    "Even {small} would take about {sj} s to judge each turn and write {sg} tokens a second: every turn would wait on it.": "即使是{small}，判断一轮也要约 {sj} 秒、每秒只生成 {sg} 个 token，每轮对话都会明显变慢。",
-    "group/auto needs a local model; without one, agents use the cloud models directly. To try anyway, pick Spark X2.5 1.7B below: it is measured once it runs.": "端云路由（group/auto）需要本地模型；不装的话，Agent 直接使用云端模型即可。如仍想尝试，可在下方选择星火 X2.5 1.7B，运行后会自动实测速度。",
-    "group/auto needs a local model; without one, agents use the cloud models directly.": "端云路由（group/auto）需要本地模型；不装的话，Agent 直接使用云端模型即可。",
-    "{gb} memory": "占用内存 {gb}",
-    "judges a turn in {s} s": "判断一轮约 {s} 秒",
-    "{n} tokens/s": "每秒 {n} token",
-    "Smooth": "流畅",
-    "Usable": "可用",
-    "Too slow": "太慢",
-    "Takes too much memory": "内存吃紧",
-    "Doesn't fit in memory": "内存不足",
-    "No room on the disk": "磁盘空间不足",
-    "llama.cpp can't run here": "无法运行 llama.cpp",
-    "llama.cpp's builds for this computer need glibc {need} or newer, and this Linux has {have}: {systems} run them.": "本机对应的 llama.cpp 构建需要 glibc {need} 或更新版本，而这台 Linux 是 {have}：需要 {systems} 才能运行。",
-    "Ubuntu 22.04, Debian 12 or later": "Ubuntu 22.04、Debian 12 或更新的系统",
-    "Ubuntu 24.04, Debian 13 or later": "Ubuntu 24.04、Debian 13 或更新的系统",
-    "measured": "实测",
-    "estimated": "估算",
-    "estimated, set by a measurement": "估算（已按实测校正）",
-    "{n} cores": "{n} 核",
-    "GPU {n} cores, memory shared": "GPU {n} 核（与内存共享）",
-    "{gb} free on the disk": "磁盘剩余 {gb}",
-    "Measured": "硬件测得",
-    "memory read at {bw} GB/s · {c} billion multiply-adds a second": "内存读取 {bw} GB/s · 每秒 {c10} 亿次乘加",
-    "Speeds marked measured come from the model running here; the others are estimated and set right by it.": "标为“实测”的是模型在本机实际运行测得的速度，其余为估算，并已按实测结果校正。",
-    "Estimates from this computer's figures. A model is measured once it runs here, and that is what counts.": "以上为根据本机硬件测得的估算值；模型装好运行后会自动实测一次，以实测为准。",
-    "Install and use {model}": "安装并使用{model}",
-    "Measuring…": "正在实测…",
-    "Measure the running model": "实测当前模型",
-    "for 8 GB of memory: routes well and does small tasks; the 4B catches more of what is sensitive": "适合 8 GB 内存：路由判断够用，能做小任务；识别敏感内容不如 4B 稳",
-    "for 16 GB: steadier judgements, a fair coder for its size": "适合 16 GB 内存：判断更稳，写代码在同尺寸里不错",
-    "Qwen's, for 8 GB": "通义千问，适合 8 GB 内存",
-    "Qwen's, for 16 GB": "通义千问，适合 16 GB 内存",
-    "Qwen's, for 32 GB, or a GPU with 10 GB and more": "通义千问，适合 32 GB 内存，或 10 GB 以上显存的显卡",
-  });
-
   let data = null; // /api/local
   let failed = "";
   let poll = 0;
@@ -226,7 +143,7 @@
     card.append(row("This computer", comp));
     if (!a.quick && a.bench) {
       const c = a.bench.compute || 0;
-      card.append(row("Measured", t("memory read at {bw} GB/s · {c} billion multiply-adds a second", { bw: Math.round(a.bench.bandwidth || 0), c: Math.round(c), c10: Math.round(c * 10) })));
+      card.append(row("Measured", t("memory read at {bw} GB/s · {n} multiply-adds a second", { bw: Math.round(a.bench.bandwidth || 0), n: fmtN(Math.round(c * 1e9)) })));
     }
     card.append(el("p", "lm-note", t(a.models.some((m) => m.measured)
       ? "Speeds marked measured come from the model running here; the others are estimated and set right by it."
