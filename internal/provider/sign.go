@@ -16,10 +16,6 @@ import (
 	"github.com/carey569/fogway/internal/catalog"
 )
 
-// Accounts are the subscriptions an agent is signed in to. Fogway serves
-// keys alone: there are none.
-func Accounts() []Provider { return nil }
-
 // APIs lists the APIs model is served on, as the provider's last model
 // list said: Copilot serves its GPT models on Responses alone and its
 // Claude models on Chat and Anthropic's. nil is not known, and every API

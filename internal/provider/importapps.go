@@ -195,7 +195,7 @@ func reservedID(id string) bool { return id == "fogway" }
 // address, as the import list's "same" says (settle).
 func holds(p Provider) bool {
 	for _, h := range load().Providers {
-		if !h.Hidden && sameProvider(h, p) {
+		if sameProvider(h, p) {
 			return true
 		}
 	}
@@ -248,9 +248,6 @@ func settle(items []AppImport, have []Provider, used map[string]bool) []AppImpor
 		used[p.ID] = true
 		it.Status = "new"
 		for _, h := range have {
-			if h.Hidden {
-				continue
-			}
 			if sameProvider(h, *p) {
 				it.Status, it.Existing = "same", h.Name
 				break

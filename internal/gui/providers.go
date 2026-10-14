@@ -1109,9 +1109,6 @@ func providerRoutes(mux *http.ServeMux, w Windows) {
 					if req.AuthHeader == nil {
 						in.AuthHeader = old.AuthHeader
 					}
-					in.KeepLogin = old.KeepLogin // set on its own, with keeplogin
-					in.KeepLoginAs = old.KeepLoginAs
-					in.SwitchOnly = old.SwitchOnly
 					in.Off = old.Off // and this with off and on
 					if in.Contexts == nil {
 						in.Contexts = old.Contexts // a save that doesn't say

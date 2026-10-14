@@ -47,24 +47,6 @@ func SetSink(id string, sink bool) error {
 	return Save(*p)
 }
 
-// SwitchOnly reports whether fogway only moves agent's own sign-in between
-// its accounts, sending none of its requests through the gateway for
-// account failover (Provider.SwitchOnly). While providers.json can't be
-// read the user's choice is unknown, and failover, fogway's own idea, is
-// not taken up on it.
-func SwitchOnly(agent string) bool {
-	f, err := read()
-	if err != nil {
-		return true
-	}
-	for _, p := range f.Providers {
-		if p.ID == agent {
-			return p.SwitchOnly
-		}
-	}
-	return false
-}
-
 // SetAffinity changes how long a provider's conversations stay with the key
 // or account that answered them.
 func SetAffinity(id, affinity string) error {

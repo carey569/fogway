@@ -491,7 +491,7 @@ func stepPlanQuotas(ctx context.Context) []SubscriptionQuota {
 	}
 	var jobs []job
 	for _, p := range All() {
-		if p.Hidden || p.Off {
+		if p.Off {
 			continue
 		}
 		site := StepFunSite(p)

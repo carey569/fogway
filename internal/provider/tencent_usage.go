@@ -101,7 +101,7 @@ func tencentPlanQuotas(ctx context.Context) []SubscriptionQuota {
 	keyed := map[string]bool{}
 	var keyless []job
 	for _, p := range All() {
-		if p.Hidden || p.Off {
+		if p.Off {
 			continue
 		}
 		region, ok := tencentPlanRegion(p)

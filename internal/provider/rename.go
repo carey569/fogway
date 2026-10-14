@@ -18,7 +18,6 @@ import (
 // with it (Was), so an agent still running on a config that names it the
 // old way reaches it, and its usage so far is counted with it; the agents'
 // own files are the agent package's to rewrite (agent.RenameProvider).
-// A signed-in account keeps the id of its agent.
 func Rename(from, to string) error {
 	from = strings.ToLower(strings.TrimSpace(from))
 	to = strings.ToLower(strings.TrimSpace(to))
@@ -33,21 +32,11 @@ func Rename(from, to string) error {
 		return err
 	}
 	i := slices.IndexFunc(f.Providers, func(p Provider) bool { return p.ID == from })
-	// one of the user's own saved on a subscription's id before that was one
-	// (a "WorkBuddy" key before v0.1.261) can be moved off it; the
-	// subscription itself can't
-	custom := i >= 0 && hasEndpoint(f.Providers[i])
-	_, signedIn := find(Accounts(), from)
-	sub := false
-	if (signedIn || sub) && !custom {
-		return fmt.Errorf("%s is a subscription: its id is its agent's", from)
-	}
 	switch {
 	case to == "fogway":
 		return errors.New(`"fogway" is what agents call the gateway itself; pick another id`)
 	case to == strings.TrimSuffix(GroupPrefix, "/"):
 		return errors.New(`"group" starts the ids of routing groups; pick another id`)
-
 	}
 	if i < 0 {
 		return fmt.Errorf("no provider %q", from)
@@ -61,9 +50,7 @@ func Rename(from, to string) error {
 	}
 	p := &f.Providers[i]
 	p.ID = to
-	// the subscription's id is the subscription's: an old ref to it isn't
-	// taken for this one
-	if !sub && !slices.Contains(p.Was, from) {
+	if !slices.Contains(p.Was, from) {
 		p.Was = append(p.Was, from)
 	}
 	for j := range f.Providers {

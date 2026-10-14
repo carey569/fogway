@@ -880,7 +880,7 @@ func KeyBalances(ctx context.Context) []SubscriptionQuota {
 	}
 	var jobs []job
 	for _, p := range All() {
-		if p.Hidden || p.Off || p.Key == "" {
+		if p.Off || p.Key == "" {
 			continue
 		}
 		src, ok := balanceSourceOf(p)

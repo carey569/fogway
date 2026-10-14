@@ -100,7 +100,7 @@ func volcPlanQuotas(ctx context.Context) []SubscriptionQuota {
 	keyed := map[string]bool{} // the plans a provider has the access key for
 	var keyless []job
 	for _, p := range All() {
-		if p.Hidden || p.Off {
+		if p.Off {
 			continue
 		}
 		action, plan, region, ok := volcPlanOf(p)

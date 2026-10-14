@@ -1664,18 +1664,9 @@ var codexUsedUp = func() bool {
 }
 
 // codexFailover reports whether Codex is signed in to a ChatGPT account
-// with more of its accounts on in fogway, behind it, and the user hasn't
-// asked fogway to only switch its sign-in (provider.SwitchOnly).
-func codexFailover() bool {
-	// the user had fogway only switch Codex's own sign-in (#1907)
-	if provider.SwitchOnly("codex") {
-		return false
-	}
-	for range provider.Accounts() {
-
-	}
-	return false
-}
+// with more of its accounts on in fogway, behind it: fogway holds no
+// accounts, so never.
+func codexFailover() bool { return false }
 
 // EndCodexFailover takes account failover out of this machine's Codex
 // as the fogway serving its gateway quits (EndFailover): Codex goes

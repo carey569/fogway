@@ -125,23 +125,6 @@ type Provider struct {
 	// "turn", "off", "strict".
 	Affinity string `json:"affinity,omitempty"`
 
-	// KeepLogin, on Codex's or Claude Code's subscription, keeps the agent
-	// signed in to the account the user made first: fogway doesn't sign it
-	// in to another when that one runs low or out (#524). The gateway still
-	// spreads its requests over the accounts that are on, as Routing says.
-	KeepLogin bool `json:"keepLogin,omitempty"`
-	// KeepLoginAs, with KeepLogin, is the account the agent is kept signed
-	// in to whichever is first in the order the gateway tries them: the one
-	// the user uses the agent as, while the first is only the one whose
-	// allowance is spent first (#524). Empty, it is the first.
-	KeepLoginAs string `json:"keepLoginAs,omitempty"`
-	// SwitchOnly, on Codex's subscription, has fogway only move Codex's
-	// own sign-in (auth.json) to the next account with room and back:
-	// Codex's requests then go straight to OpenAI, never through the
-	// gateway for account failover, however many of its accounts are on
-	// (#1907).
-	SwitchOnly bool `json:"switchOnly,omitempty"`
-
 	// MaxConcurrency is how many requests may be out at the vendor at once
 	// on each of its keys or accounts (Discord, Lemon: a Codex account is
 	// risk-controlled past five or six at once); the rest wait their turn,
@@ -326,17 +309,6 @@ type Provider struct {
 	// once the user confirms. It is only a carrier between parsing and that
 	// fetch: Save drops it, so it never reaches providers.json.
 	IconURL string `json:"iconUrl,omitempty"`
-
-	// Hidden is set on an account the user removed from fogway; the
-	// agent stays signed in, fogway just leaves it alone.
-	Hidden bool `json:"hidden,omitempty"`
-	// Quiet is set on a removed account whose "Add it back" line the user
-	// dismissed: it is offered again only from the Add sheet (#116).
-	Quiet bool `json:"quiet,omitempty"`
-	// Tucked is set on a quiet one the user hid from the Add sheet too:
-	// it is listed there only behind "Show N hidden", or when searched
-	// for by name (#116).
-	Tucked bool `json:"tucked,omitempty"`
 }
 
 type file struct {
@@ -511,7 +483,7 @@ func (p Provider) clone() Provider {
 		v := *p.Vertex
 		p.Vertex = &v
 	}
-	return p // Account, the sign-in's runtime, stays shared
+	return p
 }
 
 // AllBuilt counts the times All built the list anew, for tests.
@@ -520,43 +492,15 @@ var AllBuilt atomic.Int64
 func allProviders() []Provider {
 	AllBuilt.Add(1)
 	f := load()
-	stored := f.Providers
-	picks := map[string]Provider{}
 	var out []Provider
-	for _, p := range stored {
-		p = normalize(p)
-		if !hasEndpoint(p) {
-			picks[p.ID] = p
-			continue
+	// one with no endpoint (a subscription's picks, kept by a fogway that
+	// served them) is nothing to send to
+	for _, p := range f.Providers {
+		if p = normalize(p); hasEndpoint(p) {
+			out = append(out, p)
 		}
-		out = append(out, p)
-	}
-	for _, a := range Accounts() {
-		if _, taken := find(out, a.ID); taken || picks[a.ID].Hidden {
-			continue
-		}
-		a = withPicks(a, picks[a.ID])
-		out = append(out, a)
 	}
 	return ordered(out, f.Order)
-}
-
-// withPicks is the signed-in account a with what the user set on its
-// provider (pk, as providers.json keeps it): its models, routing, limits
-// and queue. The account the agent is signed in to gets them in All, and
-// each other account in use beside it in AlsoOn, so that every account of
-// the provider keeps the same settings (#1899: a second WorkBuddy AI
-// account queued 62s with the wait set to 1s).
-func withPicks(a, pk Provider) Provider {
-	a.PickedFrom = pk.PickedFrom
-	a.Models, a.Unlisted, a.Off, a.Fallback, a.Routing, a.Affinity, a.KeepLogin, a.KeepLoginAs, a.Contexts, a.Family = pk.Models, pk.Unlisted, pk.Off, pk.Fallback, pk.Routing, pk.Affinity, pk.KeepLogin, pk.KeepLoginAs, pk.Contexts, pk.Family
-	a.SwitchOnly = pk.SwitchOnly
-	a.Sink, a.NoModels = pk.Sink, pk.NoModels
-	a.Proxy, a.AccountProxies, a.AccountModels = pk.Proxy, pk.AccountProxies, pk.AccountModels
-	a.MaxConcurrency, a.PinUpstream = pk.MaxConcurrency, pk.PinUpstream
-	a.AccountConcurrency, a.QueueLimit, a.QueueWait = pk.AccountConcurrency, pk.QueueLimit, pk.QueueWait
-	a.MaxRPM = pk.MaxRPM
-	return a
 }
 
 func find(ps []Provider, id string) (Provider, bool) {
@@ -575,8 +519,8 @@ func Find(id string) (*Provider, error) {
 
 func findIn(all []Provider, id string) (*Provider, error) {
 	q := strings.ToLower(strings.TrimSpace(id))
-	// an id before a name: a provider of the user's called WorkBuddy isn't
-	// the workbuddy subscription
+	// an id before a name: a provider called DeepSeek isn't the deepseek
+	// preset's
 	if i := slices.IndexFunc(all, func(p Provider) bool { return p.ID == q }); i >= 0 {
 		return &all[i], nil
 	}
@@ -843,23 +787,11 @@ func stored(id string) bool {
 	return false
 }
 
-// Delete removes a provider. An account, a built-in's or a plugin's, is
-// only hidden from fogway (its accounts and model picks kept, shown again
-// from Hidden or by signing in); signing out is each account's Remove.
+// Delete removes a provider.
 func Delete(id string) error {
 	f, err := read()
 	if err != nil {
 		return err
-	}
-	if _, ok := find(Accounts(), id); ok {
-		for i := range f.Providers {
-			if f.Providers[i].ID == id {
-				f.Providers[i].Hidden = true
-				return store(f)
-			}
-		}
-		f.Providers = append(f.Providers, Provider{ID: id, Hidden: true})
-		return store(f)
 	}
 	keep := f.Providers[:0]
 	found := false
