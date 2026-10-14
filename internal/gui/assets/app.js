@@ -14108,7 +14108,17 @@ function renderPanelQuota() {
   const arrange = el("button", "pq-more pq-arrange", t("Arrange"));
   arrange.type = "button";
   arrange.title = t("Choose which cards this tab shows, and their order");
-  arrange.onclick = () => { panelArranging = true; panelPeek = ""; renderPanelQuota(); $("#panelQuota .pq-arow .pq-ahandle")?.focus({ preventScroll: true }); };
+  // the list takes the cards' place whole: the page is let go where the
+  // reader was, as far down as the list goes, not held for Done to stand
+  // where Arrange was. Held, it kept room under the list for Done, and the
+  // first logo, given the keyboard above it, was then brought into view: a
+  // jump each way when the cards stood less than a panel taller than the
+  // list
+  arrange.onclick = () => {
+    panelArranging = true; panelPeek = ""; renderPanelQuota();
+    held = null;
+    $("#panelQuota .pq-arow .pq-ahandle")?.focus({ preventScroll: true });
+  };
   foot.append(arrange);
   if (away.size) foot.append(el("span", "pq-hidden", t("{n} hidden", { n: away.size })));
   box.append(foot);
