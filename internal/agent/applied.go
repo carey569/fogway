@@ -444,12 +444,12 @@ func (a *Agent) Pick(key, v string) error {
 // every one of fogway's models. An agent that can keep the model it is on
 // (Join) keeps it. An agent already connected is left as it is.
 // NoModelsError is Connect's answer while fogway has no models to give
-// the agent: no provider or subscription has been added yet. The GUI says
+// the agent: no provider has been added yet. The GUI says
 // it in the reader's language by its code (no_models).
 type NoModelsError struct{ Agent string }
 
 func (e *NoModelsError) Error() string {
-	return "Add a provider or subscription in fogway first, then connect " + e.Agent
+	return "Add a provider in fogway first, then connect " + e.Agent
 }
 
 func (a *Agent) Connect() error {

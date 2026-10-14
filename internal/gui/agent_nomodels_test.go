@@ -26,7 +26,7 @@ func TestAgentConnectNoModels(t *testing.T) {
 	Handler(nil, nil).ServeHTTP(rec, httptest.NewRequest("POST", "/api/agents/connect/codex", strings.NewReader("{}")))
 	var out map[string]string
 	json.Unmarshal(rec.Body.Bytes(), &out)
-	if rec.Code != 400 || out["code"] != "no_models" || out["agent"] != "Codex" || !strings.Contains(out["error"], "Add a provider or subscription") {
+	if rec.Code != 400 || out["code"] != "no_models" || out["agent"] != "Codex" || !strings.Contains(out["error"], "Add a provider in fogway first") {
 		t.Fatalf("%d %s", rec.Code, rec.Body)
 	}
 }

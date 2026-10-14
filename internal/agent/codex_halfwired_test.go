@@ -79,7 +79,7 @@ func TestConnectWithNoModels(t *testing.T) {
 	}
 	_, err := codex(home).ConnectHow()
 	var nm *NoModelsError
-	if !errors.As(err, &nm) || nm.Agent != "Codex" || !strings.Contains(err.Error(), "Add a provider or subscription in fogway first, then connect Codex") {
+	if !errors.As(err, &nm) || nm.Agent != "Codex" || !strings.Contains(err.Error(), "Add a provider in fogway first, then connect Codex") {
 		t.Fatalf("%v", err)
 	}
 }

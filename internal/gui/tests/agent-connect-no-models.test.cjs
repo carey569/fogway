@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Tystem on Discord: switching Codex on with no provider or subscription in
+// Tystem on Discord: switching Codex on with no provider in
 // fogway said only "Codex can't be connected to fogway", in English whatever
 // the language. The server answers that case with code no_models, and the
 // toast says what to do in the reader's language; the switch goes back off.
@@ -38,10 +38,10 @@ function server(lang, posts) {
 }
 
 const said = {
-  en: "Add a provider or subscription in fogway first, then connect Codex",
-  zh: "请先在 fogway 中添加一个供应商或订阅，再接入 Codex",
-  ja: "先に fogway でプロバイダかサブスクリプションを追加してから、Codex を接続してください",
-  de: "Fügen Sie zuerst in fogway einen Anbieter oder ein Abo hinzu und verbinden Sie dann Codex",
+  en: "Add a provider in fogway first, then connect Codex",
+  zh: "请先在 fogway 中添加一个供应商，再接入 Codex",
+  ja: "先に fogway でプロバイダを追加してから、Codex を接続してください",
+  de: "Fügen Sie zuerst in fogway einen Anbieter hinzu und verbinden Sie dann Codex",
 };
 const sw = '.row.agent[data-id="codex"] .ag-conn';
 
