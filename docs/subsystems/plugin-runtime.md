@@ -53,9 +53,8 @@ remembering its layer (`Source`):
   each call it (`builtinsState`), so a change made by the CLI shows on the
   next read.
 - **Switch**: `Set(id, on)` (`POST /api/plugins/builtin`, `fogway plugin
-  builtin on|off <id>`) writes the user's row; `SetPreset` the preset
-  (`fogway plugin preset essentials|all`). Off is refused while the plugin
-  is in use.
+  builtin on|off <id>`) writes the user's row. Off is refused while the
+  plugin is in use.
 - **The window**: see [GUI app shell](gui-shell.md), "Built-in plugins".
 
 ## Failure and compatibility
@@ -63,9 +62,8 @@ remembering its layer (`Source`):
 - A plugins.yml that can't be read or doesn't parse, or names another
   preset, is an error, never an empty file. `Refresh` returns it and leaves
   the runtime as it was; before the first good read every plugin is on, as
-  before plugins existed. `Set` and `SetPreset` refuse to write over it, the
-  window says it above the list and disables every switch, and the CLI exits
-  with it. The user fixes the file or removes it.
+  before plugins existed. `Set` refuses to write over it, and the CLI and
+  `POST /api/plugins/builtin` say so. The user fixes the file or removes it.
 - Writes hold `filelock.Mutex` (`plugins.yml.lock`) against other fogways
   and a mutex in the process, are written whole (temp file, sync, rename),
   and keep the file they replace as `plugins.yml.bak`.
@@ -73,14 +71,13 @@ remembering its layer (`Source`):
   with the reason; the rest run.
 - In P0 a plugin's off is the window's alone: its page, sections and rows
   leave the window. The gateway, the TUI and the CLI serve the same either
-  way, and nothing the user made is deleted. Davsync doesn't carry
-  plugins.yml.
+  way, and nothing the user made is deleted.
 
 ## Verification
 
 - `go test ./internal/pluginrt/` (`TestReconcile`, `TestCompatible`,
   `TestPluginsImportOnlyCore`, `TestCompose`, `TestSettleAndSet`,
   `TestBrokenFileIsKept`), `go test ./internal/settings/ -run TestRanBefore`.
-- `go test ./internal/gui/ -run 'TestBuiltin|TestBootSaysBuiltinsOff'`.
+- `go test ./internal/gui/ -run 'TestBuiltin'`.
 - By hand, under a sandbox HOME: `fogway plugin builtin`, `fogway plugin
-  builtin on groups`, `fogway plugin dump`, and a plugins.yml broken by hand.
+  builtin on groups`, and a plugins.yml broken by hand.

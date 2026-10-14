@@ -52,10 +52,8 @@ and a rename in Desktop shows within a second. The names reach the native
 Desktop sessions (`assemble`), every gateway list (`MergeExternal`), the stats
 summaries (`MergeExternalStats`), Routing's `/api/gateway/session-titles`
 (`Titles`) and the Context page. It does not grant resume or native transcript
-capabilities to a gateway row. Verification: `TestDesktopSessionTitles`,
-`TestDesktopSessionTitleIdentity`, `TestDesktopSessionTitleHandles`,
-`TestDesktopSessionTitleInStats`, `TestDesktopTitlesReadOncePerList`,
-`TestDesktopSessionTitlesOnPages`.
+capabilities to a gateway row. Verification: `TestPIDesktopTitlesNameGatewaySessions`;
+the Desktop titles' own six tests went with the cut agents in 36b17d5.
 
 A gateway projection can be deleted (lc on Discord). `sessions.DeleteGateway`
 moves its recorded text folders (`gateway-conversations/<date>/<identity hash>`)
@@ -122,7 +120,7 @@ as placeholders; hidden reasoning, client-only operations and unsupported wire
 items cannot be reconstructed. This is not a raw request archive or remote
 session synchronization, and existing S3 archives are not imported.
 
-[`SaveGatewayTurn`](../../internal/sessions/gateway.go) stores normalized,
+[`SaveGatewayTurnGeneration`](../../internal/sessions/gateway.go) stores normalized,
 scrubbed exchanges in one append-only `turns.jsonl` per
 `gateway-conversations/<UTC date>/<identity hash>/` under
 the Fogway config directory, using 0700 directories and 0600 files. Each line is
@@ -164,9 +162,9 @@ cannot replace content fetched after clearing the store.
 choice: a native session is written from its file (`sessions.WriteMarkdown`),
 and otherwise a known gateway session from what its transcript reads
 (`sessions.WriteGatewayMarkdown`, "Recorded by: fogway's gateway", with a note
-when turns or a part's end weren't kept). A fogway that others reach as a
-remote fogway has no file of their agents' sessions, so this is the only way
-it can export them. Verification: `TestGatewaySessionExportsMarkdown`.
+when turns or a part's end weren't kept). A fogway that other computers'
+agents reach has no file of their sessions, so this is the only way it can
+export them. Its test, `TestGatewaySessionExportsMarkdown`, went in 36b17d5.
 
 A gateway session without a saved Desktop name is titled by what it was
 first asked (YOU on Discord), not its `ses_…` id: `sessions.GatewayTitle` reads the first 8 complete turns of
@@ -209,14 +207,13 @@ Implementation: [`internal/sessions/search.go`](../../internal/sessions/search.g
 [`internal/gui/assets/sessions.js`](../../internal/gui/assets/sessions.js).
 Verification: `TestSearchSession*` (`TestSearchSessionReadsOnlyLinesWithTheWords`
 for the line filter), `TestContainsFold`, `TestMayHoldSkipsAFileWithoutTheWords`,
-`TestGatewayTitleAndSearch`, `TestSessionsSearch*`; browser
+browser
 `sessions-search.test.cjs`.
 
 Verification: `TestGatewayConversation*` (`TestGatewayConversationNeedsTheClientsSession`
-and `TestGatewayConversationClientRequestPrefixedSession` for the two rules above), `TestGatewaySessionHistoryAndCalendar`,
-`TestGatewaySessionsNativeWinsBeforeLimits`,
+and `TestGatewayConversationClientRequestPrefixedSession` for the two rules above),
 `TestGatewayStatsRebaseNativeCalendar`, `TestCORSKeyThroughTheServer`,
-`TestSessionsDeleteGatewaySession`, `TestGatewayDeleteTrashExpires`, `TestGatewayPurgeKeepsItHidden`, `TestGatewayDeleteNothingRecorded` and
+`TestGatewayDeleteNothingRecorded` and
 `TestGatewayRestoreRefusesForeignItems`; browser
 `gateway-conversations.test.cjs`, `sessions-talk.test.cjs`,
 `sessions-gateway-delete.test.cjs`, and locale checks.
@@ -240,8 +237,9 @@ quotas, their history, kept cards and refresh, and `/v1/fogway/concurrency`
 (#1981); `/v1/fogway/route` tells it only routes whose `callerKey` is its
 own. `Route.callerKey` is set by `trace.beginFor` from the request's
 caller, so a route begun without it is told to no held key.
-`TestHeldKeyToldNoAccounts` covers every one of these from loopback and
-the LAN, for a key held each of the three ways and one held to nothing.
+Their test, `TestHeldKeyToldNoAccounts` (from loopback and the LAN, a key
+held each of the three ways and one held to nothing), went in 36b17d5 and
+is to be written again with keys.
 
 ### Calls read from the agents' own files
 
@@ -325,7 +323,7 @@ however old, so a client's history can be backfilled.
 `TestUsageIngest*` and `TestIngestReported*` cover these, including
 concurrent posts beside the gateway's own writes, and a backfill of a full
 5000-record batch landing on the right 7d/30d/all days.
-`TestReportedTouchesNothingLive` and `TestUsageIngestTouchesNoLimit` go red
+`TestUsageIngestTouchesNoLimit` goes red
 when any of the live guards is removed. Browser:
 `usage-ledger-reported.test.cjs`.
 
