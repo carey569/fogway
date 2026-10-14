@@ -102,7 +102,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     async function reset() {
       await page.goto("http://fogway.test/?view=usage");
       await page.locator("#sessFolder:not([hidden])").waitFor();
-      assert.equal(await page.title(), "fogway");
+      assert.equal(await page.title(), "Fogway");
       assert.equal(await page.locator("#sessList .sess-item").count(), 40);
       // Always-visible scrollbars make track/thumb input independent of OS preferences.
       await page.addStyleTag({ content: `
