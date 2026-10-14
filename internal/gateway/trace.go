@@ -230,14 +230,6 @@ type Weighed struct {
 	// Held: left out as the gateway key asking may not use its account or
 	// key (#905)
 	Held bool `json:"held,omitempty"`
-	// Capped: left out as held at the usage cap the user set on the
-	// account, this cap in percent; Used is then its fullest window's
-	// share, CapBack when the last window at or past it renews
-	Capped  int        `json:"capped,omitempty"`
-	CapBack *time.Time `json:"capBack,omitempty"`
-	// NoCredits: held at 100% (Capped), a Codex account the user set not
-	// to spend its credits once its allowance is used up
-	NoCredits bool `json:"noCredits,omitempty"`
 	// Rank: its place in its provider's own list of accounts or keys, the
 	// order the provider's page shows and a drag sets (#217); routing may
 	// weigh them in another
@@ -316,31 +308,10 @@ type Try struct {
 	// Queued: ms it waited for one of its key's or account's slots, the
 	// provider's MaxConcurrency out already (concurrency.go)
 	Queued int64 `json:"queued,omitempty"`
-	// Reset: its week used up and nobody else left, one of the account's
-	// Codex resets was spent by itself (the user's setting) — on Who, and
-	// what spending it did — and the request asked again
-	Reset *AutoReset `json:"reset,omitempty"`
-}
-
-// AutoReset is a Codex reset spent by itself, on Who's account. (Claude's
-// resets were taken out in 9bf6d4352 and aren't coming back: reading or
-// spending one means fogway calling Anthropic with the account's token,
-// #1972.)
-type AutoReset struct {
-	Who   string `json:"who"`
-	Text  string `json:"text"`
-	Agent string `json:"agent,omitempty"` // the account's agent, as Account.Agent has it
 }
 
 type planned struct {
 	order, left []Weighed
-	// held: the accounts left out (in left) as they won't spend their
-	// credits, for one that spends its resets by itself to spend one
-	held []candidate
-	// capped: the accounts left out (in left) as they are past the usage
-	// cap set on them, for a conversation that stays strictly on one to
-	// go on there (provider.AffinityStrict, #1797)
-	capped []candidate
 }
 
 func weighed(c candidate, p provider.Provider, wg weighing, fallback bool, from provider.Protocol) Weighed {

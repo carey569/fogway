@@ -1583,32 +1583,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		}
 		cands, pl, accountHeld = allowedCandidates(who, cands, pl, members)
 	}
-	// a conversation that stays strictly where it is goes on on its
-	// account past the usage cap set on it, and is refused there, not
-	// moved, while the account is held as it won't spend its credits
-	// (#1797)
-	cands, pl, strictHeld := strictKeep(scope, mode, r.Header, body, cands, pl)
-	if len(cands) == 0 && (strictHeld != nil || slices.ContainsFunc(pl.left, func(w Weighed) bool { return w.Capped > 0 }) &&
-		!slices.ContainsFunc(pl.left, func(w Weighed) bool { return !w.Barred && !w.Held && w.Capped == 0 })) {
-		// every account there is is held at its usage cap: used up, as far
-		// as routing goes, until a window renews — or the one a strict
-		// conversation stays on is
-		held := pl.left
-		if strictHeld != nil {
-			held = strictHeld
-		}
-		msg, back := cappedError(call.Model, held, time.Now())
-		if strictHeld != nil {
-			msg += ". The conversation stays strictly on that account (Stays: Strict), so fogway doesn't move it to another"
-		}
-		if d := time.Until(back); d > 0 {
-			w.Header().Set("Retry-After", strconv.Itoa(int(d.Seconds())+1))
-		}
-		call.Status, call.Error = 429, cappedRecord(held)
-		writeError(w, from, 429, msg)
-		turnedAway()
-		return
-	}
 	if len(cands) == 0 && accountHeld {
 		// every account or key the model had is one the calling key may
 		// not use (#905), the plan's left saying so: told before the barred
@@ -3293,11 +3267,6 @@ func (s *Server) passthrough(w http.ResponseWriter, r *http.Request, p provider.
 	if !s.fits(p.ID, toolStrictRefused, proto) {
 		body, _ = withoutToolStrict(proto, body)
 	}
-	// a Grok subscription is given Codex's namespaced functions flat
-	// (grokBody), and Zed's plugin likewise (ZedBody); a call to one goes
-	// back under its namespace (#404)
-	var named map[string]nsTool
-
 	res, err := s.forward(r.Context(), p, proto, path, p.Prepare(body), r.Header)
 	if err != nil {
 		return writeError(w, proto, 502, p.Name+": "+err.Error()), err.Error(), true
@@ -3557,10 +3526,6 @@ func (s *Server) passthrough(w http.ResponseWriter, r *http.Request, p provider.
 	if searchFn && sse {
 		search = &searchTidy{}
 	}
-	var spaces *nsTidy
-	if named != nil {
-		spaces = &nsTidy{named: named, sse: sse}
-	}
 	// a Grok model's 2500.0 in a call's arguments, which Codex turns away
 	// (grok_integral.go, #1431); any other model's reply goes as it came
 	var ints *intTidy
@@ -3585,9 +3550,6 @@ func (s *Server) passthrough(w http.ResponseWriter, r *http.Request, p provider.
 			}
 			if search != nil {
 				out = search.write(out)
-			}
-			if spaces != nil {
-				out = spaces.write(out)
 			}
 			if ints != nil {
 				out = ints.write(out)
@@ -3628,21 +3590,10 @@ func (s *Server) passthrough(w http.ResponseWriter, r *http.Request, p provider.
 		w.Write(sign(written.flush()))
 	}
 	if whole != nil {
-		out := whole.flush()
-		if spaces != nil {
-			out = spaces.write(out)
-		}
-		w.Write(sign(out))
+		w.Write(sign(whole.flush()))
 	}
 	if search != nil {
-		out := search.flush()
-		if spaces != nil {
-			out = spaces.write(out)
-		}
-		w.Write(sign(out))
-	}
-	if spaces != nil {
-		w.Write(sign(spaces.flush()))
+		w.Write(sign(search.flush()))
 	}
 	if ints != nil {
 		out := ints.flush()

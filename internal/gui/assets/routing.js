@@ -390,7 +390,7 @@
   // from its vendor does — relays list each key its own group's models
   // or the user set the account or key to serve other models only (#474)
   // or it is held at the usage cap the user set on the account
-  const unlistedWord = (w) => w.held ? t("not an account the gateway key may use") : w.noCredits ? t("held: its allowance used up, set not to spend credits") : w.capped ? t("held at its {cap}% usage cap", { cap: w.capped }) : w.barred ? t("set to serve other models, not {model}", { model: w.model }) : w.kind === "key" ? t("{name}'s list for this key has no {model}", { name: w.name, model: w.model }) : t("its plan doesn't list {model}", { model: w.model });
+  const unlistedWord = (w) => w.held ? t("not an account the gateway key may use") : w.barred ? t("set to serve other models, not {model}", { model: w.model }) : w.kind === "key" ? t("{name}'s list for this key has no {model}", { name: w.name, model: w.model }) : t("its plan doesn't list {model}", { model: w.model });
   // noURLWord: its keys are all set to a protocol its provider has no URL
   // for, so it went out on the URLs it has (#1702)
   const noURLWord = (w) => t("key set to {api} only, no {api} URL · sent on the others", { api: API[w.noURL] || w.noURL });
@@ -568,10 +568,6 @@
     for (const x of r.order.filter((x) => x.aside)) out.push(t("{who} is made for {api}, not {other} as the keys routed over are, so it isn't one of them: it's tried after them.", { who: who(x), api: API[x.speaks] || x.speaks || t("any API"), other: API[pooled?.speaks] || pooled?.speaks || t("any API") }));
     for (const x of r.left || []) out.push(x.held
       ? t("{who} is left out: the gateway key asking may not use its account.", { who: who(x) })
-      : x.noCredits
-      ? t("{who} is left out: a usage window is used up, and the account is set not to spend its credits, so it counts as used up until that window renews.", { who: who(x) })
-      : x.capped
-      ? t("{who} is left out: a usage window is at {n}, past the {cap}% cap set on the account, so it counts as used up until that window renews.", { who: who(x), n: pct(x.used), cap: x.capped })
       : x.barred
       ? t("{who} is left out: it is set to serve other models, not {model}.", { who: who(x), model: x.model })
       : x.kind === "key"
@@ -838,11 +834,6 @@
     if (w && tr.auto?.length) name = `${who(w)} (${w.model} → ${tr.auto[tr.auto.length - 1].model})`;
     if (tr.effort && tr.fail !== "prompt") name += " " + t("at {level} reasoning", { level: tr.effort });
     if (!tr.done) return t("{who} is answering…", { who: name });
-    // a Codex reset spent by itself: with Codex's own sign-in the one try
-    // it was spent for is the one that then answered
-    const spent = tr.reset && tr.status < 400
-      ? t("Its week was used up, so one of {account}'s Codex resets was used by itself first.", { account: tr.reset.who }) + " "
-      : "";
     if (tr.status < 400 && tr.fail)
       return tr.rest
         ? t("{who} began answering, then broke off · {fail}. {agent} got what was said before the error; {how}, so {agent}'s next request goes to another first.",
@@ -850,13 +841,10 @@
         : t("{who} began answering, then broke off. {agent} got what was said before the error; the conversation isn't kept on {who} for its next request.", { who: name, agent });
     if (tr.status < 400) {
       const tk = (r.tokens ? " · " + t("{n} tokens", { n: tokens(r.tokens) }) : "") + firstNote(r, tr);
-      return spent + (i > 0
+      return i > 0
         ? t("{who} answered in {ms}{tk}. {agent} got one clean reply and never saw the {n} that failed first.", { who: name, ms: took(tr.ms), tk, agent, n: i })
-        : t("{who} answered in {ms}{tk}.", { who: name, ms: took(tr.ms), tk }));
+        : t("{who} answered in {ms}{tk}.", { who: name, ms: took(tr.ms), tk });
     }
-    if (tr.reset)
-      return t("{who} answered {status}: its week is used up and nobody else could take the request, so one of {account}'s Codex resets was used by itself and the request is asked again, before any of the reply reaches {agent}.",
-        { who: name, status: tr.status, account: tr.reset.who, agent });
     if (tr.fail === "canceled")
       return t("{agent} canceled the request while {who} was answering: nobody failed, so nobody rests and nobody else is asked.", { who: name, agent });
     if (tr.fail === "auth") {
@@ -3224,7 +3212,7 @@
     session: "A conversation stays with the account or key that answered it for the whole session, while it can answer.",
     turn: "A conversation stays put within a turn, while the agent sends tool results back; when you speak again, routing decides afresh.",
     off: "Every request is routed afresh, whoever answered its conversation before.",
-    strict: "A conversation stays with the account or key that answered it and never moves to another, even past its usage cap: when that one is rate limited or out of quota, the error goes to the agent. New conversations are routed as usual.",
+    strict: "A conversation stays with the account or key that answered it and never moves to another: when that one is rate limited or out of quota, the error goes to the agent. New conversations are routed as usual.",
   };
   const GROUP_HINT = {
     "": "Smart, over the members' keys together: of the keys on plans with quota to spare, the one whose allowance renews soonest goes first — the week decides, and a plan with five hours and no week goes by its five hours, so ahead of every week renewing later; one resting after a failure goes last.",

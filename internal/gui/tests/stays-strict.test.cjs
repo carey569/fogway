@@ -51,7 +51,7 @@ function serve(lang, posts) {
   };
 }
 
-const HINT = "A conversation stays with the account or key that answered it and never moves to another, even past its usage cap: when that one is rate limited or out of quota, the error goes to the agent. New conversations are routed as usual.";
+const HINT = "A conversation stays with the account or key that answered it and never moves to another: when that one is rate limited or out of quota, the error goes to the agent. New conversations are routed as usual.";
 const LANGS = ["en", "zh", "zh-TW", "ja", "de"];
 // what the hint says, in each language: the error goes to the agent
 const SAYS = { en: /the error goes to the agent/, zh: /错误直接交给智能体/, "zh-TW": /錯誤直接交給智能體/, ja: /エラーはそのままエージェントに渡ります/, de: /geht der Fehler an den Agenten/ };

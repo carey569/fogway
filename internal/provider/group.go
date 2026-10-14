@@ -54,11 +54,10 @@ const (
 	AffinitySession = "session"
 	AffinityTurn    = "turn"
 	AffinityOff     = "off"
-	// AffinityStrict keeps a conversation on the key or account that
-	// answered it whatever happens: resting, all but used up or past the
-	// usage cap set on it, it is still the one asked, and its error goes
-	// to the agent rather than the conversation to another. A usage cap
-	// still keeps new conversations off it.
+	// AffinityStrict keeps a conversation on the key that answered it
+	// whatever happens: resting or all but used up, it is still the one
+	// asked, and its error goes to the agent rather than the conversation
+	// to another.
 	AffinityStrict = "strict"
 )
 

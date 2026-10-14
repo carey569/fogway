@@ -48,8 +48,6 @@ type candidate struct {
 	// rank is its place in its provider's own list of accounts or keys,
 	// the order the provider's page shows and a drag sets (#217)
 	rank int
-	// capped is set on an account left out as held at its usage cap
-	capped *capHold
 	// noURL is the protocol its provider's keys are all set to that the
 	// provider has no URL for (#1702): the provider is tried whole, on the
 	// URLs it has, and the routing trace says why
@@ -58,17 +56,6 @@ type candidate struct {
 	// it is in (weightedUnits), for affinity to charge the member that
 	// keeps a conversation (weightedKept)
 	seats []wrrSeat
-}
-
-// capHold is how an account is held at its usage cap: the cap of the
-// fullest window at or past its own cap, that window's share used, and when the last such window
-// renews (zero when one doesn't say). noCredits: it is a Codex account
-// held at 100% as it is set not to spend its credits (cap is 100 then).
-type capHold struct {
-	cap       int
-	used      float64
-	back      time.Time
-	noCredits bool
 }
 
 // label names a candidate in a call's record: the provider, and the key
@@ -136,23 +123,8 @@ func perKeyBarred(p provider.Provider, model string, from provider.Protocol) (ou
 	if _, off := provider.ModelDisabled(p.ID, model); off || provider.DisabledUnknown() {
 		return nil, nil, nil, nil // the user disabled it (#1867): never planned, a fallback no more than the model asked
 	}
-
-	// the account the agent is signed in to, unless the user paused
-	// it for the others on (#263)
-
-	// kept signed in to an account of the user's choosing, the one
-	// signed in to stands at its own place in the order, not first
-	// (#524)
-
-	// an account at its usage cap is used up for routing until the
-	// window it filled renews: never tried, so groups, fallbacks and
-	// the other accounts take the request (provider/account_caps.go);
-	// so is a Codex account at 100% set not to spend its credits
-	// (provider/codex_credits.go)
-
-	// an account whose plan lacks the model (a Free one behind a Plus)
-	// would only answer 400; it is tried only when none lists it
-
+	// a key whose list lacks the model would only answer 400; it is tried
+	// only when none lists it
 	keys := p.KeysOn()
 	var unlisted []candidate
 	var noURL provider.Protocol
@@ -258,8 +230,6 @@ func (s *Server) plan(p provider.Provider, model string, from provider.Protocol)
 	add := func(q provider.Provider, m string, fallback bool) []candidate {
 		cs, aside, left, barred := perKeyBarred(q, m, from)
 		pl.left = append(pl.left, barredOf(barred, q, fallback, from, nil)...)
-		pl.held = append(pl.held, creditsHeld(barred)...)
-		pl.capped = append(pl.capped, capHeldOnly(barred)...)
 		cs, wg := weigh(q, cs, m, from)
 		for i, c := range cs {
 			w := weighed(c, q, wg, fallback, from)
@@ -327,8 +297,6 @@ func planLevel(g provider.Group, ms []provider.Member, depth int, from provider.
 			}
 		}
 		pl.left = append(pl.left, barredOf(barred, m.Provider, false, from, m.Groups())...)
-		pl.held = append(pl.held, creditsHeld(barred)...)
-		pl.capped = append(pl.capped, capHeldOnly(barred)...)
 		*asides = append(*asides, aside...)
 		for _, w := range asideOf(aside, m.Provider, false, from) {
 			w.Via = m.Groups()
@@ -371,7 +339,6 @@ func planLevel(g provider.Group, ms []provider.Member, depth int, from provider.
 				var sub planned
 				cs := planLevel(m.Via[depth], ms[i:j], depth+1, from, &sub, asides, wAsides)
 				pl.left = append(pl.left, sub.left...)
-				pl.capped = append(pl.capped, sub.capped...)
 				if len(cs) > 0 {
 					add(unit{cs: cs, order: sub.order, member: m.Path[depth]}, firstAwake(cs))
 				}
@@ -496,103 +463,13 @@ func ownRouting(p provider.Provider, g provider.Group) bool {
 	return p.Routing != "" && p.Routing != g.Routing
 }
 
-// cappedError says why a request for model went nowhere when every account
-// that could take it is held at its usage cap, as the vendor's own refusal
-// would when all are used up; the soonest one is back is the wait.
-func cappedError(model string, ws []Weighed, now time.Time) (string, time.Time) {
-	var held []string
-	var soonest time.Time
-	capped, noCredits := heldBy(ws)
-	for _, w := range ws {
-		if w.Capped == 0 {
-			continue
-		}
-		s := fmt.Sprintf("%s (%s) is at %.0f%% of a usage window, past its %d%% cap", w.Name, w.Who, w.Used, w.Capped)
-		if w.NoCredits {
-			s = fmt.Sprintf("%s (%s) has used up a usage window and is set not to spend its credits", w.Name, w.Who)
-		}
-		if w.CapBack != nil {
-			s += ", until " + w.CapBack.Local().Format("Jan 2 15:04")
-			if soonest.IsZero() || w.CapBack.Before(soonest) {
-				soonest = *w.CapBack
-			}
-		}
-		held = append(held, s)
-	}
-	switch {
-	case !noCredits:
-		return fmt.Sprintf("usage cap reached: every account that serves %q is held at the usage cap set on it in fogway — %s. fogway uses it again once that window renews; raise or lift the cap in fogway (Providers → the account's cap, or fogway provider account-cap)", model, strings.Join(held, "; ")), soonest
-	case !capped:
-		return fmt.Sprintf("usage limit reached: every account that serves %q has used up its allowance and is set in fogway not to spend its credits — %s. fogway uses it again once that window renews; to go on now, if an account holds credits, let it spend them (Usage → the account's Use credits, or fogway quota credits <account> on)", model, strings.Join(held, "; ")), soonest
-	}
-	return fmt.Sprintf("usage limit reached: every account that serves %q is held by fogway — %s. fogway uses it again once that window renews; to go on now, raise or lift a cap (Providers → the account's cap, or fogway provider account-cap) or, if an account holds credits, let it spend them (Usage → the account's Use credits, or fogway quota credits <account> on)", model, strings.Join(held, "; ")), soonest
-}
-
-// heldBy says what holds the accounts of ws held at a share: a usage cap
-// set on one, credits it is set not to spend, or both.
-func heldBy(ws []Weighed) (capped, noCredits bool) {
-	for _, w := range ws {
-		if w.Capped > 0 {
-			capped, noCredits = capped || !w.NoCredits, noCredits || w.NoCredits
-		}
-	}
-	return capped, noCredits
-}
-
-// cappedRecord is the call's record of the same refusal as cappedError,
-// told apart the same way.
-func cappedRecord(ws []Weighed) string {
-	switch capped, noCredits := heldBy(ws); {
-	case !noCredits:
-		return "every account at its usage cap"
-	case !capped:
-		return "every account held: set not to spend its credits"
-	}
-	return "every account held: at its usage cap or set not to spend its credits"
-}
-
-// creditsHeld are those of cs held only as they won't spend their
-// credits: out of their allowance at the vendor's own 100%, where one
-// that spends its resets by itself spends one (codex_autoreset.go). One
-// held at the user's cap never does.
-func creditsHeld(cs []candidate) []candidate {
-	var out []candidate
-	for _, c := range cs {
-		if c.capped != nil && c.capped.noCredits {
-			out = append(out, c)
-		}
-	}
-	return out
-}
-
-// capHeldOnly are those of cs held at the usage cap the user set on them,
-// not for credits they won't spend: a conversation kept strictly on one
-// goes on there past the cap (provider.AffinityStrict, #1797).
-func capHeldOnly(cs []candidate) []candidate {
-	var out []candidate
-	for _, c := range cs {
-		if c.capped != nil && !c.capped.noCredits {
-			out = append(out, c)
-		}
-	}
-	return out
-}
-
 // barredOf is how the trace tells the accounts or keys the user set not
 // to serve the model: left out, as those not listing it are.
 func barredOf(cs []candidate, q provider.Provider, fallback bool, from provider.Protocol, via []string) []Weighed {
 	var out []Weighed
 	for _, c := range cs {
 		w := weighed(c, q, weighing{}, fallback, from)
-		w.Unlisted, w.Via = true, via
-		if h := c.capped; h != nil {
-			w.Capped, w.Used, w.NoCredits = h.cap, h.used, h.noCredits
-			if !h.back.IsZero() {
-				w.CapBack = &h.back
-			}
-		} else {
-			w.Barred = true
-		}
+		w.Unlisted, w.Via, w.Barred = true, via, true
 		out = append(out, w)
 	}
 	return out
@@ -709,9 +586,7 @@ func restingOf(c candidate) (Rest, bool) {
 // quotaHeld is, when every candidate of cs is a key resting out of its
 // allowance or its credit — refused with a 429 or a 402 for it, the
 // vendor's words kept — the rest of the first, and when the first of them
-// is back: asked before then, each would be refused the same (#1772). A
-// subscription account isn't held so: its resets may be spent for it
-// (autoReset), and its windows are read again as it is planned.
+// is back: asked before then, each would be refused the same (#1772).
 func quotaHeld(cs []candidate) (Rest, time.Time, bool) {
 	var first Rest
 	var back time.Time
@@ -766,26 +641,19 @@ func spentAfter(cs []candidate) bool {
 	return len(cs) > 0
 }
 
-// spentModel says whether every account or key routing would try for
-// p's model is out of its allowance as last known: held at its usage cap,
-// resting after the vendor said it is out of quota or credit (the
-// account's, or its model's own pool), or with a window that counts the
-// model used up. back is when the first of them is, zero when none says.
+// spentModel says whether every key routing would try for p's model is
+// out of its allowance as last known: resting after the vendor said it is
+// out of quota or credit, or with a window that counts the model used up. back is when the first of them is, zero when none says.
 // A model fogway picks for a call of its own (AutoVision, autoSearcher)
 // is one routing would still try: a turn's own model goes to the one
 // candidate it has all the same, but the describer or searcher picked in
 // its place can be another (#1801). Unknown allowance, or a rest for a
 // rate limit or an error, is not spent.
 func spentModel(p provider.Provider, model string, from provider.Protocol, now time.Time) (back time.Time, spent bool) {
-	out, aside, _, barred := perKeyBarred(p, model, from)
+	out, aside, _, _ := perKeyBarred(p, model, from)
 	soonest := func(t time.Time) {
 		if !t.IsZero() && (back.IsZero() || t.Before(back)) {
 			back = t
-		}
-	}
-	for _, c := range barred {
-		if c.capped != nil {
-			soonest(c.capped.back)
 		}
 	}
 	for _, c := range append(out, aside...) {
@@ -2706,10 +2574,6 @@ func pinTo(want string, cands []candidate, pl planned) ([]candidate, planned, in
 	for _, w := range pl.left {
 		if match(w) && w.Held {
 			return nil, pl, http.StatusForbidden, fmt.Sprintf("%s: the gateway key may not use %s's account", AccountHeader, w.Who)
-		}
-		if match(w) && w.Capped > 0 {
-			msg, _ := cappedError(w.Model, []Weighed{w}, time.Now())
-			return nil, pl, http.StatusTooManyRequests, AccountHeader + ": " + msg + "; no other account is tried in its place"
 		}
 		if match(w) {
 			return nil, pl, http.StatusBadRequest, fmt.Sprintf("%s: %s's plan doesn't list %s", AccountHeader, w.Who, w.Model)
