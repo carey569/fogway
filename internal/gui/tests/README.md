@@ -1265,27 +1265,12 @@ English and Chinese, Chromium and WebKit, API faked. Run it with:
 node --test internal/gui/tests/sessions-toolbar.test.cjs
 ```
 
-`routing-wb-refused.test.cjs` opens a request WorkBuddy refused "from an
-unapproved channel" (Codex's system prompt, #182) on the Routing page: the
-vendor's words are given without the hint the gateway adds, and the hint is
-on its own line in English and Chinese; another 400 gets none, and picking
-the request leaves the page where it is. Chromium and WebKit, API faked.
-
 `routing-blocked.test.cjs` opens a request a vendor's edge firewall blocked
 (Alibaba Cloud's 405 page in front of zcode.z.ai) on the Routing page: what
 the gateway made of it is given without the hint it adds, and the hint (the
 firewall blocked this IP; wait, or switch network or proxy) is on its own
 line in English and Chinese; another 405 gets none, and picking the request
 leaves the page where it is. Chromium and WebKit, API faked.
-
-`routing-zcode-blocked.test.cjs` opens a request ZCode's Start Plan turned
-away (#425: 405 "request has been blocked due to unusual activity") on the
-Routing page: what the gateway made of it is given without the hint it adds,
-and the hint (ZCode still turned it away though fogway sends it as the ZCode
-app does: the network blocked this IP, or ZCode checks something new; use a
-GLM Coding Plan or another provider in the group) is on its own line in English and Chinese;
-another 405 gets none, and picking the request leaves the page where it is.
-Chromium and WebKit, API faked.
 
 `routing-shape.test.cjs` opens a group request whose first member answered
 422 because its API couldn't read the request (#350: SuperGrok and Codex's

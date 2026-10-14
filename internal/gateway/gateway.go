@@ -2241,24 +2241,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			}
 			continue
 		}
-		if !last && hw.failed() && promptRefused(hw.code(), hw.errBody()) {
-			// WorkBuddy's "Illegal API invocation from an unapproved
-			// channel": its security policy turns away the agent's system
-			// prompt (Claude Code's own, #182), whichever account and
-			// reasoning level it is asked at (Discord, lemon: both WorkBuddy
-			// AI accounts rested over an agent's chat, for every agent).
-			// Nothing is wrong with the account, so it doesn't rest; its
-			// mates, carrying the same prompt, are asked last
-			if other == nil {
-				other = &Try{Status: call.Status, Error: call.Error}
-			}
-			try.Fail = failPrompt
-			s.trace.update(tr, func(t *Route) { t.Tries[len(t.Tries)-1] = try })
-			skipped = append(skipped, c.label()+": "+call.Error)
-			matesLast(cands[i+1:], c)
-			continue
-		}
-
 		// the account's plan doesn't take the level, which the
 		// model has (#520: a Free ChatGPT account, gpt-6-luna at
 		// high): another account is asked, and this one doesn't
@@ -2548,8 +2530,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			}
 		} else if hw.refused {
 			try.Fail = failRefused
-		} else if promptRefused(call.Status, []byte(call.Error)) {
-			try.Fail = failPrompt
 		} else {
 			try.Fail = failureOf(c, call.Status, []byte(call.Error))
 			if try.Fail == failVerify && !held || strictAlone {

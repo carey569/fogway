@@ -714,7 +714,7 @@ func modelRefused(status int, body []byte) bool {
 	}
 	// the words are matched decoded, too (#1669)
 	body = wordsOf(body)
-	return unservedWords.Match(body) && !quotaWords.Match(body) && !refusedWords.Match(body)
+	return unservedWords.Match(body) && !quotaWords.Match(body)
 }
 
 // retiredWords are how a vendor says the model is retired, though its
@@ -753,18 +753,6 @@ func modelRetired(status int, body []byte) bool {
 // AuthError "Invalid API key." for a key it doesn't take.
 var zenModelGone = regexp.MustCompile(`(^|[\s:"])Model [^"\s]+ is not supported("|\s*$)`)
 
-// refusedWords are how a vendor says it won't take requests from this
-// client at all — WorkBuddy's "Illegal API invocation from an unapproved
-// channel" to a chat opening with another agent's own system prompt — a
-// refusal of the provider, not of the request, another member may serve.
-var refusedWords = regexp.MustCompile(`(?i)unapproved channel|illegal api invocation`)
-
-// promptRefused says a vendor answered with that refusal: the agent's
-// prompt, not the account, is at fault.
-func promptRefused(status int, body []byte) bool {
-	return status >= 400 && refusedWords.Match(body)
-}
-
 // shapeWords are how a vendor says it can't read the request's shape — an
 // item, field or parameter it doesn't know, which another vendor's API may
 // take: xAI's 422 "Failed to deserialize the JSON body …: unknown item type"
@@ -782,7 +770,7 @@ func shapeRefused(status int, body []byte) bool {
 	// the words are matched decoded, too (#1669)
 	body = wordsOf(body)
 	return (status == 400 || status == 422) && shapeWords.Match(body) &&
-		!quotaWords.Match(body) && !unservedWords.Match(body) && !refusedWords.Match(body)
+		!quotaWords.Match(body) && !unservedWords.Match(body)
 }
 
 // regionWords are how a vendor says it doesn't serve where the request
@@ -851,7 +839,7 @@ func retryable(status int, body []byte) bool {
 		// in front of zcode.z.ai): another provider goes another way
 		return true
 	case status == 400, status == 422:
-		return quotaWords.Match(body) || unservedWords.Match(body) || refusedWords.Match(body) || shapeWords.Match(body) || regionWords.Match(body)
+		return quotaWords.Match(body) || unservedWords.Match(body) || shapeWords.Match(body) || regionWords.Match(body)
 	}
 	return false
 }
@@ -863,7 +851,7 @@ func retryable(status int, body []byte) bool {
 // nobody rests for it. Nor does an account rest when a model generated
 // empty output (#1221).
 func lateRests(msg string) bool {
-	return !tooLong(http.StatusBadRequest, msg) && !refusedWords.MatchString(msg) && !protectionWords.MatchString(msg) && !strings.Contains(msg, emptyReply)
+	return !tooLong(http.StatusBadRequest, msg) && !protectionWords.MatchString(msg) && !strings.Contains(msg, emptyReply)
 }
 
 // unsaidMargin is how far past a model's window a request's estimate
@@ -891,7 +879,7 @@ func tooLongUnsaid(p provider.Provider, model string, tokens, status int, body [
 	// the words are matched decoded, too (#1669)
 	body = wordsOf(body)
 	if overflowed(status, body) || failure(status, body) != failOther || quotaWords.Match(body) ||
-		unservedWords.Match(body) || refusedWords.Match(body) || provider.EdgeBlocked(body) || regionRefused(status, body) {
+		unservedWords.Match(body) || provider.EdgeBlocked(body) || regionRefused(status, body) {
 		return "", false
 	}
 	window := windowOf(p, model)

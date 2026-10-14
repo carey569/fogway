@@ -355,7 +355,7 @@
   // (WorkBuddy's credits, #659): "355 / 500 credits · 71% used"
   const quota = (w, used, left, vars) => (w.limit > 0 ? quotaCount(w) + " · " : "") + t(quotaLeft ? left : used, { n: pct(share(w)), ...vars });
   const fill = (w) => Math.max(0, Math.min(100, share(w))) + "%";
-  const FAIL = { rate: "rate limited", credit: "out of credit", quota: "quota used up", other: "failed", auth: "sign-in required", canceled: "canceled", foreign: "another account's reasoning", floor: "reply too short", verify: "needs verification", refused: "refused (safety filter)", shape: "request not understood", proxy: "proxy not reachable", effort: "reasoning effort not in its plan", overflow: "too long for its model", slow: "slow to start", prompt: "agent's prompt turned away", restricted: "account restricted by the vendor" };
+  const FAIL = { rate: "rate limited", credit: "out of credit", quota: "quota used up", other: "failed", auth: "sign-in required", canceled: "canceled", foreign: "another account's reasoning", floor: "reply too short", verify: "needs verification", refused: "refused (safety filter)", shape: "request not understood", proxy: "proxy not reachable", effort: "reasoning effort not in its plan", overflow: "too long for its model", slow: "slow to start" };
   const failWord = (why) => t(FAIL[why] || "failed");
   // a try that answered: one whose reply broke off after it began (its 200
   // sent, then the vendor's error, #733) didn't, and has a fail
@@ -440,9 +440,6 @@
       case "resets": return t("It rests until {time}, when the vendor says the limit resets", { time });
       case "quota": return t("It rests 15 minutes: out of quota, with no word of when it resets");
       case "verify": return t("The vendor wants the account verified first: it rests half an hour, or until you say it's verified");
-      // the vendor restricted the account itself (#1849): only its lifting,
-      // which the vendor's appeal asks for, brings it back
-      case "restricted": return t("The vendor restricted the account: it rests {d}, as only the vendor lifting the restriction brings it back. Appeal with the vendor; once it's lifted, try it again here", { d });
       case "backoff": return rest.why === "rate"
         ? t("It was rate limited again as soon as it was back ({n} times in a row): it rests {d}, longer each time until it answers", { n: rest.failures, d })
         : rest.failures > 1
@@ -790,8 +787,7 @@
   // a try in words, and how its reasoning came to differ from the agent's
   function tryWhy(r, i) {
     const tr = r.tries[i], said = trySaid(r, i);
-    // a prompt turned away is turned away at every level: the level is no part of it
-    if (!tr.effort || !r.effort || r.effort === tr.effort || tr.fail === "prompt") return said;
+    if (!tr.effort || !r.effort || r.effort === tr.effort) return said;
     const agent = agentName(r.agent);
     return said + (/[。！？]$/.test(said) ? "" : " ") + (tr.fixed
       ? t("The group fixes this model at {fixed} reasoning, in place of the {asked} {agent} asked for.", { fixed: tr.fixed, asked: r.effort, agent })
@@ -800,26 +796,18 @@
       : t("{level} is the model's nearest to the {asked} {agent} asked for.", { level: tr.effort, asked: r.effort, agent }));
   }
 
-  // what the gateway adds to WorkBuddy's "unapproved channel" refusal
-  // (provider.WBRefusedHint, #182): the agent gets it in English, the page
-  // says it apart from the vendor's words, in its own language
-  const WB_REFUSED = "WorkBuddy refuses chats from Codex and Claude Code (their system prompt); use it from Hermes, OpenCode or Pi, or add another provider to this group";
-  // what it adds to a vendor's edge firewall's block page (provider.BlockedHint)
+  // what the gateway adds to a vendor's edge firewall's block page
+  // (provider.BlockedHint): the agent gets it in English, the page says it
+  // apart from the vendor's words, in its own language
   const BLOCKED = "the provider's network firewall blocked requests from this IP; wait a while, or switch to another network or proxy";
-  // what it says of ZCode's Start Plan turning a request away (#425,
-  // provider.ZCodeStartBlockedHint), in place of BLOCKED
-  const ZCODE_BLOCKED = "ZCode's Start Plan still turned this request away, though fogway sends it as the ZCode app does; it can be a network block of this IP, or ZCode checking for something new. Use an account with a GLM Coding Plan, or add another provider to this group";
-  // what it adds to WorkBuddy's 403 11140 for an account it restricted
-  // (provider.WBRestrictedHint, #1849)
-  const WB_RESTRICTED = "WorkBuddy restricted this account for unusual activity; it stays out until WorkBuddy lifts that, which an appeal (Submit feedback in WorkBuddy) asks for";
-  const HINTS = [WB_REFUSED, BLOCKED, ZCODE_BLOCKED, WB_RESTRICTED];
+  const HINTS = [BLOCKED];
 
   function trySaid(r, i) {
     const tr = r.tries[i], w = tried(r, tr), agent = agentName(r.agent);
     let name = w ? `${who(w)} (${w.model})` : tr.id;
     // Copilot's Auto: the model it picked last, which this try went as
     if (w && tr.auto?.length) name = `${who(w)} (${w.model} → ${tr.auto[tr.auto.length - 1].model})`;
-    if (tr.effort && tr.fail !== "prompt") name += " " + t("at {level} reasoning", { level: tr.effort });
+    if (tr.effort) name += " " + t("at {level} reasoning", { level: tr.effort });
     if (!tr.done) return t("{who} is answering…", { who: name });
     if (tr.status < 400 && tr.fail)
       return tr.rest
@@ -852,10 +840,6 @@
       return r.tries[i + 1]
         ? t("{who}'s safety filter refused the request before saying anything, so it goes on to the next before any of the reply reaches {agent}. Nothing is wrong with {who}, so it doesn't rest.", { who: name, agent })
         : t("{who}'s safety filter refused the request before saying anything, and nobody is left to try, so {agent} gets an error saying so, not an empty reply to ask again for.", { who: name, agent });
-    if (tr.fail === "prompt")
-      return r.tries[i + 1]
-        ? t("{who} answered {status}: the vendor turns away {agent}'s system prompt whichever account it goes to, so it goes on to the next before any of the reply reaches {agent}. Nothing is wrong with {who}, so it doesn't rest.", { who: name, status: tr.status, agent })
-        : t("{who} answered {status}: the vendor turns away {agent}'s system prompt whichever account it goes to, and nobody else is left to try, so {agent} gets the error. Nothing is wrong with {who}, so it doesn't rest.", { who: name, status: tr.status, agent });
     if (tr.fail === "shape")
       return t("{who} answered {status}: its API couldn't read something in the request that another's may, so it goes on to the next before any of the reply reaches {agent}. Nothing is wrong with {who}, so it doesn't rest.", { who: name, status: tr.status, agent });
     if (tr.fail === "effort")
@@ -2483,14 +2467,12 @@
         // any rest can be lifted by hand (#1869): a quota, a backoff, a
         // Retry-After, a network blip read as down. It only ends the rest;
         // the vendor refusing again rests it again as before. The vendor
-        // wants the account verified (#152), or restricted it until an
-        // appeal lifts it (#1849): where, and the way to stop its rest
-        // once it is
+        // wants the account verified (#152): where, and the way to stop its
+        // rest once it is
         const fix = el("div", "fix"), rest = lifts[0];
         if (rest.link) { const b = el("button", "link", t("Verify the account ↗")); b.onclick = () => api("open", { url: rest.link }).catch(() => {}); fix.append(b); }
-        const go = el("button", "link", t(rest.why === "restricted" ? "The restriction is lifted — try it again"
-          : rest.why === "verify" ? "It's verified — try it again" : "Try now"));
-        if (rest.why !== "restricted" && rest.why !== "verify") go.title = t("Ends the rest: the next request asks it again. Refused again, it rests again.");
+        const go = el("button", "link", t(rest.why === "verify" ? "It's verified — try it again" : "Try now"));
+        if (rest.why !== "verify") go.title = t("Ends the rest: the next request asks it again. Refused again, it rests again.");
         go.onclick = async () => {
           try {
             for (const x of lifts) { await api("gateway/unrest", { key: x.key }); liftedAt.set(x.key, Date.now()); }

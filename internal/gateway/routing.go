@@ -110,15 +110,6 @@ const (
 	// is answered that way by fogway without asking again: an agent's
 	// reconnects don't all land on the account Google has stopped
 	verifyHold = time.Minute
-	// restrictedRest: an account its vendor restricted (WorkBuddy's 403
-	// 11140, #1849) is out until the vendor lifts it, which takes an
-	// appeal, not a wait: hours, not the minutes of a backoff, so a group
-	// stops walking every restricted account on every request. Two hours
-	// costs one refused request per account every two hours, and a
-	// restriction lifted (or a refusal read wrong) is back the same
-	// afternoon without anyone acting; the Routing page lifts it at once
-	// (Unrest) for a user whose appeal went through
-	restrictedRest = 2 * time.Hour
 )
 
 var (
@@ -194,10 +185,6 @@ const (
 	// failShape: the vendor couldn't read the request's shape (#350) — the
 	// next one is asked, and nobody rests
 	failShape = "shape"
-	// failPrompt: the vendor turns away the agent's system prompt, as
-	// WorkBuddy's "unapproved channel" does Claude Code's — the next one is
-	// asked, its own mates last, and nobody rests
-	failPrompt = "prompt"
 	// failEffort: the account's plan doesn't take the reasoning level
 	// asked for (#520) — another account is asked, and nobody rests
 	failEffort = "effort"
@@ -215,10 +202,6 @@ const (
 	// failLoop: the reply was ended stuck in a loop (#1359) — the agent
 	// is told, and nobody rests, as the model, not the account, looped
 	failLoop = "loop"
-	// failRestricted: the vendor restricted the account itself (WorkBuddy's
-	// 403 11140, "账号存在异常行为，已被限制使用", #1849) — the next is
-	// asked, and it rests restrictedRest, until the vendor lifts it
-	failRestricted = "restricted"
 )
 
 // loopErrType is the usage log's ErrType for a reply ended for looping
@@ -329,8 +312,7 @@ type Rest struct {
 	// vendor's own headers), "resets" (the time Claude Code gave), "window"
 	// (the allowance window it filled renews), "quota" (no word of when),
 	// "cooldown" (a minute), "backoff" (longer each time it fails again,
-	// or is rate limited again as soon as it is back), "restricted" (the
-	// vendor restricted the account: two hours, or until lifted by hand).
+	// or is rate limited again as soon as it is back).
 	By       string `json:"by"`
 	Failures int    `json:"failures,omitempty"` // in a row, for a backoff
 	// Key is what it rests by, for the app to lift the rest (Unrest)
@@ -584,9 +566,6 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 		if c.full(now).IsZero() && !(c.isOpenRouterFree() && sharedPool) {
 			sink(c.restKey(), now)
 		}
-	case failRestricted:
-		// out until the vendor lifts it: an appeal, not a wait (#1849)
-		d, r.By = restrictedRest, "restricted"
 	case failVerify:
 		d, r.By = verifyRest, "verify"
 		// the error as the agent was given it, and the link in it
@@ -616,7 +595,7 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 			d, r.By = min(t.Sub(now), longestQuota), "window"
 		}
 	}
-	if why != failOther && why != failVerify && why != failRestricted {
+	if why != failOther && why != failVerify {
 		staleKeyAllowance(c.p) // a key that reads its windows: asked again
 	}
 	r.Until = now.Add(d)
