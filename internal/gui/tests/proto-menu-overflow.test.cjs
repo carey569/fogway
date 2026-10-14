@@ -102,8 +102,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await last.scrollIntoViewIfNeeded();
       const scrolled = await menu.evaluate((e) => e.scrollTop > 0);
       assert.ok(scrolled, "scrolling the menu moves it, so the last rows are reachable");
+      // ticked, then saved as the menu closes, through savePrefs' queue: its
+      // POST comes a moment after Escape, waited for, not assumed in
       await last.click();
+      const saving = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/settings" && r.request().method() === "POST");
       await page.keyboard.press("Escape");
+      await saving;
       const saved = posts.at(-1)?.trayUsages;
       assert.ok(Array.isArray(saved) && saved.length === 1 && /acct\d+@b\.c$/.test(saved[0]),
         `the last account was picked and saved: ${JSON.stringify(saved)}`);
