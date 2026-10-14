@@ -202,7 +202,6 @@ type Weighed struct {
 	Fallback bool    `json:"fallback,omitempty"`
 	Shared   bool    `json:"shared,omitempty"` // its provider has more than one on
 	Known    bool    `json:"known,omitempty"`  // the vendor said what the account has left
-	Learns   bool    `json:"learns,omitempty"` // not known, but its answer will tell
 	Used     float64 `json:"used"`             // share of the allowance counting the model, used
 	// Amount of Limit in Unit: the count that share is of, when the
 	// vendor counts it so (WorkBuddy's credits, #659)
@@ -218,12 +217,6 @@ type Weighed struct {
 	Speaks   provider.Protocol `json:"speaks,omitempty"` // a key made for one protocol only
 	Rest     *Rest             `json:"rest,omitempty"`   // resting after a failure, when the request came
 	Unlisted bool              `json:"unlisted,omitempty"`
-	// DueBy: "reset" when Due is when an auto-used Codex reset about to
-	// run out starts the windows again, sooner than they renew (#717)
-	DueBy string `json:"dueBy,omitempty"`
-	// Restarts: when that reset starts them again, set when it is sooner
-	// than its biggest window renews — Smart goes by it then (#718)
-	Restarts *time.Time `json:"restarts,omitempty"`
 	// Barred: left out as the user set it not to serve the model, its
 	// own list of models leaving it out (#474)
 	Barred bool `json:"barred,omitempty"`
@@ -343,15 +336,7 @@ func weighed(c candidate, p provider.Provider, wg weighing, fallback bool, from 
 		if !l.due.IsZero() {
 			due := l.due
 			w.Due = &due
-			if l.dueRestart {
-				w.DueBy = "reset"
-			}
 		}
-		if rs := l.restarts; !rs.IsZero() && len(l.soon) > 0 && rs.Equal(l.soon[0]) {
-			w.Restarts = &rs
-		}
-	} else if wg.lefts != nil {
-		w.Learns = learns(c, wg.lefts)
 	}
 	if wg.tokens != nil {
 		w.Tokens = wg.tokens[c.rest]

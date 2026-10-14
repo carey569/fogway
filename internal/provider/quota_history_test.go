@@ -11,7 +11,6 @@ func histCard(user string, used5h float64, reset5h time.Time, usedWeek float64, 
 	return SubscriptionQuota{Provider: "codex", Name: "Codex", User: user, Windows: []QuotaWindow{
 		{Name: "5 hours", Used: used5h, ResetsAt: &reset5h},
 		{Name: "Weekly", Used: usedWeek, ResetsAt: &resetWeek, Span: 7 * 24 * time.Hour},
-		{Name: "Opus", Used: 1, Family: "Claude"},
 		{Name: "Reviews", Unlimited: true},
 	}}
 }
@@ -33,10 +32,10 @@ func lineOf(t *testing.T, hs []QuotaHistory, user, name string) []QuotaPoint {
 }
 
 // TestQuotaHistoryRecords: each reading of an account's windows is a point
-// of the percent left, with when its window began and starts again; a
-// window of a family, an unlimited one, a failed reading and one kept from
-// before aren't kept; readings a minute apart within five are one point,
-// and a run of the same figure its first and last (#651).
+// of the percent left, with when its window began and starts again; an
+// unlimited window, a failed reading and one kept from before aren't
+// kept; readings a minute apart within five are one point, and a run of
+// the same figure its first and last (#651).
 func TestQuotaHistoryRecords(t *testing.T) {
 	testenv.SetHome(t, t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())

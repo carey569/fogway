@@ -185,8 +185,8 @@ type servedBy struct {
 	keys   map[string][]KeyInfo // provider → its keys, read once, when a plan or balance asks
 }
 
-// at is when the card of provider's kind ("subscription", "plan" or
-// "balance") told by user last answered; zero when it hasn't.
+// at is when the card of provider's kind ("plan" or "balance") told by
+// user last answered; zero when it hasn't.
 func (s *servedBy) at(provider, kind, user string) time.Time {
 	var at time.Time
 	latestOf := func(id string) {
@@ -195,8 +195,6 @@ func (s *servedBy) at(provider, kind, user string) time.Time {
 		}
 	}
 	switch {
-	case kind == "subscription" && user != "":
-		latestOf(provider + "@" + strings.ToLower(user))
 	case user == "":
 		// the one account or key it has, or any of them: a balance
 		// one account has whichever key asks
@@ -228,13 +226,13 @@ func (s *servedBy) at(provider, kind, user string) time.Time {
 // panel show in full, and what the menu bar's "account in use" follows,
 // is the account that answered last. Each is a copy; the caches the
 // cards come from are left as they were.
-func cardsServed(subs, plans, balances []SubscriptionQuota, served map[string]time.Time) []SubscriptionQuota {
-	out := make([]SubscriptionQuota, 0, len(subs)+len(plans)+len(balances))
+func cardsServed(plans, balances []SubscriptionQuota, served map[string]time.Time) []SubscriptionQuota {
+	out := make([]SubscriptionQuota, 0, len(plans)+len(balances))
 	by := servedBy{served: served}
 	for _, g := range []struct {
 		kind string
 		qs   []SubscriptionQuota
-	}{{"subscription", subs}, {"plan", plans}, {"balance", balances}} {
+	}{{"plan", plans}, {"balance", balances}} {
 		for _, q := range g.qs {
 			if len(served) > 0 {
 				if at := by.at(q.Provider, g.kind, q.User); !at.IsZero() {

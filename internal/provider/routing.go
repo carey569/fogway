@@ -95,40 +95,14 @@ type Limit struct {
 	// counts it so (QuotaWindow.Amount)
 	Amount, Of float64
 	Unit       string
-	matches    func(string) bool
-	partial    bool   // of a reading that may leave windows out (QuotaWindow.partial)
-	Name       string // QuotaWindow.Name: which window it is, one reading to the next (WindowCapID)
-	// ResetRunsOut is when the reset the account spends by itself before
-	// it runs out does (resetRunsOut): spent then, it starts this window
-	// again — at Restarts, which routing takes for the window's renewal
-	// when it is the sooner. Zero when none will be spent so.
-	ResetRunsOut time.Time
+	Name       string // QuotaWindow.Name: which window it is, one reading to the next
 	// RunsOut is when the soonest of what the window has left is lost,
 	// apart from its reset (QuotaWindow.RunsOutAt): zero when not known.
 	RunsOut time.Time
 }
 
-// Restarts is when an auto-used reset starts the account's windows again,
-// as the Codex reset about to run out is spent (expiringResetSpent):
-// resetExpiryLead before it runs out, or now when the account is held up
-// past then. What they have left then is lost, as at their own reset, so
-// Weekly pace and Smart take it for their renewal when it comes sooner
-// (#717, #718). Zero when none will be.
-func (a Allowance) Restarts(now time.Time) time.Time {
-	return time.Time{}
-}
-
-// restarted is when a window that renews at renews (zero: not known) is
-// started again: at restart (Restarts) when that is the sooner.
-func restarted(renews, restart time.Time) time.Time {
-	if !restart.IsZero() && (renews.IsZero() || restart.Before(renews)) {
-		return restart
-	}
-	return renews
-}
-
 func (l Limit) applies(model string) bool {
-	return (l.Model == "" || strings.Contains(model, l.Model)) && (l.matches == nil || l.matches(model))
+	return l.Model == "" || strings.Contains(model, l.Model)
 }
 
 // For is what an allowance leaves a request for model at now: the share
@@ -214,7 +188,6 @@ func (a Allowance) Count(model string, now time.Time) (amount, of float64, unit 
 // (cdredfox on X).
 func (a Allowance) Renewal(model string, now time.Time) []time.Time {
 	model = strings.ToLower(model)
-	restart := a.Restarts(now)
 	var ls []Limit
 	for _, l := range a {
 		if !l.applies(model) {
@@ -229,7 +202,6 @@ func (a Allowance) Renewal(model string, now time.Time) []time.Time {
 		if l.RunsOut.After(now) && (l.Resets.IsZero() || l.RunsOut.Before(l.Resets)) {
 			l.Resets = l.RunsOut
 		}
-		l.Resets = restarted(l.Resets, restart)
 		ls = append(ls, l)
 	}
 	sort.SliceStable(ls, func(i, j int) bool {
@@ -256,33 +228,6 @@ func (a Allowance) Full(model string, share float64, now time.Time) time.Time {
 		}
 	}
 	return t
-}
-
-// Pooled says whether a refusal of model for its allowance leaves the
-// account's other models alone: the windows that count model and are full
-// at share are each of some models only (Opus's own week, Cursor's Other
-// Models pool) — or, none known full, no window of the whole account
-// counts it, only pools. Then it is that model which is out, not the
-// account: Cursor's Other Models used up leaves Auto and Composer in
-// theirs (Xiaopodev on X).
-func (a Allowance) Pooled(model string, share float64, now time.Time) bool {
-	model = strings.ToLower(model)
-	full, pooled, whole := false, false, false
-	for _, l := range a {
-		if !l.applies(model) {
-			continue
-		}
-		scoped := l.Model != "" || l.matches != nil
-		if l.Used >= share && (l.Resets.IsZero() || l.Resets.After(now)) {
-			if !scoped {
-				return false
-			}
-			full = true
-		}
-		pooled = pooled || scoped
-		whole = whole || !scoped
-	}
-	return full || pooled && !whole
 }
 
 // budgetSpan is the shortest window that is a budget rather than a rate
@@ -314,31 +259,15 @@ const FreshPace = 100 / (7 * 24.0)
 // what its five hours have left is lost at their reset, so it goes by
 // that, per hour until then — the whole span when not started (#576):
 // ahead of nearly every week, behind only one with more of it to lose
-// sooner. Where the reading may leave a week out (a Claude account only
-// heard of as Claude Code answered, partial) it is instead taken to have
-// a week not started with the share its fullest window has used: those
-// go by what they have used, among the rest as the fresh are. An
-// account whose windows an auto-used reset starts again sooner than they
-// renew (Restarts) goes by that instead, and due is then that time: what
-// it has left is lost there.
+// sooner.
 func (a Allowance) Pace(model string, now time.Time) (pace float64, due time.Time) {
 	model = strings.ToLower(model)
-	restart := a.Restarts(now)
-	// until is how long a window runs from now and renews when; a restart
-	// sooner cuts it short
-	cut := func(until time.Duration, renews time.Time) (time.Duration, time.Time) {
-		if !restart.IsZero() && restart.Before(now.Add(until)) {
-			return restart.Sub(now), restart
-		}
-		return until, renews
-	}
 	any, used := false, 0.0
-	short, partial, shortPace, shortDue := false, false, 0.0, time.Time{}
+	short, shortPace, shortDue := false, 0.0, time.Time{}
 	for _, l := range a {
 		if !l.applies(model) {
 			continue
 		}
-		partial = partial || l.partial
 		u := min(100, max(0, l.Used))
 		if !l.Resets.IsZero() && !l.Resets.After(now) {
 			u = 0 // its reset has passed: empty again
@@ -349,7 +278,6 @@ func (a Allowance) Pace(model string, now time.Time) (pace float64, due time.Tim
 			if l.Resets.After(now) {
 				until, renews = l.Resets.Sub(now), l.Resets
 			}
-			until, renews = cut(until, renews)
 			if p := (100 - u) / max(until, time.Hour).Hours(); !short || p < shortPace {
 				shortPace, shortDue, short = p, renews, true
 			}
@@ -362,13 +290,12 @@ func (a Allowance) Pace(model string, now time.Time) (pace float64, due time.Tim
 		if l.Resets.After(now) {
 			until, renews = l.Resets.Sub(now), l.Resets
 		}
-		until, renews = cut(until, renews)
 		if p := (100 - u) / max(until, time.Hour).Hours(); !any || p < pace {
 			pace, due, any = p, renews, true
 		}
 	}
 	if !any {
-		if short && !partial {
+		if short {
 			return shortPace, shortDue
 		}
 		return (100 - used) / weekSpan.Hours(), time.Time{}
@@ -376,19 +303,10 @@ func (a Allowance) Pace(model string, now time.Time) (pace float64, due time.Tim
 	return pace, due
 }
 
-// Allowances is each of an agent's accounts' allowance by user. Fogway
-// reads no subscription's: there is none.
-func Allowances(agent string) map[string]Allowance {
-	return nil
-}
-
-// OnRenewed has f told when an account's usage windows were started again
-// (a Codex reset spent), or a reading of them (Allowances) finds one it
-// was full in full no more, so what sat out waiting for them can come
-// back; agent is the one its usage is read under (Account.UsageAgent).
-// And, as agent "" and the key's KeyAllowanceID, when a reading of a key's
-// own windows finds one it was full in full no more: its limit raised in
-// its panel, or its usage reset.
+// OnRenewed has f told, as agent "" and the key's KeyAllowanceID, when a
+// reading of a key's own windows finds one it was full in full no more:
+// its limit raised in its panel, or its usage reset. What sat out waiting
+// for it can come back.
 func OnRenewed(f func(agent, user string)) {
 	renewedHooks.Lock()
 	renewedHooks.fs = append(renewedHooks.fs, f)
@@ -439,7 +357,7 @@ func allowanceOf(ws []QuotaWindow, now time.Time) Allowance {
 		if w.Aside {
 			continue
 		}
-		l := Limit{Used: w.Used, Span: w.Span, Model: w.Model, Amount: w.Amount, Of: w.Limit, Unit: w.Unit, matches: w.matches, partial: w.partial, Name: w.Name}
+		l := Limit{Used: w.Used, Span: w.Span, Model: w.Model, Amount: w.Amount, Of: w.Limit, Unit: w.Unit, Name: w.Name}
 		switch {
 		case w.ResetsAt != nil:
 			l.Resets = *w.ResetsAt

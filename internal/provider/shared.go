@@ -69,41 +69,6 @@ func usedUp(q SubscriptionQuota, now time.Time) bool {
 
 var googleTokenURL = "https://oauth2.googleapis.com/token"
 
-// PooledWindows are ws as a page of text shows them: a pool's own windows,
-// named with their pool ("Gemini · 7 days"), in place of the per-model
-// windows drawing on it; ws as it is when it has no pool. A model's window
-// goes only for a pool window of its span: one whose pool has only its
-// 7 days stays, the 5 hours it reads being the only ones to be had (#745).
-func PooledWindows(ws []QuotaWindow) []QuotaWindow {
-	if !slices.ContainsFunc(ws, func(w QuotaWindow) bool { return w.Pool != "" && w.Model == "" }) {
-		return ws
-	}
-	span := func(w QuotaWindow) time.Duration {
-		if w.Span == 0 && w.Model != "" {
-			return modelSpan
-		}
-		return w.Span
-	}
-	pooled := func(m QuotaWindow) bool {
-		return slices.ContainsFunc(ws, func(w QuotaWindow) bool {
-			return w.Pool == m.Pool && w.Model == "" && w.Span == span(m)
-		})
-	}
-	var out []QuotaWindow
-	for _, w := range ws {
-		switch {
-		case w.Pool == "":
-			out = append(out, w)
-		case w.Model == "":
-			w.Name = w.Pool + " · " + w.Name
-			out = append(out, w)
-		case !pooled(w):
-			out = append(out, w)
-		}
-	}
-	return out
-}
-
 func isFile(p string) bool {
 	st, err := os.Stat(p)
 	return err == nil && !st.IsDir()
@@ -206,17 +171,6 @@ type QuotaWindow struct {
 	// day. Smart routing takes it for the window's renewal (cdredfox on X).
 	RunsOutAt *time.Time `json:"runsOutAt,omitempty"`
 	RunsOut   float64    `json:"runsOut,omitempty"`
-	// Family is the model family a per-model window belongs to (Antigravity's
-	// "Gemini 3.1 Pro (High)" is Gemini's), for the GUI to show one figure a
-	// family, the tightest; each window is still here, and routing reads
-	// them one by one.
-	Family string `json:"family,omitempty"`
-	// Pool is the group of models that share one allowance (Antigravity's
-	// "Gemini", "Claude & GPT"): on the group's own windows, a 5-hour and
-	// a weekly, which name no Model, and on each per-model window drawing
-	// on it, for the GUI to show the group's windows in place of its
-	// models'.
-	Pool string `json:"pool,omitempty"`
 
 	// For routing (see Allowances): how long the window runs, zero when
 	// not known; the only models it counts, by a word in their ids
@@ -226,24 +180,6 @@ type QuotaWindow struct {
 	Span  time.Duration `json:"-"`
 	Model string        `json:"-"`
 	Aside bool          `json:"-"`
-	// Capped is set, for the GUI only (WithCapped), on a window an
-	// account's usage cap counts: neither Aside nor unlimited. One model's
-	// own counts for that model (CapHeld), so it is marked like the rest.
-	Capped bool `json:"capped,omitempty"`
-	// CapsSome is set beside Capped on a window that counts some models
-	// only — one model's own, or a pool's — so the cap holds the account
-	// for those alone, and the GUI says which.
-	CapsSome bool `json:"capsSome,omitempty"`
-	// CapID is, beside Capped, how the window is known to a cap of its
-	// own (WindowCapID), for the GUI to set and show one.
-	CapID string `json:"capId,omitempty"`
-	// matches further scopes pools whose membership isn't one model word.
-	matches func(string) bool
-	// partial is set on the windows of a reading that may leave some out:
-	// a Claude account only heard of as Claude Code answered (its
-	// rate_limit_event names one window at a time), never read whole by
-	// /usage — five hours alone there needn't mean no week.
-	partial bool
 }
 
 // SubscriptionQuota is provider-reported allowance usage. This is separate

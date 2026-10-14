@@ -8,9 +8,7 @@ import (
 // An account with the five hours alone (Claude Enterprise) has nothing
 // longer to keep for: Pace goes by what its five hours lose at their
 // reset, the whole span when not started, and Renewal has a five hours
-// not started renewing within five hours — unless the reading may leave
-// a week out (a Claude account only heard of as Claude Code answered),
-// which goes as a fresh week with the share used, as before (#576).
+// not started renewing within five hours (#576).
 func TestFiveHoursAlone(t *testing.T) {
 	now := time.Now()
 	five := 5 * time.Hour
@@ -23,10 +21,6 @@ func TestFiveHoursAlone(t *testing.T) {
 	idle := Allowance{{Used: 0, Span: five}}
 	if p, _ := idle.Pace("m", now); !near(p, 20) {
 		t.Fatalf("not started: %v", p)
-	}
-	ws := []QuotaWindow{{Name: "5 hours", Used: 20, ResetsAt: ptr(now.Add(2 * time.Hour)), Span: five, partial: true}}
-	if p, _ := allowanceOf(ws, now).Pace("m", now); !near(p, 80/(7*24.0)) {
-		t.Fatalf("partial reading, a fresh week: %v", p)
 	}
 	// beside a week, the week decides as ever
 	both := Allowance{{Used: 0, Span: five}, {Used: 40, Resets: now.Add(60 * time.Hour), Span: 7 * 24 * time.Hour}}

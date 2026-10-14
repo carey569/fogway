@@ -66,9 +66,6 @@ func TestAllowancePace(t *testing.T) {
 	if p, _ := (Allowance{{Used: 20, Resets: now.Add(time.Hour), Span: 5 * time.Hour}}).Pace("m", now); !near(p, 80.0/1) {
 		t.Fatalf("five hours alone: what they lose at their reset, per hour: %v", p)
 	}
-	if p, _ := (Allowance{{Used: 20, Resets: now.Add(time.Hour), Span: 5 * time.Hour, partial: true}}).Pace("m", now); !near(p, 80.0/168) {
-		t.Fatalf("five hours alone, the reading partial: a week not started with their share used: %v", p)
-	}
 	// a plugin may tell no span: the window is a budget for as long as its
 	// reset says, else a week
 	if p, due := (Allowance{{Used: 20, Resets: now.Add(time.Hour), Span: 5 * time.Hour}, {Used: 60, Resets: now.Add(2 * 24 * time.Hour)}}).Pace("m", now); !near(p, 40.0/48) || due.IsZero() {

@@ -538,10 +538,6 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 	now := time.Now()
 	d := fallbackCooldown
 	why := failureOf(c, status, body)
-	// read before the allowance is asked again below: out of a pool that
-	// counts some models only, the account's others are still in theirs
-	// (Cursor's Auto with Other Models used up)
-	pooled := why == failQuota && c.pooled(now)
 	// a model the key's plan doesn't serve rests alone, counted by itself
 	// (#1235): the key's other models are still served
 	unserved := why == failOther && modelRefused(status, body)
@@ -639,7 +635,7 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 	// a refusal that names its reset and points to the account's other
 	// models is the model's limit: the others still answer (WorkBuddy's
 	// "您也可以切换其他模型继续使用", #1669)
-	if pooled || unserved || why == failQuota && resetsWhen.Match(wordsOf(body)) && otherModels.Match(wordsOf(body)) {
+	if unserved || why == failQuota && resetsWhen.Match(wordsOf(body)) && otherModels.Match(wordsOf(body)) {
 		id = c.restID()
 	}
 	// out of credit, or of a quota, on a model that costs credits where
@@ -805,8 +801,6 @@ func retryAfter(h http.Header, now time.Time) time.Duration {
 	return min(d, longestWait)
 }
 
-var allowances = provider.Allowances
-
 // Shares of an allowance past which an account is kept for when the others
 // can't take a request: low, and all but used up — where the agent signed
 // in to it is signed in to another, too (provider.SpentShare).
@@ -841,22 +835,10 @@ type left struct {
 	soon    []time.Time // renews as Smart ranks them (Allowance.Renewal)
 	pace    float64     // weekly pace: share of its week left per hour until it renews
 	due     time.Time   // when the window that pace went by renews; zero when not known
-	// restarts: when an auto-used reset starts its windows again
-	// (Allowance.Restarts), zero when none will; dueRestart: due is that,
-	// sooner than the window renews by itself
-	restarts   time.Time
-	dueRestart bool
 	// the count used is the share of, when the vendor counts it so
 	// (Allowance.Count): amount of of, in unit
 	amount, of float64
 	unit       string
-}
-
-// learns: c is a subscription whose allowance isn't known yet, of an agent
-// that tells it as it answers (Claude Code's rate_limit_event).
-func learns(c candidate, lefts map[allowanceKey]left) bool {
-	_, _ = lefts[c.allowanceKey()]
-	return false
 }
 
 // weigh orders one provider's candidates as its routing says, and tells
@@ -876,27 +858,18 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 	if len(cs) == 0 {
 		return cs, wg
 	}
-	// each account's own agent's: a group weighs accounts of several. One
-	// alone is weighed against nobody, but what it has left is still
+	// one alone is weighed against nobody, but what it has left is still
 	// told: the Routing page shows it (#1016)
-	_ = map[string]map[string]provider.Allowance{}
 	now := time.Now()
 	wg.lefts = map[allowanceKey]left{}
 	for _, c := range cs {
-		var a provider.Allowance
-		var ok bool
-
-		// a key that reads its own windows is weighed by them as an
-		// account is; any other key isn't known
-		a, ok = keyAllowance(c.p)
-
-		if ok {
+		// a key that reads its own windows is weighed by them; any other
+		// key isn't known, and counts as unused
+		if a, ok := keyAllowance(c.p); ok {
 			u, r := a.For(c.model, now)
 			pc, due := a.Pace(c.model, now)
 			amt, of, unit := a.Count(c.model, now)
-			rs := a.Restarts(now)
-			wg.lefts[c.allowanceKey()] = left{used: u, renews: r, fullest: a.Fullest(c.model, now), soon: a.Renewal(c.model, now), pace: pc, due: due, amount: amt, of: of, unit: unit,
-				restarts: rs, dueRestart: !rs.IsZero() && due.Equal(rs)} // one not known counts as unused
+			wg.lefts[c.allowanceKey()] = left{used: u, renews: r, fullest: a.Fullest(c.model, now), soon: a.Renewal(c.model, now), pace: pc, due: due, amount: amt, of: of, unit: unit}
 		}
 	}
 	if len(cs) < 2 {
@@ -938,9 +911,6 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 		// and never be known (Anthropic's usage endpoint can turn
 		// fogway away for hours)
 		sort.SliceStable(fine, func(i, j int) bool {
-			if li, lj := learns(fine[i], lefts), learns(fine[j], lefts); li != lj {
-				return li
-			}
 			ri, rj := lefts[fine[i].allowanceKey()].soon, lefts[fine[j].allowanceKey()].soon
 			for k := 0; k < len(ri) || k < len(rj); k++ {
 				var a, b time.Time // to the hour, so a few minutes don't reorder
@@ -1048,7 +1018,7 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 		// would otherwise set a band's top and part two alike behind it
 		var byPace []int
 		for i, c := range cs {
-			if tier(shareOf(c)) == 0 && !learns(c, lefts) {
+			if tier(shareOf(c)) == 0 {
 				byPace = append(byPace, i)
 			}
 		}
@@ -1086,8 +1056,6 @@ func weighRouted(p provider.Provider, cs []candidate, model string, from provide
 				if sa != sb {
 					return sa < sb
 				}
-			} else if la, lb := learns(ca, lefts), learns(cb, lefts); la != lb {
-				return la
 			} else if band[idx[a]] != band[idx[b]] {
 				return band[idx[a]] < band[idx[b]]
 			}

@@ -87,20 +87,11 @@ func (c candidate) isOpenRouterFree() bool {
 }
 
 // restID is the candidate's model's own rest key: a free OpenRouter
-// model's, whose rate limit is its free-tier limit, a subscription's, out
-// of a pool of its allowance that counts some models only (pooled), and
-// any key's or account's model its vendor said it doesn't serve it
-// (modelRefused). An account-level rest stays on restKey.
+// model's, whose rate limit is its free-tier limit, and any key's model
+// its vendor said it doesn't serve it (modelRefused). A key-level rest
+// stays on restKey.
 func (c candidate) restID() string {
 	return c.restKey() + "/" + c.model
-}
-
-// pooled says whether the candidate's subscription, refused for its
-// allowance, is out for its model alone (provider.Allowance.Pooled).
-func (c candidate) pooled(now time.Time) bool {
-
-	return false
-
 }
 
 // who is the key or account itself, however many the provider has on: a

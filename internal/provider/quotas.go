@@ -10,8 +10,8 @@ import (
 // a key, and the keys' balances, as the Usage page shows them. The vendors are asked at once;
 // what doesn't answer before ctx ends comes back with an error.
 func Quotas(ctx context.Context) []SubscriptionQuota {
-	subs, plans, balances := quotas(ctx)
-	return cardsServed(subs, plans, balances, LastServed())
+	plans, balances := quotas(ctx)
+	return cardsServed(plans, balances, LastServed())
 }
 
 // Allotted is Quotas without the keys' balances: the plans whose
@@ -21,24 +21,22 @@ func Allotted(ctx context.Context) []SubscriptionQuota {
 	return PlanQuotas(ctx)
 }
 
-// quotas reads the plans and the balances at once. Fogway has no
-// subscriptions: subs is always empty.
-func quotas(ctx context.Context) (subs, plans, balances []SubscriptionQuota) {
+// quotas reads the plans and the balances at once.
+func quotas(ctx context.Context) (plans, balances []SubscriptionQuota) {
 	b := make(chan []SubscriptionQuota, 1)
 	go func() { b <- KeyBalances(ctx) }()
 	plans = PlanQuotas(ctx)
-	return nil, plans, <-b
+	return plans, <-b
 }
 
 // Quota is one account's or key's allowance as fogway quota --json and
 // the gateway's GET /v1/fogway/quotas tell it, for an agent choosing
 // where to send its work: Provider is the first part of the models'
-// ids (provider/model) for a key's plan or balance, the agent for a
-// subscription.
+// ids (provider/model) of the key's plan or balance.
 type Quota struct {
 	Provider string      `json:"provider"`
 	Name     string      `json:"name"`
-	Kind     string      `json:"kind"` // subscription, plan (bought with a key) or balance (a key's money)
+	Kind     string      `json:"kind"` // plan (bought with a key) or balance (a key's money)
 	Plan     string      `json:"plan,omitempty"`
 	User     string      `json:"user,omitempty"`
 	Windows  []QuotaSpan `json:"windows"`
@@ -73,30 +71,27 @@ type QuotaSpan struct {
 	Amount float64 `json:"amount,omitempty"`
 	Limit  float64 `json:"limit,omitempty"`
 	Unit   string  `json:"unit,omitempty"`
-	Pool   string  `json:"pool,omitempty"` // the shared pool the window draws on ("Gemini")
 }
 
 // QuotaReport is Quotas as Quota, the reset times made absolute from now.
 func QuotaReport(ctx context.Context, now time.Time) []Quota {
-	subs, plans, balances := quotas(ctx)
-	return withServed(quotaReport(subs, plans, balances, now), LastServed())
+	plans, balances := quotas(ctx)
+	return withServed(quotaReport(plans, balances, now), LastServed())
 }
 
 // quotaReport assembles the cards from readings the tests feed directly.
-func quotaReport(subs, plans, balances []SubscriptionQuota, now time.Time) []Quota {
+func quotaReport(plans, balances []SubscriptionQuota, now time.Time) []Quota {
 	out := []Quota{}
 	for _, g := range []struct {
 		kind string
 		qs   []SubscriptionQuota
-	}{{"subscription", subs}, {"plan", plans}, {"balance", balances}} {
+	}{{"plan", plans}, {"balance", balances}} {
 		for _, q := range g.qs {
 			r := Quota{Provider: q.Provider, Name: q.Name, Kind: g.kind, Plan: q.Plan, User: q.User, AsOf: q.AsOf, ReadAt: q.ReadAt,
 				Windows: []QuotaSpan{}, Balance: q.Balance, Error: q.Error, Until: q.Until, Renew: q.Renew}
-			// a pool's own windows stand in for the models' drawing on it,
-			// as the usage page shows them
-			for _, w := range PooledWindows(q.Windows) {
+			for _, w := range q.Windows {
 				s := QuotaSpan{Unlimited: w.Unlimited, Name: w.Name, Used: w.Used, Remaining: max(0, 100-w.Used), ResetsAt: w.ResetsAt, Display: w.Display,
-					Amount: w.Amount, Limit: w.Limit, Unit: w.Unit, Pool: w.Pool}
+					Amount: w.Amount, Limit: w.Limit, Unit: w.Unit}
 				if s.ResetsAt == nil && w.ResetSecs > 0 {
 					t := now.Add(time.Duration(w.ResetSecs) * time.Second)
 					s.ResetsAt = &t

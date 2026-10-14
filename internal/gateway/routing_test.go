@@ -4,11 +4,9 @@ import (
 	"github.com/carey569/fogway/internal/provider"
 )
 
-// Tests don't ask vendors how much of an allowance is used: the gateway
-// would, behind a request, of whatever upstream a test serves — nor how
-// much of a key's own windows.
+// Tests don't ask vendors how much of a key's own windows is used: the
+// gateway would, behind a request, of whatever upstream a test serves.
 func init() {
-	allowances = func(string) map[string]provider.Allowance { return nil }
 	keyAllowance = func(provider.Provider) (provider.Allowance, bool) { return nil, false }
 }
 
