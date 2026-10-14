@@ -103,13 +103,6 @@ const (
 	// rateForget: a rate limit this long after the last one's rest ended
 	// is a new one, a minute again
 	rateForget = 30 * time.Minute
-	// verifyRest: an account Google wants verified (#152) is out until
-	// someone does, or lifts its rest in the app
-	verifyRest = 30 * time.Minute
-	// verifyHold is how long the last one left, refused for verification,
-	// is answered that way by fogway without asking again: an agent's
-	// reconnects don't all land on the account Google has stopped
-	verifyHold = time.Minute
 )
 
 var (
@@ -176,9 +169,6 @@ const (
 	// a changed effort went as (#617), and the request is sent again
 	// without them
 	failUpdate = "update"
-	// failVerify: the account must be verified with its vendor (Google's
-	// VALIDATION_REQUIRED) before it is served again
-	failVerify = "verify"
 	// failRefused: the vendor's safety filter refused the request before
 	// anything was said (#248) — the next one is asked, and nobody rests
 	failRefused = "refused"
@@ -250,9 +240,6 @@ func failure(status int, body []byte) string {
 	if status == http.StatusBadGateway && proxyDown.Match(body) {
 		return failProxy
 	}
-	if _, ok := provider.Verification(body); ok && (status == 401 || status == 403) {
-		return failVerify
-	}
 	// the words are matched decoded, too
 	body = wordsOf(body)
 	switch {
@@ -323,14 +310,11 @@ type Rest struct {
 	// that model's rows only (#1960: Antigravity's Claude & GPT pool used
 	// up showed gemini-3.8-flash, in a pool of its own, as out too).
 	Model string `json:"model,omitempty"`
-	// Link: where the vendor said to verify the account, for failVerify
-	Link string `json:"link,omitempty"`
 
 	// the subscription account resting, when it is one; agent "" and its
 	// provider.KeyAllowanceID for a key out of its own windows
 	agent, user string
-	said        string    // the error it gave, for a failVerify held
-	hold        time.Time // until when a failVerify is answered without asking
+	said        string // the error it gave, for quotaHeld to give again
 }
 
 // renewed lifts the rests of a subscription account whose windows were
@@ -395,16 +379,6 @@ func (s *Server) UnrestAll(key string) int {
 		}
 	}
 	return n
-}
-
-// verifyHeld is the error to give again, without asking, for a candidate
-// its vendor refused a moment ago until the account is verified.
-func verifyHeld(key string) (string, bool) {
-	r, ok := restOf(key)
-	if !ok || r.Why != failVerify || r.said == "" || !time.Now().Before(r.hold) {
-		return "", false
-	}
-	return r.said, true
 }
 
 // resetsIn is how long until a used-up ChatGPT account is back, as its
@@ -566,15 +540,6 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 		if c.full(now).IsZero() && !(c.isOpenRouterFree() && sharedPool) {
 			sink(c.restKey(), now)
 		}
-	case failVerify:
-		d, r.By = verifyRest, "verify"
-		// the error as the agent was given it, and the link in it
-		r.said, r.hold = provider.APIError(body, ""), now.Add(verifyHold)
-		if !json.Valid(body) {
-			link, _ := provider.Verification(body)
-			r.said = provider.VerifyMessage(string(body), link)
-		}
-		r.Link, _ = provider.Verification([]byte(r.said))
 	default:
 		counted := c.restKey()
 		if unserved {
@@ -595,7 +560,7 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 			d, r.By = min(t.Sub(now), longestQuota), "window"
 		}
 	}
-	if why != failOther && why != failVerify {
+	if why != failOther {
 		staleKeyAllowance(c.p) // a key that reads its windows: asked again
 	}
 	r.Until = now.Add(d)

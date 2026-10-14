@@ -443,7 +443,7 @@ func (t *trace) update(r *Route, f func(r *Route)) {
 	if r.Done && !done {
 		t.totals.Requests++
 		for i, try := range r.Tries {
-			if try.Rest != nil && i < len(r.Tries)-1 { // the last rests with nobody after it (failVerify)
+			if try.Rest != nil && i < len(r.Tries)-1 { // the last rests with nobody after it (strictAlone)
 				t.totals.Rerouted++
 			}
 		}

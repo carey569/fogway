@@ -1958,13 +1958,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		var queued int64       // ms it waited for a slot of its key's or account's
 		var laneErr error      // turned away by its key's or account's queue
 		at := &wireAt{}        // the level a translated request was built at
-		if said, ok := verifyHeld(c.restKey()); ok && last {
-			// the account must be verified first (#152): the agent's
-			// reconnects are told so again, not sent on to a vendor that
-			// just refused it
-			held, call.Status, call.Error = true, http.StatusForbidden, said
-			writeError(hw, from, call.Status, said)
-		} else if rested, back, ok := quotaHeld(cands[i:]); ok && last {
+		if rested, back, ok := quotaHeld(cands[i:]); ok && last {
 			// it rests out of its allowance, and so does every key that
 			// was left (#1772: four Ollama Cloud keys out for the week,
 			// each asked again, and refused, on every request): its
@@ -2532,7 +2526,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			try.Fail = failRefused
 		} else {
 			try.Fail = failureOf(c, call.Status, []byte(call.Error))
-			if try.Fail == failVerify && !held || strictAlone {
+			if strictAlone {
 				// the last one left rests too, for the app to show and the
 				// next requests to be held
 				rest := s.restAfter(c, call.Status, hw.header, []byte(call.Error))

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -550,18 +549,13 @@ func EdgeBlocked(b []byte) bool {
 }
 
 // APIError pulls the human message out of an error body when there is one.
-// A firewall's block page is put in plain words (BlockedHint); Google's
-// "verify your account" refusal also says what to do about it, with the
-// link it gave.
+// A firewall's block page is put in plain words (BlockedHint).
 func APIError(b []byte, fallback string) string {
 	if edgeBlocked.Match(b) {
 		if fallback == "" {
 			return BlockedHint
 		}
 		return fallback + " — " + BlockedHint
-	}
-	if link, ok := Verification(b); ok {
-		return VerifyMessage(apiError(b, fallback), link)
 	}
 	if cmdGoNoAPI.Match(b) {
 		return apiError(b, fallback) + " — " + CommandCodeGoHint
@@ -578,72 +572,6 @@ var cmdGoNoAPI = regexp.MustCompile(`(?i)\bGo plan doesn.t include API access`)
 
 // CommandCodeGoHint says where a Go plan's key works.
 const CommandCodeGoHint = "a Go plan's key works in fogway through the Command Code plugin (Plugins › Command Code, then sign in with the key), which asks Command Code as its CLI does; a Command Code API-key provider can't use it"
-
-// verifyWords is a refusal asking for the account to be verified, put in
-// words rather than as VALIDATION_REQUIRED — or already by VerifyMessage.
-var verifyWords = regexp.MustCompile(`(?i)verify your account|account verification required|` + verifyAdvice)
-
-// verifyLink is the link in a message VerifyMessage put in words.
-var verifyLink = regexp.MustCompile(verifyAdvice + `: open (https://[^\s"\\]+) in a browser`)
-
-// Verification says whether an error body is Google's refusal of an account
-// it wants verified first — Cloud Code Assist's 403 whose details say
-// VALIDATION_REQUIRED with a validation_url in their metadata (#152) — and
-// the https link to verify it at, when the body has one.
-func Verification(b []byte) (link string, ok bool) {
-	var v struct {
-		Error struct {
-			Details []struct {
-				Reason   string            `json:"reason"`
-				Metadata map[string]string `json:"metadata"`
-				Links    []struct {
-					URL string `json:"url"`
-				} `json:"links"` // google.rpc.Help
-			} `json:"details"`
-		} `json:"error"`
-	}
-	if json.Unmarshal(b, &v) == nil {
-		help := ""
-		for _, d := range v.Error.Details {
-			if d.Reason == "VALIDATION_REQUIRED" {
-				ok = true
-				link = cmp.Or(link, d.Metadata["validation_url"], d.Metadata["validationUrl"])
-			}
-			for _, l := range d.Links {
-				help = cmp.Or(help, l.URL)
-			}
-		}
-		if ok && link == "" {
-			link = help
-		}
-	}
-	if !ok && !verifyWords.Match(b) {
-		return "", false
-	}
-	if m := verifyLink.FindSubmatch(b); link == "" && m != nil {
-		link = string(m[1]) // said already, by VerifyMessage
-	}
-	if u, err := url.Parse(link); err != nil || u.Scheme != "https" || u.Host == "" {
-		link = ""
-	}
-	return link, true
-}
-
-// verifyAdvice marks a message VerifyMessage has already added to.
-const verifyAdvice = "this Google account needs to be verified"
-
-// VerifyMessage is a verification refusal as the agent and the app show it:
-// the vendor's words, then what to do.
-func VerifyMessage(said, link string) string {
-	said = strings.TrimSpace(said)
-	if strings.Contains(said, verifyAdvice) {
-		return said
-	}
-	if link != "" {
-		return said + " — " + verifyAdvice + ": open " + link + " in a browser signed in to it, verify it, then try again"
-	}
-	return said + " — " + verifyAdvice + ": open the Antigravity app (or Gemini CLI) signed in to it and do what it asks, then try again"
-}
 
 // ErrorType is the kind of error a vendor's body names — the error's type
 // (rate_limit_error, usage_limit_reached), else its code — or "" when it
