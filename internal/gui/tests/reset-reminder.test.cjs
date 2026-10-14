@@ -17,8 +17,8 @@ function server(lang, posts) {
   const fixed = {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd", dock: false, dockWindow: false, proxy: "",
     redact: false, redactPersonal: false, redactWords: [], codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "",
-    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "", version: "0.1.900", dir: "~/.config/fogway",
-    gateway: "http://127.0.0.1:3725", proxyNow: "none", proxySource: "none", visionModels: [], imageGenModels: [], lanURLs: [],
+    trayUsage: "", trayUsageEvery: 3, vision: "", version: "0.1.900", dir: "~/.config/fogway",
+    gateway: "http://127.0.0.1:3725", proxyNow: "none", proxySource: "none", visionModels: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
   };
   let cur = fixed;

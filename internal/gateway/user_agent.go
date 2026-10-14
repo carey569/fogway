@@ -27,10 +27,8 @@ func userAgentFor(p provider.Provider, ua string) string {
 }
 
 // fogwaysOwn is a User-Agent fogway's own requests carry: another fogway's
-// (fogway/…), the classifier's, vision's and search's (fogway-router/1,
-// fogway-vision/1, fogway-search/1), and the image tool's, which names the
-// agent it draws for before its own (claude-code/2.1.0 fogway-image/1)
-// from what the agent told it, not from a User-Agent the agent sent.
+// (fogway/…), and the classifier's, vision's and search's (fogway-router/1,
+// fogway-vision/1, fogway-search/1).
 func fogwaysOwn(ua string) bool {
 	return strings.HasPrefix(ua, "fogway/") || strings.HasPrefix(ua, "fogway-")
 }

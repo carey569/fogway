@@ -1,9 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// An Image recognition or Image generation model picked in Settings › Models
-// that fogway can't find any more (its provider removed or off, the model
-// gone) is said where the setting shows: the picker names the model picked
-// as missing, and a line under the row says what describes or draws in its
-// place — the automatic choice, or nothing — and to pick another. Before,
+// An Image recognition model picked in Settings › Models that fogway can't
+// find any more (its provider removed or off, the model gone) is said where
+// the setting shows: the picker names the model picked as missing, and a
+// line under the row says what describes in its place — the automatic
+// choice, or nothing — and to pick another. Before,
 // the picker showed the gone model's id as if it were in use, and fogway
 // quietly described with its own pick. A model that is found shows as
 // before. English and Chinese; wide and at a phone's width, nothing running
@@ -21,12 +21,12 @@ function settingsPayload(lang, over) {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd", textSize: 100,
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
-    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
+    trayUsage: "", trayUsageEvery: 3, vision: "",
     version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
     visionModels: [{ id: "codex/gpt-6.1-sol", name: "GPT-6.1 Sol", provider: "codex", providerName: "Codex", icon: "openai" }],
     visionAuto: "codex/gpt-6.1-sol",
-    imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
+    workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
     ...over,
   };
@@ -56,13 +56,11 @@ const want = {
   en: {
     pick: "gone/qwen-vl-max · missing",
     vision: [/gone\/qwen-vl-max, picked here, isn't set up any more/, /GPT-6\.1 Sol · Codex, the automatic choice, describes images in its place/, /Pick another model here/],
-    draw: [/gone\/gpt-image-2, picked here, isn't set up any more/, /No other model draws, so a request that names no model is turned away/],
     found: "GPT-6.1 Sol · Codex",
   },
   zh: {
     pick: "gone/qwen-vl-max · 已失效",
     vision: [/这里选的 gone\/qwen-vl-max 已不可用/, /现在由自动选择的 GPT-6\.1 Sol · Codex 代为描述图片/, /请在这里另选一个模型/],
-    draw: [/这里选的 gone\/gpt-image-2 已不可用/, /也没有其他能生图的模型/],
     found: "GPT-6.1 Sol · Codex",
   },
 };
@@ -87,24 +85,20 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => page.errors.push(e.message));
       await page.route("**/*", server(lang, cur));
       await page.goto("http://fogway.test/?view=settings&tab=models");
-      await page.locator("#imagesList .row").nth(1).waitFor();
+      await page.locator("#imagesList .row").first().waitFor();
       return page;
     };
     for (const lang of ["en", "zh"]) {
       for (const width of [1000, 360]) {
-        await t.test(`${lang} at ${width}px: the missing picks are named, with what stands in`, async () => {
+        await t.test(`${lang} at ${width}px: the missing pick is named, with what stands in`, async () => {
           const page = await open(lang, settingsPayload(lang, {
             vision: "gone/qwen-vl-max", visionMissing: "gone/qwen-vl-max",
-            imageGen: "gone/gpt-image-2", imageGenMissing: "gone/gpt-image-2",
           }), width);
-          const [vision, draw] = [page.locator("#imagesList .row").nth(0), page.locator("#imagesList .row").nth(1)];
+          const vision = page.locator("#imagesList .row").first();
           assert.equal((await vision.locator("button.rt-cond").textContent()).trim(), want[lang].pick);
           const line = vision.locator(".vision-missing");
           assert.equal(await line.isVisible(), true);
           for (const re of want[lang].vision) assert.match(await line.textContent(), re);
-          const drawLine = draw.locator(".image-gen-missing");
-          assert.equal(await drawLine.isVisible(), true);
-          for (const re of want[lang].draw) assert.match(await drawLine.textContent(), re);
           // the line wraps inside the row, and the page doesn't run off
           // to the side at a phone's width
           const fit = await page.evaluate(() => {
@@ -121,7 +115,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const page = await open(lang, settingsPayload(lang, { vision: "codex/gpt-6.1-sol" }), 1000);
         const vision = page.locator("#imagesList .row").nth(0);
         assert.equal((await vision.locator("button.rt-cond").textContent()).trim(), want[lang].found);
-        assert.equal(await page.locator("#imagesList .vision-missing, #imagesList .image-gen-missing").count(), 0);
+        assert.equal(await page.locator("#imagesList .vision-missing").count(), 0);
         assert.deepEqual(page.errors, []);
         await page.context().close();
       });

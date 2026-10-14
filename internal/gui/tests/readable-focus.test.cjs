@@ -9,7 +9,7 @@ const assets = path.resolve(__dirname, "../assets");
 const settings = { theme: "light", lang: "en", tray: "panel", textSize: 100, currency: "usd",
   dir: "/config/fogway", gateway: "http://127.0.0.1:3999", version: "0.1.900",
   proxy: "", proxyNow: "none", proxySource: "none", redactWords: [], otel: {},
-  visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
+  visionModels: [], workbuddyCheckins: [], lanURLs: [],
   fx: { rate: 7.2, at: new Date().toISOString(), stale: false } };
 const providers = { providers: [{ id: "acme", name: "Acme", icon: "generic", agents: [],
   chat: "https://acme.test/v1", headers: {}, fallback: [], key: { set: true, masked: "sk-…1234" },

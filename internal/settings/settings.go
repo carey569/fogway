@@ -173,12 +173,6 @@ type Settings struct {
 	// fitted to the model's own levels when it is asked, or empty for
 	// fogway's choice, the least the model has (gateway.visionEffort).
 	VisionEffort string `json:"visionEffort,omitempty"`
-	// ImageGen is the model fogway's generate_image tool draws with (the
-	// gateway's /v1/images/generations when a request names no model): a
-	// model's id, "off", or empty for one fogway picks (gateway.drawer).
-	// "off" turns the video a request that names no model gets off too
-	// (gateway.videomaker).
-	ImageGen string `json:"imageGen,omitempty"`
 	// Searcher is the provider that searches the web for a model that
 	// can't: "<provider>" with the small model fogway picks of it,
 	// "<provider>/<model>", or empty for the one fogway picks
@@ -1087,10 +1081,6 @@ func save(s Settings, recording bool) error {
 	}
 	if s.SearchFirst != "" && s.SearchFirst != SearchFirstAPI {
 		return fmt.Errorf("web search must go first to %q or %q, not %q", SearchFirstModel, SearchFirstAPI, s.SearchFirst)
-	}
-	s.ImageGen = strings.TrimSpace(s.ImageGen)
-	if s.ImageGen != "" && s.ImageGen != "off" && !strings.Contains(s.ImageGen, "/") {
-		return fmt.Errorf("the image generation model must be a model's id such as openai/gpt-image-1, or off, not %q", s.ImageGen)
 	}
 	rules, err := redact.CheckRules(s.RedactRules)
 	if err != nil {

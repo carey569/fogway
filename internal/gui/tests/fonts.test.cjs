@@ -18,7 +18,7 @@ const catalogue = [
 async function open(browser, lang = "en", options = {}) {
   const context = await browser.newContext({ locale: lang === "zh" ? "zh-CN" : "en-US", viewport: options.viewport || { width: 1000, height: 820 } });
   const api = { posts: [], reads: 0, fonts: structuredClone(catalogue), fontError: false, saveError: false, delay: 0,
-    cur: { lang, theme: "light", textSize: 100, currency: "usd", tray: "panel", version: "0.1.0", visionModels: [], imageGenModels: [], ...options.settings } };
+    cur: { lang, theme: "light", textSize: 100, currency: "usd", tray: "panel", version: "0.1.0", visionModels: [], ...options.settings } };
   const page = await context.newPage();
   page.setDefaultTimeout(5000);
   const errors = [];

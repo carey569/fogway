@@ -18,10 +18,10 @@ const quotas = [
 function server(posts) {
   let cur = {
     theme: "light", lang: "en", tray: "panel", quotaLeft: false, currency: "usd",
-    trayUsage: "", trayUsages: [], trayUsageEvery: 3, vision: "", imageGen: "",
+    trayUsage: "", trayUsages: [], trayUsageEvery: 3, vision: "",
     version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxy: "", proxyNow: "none", proxySource: "none", login: false, redactWords: [],
-    visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
+    visionModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
   };
   return async (route) => {

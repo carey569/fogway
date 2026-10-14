@@ -19099,7 +19099,6 @@ function renderImages(s, keep) {
     "the least it has", (e) => savePrefs({ ...keep, visionEffort: e }));
   r.append(who, val);
   box.append(r);
-  renderImageGen(s, keep, box);
   // the same image recognition as an MCP server of the gateway's (JonahFu
   // on X), for an agent to mount as its analyze_image tool
   const mcpURL = mcpAddress(s, "/mcp/fogway/vision");
@@ -19111,57 +19110,6 @@ function renderImages(s, keep) {
   mcp.append(mwho, mval);
   mcp.id = "visionMcpRow";
   box.append(mcp);
-}
-
-// renderImageGen: the model fogway's generate_image tool draws with — the
-// one fogway picks, one named, or none — and where agents are given the tool.
-function renderImageGen(s, keep, box) {
-  const models = s.imageGenModels || [];
-  const named = (id) => {
-    const m = models.find((x) => x.id === id);
-    return m ? `${m.name || m.id} · ${m.providerName}` : id;
-  };
-  const icOf = (id) => models.find((x) => x.id === id)?.icon;
-  const v = s.imageGen || "";
-  // a pick that stands for a listed model shows as it, and is kept as saved
-  // until another is picked: a ChatGPT account's gpt-image-2.5 is its one
-  // GPT Image, as the backend draws the same for any name (#1865)
-  const shown = s.imageGenShown || v;
-  // a picked model fogway can't find any more is said, as Image recognition's
-  const gone = v && v === s.imageGenMissing;
-  const r = el("div", "row pref");
-  const who = el("div", "who");
-  const sub = el("div", "sub",
-    v === "off" ? t("Agents given Fogway Image can't generate images or videos: the tool says it is off")
-    : t("The model Fogway Image draws with. Give an agent the tool from Library → MCP servers → Discover → Fogway Image; images are saved in its project"));
-  who.append(el("div", "name", t("Image generation")), sub);
-  // ChatGPT's images backend picks the model itself, so its one entry says
-  // so where it draws, picked or automatic (#1865)
-  const draws = v === "off" || gone ? "" : v ? shown : s.imageGenAuto;
-  if (models.find((x) => x.id === draws)?.vendorPicks) who.append(el("div", "sub image-gen-vendor", t("ChatGPT's image backend picks the model itself, whichever is named, so one GPT Image is listed")));
-  if (gone) who.append(el("div", "sub err image-gen-missing", s.imageGenAuto
-    ? t("{model}, picked here, isn't set up any more: its provider was removed or turned off, or no longer has it. {auto}, the automatic choice, draws in its place. Pick another model here.", { model: v, auto: named(s.imageGenAuto) })
-    : t("{model}, picked here, isn't set up any more: its provider was removed or turned off, or no longer has it. No other model draws, so a request that names no model is turned away. Pick another model here.", { model: v })));
-  const b = el("button", "rt-cond on");
-  if (v === "off") b.append(el("span", "", t("Off")));
-  else if (gone) b.append(icon("generic"), el("span", "", v + " · " + t("missing")));
-  else if (v) b.append(icon(icOf(shown) || "generic"), el("span", "", named(shown)));
-  else {
-    if (s.imageGenAuto) b.append(icon(icOf(s.imageGenAuto) || "generic"));
-    b.append(el("span", "", s.imageGenAuto ? t("Automatic") + " · " + named(s.imageGenAuto) : t("Automatic") + " · " + t("no model that draws")));
-  }
-  // a routing group (no provider of its own) goes with the others, as in
-  // an agent's picker, not in a group of its own with its own rail button
-  const opt = (x) => ({ value: x.id, label: x.name || x.id, note: x.vendorPicks ? x.providerName + " · " + t("ChatGPT picks the model") : x.providerName, icon: x.icon, group: x.provider ? x.providerName : ROUTING_GROUPS, ref: x.id });
-  b.onclick = (ev) => openPicker({ id: "", name: "", fields: [] }, { key: "imageGen", label: "model", value: shown, options: [
-    { value: "", label: t("Automatic"), note: s.imageGenAuto ? named(s.imageGenAuto) : t("no model that draws"), reset: true },
-    { value: "off", label: t("Off"), note: t("no images generated"), reset: true },
-    ...models.map(opt)],
-  onPick: (id) => { if (id !== shown) savePrefs({ ...keep, imageGen: id }); } }, b, ev);
-  const val = el("div", "val");
-  val.append(b);
-  r.append(who, val);
-  box.append(r);
 }
 
 // mcpAddress: where one of the gateway's own MCP servers is, at path. A
@@ -20223,7 +20171,7 @@ function prefsKeep(s) {
     noStats: !!s.noStats, noUsageStats: !!s.noUsageStats,
     memberModel: !!s.memberModel, noLoopGuard: !!s.noLoopGuard, refusalRetries: s.refusalRetries ?? null,
     noUpdatePill: !!s.noUpdatePill, noAutoUpdate: !!s.noAutoUpdate, updateEvery: s.updateEvery || 360,
-    trayUsage: s.trayUsage || "", trayUsageEvery: s.trayUsageEvery || 3, trayNoLogos: !!s.trayNoLogos, trayNoBird: !!s.trayNoBird, vision: s.vision || "", visionEffort: s.visionEffort || "", searcherEffort: s.searcherEffort || "", imageGen: s.imageGen || "", searcher: s.searcher || "", searchFirst: s.searchFirst || "", currency: s.currency || "usd",
+    trayUsage: s.trayUsage || "", trayUsageEvery: s.trayUsageEvery || 3, trayNoLogos: !!s.trayNoLogos, trayNoBird: !!s.trayNoBird, vision: s.vision || "", visionEffort: s.visionEffort || "", searcherEffort: s.searcherEffort || "", searcher: s.searcher || "", searchFirst: s.searchFirst || "", currency: s.currency || "usd",
     chineseUnits: !!s.chineseUnits, usageAlert: s.usageAlert || 0, balanceAlert: s.balanceAlert || 0, resetReminder: s.resetReminder || 0,
     turnDoneAlert: s.turnDoneAlert || 0 };
 }

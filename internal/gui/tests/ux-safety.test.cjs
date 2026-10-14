@@ -9,7 +9,7 @@ const assets = path.resolve(__dirname, "../assets");
 function fixture(lang, posts) {
   let settings = { theme: "light", lang, tray: "panel", currency: "usd", textSize: 100,
     version: "0.1.700", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3999",
-    proxy: "", proxyNow: "none", proxySource: "none", redactWords: [], visionModels: [], imageGenModels: [],
+    proxy: "", proxyNow: "none", proxySource: "none", redactWords: [], visionModels: [],
     workbuddyCheckins: [], lanURLs: [], otel: {}, fx: { rate: 7.2, at: new Date().toISOString(), stale: false } };
   const relay = { id: "relay", name: "Relay", icon: "generic", host: "relay.test", chat: "https://relay.test/v1",
     responses: "", anthropic: "", models: [{ id: "fixture-model", name: "Fixture model", on: true }], agents: [], fallback: [], headers: { "X-Fixture": "kept" },

@@ -21,10 +21,10 @@ function server(lang, posts, web) {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd", textSize: 100,
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     noStats: false,
-    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
+    trayUsage: "", trayUsageEvery: 3, vision: "",
     version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
-    visionModels: [], imageGenModels: [], lanURLs: [],
+    visionModels: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
   };
   return async (route) => {

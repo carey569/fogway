@@ -42,7 +42,7 @@ function server(lang, ctl, update) {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd",
     version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3999",
     proxyNow: "none", proxySource: "none", login: false, redactWords: [],
-    visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
+    visionModels: [], workbuddyCheckins: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
   };
   return async (route) => {

@@ -23,10 +23,10 @@ function settingsPayload(over) {
     theme: "light", lang: "en", tray: "panel", quotaLeft: false, currency: "usd",
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
     codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
-    trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
+    trayUsage: "", trayUsageEvery: 3, vision: "",
     version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
-    visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
+    visionModels: [], workbuddyCheckins: [], lanURLs: [],
     titleModels: [
       { id: "deepseek/deepseek-v4-flash", name: "DeepSeek V4 Flash", provider: "deepseek", providerName: "DeepSeek", icon: "deepseek" },
       { id: "group/cheap", name: "cheap", provider: "", providerName: "Routing groups" },

@@ -397,16 +397,6 @@ type settingsJSON struct {
 	TitleModels []modelRef `json:"titleModels"`
 	// what each of the disabled models (#1867) turns off now, by pattern
 	DisabledHits map[string][]string `json:"disabledHits,omitempty"`
-	// the model fogway's generate_image tool draws with when ImageGen
-	// names none, and those that can be named
-	ImageGenAuto string `json:"imageGenAuto,omitempty"`
-	// the ImageGen the user picked when fogway can't find it any more
-	ImageGenMissing string `json:"imageGenMissing,omitempty"`
-	// the listed model the ImageGen the user picked stands for, when it
-	// isn't listed itself: a ChatGPT account's gpt-image-2.5, saved when
-	// fogway listed it, is its one GPT Image (gateway.ListedDrawer, #1865)
-	ImageGenShown  string     `json:"imageGenShown,omitempty"`
-	ImageGenModels []modelRef `json:"imageGenModels"`
 	// the web search APIs a model's search goes to when no provider can
 	// search (#419), their keys masked; the ones that can be added; and
 	// the provider that searches first, if one does
@@ -593,7 +583,6 @@ func settingsState() settingsJSON {
 		}
 	}
 	searchState(&s)
-	s.ImageGenModels = []modelRef{}
 	// the Codex subagents row's warning: fogway's multi-agent V1 doesn't reach
 	// Codex where its own multi_agent_v2 is on in the config fogway routes, and
 	// fogway writes nothing there — the setting is the user's to turn off
@@ -1121,12 +1110,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		if v := strings.TrimSpace(in.Vision); v != "" && v != "off" && v != cur.Vision {
 			if _, _, ok := provider.Resolve(v); !ok {
 				fail(rw, fmt.Errorf("no model %s to describe images", v))
-				return
-			}
-		}
-		if v := strings.TrimSpace(in.ImageGen); v != "" && v != "off" && v != cur.ImageGen {
-			if _, _, ok := provider.Resolve(v); !ok {
-				fail(rw, fmt.Errorf("no model %s to generate images", v))
 				return
 			}
 		}

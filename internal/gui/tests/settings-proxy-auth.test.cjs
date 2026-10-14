@@ -13,7 +13,7 @@ function server(lang, posts, proxy = "") {
     theme: "light", lang, tray: "panel", currency: "usd", textSize: 100,
     proxy, proxyNow: proxy, proxySource: proxy ? "settings" : "none",
     trayUsageEvery: 3, version: "test", dir: "/test", lanURLs: [],
-    visionModels: [], imageGenModels: [], workbuddyCheckins: [],
+    visionModels: [], workbuddyCheckins: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
   };
   return async (route) => {
