@@ -97,7 +97,7 @@
     "memory read at {bw} GB/s · {c} billion multiply-adds a second": "内存读取 {bw} GB/s · 每秒 {c10} 亿次乘加",
     "Speeds marked measured come from the model running here; the others are estimated and set right by it.": "标为“实测”的是模型在本机实际运行测得的速度，其余为估算，并已按实测结果校正。",
     "Estimates from this computer's figures. A model is measured once it runs here, and that is what counts.": "以上为根据本机硬件测得的估算值；模型装好运行后会自动实测一次，以实测为准。",
-    "Use {model}": "安装并使用{model}",
+    "Install and use {model}": "安装并使用{model}",
     "Measuring…": "正在实测…",
     "Measure the running model": "实测当前模型",
     "for 8 GB of memory: routes well and does small tasks; the 4B catches more of what is sensitive": "适合 8 GB 内存：路由判断够用，能做小任务；识别敏感内容不如 4B 稳",
@@ -247,7 +247,7 @@
     const cur = data.config?.model || {};
     const want = pick && data.catalog.find((c) => c.name === pick.model);
     if (want && (!data.config?.on || cur.repo !== want.repo || cur.file !== want.file)) {
-      const use = el("button", "text action primary", t("Use {model}", { model: t(pick.title) }));
+      const use = el("button", "text action primary", t("Install and use {model}", { model: t(pick.title) }));
       use.disabled = assessing || measuring;
       use.onclick = () => act("save", { model: { repo: want.repo, file: want.file } });
       acts.append(use);
