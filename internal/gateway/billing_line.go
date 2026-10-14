@@ -17,9 +17,7 @@ import (
 // every turn: 4% of a day's input read from the cache, against 96–99%
 // without the line (#1600, justrun1983). It goes on only to a Claude model
 // asked on Anthropic's Messages API (Anthropic's own, a relay's, Bedrock's),
-// as Claude Code sent it. The Claude subscription's run sends its own
-// (withoutBillingHeader), another fogway decides for the provider it picks,
-// and Code Assist is sent it as before (antigravityTurnsAway, #666).
+// as Claude Code sent it.
 
 // billingLine is a system block that is the billing line and nothing else.
 var billingLine = regexp.MustCompile(`^x-anthropic-billing-header:(\s*[A-Za-z_]+=[^;\s]*;)*\s*$`)

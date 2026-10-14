@@ -61,7 +61,7 @@ func (b *blockPricer) as(prov, model, served, effort string) pricedAs {
 		prov = id
 	}
 	a := pricedAs{provider: prov, flags: swapKnown}
-	sent := provider.SentNameIn(b.wires, prov, model, effort)
+	sent := provider.UpstreamNameIn(b.wires, prov, model)
 	if served != "" && Swapped(sent, served) && !(SameSpelled(model, served) || ServingName(model, served) || RelayRenamed(model, served)) {
 		a.flags |= 2
 	}

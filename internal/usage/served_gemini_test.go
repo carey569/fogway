@@ -45,25 +45,15 @@ func TestSwappedGeminiServingName(t *testing.T) {
 	}
 }
 
-// The requests log reads an Antigravity record of gemini-3.8-flash answered
-// as gemini-3.8-flash-n as not swapped, at every level it went out at; a
-// row of gpt-5 answered by gpt-5-mini is still marked.
+// The requests log reads a record of gemini-3.8-flash answered as
+// gemini-3.8-flash-n as not swapped, at every level it went out at; a row
+// of gpt-5 answered by gpt-5-mini is still marked.
 func TestLedgerGeminiServingNameIsNoSwap(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
-	// Antigravity's own list on 2026-10-08 for the 3.8 Flash family
-	raw := []catalog.Model{
-		{ID: "gemini-3.8-flash-high", Name: "Gemini 3.8 Flash (High)"},
-		{ID: "gemini-3.8-flash-low", Name: "Gemini 3.8 Flash (Low)"},
-		{ID: "gemini-3.8-flash-medium", Name: "Gemini 3.8 Flash (Medium)"},
-		{ID: "gemini-3.8-flash-tiered"},
-	}
-	if err := catalog.SaveLive("antigravity", "", raw); err != nil {
-		t.Fatal(err)
-	}
 	catalog.Reset()
 	t.Cleanup(catalog.Reset)
 	os.MkdirAll(filepath.Dir(Path()), 0o755)
@@ -71,8 +61,8 @@ func TestLedgerGeminiServingNameIsNoSwap(t *testing.T) {
 	Append(Record{Time: now, Provider: "openai", Host: "api.openai.com", Model: "gpt-5",
 		Served: "gpt-5-mini-2025-08-07", Input: 10, Output: 1, Status: 200})
 	for i, effort := range []string{"", "low", "medium", "high"} {
-		Append(Record{Time: now.Add(time.Duration(i+1) * time.Minute), Provider: "antigravity",
-			Host: "daily-cloudcode-pa.googleapis.com", Model: "gemini-3.8-flash", Effort: effort,
+		Append(Record{Time: now.Add(time.Duration(i+1) * time.Minute), Provider: "gemini",
+			Host: "generativelanguage.googleapis.com", Model: "gemini-3.8-flash", Effort: effort,
 			Served: "gemini-3.8-flash-n", Input: 10, Output: 1, Status: 200})
 	}
 	rows, _, _ := Ledger(All, Filter{})

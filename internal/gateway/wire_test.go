@@ -14,7 +14,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/carey569/fogway/internal/catalog"
 	"github.com/carey569/fogway/internal/provider"
 	"github.com/carey569/fogway/internal/settings"
 	"github.com/carey569/fogway/internal/usage"
@@ -826,31 +825,11 @@ func TestUpstreamNameWildcardStandsWhereverItStands(t *testing.T) {
 }
 
 // A turn's route and its ledger row are two views of the one call, so they
-// have to judge it against one name: on an Antigravity account the call
-// goes out under the variant of the model the effort picks, so a relay that
-// answers with that very id has not swapped anything — and one that answers
-// with another level's id has, whichever of the two the reader is looking
-// at. The route read the model fogway knows where the ledger read the id
-// that went out, and told the user two different things about the same
-// reply.
-//
-// The provider here is one of the user's own under an id of its own, which is
-// the shape the two views agree on by rule and not by coincidence: a relay's
-// id names no account, so neither view reaches for a variant, and both read
-// the reply back by the one name that went out. An Antigravity account's
-// provider is not a shape a test can build here — it speaks Code Assist,
-// which fogway cannot point at a relay — and the rule keyed by the account is
-// read in internal/provider, where the account is what a caller hands in.
+// judge it against one name, the one it went out under: a relay that
+// answers with that very id has not swapped anything, and one that answers
+// with another id has, whichever of the two the reader is looking at.
 func TestUpstreamNameReadTheSameByTheRouteAndTheLedger(t *testing.T) {
 	fresh(t)
-	var raw []catalog.Model
-	for _, l := range []string{"gemini-3.7-flash-high - High", "gemini-3.7-flash-low - Low", "gemini-3.7-flash-medium - Medium"} {
-		id, name, _ := strings.Cut(l, " - ")
-		raw = append(raw, catalog.Model{ID: id, Name: name})
-	}
-	if err := catalog.SaveLive("antigravity", "", raw); err != nil {
-		t.Fatal(err)
-	}
 	// a relay that answers with an id of its own choosing, the way a vendor
 	// serves a model under a name of its own and says which answered
 	answers := ""
@@ -867,10 +846,10 @@ func TestUpstreamNameReadTheSameByTheRouteAndTheLedger(t *testing.T) {
 	}))
 	t.Cleanup(relay.Close)
 	putProvider(t, map[string]any{
-		"id": "ag-relay", "name": "AG Relay", "key": "k", "chat": relay.URL,
+		"id": "relay", "name": "Relay", "key": "k", "chat": relay.URL,
 		"models": []string{"gemini-3.7-flash"},
 	})
-	if err := provider.SetUpstreamName("ag-relay/*", "vendor-c/*"); err != nil {
+	if err := provider.SetUpstreamName("relay/*", "vendor-c/*"); err != nil {
 		t.Fatal(err)
 	}
 	s := New()
@@ -878,7 +857,7 @@ func TestUpstreamNameReadTheSameByTheRouteAndTheLedger(t *testing.T) {
 		t.Helper()
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("POST", "/v1/messages", strings.NewReader(
-			`{"model":"ag-relay/gemini-3.7-flash","max_tokens":1024,"stream":true,`+
+			`{"model":"relay/gemini-3.7-flash","max_tokens":1024,"stream":true,`+
 				`"thinking":{"type":"enabled","budget_tokens":24000},`+
 				`"messages":[{"role":"user","content":"hi"}]}`))
 		s.Handler().ServeHTTP(rec, req)
@@ -905,75 +884,7 @@ func TestUpstreamNameReadTheSameByTheRouteAndTheLedger(t *testing.T) {
 	answers = "vendor-c/gemini-3.7-flash-high"
 	route, row = turn()
 	if !route.Swapped || !row.Swapped {
-		t.Errorf("the relay answered with another level's id: route swapped %v, ledger %v", route.Swapped, row.Swapped)
-	}
-}
-
-// A route reads a turn's reply against the name the call really went out
-// under, and on an Antigravity account that name is the variant of the model
-// the effort picked — so the account is the question, not the provider's id.
-// The two are one id today because an account provider is built with its
-// account's own id, and a test that builds a provider of an account's own id
-// with no account behind it says nothing about which of the two the rule is
-// keyed by: it is the shape where they come apart, and the relay here is
-// asked for the model fogway knows, so no level of the family is what the
-// route has to read the reply back by.
-//
-// Only the route is asserted: a record keeps the provider id and no account,
-// and reads itself back by that id (SentNameIn), which is the whole of what
-// the ledger has to work from.
-func TestRouteJudgesTheUpstreamNameByTheAccountAndNotByTheProvidersId(t *testing.T) {
-	fresh(t)
-	var raw []catalog.Model
-	for _, l := range []string{"gemini-3.7-flash-high - High", "gemini-3.7-flash-low - Low", "gemini-3.7-flash-medium - Medium"} {
-		id, name, _ := strings.Cut(l, " - ")
-		raw = append(raw, catalog.Model{ID: id, Name: name})
-	}
-	if err := catalog.SaveLive("antigravity", "", raw); err != nil {
-		t.Fatal(err)
-	}
-	answers := ""
-	relay := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/event-stream")
-		io.WriteString(w, `data: {"id":"x","model":`+strconv.Quote(answers)+
-			`,"choices":[{"index":0,"delta":{"role":"assistant","content":"hi"},"finish_reason":"stop"}],`+
-			`"usage":{"prompt_tokens":5,"completion_tokens":3}}`+"\n\n")
-		io.WriteString(w, "data: [DONE]\n\n")
-	}))
-	t.Cleanup(relay.Close)
-	putProvider(t, map[string]any{
-		"id": "antigravity", "name": "Antigravity", "key": "k", "chat": relay.URL,
-		"models": []string{"gemini-3.7-flash"},
-	})
-	if err := provider.SetUpstreamName("antigravity/*", "vendor-c/*"); err != nil {
-		t.Fatal(err)
-	}
-	s := New()
-	turn := func() Route {
-		t.Helper()
-		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("POST", "/v1/messages", strings.NewReader(
-			`{"model":"antigravity/gemini-3.7-flash","max_tokens":1024,"stream":true,`+
-				`"thinking":{"type":"enabled","budget_tokens":24000},`+
-				`"messages":[{"role":"user","content":"hi"}]}`))
-		s.Handler().ServeHTTP(rec, req)
-		if rec.Code != 200 {
-			t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
-		}
-		return lastRoute(s)
-	}
-
-	// the relay was asked for the model under its provider's own name, and
-	// answered with that id: nothing swapped
-	answers = "vendor-c/gemini-3.7-flash"
-	if r := turn(); r.Swapped {
-		t.Errorf("the relay answered with the id it was asked for, which is no swap: the route says %v", r.Swapped)
-	}
-
-	// a level of the family is another model, and the route reads it as one
-	answers = "vendor-c/gemini-3.7-flash-high"
-	if r := turn(); !r.Swapped {
-		t.Errorf("the relay answered with a level's id: the route says swapped %v", r.Swapped)
+		t.Errorf("the relay answered with another id: route swapped %v, ledger %v", route.Swapped, row.Swapped)
 	}
 }
 

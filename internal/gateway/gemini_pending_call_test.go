@@ -276,9 +276,8 @@ func TestGeminiAnsweredCallsUnchanged(t *testing.T) {
 
 // The synthetic answer goes in a turn of its own before what the user said
 // (a turn mixing a functionResponse with text is turned away, #1533), in
-// the turn of answers the client already sent, or, for a Claude model on
-// Antigravity, in the one tool_result turn; a call with no id answered by
-// name is left as it is.
+// the turn of answers the client already sent; a call with no id answered
+// by name is left as it is.
 func TestPairFunctionTurnsShapes(t *testing.T) {
 	call := func(id, name string) map[string]any {
 		fc := map[string]any{"name": name}
@@ -317,19 +316,17 @@ func TestPairFunctionTurnsShapes(t *testing.T) {
 		return strings.Join(out, " ")
 	}
 	for _, c := range []struct {
-		name     string
-		in       []map[string]any
-		agClaude bool
-		want     string
+		name string
+		in   []map[string]any
+		want string
 	}{
-		{"before the user's words", []map[string]any{turn("user", text), turn("model", call("a", "A")), turn("user", text)}, false, "user:T model:C user:R user:T"},
-		{"beside the client's answers", []map[string]any{turn("user", text), turn("model", call("a", "A"), call("b", "B")), turn("user", resp("a", "A")), turn("user", text)}, false, "user:T model:CC user:RR user:T"},
-		{"one tool_result turn on Antigravity's Claude", []map[string]any{turn("user", text), turn("model", call("a", "A")), turn("user", text)}, true, "user:T model:C user:RT"},
-		{"last", []map[string]any{turn("user", text), turn("model", call("a", "A"))}, false, "user:T model:C user:R"},
-		{"no id, answered by name", []map[string]any{turn("user", text), turn("model", call("", "A")), turn("user", resp("", "A")), turn("user", text)}, false, "user:T model:C user:R user:T"},
+		{"before the user's words", []map[string]any{turn("user", text), turn("model", call("a", "A")), turn("user", text)}, "user:T model:C user:R user:T"},
+		{"beside the client's answers", []map[string]any{turn("user", text), turn("model", call("a", "A"), call("b", "B")), turn("user", resp("a", "A")), turn("user", text)}, "user:T model:CC user:RR user:T"},
+		{"last", []map[string]any{turn("user", text), turn("model", call("a", "A"))}, "user:T model:C user:R"},
+		{"no id, answered by name", []map[string]any{turn("user", text), turn("model", call("", "A")), turn("user", resp("", "A")), turn("user", text)}, "user:T model:C user:R user:T"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			if got := shape(pairFunctionTurns(c.in, false, c.agClaude)); got != c.want {
+			if got := shape(pairFunctionTurns(c.in)); got != c.want {
 				t.Fatalf("got %s, want %s", got, c.want)
 			}
 		})

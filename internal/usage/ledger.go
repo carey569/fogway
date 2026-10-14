@@ -278,11 +278,7 @@ func (l Ledgered) Filtered(f Filter) Ledgered {
 // after a name was set for it, reads as a swap although the vendor answered
 // with the very model that was asked for. A record keeps the canonical id
 // and the name the vendor's own reply gave (served_model) and not the name
-// the request was sent under, so this is the only name there is to judge by
-// — read as the name that went out, which the effort a record keeps of
-// makes exact: an Antigravity account is asked for the variant of the model
-// that level picks, so a reply naming that one is the model that was asked
-// for and not another, whatever the family it is a level of.
+// the request was sent under, so this is the only name there is to judge by.
 // It is how ledgerWith's loop already treats the rest of a row: a provider
 // renamed since is put back to the id it has now, and the names in force now
 // are what the catalog lists the models under as well.
@@ -383,7 +379,7 @@ func ledgerMatched(since, until time.Time, f Filter, recs []Record, logs []sessi
 		}
 		sent := r.Model
 		if source == "" {
-			sent = provider.SentNameIn(wires, r.Provider, r.Model, r.Effort)
+			sent = provider.UpstreamNameIn(wires, r.Provider, r.Model)
 		}
 		row := Row{Record: r, Swapped: r.Served != "" && Swapped(sent, r.Served), Routed: GroupRouted(sent, r.Served), Source: source}
 		if pr != nil && r.Input+r.Output > 0 {

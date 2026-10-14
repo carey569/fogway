@@ -51,12 +51,11 @@ func bareModel(m string) string {
 
 // Swapped reports whether served is another model than sent: not the same
 // name, however dated, pinned or prefixed. A call that went out as one level
-// of a model (an Antigravity account's gemini-3.8-flash-medium) answered
-// under the model's own name is that model at that level: Antigravity's
-// reply names the family, not the variant (#462). Another level is another
-// model, as AntigravitySentID has it. A vendor's "auto" (Copilot's,
-// Cursor's) asked it to pick, so whichever answers wasn't swapped in, nor
-// is the member another fogway's routing group sent it to (GroupRouted),
+// of a model (gemini-3.8-flash-medium) answered under the model's own name
+// is that model at that level: the reply names the family, not the variant
+// (#462). Another level is another model. A vendor's "auto" asked it to
+// pick, so whichever answers wasn't swapped in, nor is the member a routing
+// group sent it to (GroupRouted),
 // nor a vendor's own name for the deployment serving the model
 // (ServingName), nor the model a relay sold under a name of its own
 // (RelayRenamed).

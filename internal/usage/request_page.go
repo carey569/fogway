@@ -316,7 +316,7 @@ func queryPage(p Period, f Filter, offset, limit int, readSource func(sessions.C
 			}
 		}
 	}
-	meta += fmt.Sprintf("|%x|%s", h.Sum(nil), statKey(catalog.LivePath("antigravity")))
+	meta += fmt.Sprintf("|%x", h.Sum(nil))
 	h.Reset()
 	snapshot := readLogSnapshot()
 	version := snapshot.version
@@ -379,7 +379,7 @@ func queryPage(p Period, f Filter, offset, limit int, readSource func(sessions.C
 	priceRow := func(r Record, source string) Row {
 		sent := r.Model
 		if source == "" {
-			sent = provider.SentNameIn(cfg.ModelWires, r.Provider, r.Model, r.Effort)
+			sent = provider.UpstreamNameIn(cfg.ModelWires, r.Provider, r.Model)
 		}
 		row := Row{Record: r, Source: source, Swapped: r.Served != "" && Swapped(sent, r.Served), Routed: GroupRouted(sent, r.Served)}
 		if pr := price(r); pr != nil && r.Input+r.Output > 0 {

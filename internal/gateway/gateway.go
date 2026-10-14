@@ -2083,14 +2083,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		}
 		if hw.failure != 0 { // the stream failed before any of it was sent
 			call.Status, call.Error = hw.failure, c.p.Name+": "+hw.failMsg
-			if hw.turnedAway {
-				// Antigravity's refusal said as the stream's error event:
-				// its words, and why, as its 429 is told (#1425)
-				call.Error = c.p.Name + ": " + provider.APIError([]byte(hw.failMsg), hw.failMsg)
-			}
-		}
-		if hw.turnedAway && !strings.HasSuffix(call.Error, antigravityTurnedAwayHint) {
-			call.Error += " — " + antigravityTurnedAwayHint
 		}
 		if hw.refused {
 			// the vendor's safety filter, with nothing said (#248)
@@ -2111,7 +2103,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		ended = time.Now()
 		try := Try{ID: c.rest, Model: c.model, Effort: wentAt, Picked: picked, Fixed: fixed, Fast: fast, Start: began, Done: true, Status: call.Status, Millis: ended.Sub(began).Milliseconds(), Error: call.Error, Queued: queued,
 			Served: call.Usage.Served, Upstream: call.Usage.Upstream, Tier: wentTier, TierServed: call.Usage.Tier}
-		asName := provider.SentNameOnIn(wiresOf(r.Context()), c.p.ID, accountAgent(c.p), c.model, sent)
+		asName := provider.UpstreamNameIn(wiresOf(r.Context()), c.p.ID, c.model)
 		try.Swapped, try.Routed = swapped(asName, call.Usage.Served), usage.GroupRouted(asName, call.Usage.Served)
 		try.TTFT, try.FirstText = hw.first.ms()
 		try.FirstReasoning = hw.first.reasoningMs(call.To)
@@ -2232,50 +2224,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 				rec := usage.Record{RouteID: tr.ID, Time: began, Agent: call.Agent, Via: call.Via, Provider: call.Provider, Host: where, Model: c.model,
 					ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName, ProviderAccount: providerAccount,
 					Requested: call.Model, Served: call.Usage.Served, Upstream: call.Usage.Upstream,
-					Input: call.Usage.billed().Input, Output: call.Usage.billed().Output, CacheRead: call.Usage.billed().CacheRead,
-					CacheWrite: call.Usage.billed().CacheWrite, CacheWrite1h: call.Usage.billed().CacheWrite1h, Reasoning: call.Usage.billed().Reasoning, Effort: wentAt, Millis: try.Millis, Status: call.Status,
-					TierAsked: tierAsked, TierSent: wentTier, TierServed: call.Usage.Tier,
-					TTFT: try.TTFT, FirstText: try.FirstText, FirstReasoning: try.FirstReasoning, ReasoningHidden: try.ReasoningHidden, Flow: try.Flow, Session: sessionOf(r.Header), NativeSession: nativeSessionOf(r.Header), Kind: call.Kind,
-					RequestID: call.Usage.RequestID, Endpoint: endpointOf(r, from, call.To, c.p, c.model), Archive: call.archiveName(), HandedOn: true}
-				failedWith(&rec, call.Status, call.Error, call.Usage.ErrType)
-				// what this account answered is its refusal, the reply
-				// captured so far being no one's yet
-				refusal := &Call{RequestBody: call.RequestBody, RequestTruncated: call.RequestTruncated, ResponseBody: string(hw.errBody())}
-				if call.otelIn != nil {
-					refusal.otelIn, refusal.otelOut = call.otelIn, hw.errBody()
-				}
-				withBodies(&rec, refusal)
-				appendUsage(r, rec)
-			}
-			continue
-		}
-		if !last && hw.failed() && hw.turnedAway {
-			// another member may answer what this account was turned away
-			// from, and this one isn't set aside: Antigravity refused the
-			// request, whatever quota the account has left, so nothing is
-			// wrong with it and no usage is asked again (#666). Its own
-			// mates are asked last, not first: they carry the same system
-			// prompt, so each is turned away just the same before the group
-			// reaches a member that answers. It is told as the agent's prompt
-			// turned away, as WorkBuddy's is, not a quota (#1425); and if
-			// nobody after it answers but with a quota of its own, that is
-			// what the agent is told, at a status it doesn't retry
-			if other == nil {
-				other = &Try{Status: turnedAwayStatus, Error: call.Error}
-			}
-			try.Fail = failPrompt
-			s.trace.update(tr, func(t *Route) {
-				t.Tries[len(t.Tries)-1] = try
-				if call.To != "" {
-					t.Usage = append(t.Usage, routeUsage(call.Provider, c.model, call.Usage)...)
-				}
-			})
-			skipped = append(skipped, c.label()+": "+call.Error)
-			matesLast(cands[i+1:], c)
-			if call.To != "" {
-				rec := usage.Record{RouteID: tr.ID, Time: began, Agent: call.Agent, Via: call.Via, Provider: call.Provider, Host: where, Model: c.model,
-					ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName, ProviderAccount: providerAccount,
-					Requested: call.Model, Served: call.Usage.Served,
 					Input: call.Usage.billed().Input, Output: call.Usage.billed().Output, CacheRead: call.Usage.billed().CacheRead,
 					CacheWrite: call.Usage.billed().CacheWrite, CacheWrite1h: call.Usage.billed().CacheWrite1h, Reasoning: call.Usage.billed().Reasoning, Effort: wentAt, Millis: try.Millis, Status: call.Status,
 					TierAsked: tierAsked, TierSent: wentTier, TierServed: call.Usage.Tier,
@@ -2447,12 +2395,12 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			try.Fail, try.Rest = rest.Why, &rest
 			s.trace.update(tr, func(t *Route) { t.Tries[len(t.Tries)-1] = try })
 			skipped = append(skipped, c.label()+": "+call.Error)
-			if patience > 0 && !hw.turnedAway && busy(hw.code(), hw.errBody()) {
+			if patience > 0 && busy(hw.code(), hw.errBody()) {
 				busyNow = noteBusy(busyNow, c, hw.header)
 			}
 			continue
 		}
-		if _, same := passing(hw.code(), hw.header, hw.errBody(), again); last && patience > 0 && !protected && !hw.turnedAway && !hw.refused && hw.failed() && busy(hw.code(), hw.errBody()) &&
+		if _, same := passing(hw.code(), hw.header, hw.errBody(), again); last && patience > 0 && !protected && !hw.refused && hw.failed() && busy(hw.code(), hw.errBody()) &&
 			(len(busyNow) > 0 || !same) {
 			// every member has failed, each in a way that passes — busy,
 			// overloaded, rate limited for a moment — with nothing of a
@@ -2486,9 +2434,8 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 				break
 			}
 		}
-		if wait, ok := passing(hw.code(), hw.header, hw.errBody(), again); ok && !protected && !hw.turnedAway && hw.failed() && waitFrom.IsZero() && !kept.tooQuiet(wait) {
+		if wait, ok := passing(hw.code(), hw.header, hw.errBody(), again); ok && !protected && hw.failed() && waitFrom.IsZero() && !kept.tooQuiet(wait) {
 			// nobody else is left: the same one again, after a moment (not
-			// what Antigravity turned away: it turns it away again; nor
 			// once the group's patience is spent)
 			try.Fail, try.Again = failureOf(c, hw.code(), hw.errBody()), wait.Milliseconds()
 			s.trace.update(tr, func(t *Route) { t.Tries[len(t.Tries)-1] = try })
@@ -2533,13 +2480,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			// request it shouldn't send again as it is, not handed an empty
 			// reply it would ask again for, paying for each
 			failTo(w, kept, from, refusedStatus, call.Error)
-		} else if hw.turnedAway && hw.failed() {
-			// nobody is left to answer what Antigravity turned away: the
-			// agent is told why, at a status it doesn't retry, not the 429
-			// it would ask again for ten times over, each turned away the
-			// same (#1425). The account isn't at fault, and doesn't rest
-			call.Status = turnedAwayStatus
-			failTo(w, kept, from, call.Status, call.Error)
 		} else if f := failure(call.Status, []byte(call.Error)); other != nil && !hw.passing && call.Status >= 400 && (f == failQuota || f == failCredit) {
 			// the last one left is out of its allowance, but one before it
 			// failed otherwise: the agent is told that one's error, not
@@ -2608,10 +2548,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			}
 		} else if hw.refused {
 			try.Fail = failRefused
-		} else if hw.turnedAway {
-			// Antigravity turned the agent's system prompt away (#666), at
-			// whatever quota the account has: not a quota used up (#1425)
-			try.Fail = failPrompt
 		} else if promptRefused(call.Status, []byte(call.Error)) {
 			try.Fail = failPrompt
 		} else {
@@ -2810,31 +2746,6 @@ func markOpenRouterSharedPool(w http.ResponseWriter) {
 	if h, ok := w.(*holdWriter); ok {
 		h.sharedPool = true
 	}
-}
-
-// markAntigravityTurnsAway keeps in the held attempt that the account was
-// asked with the system prompt Antigravity turns away, so a failure on it
-// isn't held against the account.
-func markAntigravityTurnsAway(w http.ResponseWriter) {
-	if h, ok := w.(*holdWriter); ok {
-		h.turnedAway = true
-	}
-}
-
-// markAntigravityRefused marks the attempt when what the account said is the
-// refusal Antigravity answers such a system prompt with. said is what the
-// failure said once the status is gone: the 429's body arrives with its 429,
-// and the reply's own error event arrives with 200 from translate and only
-// its message, the Code Assist decoder keeping neither its code nor its
-// status. An error event of any other kind says something else and marks
-// nothing.
-// It says whether it marked it.
-func markAntigravityRefused(w http.ResponseWriter, p provider.Provider, system, said string) bool {
-	if said == "" || !antigravityTurnedAway(p, system, said) {
-		return false
-	}
-	markAntigravityTurnsAway(w)
-	return true
 }
 
 // forward sends a request to the provider. On Anthropic's messages, a
@@ -3869,12 +3780,6 @@ func (s *Server) forwardTranslated(ctx context.Context, p provider.Provider, to 
 			body = asCompletionTokens(body)
 		}
 
-		// the other fogway searches for it (search_remote.go)
-
-		// the envelope is named in there, where the id it carries is
-		// known: on Antigravity that is the variant the effort picked,
-		// not the model fogway knows
-
 		if wire != model {
 			// the vendor's own name for the model goes in the model field
 			// and nowhere else: everything above shaped the request from
@@ -4465,19 +4370,11 @@ func (s *Server) translate(w http.ResponseWriter, r *http.Request, p provider.Pr
 		if wrongEndpoint(res.StatusCode, b) {
 			msg += wrongAPINote(p, model, res, b)
 		}
-		turnedAway := res.StatusCode == http.StatusTooManyRequests && antigravityTurnedAway(p, request.System, string(b))
-		if turnedAway {
-			msg += " — " + antigravityTurnedAwayHint
-			markAntigravityTurnsAway(w)
-		}
 		if p.Preset == "openrouter" && openRouterSharedPool(b) {
 			markOpenRouterSharedPool(w)
 		}
 		keepRetry(w.Header(), res.Header, b)
 		u.ErrType = provider.ErrorType(b)
-		if turnedAway {
-			u.ErrType = turnedAwayErrType
-		}
 		return writeError(w, from, res.StatusCode, msg), msg
 	}
 	dec := decoder(actual)
@@ -4516,12 +4413,7 @@ func (s *Server) translate(w http.ResponseWriter, r *http.Request, p provider.Pr
 		return writeError(w, from, 502, msg), msg
 	}
 	if col.err != "" && !saidAnything(col.res.Parts) {
-		said := col.err
-		if markAntigravityRefused(w, p, request.System, said) {
-			said += " — " + antigravityTurnedAwayHint
-			u.ErrType = turnedAwayErrType
-		}
-		return writeError(w, from, 502, p.Name+": "+said), said
+		return writeError(w, from, 502, p.Name+": "+col.err), col.err
 	}
 	if col.err == "" && !ended && (actual == provider.Anthropic || actual == provider.Responses || geminiKin(actual)) && r.Context().Err() == nil {
 		// an Anthropic stream that just stopped — no stop_reason, no
@@ -4554,7 +4446,7 @@ func (s *Server) translate(w http.ResponseWriter, r *http.Request, p provider.Pr
 const emptyReply = "an empty reply (the model answered nothing; try again)"
 
 // emptyFails tells whether a reply in proto that says nothing is a
-// failure. Gemini's, Antigravity's among them, now and then ends with
+// failure. Gemini's now and then ends with
 // nothing, or only reasoning, and a STOP — or with no finishReason at all
 // — which went to the agent as a turn ended as it should, content [] and
 // no usage, and the agent's run stopped mid-task (#667). Gemini CLI takes

@@ -655,28 +655,25 @@ func TestHasUpstreamNameReadsTheKeyHoweverItIsSpelled(t *testing.T) {
 	}
 }
 
-// A name that is only whitespace is no name at either level of the lookup,
-// as it is in UpstreamNameIn: the model's own falls through to the
-// provider's, and both falling through leaves the request under the id it
-// was built with. A blank name read as a name would send a relay an id of
-// spaces.
-func TestUpstreamNameAsInIgnoresANameOfOnlyWhitespace(t *testing.T) {
+// A name that is only whitespace is no name at either level of the lookup:
+// the model's own falls through to the provider's, and both falling through
+// leaves the request under the id fogway knows. A blank name read as a name
+// would send a relay an id of spaces.
+func TestUpstreamNameInIgnoresANameOfOnlyWhitespace(t *testing.T) {
 	for _, tc := range []struct {
-		what       string
-		wires      map[string]string
-		sent, want string
+		what  string
+		wires map[string]string
+		want  string
 	}{
 		{"the model's own name is blank, the provider's is not",
-			map[string]string{"relay/sol": "   ", "relay/*": "vendor-c/*"}, "sol-high", "vendor-c/sol-high"},
+			map[string]string{"relay/sol": "   ", "relay/*": "vendor-c/*"}, "vendor-c/sol"},
 		{"both are blank",
-			map[string]string{"relay/sol": "  ", "relay/*": "\t"}, "sol-high", "sol-high"},
+			map[string]string{"relay/sol": "  ", "relay/*": "\t"}, "sol"},
 		{"the provider's is blank and no other model has one",
-			map[string]string{"relay/sol": "   ", "relay/*": " "}, "sol-high", "sol-high"},
-		{"the request goes out under the model itself",
-			map[string]string{"relay/sol": "   ", "relay/*": "vendor-c/*"}, "sol", "vendor-c/sol"},
+			map[string]string{"relay/sol": "   ", "relay/*": " "}, "sol"},
 	} {
-		if got := UpstreamNameAsIn(tc.wires, "relay", "sol", tc.sent); got != tc.want {
-			t.Errorf("%s: asking for %q gives %q; want %q", tc.what, tc.sent, got, tc.want)
+		if got := UpstreamNameIn(tc.wires, "relay", "sol"); got != tc.want {
+			t.Errorf("%s: %q; want %q", tc.what, got, tc.want)
 		}
 	}
 }

@@ -787,7 +787,7 @@ func shapeRefused(status int, body []byte) bool {
 
 // regionWords are how a vendor says it doesn't serve where the request
 // comes from: Google's 400 FAILED_PRECONDITION "User location is not
-// supported for the API use." (Gemini, Antigravity, Code Assist; #1621),
+// supported for the API use." (Gemini; #1621),
 // and OpenAI's "unsupported_country_region_territory", which a relay may
 // pass on as a 400. It is about the address the request leaves from, not
 // the request or the model: another member, going another way, may
@@ -1009,8 +1009,7 @@ func matesFirst(left []candidate, c candidate) {
 // matesLast puts last, of the candidates left, the other keys or accounts
 // of the member c is of: what turns one of them away is in the request, so
 // it turns them all away the same, and the group is better spent on a
-// member that answers (#666). Antigravity refuses Claude Code's and its
-// Agent SDK's system prompt whichever account is asked.
+// member that answers (#666).
 func matesLast(left []candidate, c candidate) {
 	mate := func(x candidate) bool {
 		if x.p.ID != c.p.ID || x.model != c.model || x.effort != c.effort || x.who() == c.who() {
@@ -1051,11 +1050,6 @@ type holdWriter struct {
 	failure    int       // the status the stream's error stands for
 	failMsg    string
 	sharedPool bool // an OpenRouter upstream pool rejected this attempt
-
-	// turnedAway: the account is asked with the system prompt Antigravity
-	// answers with a 429 whatever quota it has left — Claude Code's, its
-	// Agent SDK's — so the account isn't at fault and doesn't rest (#666)
-	turnedAway bool
 
 	// refused: the vendor's safety filter ended the reply before any of it
 	// was said — Anthropic's stop_reason "refusal", OpenAI's content_filter

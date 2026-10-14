@@ -8,8 +8,8 @@ import (
 // three spellings: reasoning_content (DeepSeek's, which OpenCode and most
 // clients send), reasoning (OpenRouter's) and reasoning_details (OpenRouter's
 // structured one). parseChat read only reasoning_content, so a request
-// translated to a non-Chat upstream — an Anthropic key, a Codex or
-// Antigravity account, a Gemini or DeepSeek key — lost the thinking of every
+// translated to a non-Chat upstream — an Anthropic, Gemini or DeepSeek
+// key, an OpenAI Responses one — lost the thinking of every
 // turn sent in the other two spellings, and the model went on without its own
 // reasoning. A tool-calling session shows it from its second turn on.
 func TestParseChatReadsEveryReasoningSpelling(t *testing.T) {

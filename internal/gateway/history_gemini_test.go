@@ -2,7 +2,7 @@ package gateway
 
 import "testing"
 
-// A route kept with a try marked swapped for Antigravity's
+// A route kept with a try marked swapped for
 // gemini-3.8-flash answered as gemini-3.8-flash-n (Google's name for the
 // deployment serving it, dumplings on Discord) is read as not swapped;
 // gpt-5 answered by gpt-5-mini stays swapped.

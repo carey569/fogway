@@ -6,11 +6,11 @@ import (
 	"testing"
 )
 
-// Antigravity and Gemini CLI wrap each chunk in {response}; streamed to a
+// A chunk wrapped in {response}, as Code Assist sends it: streamed to a
 // Gemini client, the picture goes out as an inlineData chunk.
 func TestCodeAssistStreamsImages(t *testing.T) {
 	rec := httptest.NewRecorder()
-	enc := &geminiEncoder{w: newSSEWriter(rec), model: "antigravity/gemini-3.1-flash-image"}
+	enc := &geminiEncoder{w: newSSEWriter(rec), model: "gemini/gemini-3.1-flash-image"}
 	d := &codeAssistDecoder{}
 	for _, line := range []string{
 		`{"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"inlineData":{"mimeType":"image/png","data":"ZHJhZnQ="}}]}}]}}`,

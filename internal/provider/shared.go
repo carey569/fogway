@@ -264,10 +264,6 @@ func usedPast(q SubscriptionQuota, share float64, now time.Time) bool {
 	return false
 }
 
-// modelSpan is the window fetchAvailableModels gives a model of
-// Antigravity's, its 5 hours, which its window leaves without a Span.
-const modelSpan = 5 * time.Hour
-
 func (e *tokenRefused) Error() string {
 	return fmt.Sprintf("the sign-in was refused (%d): %s", e.status, e.msg)
 }

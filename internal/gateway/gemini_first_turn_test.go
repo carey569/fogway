@@ -8,23 +8,21 @@ import (
 	"github.com/carey569/fogway/internal/provider"
 )
 
-// geminiContents is the contents a Gemini-speaking route sends for r: Code
-// Assist for Gemini CLI and for Antigravity, and the bare generateContent
-// body (buildGemini). Zed's Google models go through buildCodeAssist too.
+// geminiContents is the contents a Gemini-speaking route sends for r: the
+// envelope buildCodeAssist builds, and the bare generateContent body
+// (buildGemini) unwrapped from it.
 func geminiContents(t *testing.T, r *Request) map[string][]map[string]any {
 	t.Helper()
 	out := map[string][]map[string]any{}
-	for _, agent := range []string{"gemini", "antigravity"} {
-		var env struct {
-			Request struct {
-				Contents []map[string]any `json:"contents"`
-			} `json:"request"`
-		}
-		if err := json.Unmarshal(buildCodeAssist(r, "gemini-2.5-pro", agent), &env); err != nil {
-			t.Fatal(err)
-		}
-		out["codeassist/"+agent] = env.Request.Contents
+	var env struct {
+		Request struct {
+			Contents []map[string]any `json:"contents"`
+		} `json:"request"`
 	}
+	if err := json.Unmarshal(buildCodeAssist(r, "gemini-2.5-pro", "gemini"), &env); err != nil {
+		t.Fatal(err)
+	}
+	out["envelope"] = env.Request.Contents
 	b, err := buildGemini(r, "gemini-2.5-pro")
 	if err != nil {
 		t.Fatal(err)
