@@ -203,8 +203,6 @@ body:not(.window.linux) #winclose { display: none; }
 body.panel .seg { display: none; }
 .seg button { position: relative; z-index: 1; white-space: nowrap; height: 24px; padding: 0 12px; border-radius: 6px; font-size: 12.5px; color: var(--ctl-fg); transition: color .18s var(--ease), transform .14s var(--ease); }
 .seg button.on { color: var(--fg); }
-/* a plugin update waiting for the reader: a dot on Plugins */
-.seg button.has-dot::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
 .seg button:hover:not(.on) { color: var(--fg-2); }
 .actions { margin-left: auto; display: flex; gap: 2px; }
 .icon {
@@ -346,7 +344,6 @@ body.side-nav #prefs svg { flex: none; width: 15px; height: 15px; margin: 0 .5px
    text's own ink; the accent is kept for what acts */
 body.side-nav :is(#nav button.on .nav-ic, #prefs.on svg) { color: var(--fg); }
 body.side-nav .side-l { display: inline; }
-body.side-nav #nav button.has-dot::after { top: 50%; right: 10px; margin-top: -3px; width: 6px; height: 6px; }
 /* the open page's tabs, under it on a thin line */
 .nav-sub { position: relative; display: flex; flex-direction: column; gap: 1px; margin: 2px 0 6px 16px; padding-left: 8px; }
 .nav-sub.moving { overflow: hidden; }
@@ -2419,7 +2416,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .signing.import textarea { margin-top: 6px; width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font: var(--code-style, normal) var(--code-weight, 400) 12px/1.45 var(--code-font, var(--code)); font-stretch: var(--code-stretch, 100%); resize: vertical; outline: none; -webkit-text-security: disc; }
 .signing.import textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .signing.import .acts { align-items: center; gap: 8px; margin-top: 4px; }
-.signing.import .fname { color: var(--muted); font-size: 11.5px; overflow-wrap: anywhere; }
 .signing.import .why { color: var(--red); }
 .signing.import .results { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
 .signing.import .res { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0; height: auto; padding: 0; border-radius: 0; background: none; color: var(--fg); font-size: 12px; font-variant-numeric: normal; }
@@ -2628,9 +2624,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 /* a custom provider's five Base URL APIs wrap to a second row where the
    editor is too narrow for them (#1346); the thumb follows the row */
 .segs.base-apis { max-width: 100%; flex-wrap: wrap; }
-/* an installed list's order (#481): small, beside the list's heading */
-.segs.sortby { align-self: center; flex: none; }
-.segs.sortby .opt { height: 20px; padding: 0 8px; font-size: 11px; }
 /* a provider's Routing and Stays, with "unsaved" beside a pick not saved yet */
 .route-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .route-pick > .hint { margin: 0; }
@@ -2839,11 +2832,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .set-searching .set-page::before { content: attr(data-part); display: block; margin: 4px 2px 6px; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 .set-none { margin: 18px 2px; font-size: 13px; color: var(--muted); text-align: center; }
 .set-page > .list:not(:last-child) { margin-bottom: 8px; }
-/* Plugins › Built-in: what the list is over its rows, and a row in use
-   saying what uses it under its switch, which can't be turned off */
-.feat-say { margin: 2px 4px 10px; font-size: 12px; line-height: 1.45; color: var(--muted); }
-.set-searching .feat-say { display: none; }
-.row.pref .sub.feat-why { color: var(--muted); font-size: 11px; }
 .row.pref { min-height: 50px; padding: 8px 12px 8px 14px; gap: 14px; }
 .row.pref .who { flex: 1 1 auto; }
 .row.pref .sub { margin-top: 2px; color: var(--fg-2); }
@@ -3228,15 +3216,10 @@ body.panel .modal { padding: 16px 12px; }
 .editor.importapps .apptag { flex: none; font-size: 11px; color: var(--fg-2); background: var(--pill); border-radius: 5px; padding: 1px 6px; margin-top: 1px; }
 .editor.importapps .bar .note { font-size: 12px; color: var(--muted); }
 
-/* sync and backup, on the Settings page */
+/* a setting's note gone wrong; a checkbox with its words, in an editor */
 .prefs .sub.bad { color: var(--red); }
-.prefs .sync-note .who .sub + .sub { margin-top: 2px; }
-.editor.sync-form { grid-template-columns: 86px minmax(0, 1fr); }
 .editor label.tick { display: flex; align-items: center; gap: 7px; text-align: left; padding-top: 0; color: var(--fg-2); cursor: pointer; }
 .editor label.tick input { margin: 0; }
-.editor .fname { flex: 1; min-width: 0; font-size: 12.5px; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.editor.sync-form .done { grid-column: 1 / -1; font-size: 12.5px; color: var(--fg-2); user-select: text; -webkit-user-select: text; }
-.editor.sync-form .bar { grid-column: 1 / -1; }
 
 /* the usual context windows under the field, one click each (#120) */
 .cxpicks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }

@@ -14,11 +14,11 @@ const web = !!window.bootPrefs?.web;
 // layout.js applies the mode and platform before the header can paint.
 // Gateway mode (gatewaymode.go): fogway web on a server that is only the
 // gateway for other computers' agents leaves out this computer's agents'
-// pages — Agents, Sessions, Library — and their settings; Settings ›
-// General turns it off, and they are back.
+// page — Agents — and their settings; Settings › General turns it off, and
+// they are back.
 let gatewayMode = web && !!window.bootPrefs?.gateway;
-const GATEWAY_HIDES = ["agents", "library"];
-// Plugins › Built-in (builtins.go; Lxxyx on X: too much to look through):
+const GATEWAY_HIDES = ["agents"];
+// The built-in features (builtins.go; Lxxyx on X: too much to look through):
 // the optional parts of the window switched off, by id. Whatever is marked
 // data-feature="<id>" leaves the page while its feature is off — by a
 // style, so what a page draws later goes too — a page's tab leaves the nav
@@ -169,8 +169,8 @@ async function api(path, body, heads, signal) {
     throw err;
   }
   // the accounts it names, for Hide accounts to know them (#568); a
-  // session's or a library's words aren't looked through
-  if (data && typeof data === "object" && !/^(sessions|library|skills|plugins|market)/.test(path)) noteAccounts(data);
+  // session's words aren't looked through
+  if (data && typeof data === "object" && !/^sessions/.test(path)) noteAccounts(data);
   return data;
 }
 
@@ -3774,7 +3774,7 @@ async function load(again) {
   if (view === "providers" && !providers) renderProvidersLoading();
   if (view === "gateway" && !providers) renderGatewayLoading();
   try {
-    const since = prefsWrites, hid = hiddenIds().join(), visibilitySince = agentsVisibilityRevision;
+    const since = prefsWrites, visibilitySince = agentsVisibilityRevision;
     const asked = api("state");
     // the first load draws the state fogway kept from its last read while
     // the fresh one is read (#1519, fatkun): reading every agent's config,
@@ -3806,15 +3806,12 @@ async function load(again) {
     }
     state = next;
     load.done = true;
-    // the library may have drawn itself before the saved language was known
+    // a page may have drawn itself before the saved language was known
     if (applyPrefs(state.settings, state.fx) || relang) {
       again = false; // the Usage page too is drawn again, in the new language
-      if (view === "library") window.loadLibrary?.();
       if (view === "local") window.loadLocal?.();
       if (view === "sessions") window.loadSessionsPage?.();
     }
-    // a Library drawn before the state came counted the hidden agents too
-    else if (view === "library" && hiddenIds().join() !== hid) window.redrawLibrary?.();
     tintPanel();
     tintTitleBar();
     renderAgents();
@@ -3836,9 +3833,7 @@ async function load(again) {
     // Overview, where the allowances are, that is opening them (#1588)
     if (view === "usage" && again && usageTab === "usage") quotasOpened();
     if (view === "usage") await (again && usageDrawn() ? refreshUsage() : loadUsage());
-    // so is an open sync form (WebDAV, export, import): its passwords are
-    // never sent back, so a rebuild would empty it
-    if (view === "settings" && !syncOpen) await loadSettings();
+    if (view === "settings") await loadSettings();
   } catch (e) {
     status(e.message, "err");
   }
@@ -4040,7 +4035,7 @@ const ISSUES = "https://github.com/carey569/fogway/issues/";
 let whatsNewAsked = false;
 // cliBehindOnce: the terminal's fogway is a copied file rather than the
 // installer's link, so it can't follow the app's updates (#531's lesson: a
-// stale command wedged the WebDAV sync). The window can't tell a stale copy
+// stale command wedged a sync). The window can't tell a stale copy
 // from a current one — that would mean running the old binary, whose
 // start-up migrates settings — so this is advice, shown once per load, only
 // in the window (the panel is too small), and dismissable until the next
@@ -6260,31 +6255,6 @@ addEventListener("pointerup", (e) => {
   });
 }, true);
 
-// An installed list's order, the reader's pick, remembered for each list
-// (#481): its names A→Z or Z→A, and for a list that has one, a view of its
-// own first (the skills by where they came from). sortOf(list) is the pick,
-// sortBy(list, …) the control; a list missing or unreadable in storage
-// takes the first.
-const NAME_SORTS = [["az", "A→Z"], ["za", "Z→A"]];
-function sortOf(list, items = NAME_SORTS) {
-  let v = "";
-  try { v = localStorage.getItem("fogway.sort." + list) || ""; } catch {}
-  return items.some(([id]) => id === v) ? v : items[0][0];
-}
-function sortBy(list, items, onPick) {
-  const box = segs(items, sortOf(list, items), (id) => {
-    try { localStorage.setItem("fogway.sort." + list, id); } catch {}
-    onPick(id);
-  });
-  box.classList.add("sortby");
-  box.dataset.sort = list;
-  const tips = { az: t("Names from A to Z"), za: t("Names from Z to A") };
-  for (const [i, b] of [...box.querySelectorAll(".opt")].entries()) if (tips[items[i][0]]) b.title = tips[items[i][0]];
-  return box;
-}
-// a comparer of names for a pick: A→Z, or Z→A
-const byName = (pick, nameOf = (x) => x.name) => (a, b) => (pick === "za" ? -1 : 1) * nameOf(a).localeCompare(nameOf(b));
-
 // Connect is set up once and seldom looked at again, so it folds away under
 // its heading, the base URL left beside it; the fold is remembered
 // (connectFolded, with the tab's other choices at the top).
@@ -7567,7 +7537,7 @@ async function cancelEdit() {
   return true;
 }
 window.addEventListener("beforeunload", (e) => {
-  if (providerDirty() || window.routingDirty?.() || ((view === "library" || importing || importingApps) && modalFormDirty())) {
+  if (providerDirty() || window.routingDirty?.() || ((importing || importingApps) && modalFormDirty())) {
     e.preventDefault();
     e.returnValue = "";
   }
@@ -8299,8 +8269,8 @@ function closeModal() {
   }, () => {});
   return done;
 }
-// the providers page's dialog; the library and a confirmation that borrow it
-// ask the same of its backdrop
+// the providers page's dialog; a confirmation that borrows it asks the same
+// of its backdrop
 const modalBackdrop = backdropClick($("#modal"));
 $("#modal").onclick = (e) => { if (modalBackdrop(e)) cancelEdit(); };
 
@@ -16729,7 +16699,6 @@ function fmtBytes(n) {
   return (i && n < 10 ? n.toFixed(1) : Math.round(n)) + " " + u[i];
 }
 
-const sessKey = (s) => s.agent + ":" + s.id;
 const sessTokens = (s) => s.input + s.output;
 // a session's cost: "—" when none of its models has a known price
 function sessCost(s) {
@@ -18020,12 +17989,6 @@ async function loadSettings() {
   // the state's copy too, which the other pages draw from (#1433)
   prefs = state.settings = s;
   applyFeatures(s.builtins);
-  // the WebDAV setup can have been changed from outside the window (fogway
-  // webdav at the terminal): the page's copy of it is dropped, so the page
-  // is drawn from a fresh read. Coming back to the window is safe with a
-  // form open: load() keeps off this path while one is, so it is never
-  // rebuilt under whoever is typing in it
-  syncView = null;
   // gateway mode turned in another tab, or the agents here come and gone
   if (web && !!s.gatewayOn !== gatewayMode) setGatewayMode(!!s.gatewayOn);
   renderSettings();
@@ -18475,7 +18438,7 @@ function renderGatewayMode(s) {
     flag: t("Now on: fogway web was started with --gateway"),
     "no-agents": t("Now on: no agents on this computer"),
   }[s.gatewayWhy] || t("Now off: agents found on this computer");
-  $("#gatewayModeSub").textContent = [t("Only what a gateway for other computers needs: no Agents or Library, nor this computer's agents' settings"), now].filter(Boolean).join(" · ");
+  $("#gatewayModeSub").textContent = [t("Only what a gateway for other computers needs: no Agents, nor this computer's agents' settings"), now].filter(Boolean).join(" · ");
 }
 
 // renderLangPick: Settings' language, one menu button showing the language
@@ -18531,229 +18494,6 @@ function renderSessionTerminal(s, keep) {
   };
 }
 
-// renderSync: the Settings page's sync and backup — a remote keeping the
-// setup the same on every computer, and a sealed file to carry by hand.
-// One of the three opens a form below its row at a time.
-let syncOpen = ""; // "dav" | "export" | "import"
-const syncNames = { webdav: "WebDAV", s3: "S3", github: "GitHub" };
-function syncServers(v) {
-  const servers = { ...v.servers };
-  if (v.other) servers[v.other.kind] ||= v.other;
-  return servers;
-}
-let syncView = null;
-async function renderSync(v) {
-  const box = $("#syncList");
-  if (v) syncView = v;
-  else if (!syncView) {
-    syncView = await api("davsync").catch(() => ({}));
-  }
-  v = syncView;
-  box.replaceChildren();
-  const row = (name, sub, ...tools) => {
-    const r = el("div", "row pref");
-    const who = el("div", "who");
-    who.append(el("div", "name", name));
-    const s = el("div", "sub", sub);
-    who.append(s);
-    const val = el("div", "val");
-    val.append(...tools);
-    r.append(who, val);
-    box.append(r);
-    return s;
-  };
-  const btn = (label, fn, cls = "text") => { const b = el("button", cls, label); b.onclick = fn; return b; };
-  const toggle = (id) => () => { syncOpen = syncOpen === id ? "" : id; renderSync(); };
-  const parts = (ps) => ps.map((p) => t({ providers: "providers", settings: "settings", profiles: "profiles", agents: "agents' models", library: "library", usage: "usage" }[p])).join(t(", "));
-
-  // WebDAV, S3 or GitHub
-  // off: what it would keep the same, named from the view's toggles as the
-  // CLI names them, so the page can't promise a part the setup leaves out.
-  // A view that says nothing of the toggles (a read that failed) reads as
-  // all on, as Status' off view is.
-  const goes = ["settings", "profiles"];
-  if (v.agents !== false) goes.push("agents");
-  if (v.library !== false) goes.push("library");
-  if (v.usage) goes.push("usage");
-  let status = t("Keeps {parts} the same on every computer", {
-    parts: t(v.keys === false ? "providers without their API keys" : "providers with their API keys") + t(", ") + parts(goes) });
-  const s3 = v.on && v.kind === "s3";
-  const github = v.on && v.kind === "github";
-  if (v.on) {
-    const hostOf = (u) => { try { return new URL(u).host; } catch { return u; } };
-    // a bucket is named by its address, and the server it is on unless AWS
-    const host = github ? [v.url, v.branch].filter(Boolean).join(" · ")
-      : s3 ? [v.url, v.endpoint && hostOf(v.endpoint.includes("://") ? v.endpoint : "https://" + v.endpoint)].filter(Boolean).join(" · ") : hostOf(v.url);
-    status = v.error ? t("Couldn't sync: {error}", { error: v.serverFile ? serverFileSaid(v.serverFile) : t(v.error) })
-      : v.last ? t("Synced {when} · {host}", { when: syncWhen(v.last), host }) : t("Not synced yet · {host}", { host });
-    // the other kind's server, kept from before sync moved here
-    for (const kind of Object.keys(syncServers(v))) status += " · " + t("{kind} settings kept", { kind: syncNames[kind] });
-    if (v.auto === 0) status += " · " + t("only when asked");
-  }
-  const sub = row(t(github ? "GitHub sync" : s3 ? "S3 sync" : v.on ? "WebDAV sync" : "WebDAV, S3 or GitHub sync"), status, ...(v.on
-    ? [btn(t("Sync now"), async (e) => { e.target.classList.add("busy"); renderSync(await api("davsync/now", {}).catch((x) => ({ ...v, error: x.message }))); }),
-       btn(t(syncOpen === "dav" ? "Close" : "Edit"), toggle("dav"))]
-    : [btn(t(syncOpen === "dav" ? "Close" : "Set up"), toggle("dav"))]));
-  // a failure is shown whole: what the server sent and what to do don't
-  // fit one line
-  if (v.error) sub.classList.add("bad", "wraps");
-  // usage that couldn't be shared is a line of its own, in red: beside
-  // "Synced" in the same grey it read as part of a sync that went fine
-  // (#1259)
-  if (v.on && !v.error && v.usageError) sub.after(el("div", "sub bad wraps sync-usage-err", t("Couldn't share usage: {error}", { error: v.usageError })));
-  // subscriptions whose settings sync brought with no account here: sync
-  // carries no sign-in, and they are listed once signed in to here
-  // the server's file isn't a backup a sync can read, and is a file: this
-  // computer's setup can go up in its place, the user choosing it
-  if (v.on && v.error && v.serverFile?.replace) {
-    row(t("Upload this computer's setup"), t("It replaces the file on the server. That file is kept in the sync folder first."),
-      btn(t("Upload…"), () => askUpload(v.serverFile)));
-  }
-  if (v.notice) {
-    const n = v.notice, r = el("div", "row pref sync-note");
-    const lines = [];
-    if (n.restored) lines.push(t("Restored from the server: {parts}", { parts: parts(n.here || []) }));
-    else if (n.here?.length) lines.push(t("Replaced here by newer ones from another computer: {parts}", { parts: parts(n.here) }));
-    if (n.there?.length) lines.push(t("Replaced on the server by this computer's newer ones: {parts}", { parts: parts(n.there) }));
-    const who = el("div", "who");
-    for (const l of lines) who.append(el("div", "sub", l));
-    who.append(el("div", "sub", t(n.restored ? "This computer's setup from before is kept in the sync folder." : "The copies replaced are kept in the sync folder.")));
-    const val = el("div", "val");
-    if (n.restored && v.undo) val.append(btn(t("Undo"), async (e) => {
-      e.target.classList.add("busy");
-      try { renderSync(await api("davsync/undo", {})); refreshAfterSync(); } catch (x) { e.target.classList.remove("busy"); sub.textContent = x.message; sub.classList.add("bad"); }
-    }));
-    val.append(btn(t("Show"), () => api("davsync/reveal", {}).catch((e) => status(e.message, "err"))), btn(t("OK"), async () => renderSync(await api("davsync/dismiss", {}))));
-    r.append(who, val);
-    box.append(r);
-  }
-  if (syncOpen === "dav") box.append(davForm(v));
-  if (v.on) {
-    // how often it syncs by itself, or never: a free 坚果云 account is
-    // allowed only so many requests (#847)
-    const every = v.auto ?? 3;
-    row(t("Sync by itself"), every ? t("Every {n} minutes while fogway runs", { n: every }) : t("Off: only Sync now syncs"),
-      segs([[0, t("Off")], [3, t("3 min")], [15, t("15 min")], [30, t("30 min")], [60, t("1 hour")]], every, async (m) => {
-        renderSync(await api("davsync/auto", { minutes: m || -1 }).catch((x) => ({ ...v, error: x.message })));
-      }));
-    row(t("Restore from the server"), t("This computer's setup becomes the one on the server. What is here now is kept first, to undo."),
-      btn(t("Restore…"), () => askRestore(v, parts)));
-  }
-
-  // export and import
-  row(t("Export"), t("Everything above in one file, sealed with a passphrase, to carry to another computer"), btn(t(syncOpen === "export" ? "Close" : "Export…"), toggle("export")));
-  if (syncOpen === "export") box.append(exportForm());
-  row(t("Import"), t("Bring in a file exported from fogway"), btn(t(syncOpen === "import" ? "Close" : "Import…"), toggle("import")));
-  if (syncOpen === "import") box.append(importForm());
-}
-
-// askRestore asks before the server's setup replaces this computer's
-// (#847); what is here is kept, and the notice it leaves can undo it.
-function askRestore(v, parts) {
-  const ed = el("div", "editor restore-ask");
-  const head = el("div", "ehead");
-  head.append(el("b", "", t("Restore from the server?")));
-  ed.append(head);
-  const goes = ["providers", "settings", "profiles"];
-  if (v.agents !== false) goes.push("agents");
-  if (v.library !== false) goes.push("library");
-  ed.append(el("p", "lib-confirm", t("This computer's {parts} become the ones on the server, as your other computers last synced them. Whatever was changed here since is replaced.", { parts: parts(goes) })));
-  ed.append(el("p", "lib-confirm", t("What is here now is sealed into the sync folder first, and Undo puts it back.")));
-  const err = el("p", "editor-error", "");
-  ed.append(err);
-  const bar = el("div", "bar");
-  const go = el("button", "text primary danger-fill", t("Restore setup"));
-  go.onclick = async (e) => {
-    e.stopPropagation();
-    go.disabled = true;
-    go.classList.add("busy");
-    try {
-      const r = await api("davsync/restore", {});
-      closeConfirmAsk();
-      renderSync(r);
-      if (r.error) return;
-      if (r.brought?.length) refreshAfterSync();
-      else status(t("This computer's setup is already the server's: nothing to restore"), "ok");
-    } catch (x) {
-      go.disabled = false;
-      go.classList.remove("busy");
-      err.textContent = x.message;
-    }
-  };
-  const cancel = el("button", "text", t("Cancel"));
-  cancel.onclick = (e) => { e.stopPropagation(); closeConfirmAsk(); };
-  bar.append(el("span", "grow"), cancel, go);
-  ed.append(bar);
-  confirmAsk = ed;
-  openModal(ed);
-  $("#modal").classList.add("lib");
-  cancel.focus({ preventScroll: true });
-}
-
-// serverFileSaid: what the server holds where the backup should be, in the
-// reader's language, from what davsync told of it (never its contents).
-function serverFileSaid(f) {
-  const size = fmtBytes(f.size || 0);
-  switch (f.what) {
-    case "empty": return t("the file on the server is empty (0 bytes)");
-    case "cut": return t("the file on the server is a fogway backup cut short ({size}): a write to it was interrupted", { size });
-    case "page": {
-      let s = f.title ? t("the server answered with a web page (“{title}”) instead of the file", { title: f.title }) : t("the server answered with a web page instead of the file");
-      if (f.moved) s += t(", after a redirect to {where}", { where: f.moved });
-      return s + t(": check the address is the server's WebDAV address, not its website");
-    }
-    case "xml": return t("the server answered with an XML document instead of the file: check the address is the server's WebDAV address");
-    case "format": return t("the file on the server is another app's (“{format}”), not a fogway backup", { format: f.format });
-    case "json": return t("the file on the server is a JSON file that isn't a fogway backup ({size})", { size });
-  }
-  return t("the file on the server isn't a fogway backup: it is {type} ({size})", { type: f.type || "?", size });
-}
-
-// askUpload asks before this computer's setup replaces a server file that
-// isn't a backup; the server's file is kept in the sync folder first.
-function askUpload(f) {
-  const ed = el("div", "editor restore-ask upload-ask");
-  const head = el("div", "ehead");
-  head.append(el("b", "", t("Replace the file on the server?")));
-  ed.append(head);
-  ed.append(el("p", "lib-confirm", t("This computer's setup goes up in place of the file on the server, and your other computers sync with it from then on.")));
-  if (f.what === "cut") ed.append(el("p", "lib-confirm", t("What another computer wrote into that file and has nowhere else is lost. If one of them synced it last, Sync now there may rebuild it instead.")));
-  ed.append(el("p", "lib-confirm", t("The file on the server is kept in the sync folder first.")));
-  const err = el("p", "editor-error", "");
-  ed.append(err);
-  const bar = el("div", "bar");
-  const go = el("button", "text primary danger-fill", t("Upload this computer's setup"));
-  go.onclick = async (e) => {
-    e.stopPropagation();
-    go.disabled = true;
-    go.classList.add("busy");
-    try {
-      const r = await api("davsync/upload", {});
-      closeConfirmAsk();
-      renderSync(r);
-    } catch (x) {
-      go.disabled = false;
-      go.classList.remove("busy");
-      err.textContent = x.message;
-    }
-  };
-  const cancel = el("button", "text", t("Cancel"));
-  cancel.onclick = (e) => { e.stopPropagation(); closeConfirmAsk(); };
-  bar.append(el("span", "grow"), cancel, go);
-  ed.append(bar);
-  confirmAsk = ed;
-  openModal(ed);
-  $("#modal").classList.add("lib");
-  cancel.focus({ preventScroll: true });
-}
-
-// refreshAfterSync: what a sync or an import brought in reaches the other
-// pages, leaving this one (and what it says was done) as it is.
-function refreshAfterSync() {
-  providers = null;
-  api("state").then((s) => { state = s; renderAgents(); }).catch(() => {});
-}
-
 function syncWhen(iso) {
   const d = new Date(iso);
   const time = d.toLocaleTimeString(intlLang(), { hour: "2-digit", minute: "2-digit" });
@@ -18786,200 +18526,6 @@ function tick(label, on) {
   c.checked = on;
   l.append(c, el("span", "", label));
   return [l, c];
-}
-
-function syncBar(ed, err, ...tools) {
-  const bar = el("div", "bar");
-  bar.append(...tools);
-  const error = el("div", "editor-error", "");
-  error.setAttribute("role", "alert");
-  ed.append(error, bar);
-  return (msg) => { ed.querySelector(".editor-error").textContent = msg || ""; };
-}
-
-// davForm: the kind picked shows one set of fields; drafts survive switching.
-// Inactive servers keep their settings for moving sync back.
-function davForm(v) {
-  const ed = el("div", "editor sync-form");
-  const active = v.on ? (v.kind || "webdav") : "";
-  let kind = active || "webdav";
-  const saved = t("saved · type a new one to replace it");
-  const servers = syncServers(v);
-  const server = (k) => active === k ? v : servers[k] || {};
-  const dav = server("webdav"), bk = server("s3"), gh = server("github");
-  const url = input(dav.url || "", "https://dav.jianguoyun.com/dav/");
-  const user = input(dav.user || "", t("user name"));
-  const pass = input("", dav.passwordSet ? saved : t("password, or an app password"), "password");
-  // s3://bucket/prefix, as the address is kept
-  const [bucketName, prefixName] = (() => { const m = /^s3:\/\/([^/]*)\/?(.*)$/i.exec(bk.url || ""); return m ? [m[1], m[2]] : ["", ""]; })();
-  const endpoint = input(bk.endpoint || "", "https://<account>.r2.cloudflarestorage.com");
-  const bucket = input(bucketName, t("bucket name"));
-  const prefix = input(prefixName, t("optional"));
-  const region = input(bk.region || "", t("us-east-1, or auto for R2"));
-  const keyID = input(bk.user || "", "AKIA…");
-  const secret = input("", bk.passwordSet ? saved : t("secret access key"), "password");
-  const [pathL, pathStyle] = tick(t("Path-style: the bucket in the path, not the host name"), !!bk.pathStyle);
-  const ghParts = /^github:\/\/([^/]+\/[^/]+)\/?(.*)$/i.exec(gh.url || "");
-  const repo = input(ghParts?.[1] || "", "owner/repo");
-  const branch = input(gh.branch || "", t("default branch"));
-  const ghPrefix = input(ghParts?.[2] || "", t("optional"));
-  const token = input("", gh.passwordSet ? saved : t("GitHub token"), "password");
-  const phrase = input("", v.passphraseSet ? saved : t("the same on every computer"), "password");
-  const [keysL, keys] = tick(t("Providers' API keys"), v.keys !== false);
-  const [agentsL, agents] = tick(t("Agents' models"), v.agents !== false);
-  const [libL, lib] = tick(t("Library: instructions, MCP servers and skills"), v.library !== false);
-  // usage: off unless picked, each computer its own (#542)
-  const [useL, use] = tick(t("Usage: this computer's calls, for the Usage page on the others"), !!v.usage);
-  const what = el("div", "stack");
-  what.append(keysL, agentsL, libL, useL);
-  const davFields = [...field(t("Address"), url, t("A folder named fogway is made in it.")),
-    ...field(t("User"), user),
-    ...field(t("Password"), pass)];
-  const s3Fields = [...field(t("Endpoint"), endpoint, t("Empty for AWS S3; for R2, B2, MinIO and the like, their S3 API address.")),
-    ...field(t("Bucket"), bucket),
-    ...field(t("Prefix"), prefix, t("The backup goes in a folder named fogway under it.")),
-    ...field(t("Region"), region),
-    ...field(t("Access key"), keyID),
-    ...field(t("Secret"), secret),
-    ...field("", pathL, t("MinIO and most NAS servers need it."))];
-  const ghFields = [...field(t("Repository"), repo, t("An existing private GitHub repository, in owner/repo form.")),
-    ...field(t("Branch"), branch, t("Empty uses the repository's default branch. Empty repositories are initialized by the first sync; other branches must already exist.")),
-    ...field(t("Folder"), ghPrefix, t("The encrypted backup goes in <folder>/fogway/fogway.fogway-backup. Each update creates a commit.")),
-    ...field(t("GitHub token"), token, t("A fine-grained token for this repository with Contents: read and write. Kept on this computer, separately from the library's GitHub token."))];
-  // which one is synced to, and that the other's settings stay
-  const to = field(t("Sync to"), segs(Object.entries(syncNames).map(([id, n]) => [id, id === active ? t("{kind} · on", { kind: n }) : n]), kind, (k) => { kind = k; show(); }), " ");
-  const where = to[1].querySelector(".hint");
-  const save = el("button", "text primary", "");
-  const other = Object.keys(servers).map((k) => syncNames[k]).filter(Boolean).join(" / ");
-  const show = () => {
-    for (const x of davFields) x.hidden = kind !== "webdav";
-    for (const x of s3Fields) x.hidden = kind !== "s3";
-    for (const x of ghFields) x.hidden = kind !== "github";
-    where.textContent = !active ? ""
-      : kind === active ? (other ? t("Syncing here now. The {other} settings are kept, not synced to: pick {other} to see them.", { other }) : t("Syncing here now."))
-      : t("{active} is synced to now. Saving moves sync here; the {active} settings are kept for moving back.", { active: syncNames[active] });
-    where.hidden = !active;
-    save.textContent = !active ? t("Turn on") : kind === active ? t("Save") : t("Move sync to {kind}", { kind: syncNames[kind] });
-  };
-  ed.append(...to,
-    ...davFields, ...s3Fields, ...ghFields,
-    ...field(t("Passphrase"), phrase, t("The file is sealed with it on this computer; the server only ever sees it sealed. Keep it: without it the file can't be opened.")),
-    ...field(t("Also sync"), what, t("Usage goes as a file a day: times, tokens, models and costs, never what was said. Turn it on on each computer that shares its own.")));
-  show();
-  const off = v.on ? el("button", "text danger", t("Turn off")) : el("span");
-  const cancel = el("button", "text", t("Cancel"));
-  const say = syncBar(ed, "", off, el("span", "grow"), cancel, save);
-  cancel.onclick = () => { syncOpen = ""; renderSync(); };
-  off.onclick = async () => { syncOpen = ""; renderSync(await api("davsync/off", {}).catch(() => null) || undefined); };
-  save.onclick = async () => {
-    const b = bucket.value.trim(), p = prefix.value.trim().replace(/^\/+|\/+$/g, "");
-    if (kind === "s3" && !b) return say(t("Name the bucket"));
-    const repository = repo.value.trim().replace(/^https:\/\/github\.com\//i, "").replace(/\/+$/, "").replace(/\.git$/i, "");
-    const ghFolder = ghPrefix.value.trim().replace(/^\/+|\/+$/g, "");
-    if (kind === "github" && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) return say(t("Name the GitHub repository as owner/repo"));
-    if (kind === "github" && !gh.passwordSet && !token.value.trim()) return say(t("Enter a GitHub token with Contents read and write permission"));
-    if (!v.passphraseSet && !phrase.value) return say(t("Pick a passphrase: the file is sealed with it"));
-    save.classList.add("busy");
-    const where = kind === "github"
-      ? { url: "github://" + repository + (ghFolder ? "/" + ghFolder : ""), branch: branch.value.trim(), password: token.value.trim() }
-      : kind === "s3"
-      ? { url: "s3://" + b + (p ? "/" + p : ""), user: keyID.value.trim(), password: secret.value, endpoint: endpoint.value.trim(), region: region.value.trim(), pathStyle: pathStyle.checked }
-      : { url: url.value.trim(), user: user.value.trim(), password: pass.value };
-    try {
-      const r = await api("davsync/save", { ...where, passphrase: phrase.value, keys: keys.checked, agents: agents.checked, library: lib.checked, ...(use.checked || v.usage ? { usage: use.checked } : {}) });
-      if (!r.error) syncOpen = "";
-      renderSync(r);
-      if (r.error) return;
-      refreshAfterSync();
-    } catch (e) {
-      save.classList.remove("busy");
-      say(e.message);
-    }
-  };
-  return ed;
-}
-
-function exportForm() {
-  const ed = el("div", "editor sync-form");
-  const p1 = input("", t("passphrase"), "password");
-  const p2 = input("", t("again"), "password");
-  const [keysL, keys] = tick(t("With the providers' API keys"), true);
-  const [libL, lib] = tick(t("With the library: instructions, MCP servers and skills"), true);
-  const what = el("div", "stack");
-  what.append(keysL, libL);
-  ed.append(...field(t("Passphrase"), p1, t("Needed to open the file.")),
-    ...field("", p2), ...field("", what));
-  const go = el("button", "text primary", t("Export"));
-  const cancel = el("button", "text", t("Cancel"));
-  const say = syncBar(ed, "", el("span", "grow"), cancel, go);
-  cancel.onclick = () => { syncOpen = ""; renderSync(); };
-  go.onclick = async () => {
-    if (!p1.value) return say(t("Pick a passphrase: the file is sealed with it"));
-    if (p1.value !== p2.value) return say(t("The two passphrases differ"));
-    go.classList.add("busy");
-    try {
-      const r = await api("backup/export", { pass: p1.value, keys: keys.checked, library: lib.checked });
-      ed.replaceChildren(el("div", "done", t("Saved to {path}", { path: r.path })));
-    } catch (e) {
-      go.classList.remove("busy");
-      say(e.message);
-    }
-  };
-  return ed;
-}
-
-function importForm() {
-  const ed = el("div", "editor sync-form");
-  let data = "";
-  const file = el("input");
-  file.type = "file";
-  file.accept = ".fogway-backup";
-  file.hidden = true;
-  const name = el("span", "fname", t("No file chosen"));
-  const pick = el("button", "text", t("Choose…"));
-  pick.onclick = () => file.click();
-  file.onchange = async () => {
-    const f = file.files[0];
-    if (!f) return;
-    // as base64 in JSON: the app's web view drops a File sent as the body
-    const bytes = new Uint8Array(await f.arrayBuffer());
-    let bin = "";
-    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    data = btoa(bin);
-    name.textContent = f.name;
-  };
-  const pf = el("div", "pair");
-  pf.append(name, pick, file);
-  const pass = input("", t("passphrase"), "password");
-  const [agentsL, agents] = tick(t("Set the agents' models too"), true);
-  const [libL, lib] = tick(t("Bring in the library too: instructions, MCP servers and skills"), true);
-  const what = el("div", "stack");
-  what.append(agentsL, libL);
-  ed.append(...field(t("File"), pf), ...field(t("Passphrase"), pass), ...field("", what, t("Providers with the same id are replaced; one that came without a key keeps the key it has here. The library replaces the one here, which is kept with its backups.")));
-  const go = el("button", "text primary", t("Import"));
-  const cancel = el("button", "text", t("Cancel"));
-  const say = syncBar(ed, "", el("span", "grow"), cancel, go);
-  cancel.onclick = () => { syncOpen = ""; renderSync(); };
-  go.onclick = async () => {
-    if (!data) return say(t("Choose a file first"));
-    go.classList.add("busy");
-    try {
-      const r = await api("backup/import", { data, pass: pass.value, agents: agents.checked, library: lib.checked });
-      const lines = [t("Providers: {added} added, {replaced} replaced; {profiles} profiles; {agents} agent settings changed", { added: r.Added, replaced: r.Replaced, profiles: r.Profiles, agents: r.Agents })];
-      if (r.NeedKey?.length) lines.push(t("Needs a key: {names}", { names: r.NeedKey.join(", ") }));
-      // a backup carries a subscription's settings, never its sign-in
-      if (r.Plugins?.length) lines.push(t("Plugins added: {names}", { names: r.Plugins.join(", ") }));
-      for (const [spec, error] of Object.entries(r.PluginErrors || {})) lines.push(t("Couldn't add the plugin {spec}: {error}", { spec, error }));
-      if (r.Library) lines.push(t("Library brought in and written into the agents"));
-      for (const p of r.LibraryProblems || []) lines.push(t("{agent} couldn't get {what}: {error}", { agent: p.agent, what: p.what, error: p.error }));
-      ed.replaceChildren(...lines.map((l) => el("div", "done", l)));
-      refreshAfterSync();
-    } catch (e) {
-      go.classList.remove("busy");
-      say(e.message);
-    }
-  };
-  return ed;
 }
 
 // trayCardID names a Usage page card as settings.TrayUsage does: its
@@ -20992,7 +20538,7 @@ function fitRoom(v) {
   const r = roomOf(v);
   if (r) setRoom(v, v.scrollTop < 1 ? 0 : Math.min(r, v.scrollTop + v.clientHeight - contentEnd(v)));
 }
-// A view drawn again whole (the Library's page) has none of what was clicked
+// A view drawn again whole has none of what was clicked
 // left, nor its parents: what's held is then what is now where it was, of
 // the same kind (#458)
 const pathIn = (v, n) => { const p = []; for (; n !== v; n = n.parentElement) p.unshift(Array.prototype.indexOf.call(n.parentElement.children, n)); return p; };
@@ -21117,22 +20663,17 @@ async function show(v) {
     if (view === "providers" && (editing !== null || importing || importingApps)) {
       if (!await cancelEdit(true)) return false;
     } else if (!$("#modal").hidden && !$("#modal").classList.contains("out")) {
-      if (view === "library" && modalFormDirty() && !(await confirmDiscard())) return false;
-      if (view === "library") window.closeLibraryModal?.(); else closeModal();
+      closeModal();
     }
     if (view === "routing" && window.routingDirty?.()) {
       if (!(await confirmDiscard())) return false;
       window.discardRouting?.();
     }
-    if (view === "library" && window.libraryDirty?.()) {
-      if (!(await confirmDiscard())) return false;
-      window.discardLibrary?.();
-    }
   }
   view = v;
   // the page the reader leaves is the one the window opens on next (keptView)
   if (mode === "window") { try { localStorage.setItem("fogway.lastView", v); } catch { /* not kept */ } }
-  const title = ({ agents: "Agents", providers: "Providers", gateway: "Gateway", routing: "Routing", usage: "Usage", sessions: "Sessions", library: "Library", plugins: "Plugins", settings: "Settings" })[v];
+  const title = ({ agents: "Agents", providers: "Providers", gateway: "Gateway", routing: "Routing", usage: "Usage", sessions: "Sessions", local: "Local model", settings: "Settings" })[v];
   $("#pageTitle").dataset.en = title;
   $("#pageTitle").textContent = t(title);
   if (mode === "window") {
@@ -21160,7 +20701,6 @@ async function show(v) {
   if (v === "routing" && (!quotas || Date.now() - quotasAt > 60e3)) loadQuotas();
   if (v === "usage") loadUsage(true).then(back, (e) => status(e.message, "err"));
   if (v === "settings") loadSettings().then(back, (e) => status(e.message, "err"));
-  if (v === "library") window.loadLibrary?.()?.then(back);
   if (v === "local") window.loadLocal?.()?.then(back);
   if (v === "sessions") window.loadSessionsPage?.()?.then(back);
   syncTitle();
@@ -21214,48 +20754,6 @@ function applyFeatures(list) {
   setSetTab(setTab);
   navSubs();
 }
-// Plugins › Built-in: a row each, its name, what it is and a switch, kept
-// in plugins.yml (builtins.go). One in use can't be switched off, and says
-// what uses it; a plugins.yml that doesn't parse says so, and none can be
-// switched until it is fixed. done gets the list after a switch.
-function renderBuiltins(box, list, done) {
-  const broken = list.find((f) => f.broken)?.broken;
-  const rows = list.map((f) => {
-    const r = el("div", "row pref feat-row");
-    r.dataset.id = f.id;
-    const who = el("div", "who");
-    who.append(el("div", "name", t(f.name)), el("div", "sub", t(f.sub)));
-    if (f.inUse > 0) who.append(el("div", "sub feat-why", t(f.use, { n: f.inUse })));
-    const b = el("button", "lib-switch use-credits" + (f.on ? " on" : ""));
-    b.type = "button";
-    b.setAttribute("role", "switch");
-    b.setAttribute("aria-checked", String(f.on));
-    b.setAttribute("aria-label", t(f.name));
-    b.append(el("i"));
-    b.disabled = f.inUse > 0 || !!broken;
-    if (f.inUse > 0) b.title = t("In use, so it stays on");
-    b.onclick = async () => {
-      if (b.disabled) return;
-      b.disabled = true;
-      try {
-        const next = await api("plugins/builtin", { id: f.id, on: !f.on });
-        if (state.settings) state.settings.builtins = next;
-        applyFeatures(next);
-        done(next);
-        status(t("Saved"), "ok", 1500);
-      } catch (err) {
-        b.disabled = false;
-        status(t(err.message), "err");
-      }
-    };
-    r.append(who, b);
-    return r;
-  });
-  const out = [];
-  if (broken) out.push(el("p", "feat-say warn", t("plugins.yml can't be read, so every built-in plugin stays as it was: {error}", { error: broken })));
-  box.replaceChildren(...out, ...rows);
-}
-window.renderBuiltins = renderBuiltins;
 // openSettings: the Settings page, in the window (the panel opens it there)
 function openSettings() {
   if (mode !== "window") { api("window/main?view=settings", {}); return; }
@@ -21421,7 +20919,7 @@ document.fonts?.addEventListener("loadingdone", fitTop);
 // A window wide enough has its pages down a sidebar, as a Mac app's: in
 // groups, the open page's own tabs under it, Settings at its foot and the
 // gateway's address under that, the header saying where the reader is
-// ("Work / Library / MCP servers"). Narrower, and fogway web on a phone,
+// ("Insights / Usage / Overview"). Narrower, and fogway web on a phone,
 // the pages go back into the header as tabs and each page shows its own
 // tabs again, as iPadOS's sidebar turns into a tab bar when it has no room.
 // It is the same #nav, its buttons and handlers, moved between the two.
@@ -21830,7 +21328,7 @@ if (mode === "window") {
   const again = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; navSubs(); }); };
   const mo = new MutationObserver(again);
   for (const v of Object.keys(NAV_SUBS)) mo.observe($("#view-" + v), { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] });
-  // a page whose head is only its tools (Library, Plugins, Settings) has them
+  // a page whose head is only its tools (Settings) has them
   // in the title bar beside the sidebar (app.css): between where the reader
   // is and the window's own buttons, so no row of its own stands empty
   // measured on the next frame, not inside the observer's callback, which
@@ -22019,22 +21517,6 @@ setInterval(() => {
 }, 1000);
 window.addEventListener("focus", () => load(true));
 setInterval(renderUpdateBadge, 15 * 60 * 1000); // a window left open still hears of a new version
-// renderPluginDot puts a dot on Plugins while a plugin's update waits for
-// the reader (someone else's plugin, or one pinned; the community's update
-// by themselves)
-async function renderPluginDot() {
-  const b = null; // Fogway has no plugins to update
-  if (!b) return;
-  const u = await api("plugins/updates").catch(() => null);
-  const n = u?.waiting?.length || 0;
-  b.classList.toggle("has-dot", n > 0);
-  if (n) b.title = t(n === 1 ? "An update for {name} is out" : "Updates for {n} plugins are out", { n, name: u.waiting[0].package });
-  else b.removeAttribute("title");
-}
-window.renderPluginDot = renderPluginDot;
-renderPluginDot();
-window.addEventListener("focus", renderPluginDot);
-setInterval(renderPluginDot, 15 * 60 * 1000);
 // ---------- hiding accounts, for a screenshot to share ----------
 // Routing and Usage each have a Hide accounts button, one setting for both,
 // which the tray panel follows too. Each account on the page — an email
