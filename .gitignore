@@ -6,3 +6,19 @@
 /rsrc_windows_*.syso
 /fogway-dev-backend
 /fogway-dev.new
+
+# from the repository's initial commit (GitHub's Go template)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.*
+!coverage.go
+*.coverprofile
+profile.cov
+go.work
+go.work.sum
+.env
