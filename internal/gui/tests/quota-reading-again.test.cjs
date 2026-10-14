@@ -34,7 +34,6 @@ function serve(lang, read) {
     }
     if (url.pathname === "/api/usage/quotas/history") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);

@@ -45,7 +45,6 @@ function serve(lang, tests) {
     if (url.pathname === "/api/state") return json(state);
     if (url.pathname === "/api/providers") return json(list);
     if (url.pathname === "/api/groups") return json({ groups: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/provider/test") {
       const body = route.request().postDataJSON();
       tests.push(body);

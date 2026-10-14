@@ -50,7 +50,6 @@ function server(lang, over, posts) {
       return json({ settings: s, port: { port, moved: ["Claude Code", "Codex"] } });
     }
     if (url.pathname === "/api/settings") return json(s);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname.startsWith("/api/")) return json({});

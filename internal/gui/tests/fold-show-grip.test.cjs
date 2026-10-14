@@ -34,7 +34,6 @@ function server(lang) {
     if (url.pathname === "/api/usage/quotas") return json(quotas);
     if (url.pathname === "/api/usage") return json({ calls: 0, cost: 0, days: [], agents: [], models: [], keys: [] });
     if (url.pathname === "/api/groups") return json({ groups: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/agents/cli") return json({ agents: {}, pending: false });
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true, window: true } });
     if (url.pathname.startsWith("/api/")) return json({});

@@ -37,7 +37,6 @@ function server(lang, ours) {
     if (url.pathname === "/api/state") return route.fulfill({ json: { agents: [snow(ours)], profiles: [], settings: { lang, theme: "light" } } });
     if (url.pathname === "/api/usage/quotas") return route.fulfill({ json: [] });
     if (url.pathname === "/api/groups") return route.fulfill({ json: { groups: [] } });
-    if (url.pathname === "/api/plugins") return route.fulfill({ json: { plugins: [] } });
     if (url.pathname === "/api/providers") return route.fulfill({ json: { providers: [], gateway: { running: true, window: true } } });
     if (url.pathname.startsWith("/api/")) return route.fulfill({ json: {} });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);

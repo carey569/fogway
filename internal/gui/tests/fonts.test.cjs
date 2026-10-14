@@ -43,7 +43,6 @@ async function open(browser, lang = "en", options = {}) {
       return json(api.cur);
     }
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: api.cur });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/window/fit") return route.fulfill({ status: 204 });

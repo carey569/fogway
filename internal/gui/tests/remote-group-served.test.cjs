@@ -61,7 +61,6 @@ function serve(lang) {
     if (url.pathname === "/api/usage") return json({ calls: 2, errors: 0, input: 1900, output: 220, cost: 0.001, bucket: "day", series: [], agents: [], models: [] });
     if (url.pathname === "/api/sessions") return json({ sessions: [], dirs: [] });
     if (url.pathname === "/api/sessions/stats") return json({ from: "", to: "", days: [], agents: {} });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true, window: true } });
     if (url.pathname.startsWith("/api/")) return json({});

@@ -37,7 +37,6 @@ function serve(lang, answer) {
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/gateway/trace" && url.searchParams.get("wait")) await new Promise((r) => setTimeout(r, 20e3));
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/sessions") return json({ sessions: [], dirs: [] });
     if (url.pathname === "/api/gateway/trace") return json({ mine: true, now: new Date().toISOString(), seq: 0, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });
     if (url.pathname === "/api/gateway/history") return json({ cut: false, days: [], routes: [] });

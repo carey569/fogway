@@ -33,7 +33,6 @@ function serve(lang, move, calls) {
       calls.push(url.pathname);
       return route.fulfill({ json: { agents: [codex, ...filler], profiles: [], settings: { lang, theme: "light" } } });
     }
-    if (url.pathname === "/api/plugins") return route.fulfill({ json: { plugins: [] } });
     if (url.pathname === "/api/usage/quotas") return route.fulfill({ json: [] });
     if (url.pathname === "/api/groups") return route.fulfill({ json: { groups: [] } });
     if (url.pathname === "/api/providers") return route.fulfill({ json: { providers: [], gateway: { running: true } } });

@@ -66,7 +66,6 @@ function serve(lang, store, web) {
     if (url.pathname === "/api/sessions/stats") { const d = sessDay(); return json({ from: d.date, to: d.date, days: [d], agents: { claude: "Claude Code" } }); }
     if (url.pathname === "/api/sessions/overview") return json({ count: 3, median: 5e8, p90: 9e8, days: [3], messages: [30], output: [0] });
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     // the gateway's trace waits for a request, as it does: the panel isn't redrawn by one
     if (url.pathname === "/api/gateway/trace" && url.searchParams.get("wait")) await new Promise((r) => setTimeout(r, 20e3));
     if (url.pathname === "/api/gateway/trace") return json({ mine: true, now: new Date().toISOString(), seq: 0, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });

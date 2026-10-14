@@ -29,7 +29,6 @@ function serve(lang, ctl) {
       return json({ agents: [], profiles: [], settings: { lang, theme: "light" }, recovered: ctl.recovered });
     }
     if (url.pathname === "/api/whatsnew") return json({ show: false, releases: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname.startsWith("/api/")) return json({});

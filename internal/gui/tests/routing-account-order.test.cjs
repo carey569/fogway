@@ -48,7 +48,6 @@ function fixture(lang) {
     if (url.pathname === "/boot.js") return r.fulfill({ contentType: "text/javascript", body: `window.bootPrefs={lang:${JSON.stringify(lang)},theme:"light",web:true};` });
     if (url.pathname === "/wails/runtime.js") return r.fulfill({ contentType: "text/javascript", body: "export const Window={};" });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/providers") return json(providers);
     if (url.pathname === "/api/gateway/trace") {
       const out = (routes) => json({ mine: true, now: new Date().toISOString(), seq: 1, totals: { requests: 1, rerouted: 0, errors: 0 }, routes });

@@ -39,7 +39,6 @@ function serve(lang, saved, { stateDelay = 0 } = {}, posts) {
       return json(state);
     }
     if (url.pathname === "/api/settings") return json({ ...cur, version: "0.1.1140", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3999" });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/gateway/trace") {
       if (url.searchParams.get("wait")) return new Promise(() => {});
       return json({ mine: true, now: new Date().toISOString(), seq: 1, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });

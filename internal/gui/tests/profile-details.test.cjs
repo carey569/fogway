@@ -55,7 +55,6 @@ function server(lang, calls, count) {
       calls.push(url.pathname.slice("/api/profile/".length) + " " + (req.postDataJSON()?.name || ""));
       return route.fulfill({ json: { ...state(), changed: 2 } });
     }
-    if (url.pathname === "/api/plugins") return route.fulfill({ json: { plugins: [] } });
     if (url.pathname === "/api/usage/quotas") return route.fulfill({ json: [] });
     if (url.pathname === "/api/groups") return route.fulfill({ json: { groups: [] } });
     if (url.pathname === "/api/providers") return route.fulfill({ json: { providers: [], gateway: { running: true } } });

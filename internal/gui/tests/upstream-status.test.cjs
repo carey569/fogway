@@ -54,7 +54,6 @@ function serve(lang, upstream) {
     if (url.pathname === "/api/upstream") return json(upstream.now);
     if (url.pathname === "/api/usage/quotas") return json(quotas);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];

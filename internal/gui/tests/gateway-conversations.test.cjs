@@ -60,7 +60,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         if (u.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs=${JSON.stringify({ web: true, gateway: true, lang, theme: "dark" })}` });
         if (u.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "dark", gatewayMode: "on" } });
         if (u.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true } });
-        if (u.pathname === "/api/plugins") return json({ plugins: [] });
         if (u.pathname === "/api/groups") return json({ groups: [], models: [] });
         if (u.pathname === "/api/sessions/manage") return json({
           agents: [{ agent: "claude", name: "Claude Code", icon: "claudecode", count: 1, deletable: false }],
@@ -179,7 +178,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         if (u.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs=${JSON.stringify({ web: true, lang, theme: "light" })}` });
         if (u.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
         if (u.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true } });
-        if (u.pathname === "/api/plugins") return json({ plugins: [] });
         if (u.pathname === "/api/groups") return json({ groups: [], models: [] });
         if (u.pathname === "/api/sessions/manage") {
           const agent = u.searchParams.get("agent") || "codex";

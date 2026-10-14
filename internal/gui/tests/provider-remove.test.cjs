@@ -33,7 +33,6 @@ function serve(lang, mode, deletes) {
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
     if (url.pathname === "/api/providers") return json(payload());
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/provider/delete") {
       const { id } = route.request().postDataJSON();

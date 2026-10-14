@@ -34,7 +34,6 @@ function serve(lang, asked, copied) {
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
     if (url.pathname === "/api/providers") return json(providers);
     if (url.pathname === "/api/groups") return json({ groups: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/provider/key") {
       const body = route.request().postDataJSON();
       asked.push(body);

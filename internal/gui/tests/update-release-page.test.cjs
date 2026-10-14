@@ -40,7 +40,6 @@ function server(lang, ctl) {
       if (ctl.update.state === "downloading") ctl.update = { ...ctl.update, done: Math.min(ctl.update.total, ctl.update.done + 1e6) };
       return json(ctl.update);
     }
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname.startsWith("/api/")) return json({});

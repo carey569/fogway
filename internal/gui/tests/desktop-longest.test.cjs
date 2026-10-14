@@ -40,7 +40,6 @@ function fixture(lang) {
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/agents/cli") return json({ agents: {}, pending: false });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];

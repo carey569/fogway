@@ -30,7 +30,6 @@ function server(lang, size) {
     if (url.pathname === "/api/update") return route.fulfill({ json: { state: "ready", version: "0.1.590", latest: "0.1.592" } });
     if (url.pathname === "/api/providers") return route.fulfill({ json: { providers: [], presets: [], excluded: [], gateway: { running: true, window: true } } });
     if (url.pathname === "/api/groups") return route.fulfill({ json: { groups: [] } });
-    if (url.pathname === "/api/plugins") return route.fulfill({ json: { plugins: [] } });
     if (url.pathname.startsWith("/api/")) return route.fulfill({ json: {} });
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];

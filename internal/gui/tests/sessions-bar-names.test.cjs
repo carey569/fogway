@@ -36,7 +36,6 @@ function serve(lang) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:true};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/sessions/progress") return json({ indexing: false });
     if (url.pathname === "/api/sessions") return json({ sessions: [], dirs: ["/test/sessions"] });
     if (url.pathname === "/api/sessions/stats") return json({ from: allDays[0].date, to: iso(to), days: allDays, agents: { claude: "Claude Code", codex: "Codex" } });

@@ -47,7 +47,6 @@ function serve(lang, posts) {
       return json(cur);
     }
     if (url.pathname === "/api/settings") return json(cur);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/gateway/trace") {
       if (url.searchParams.get("wait")) return new Promise(() => {});
       return json({ mine: true, now: new Date().toISOString(), seq: 1, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });

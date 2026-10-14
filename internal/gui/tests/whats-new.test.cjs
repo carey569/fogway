@@ -60,7 +60,6 @@ function serve(lang, ctl) {
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
     if (url.pathname === "/api/settings") return json(settingsPayload(lang));
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/update" || url.pathname === "/api/whatsnew" || url.pathname === "/api/update/check") {

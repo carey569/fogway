@@ -35,7 +35,6 @@ function serve(lang, acct) {
     if (url.pathname === "/api/usage/quotas/history") return json([]);
     if (url.pathname === "/api/usage") return json({ calls: 1, input: 100, output: 10, cost: 0.01, series: [], agents: [], models: [] });
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true } });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);

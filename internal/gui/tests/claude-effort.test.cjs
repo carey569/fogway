@@ -43,7 +43,6 @@ function serve(lang, sets) {
       if (b.field === "ultracode") on = b.value === "on";
       return route.fulfill({ json: st(b.field === "ultracode" ? ULTRA : EFFORT) });
     }
-    if (url.pathname === "/api/plugins") return route.fulfill({ json: { plugins: [] } });
     if (url.pathname === "/api/usage/quotas") return route.fulfill({ json: [] });
     if (url.pathname === "/api/groups") return route.fulfill({ json: { groups: [] } });
     if (url.pathname === "/api/providers") return route.fulfill({ json: { providers: [], gateway: { running: true } } });

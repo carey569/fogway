@@ -67,7 +67,6 @@ function serve(lang, c) {
     if (url.pathname === "/api/usage/quotas") return json(c.quotas);
     if (url.pathname === "/api/usage") return json({ days: [] });
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];

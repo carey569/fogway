@@ -50,7 +50,6 @@ function server(lang, posts) {
       return json(cur);
     }
     if (url.pathname === "/api/usage/quotas") return json(quotas);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);

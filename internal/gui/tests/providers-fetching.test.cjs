@@ -32,7 +32,6 @@ function fixture() {
       return json({ providers: done ? [prov("a"), prov("b")] : [prov("a")], presets: [], excluded: [], gateway: { running: true, window: true }, fetching: !done });
     }
     if (url.pathname === "/api/groups") return json({ groups: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);

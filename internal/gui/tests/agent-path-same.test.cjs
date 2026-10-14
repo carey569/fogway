@@ -49,7 +49,6 @@ function server(lang, sets) {
       a.wired = body.value.startsWith("fogway/") || a.id === "codex";
       return json({ ...cur, settings: { lang, theme: "light" } });
     }
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/agents/cli") return json({ agents: {}, pending: false });

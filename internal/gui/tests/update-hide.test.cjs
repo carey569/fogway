@@ -58,7 +58,6 @@ function server(lang, ctl) {
       return json(settingsPayload(lang, ctl));
     }
     if (url.pathname === "/api/update") return json({ state: "ready", current: "0.1.400", latest: ctl.latest });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname.startsWith("/api/")) return json({});

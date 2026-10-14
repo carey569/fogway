@@ -57,7 +57,6 @@ function serve(lang, posts) {
     if (url.pathname === "/wails/runtime.js") return r.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (req.method() === "POST" && url.pathname.startsWith("/api/")) posts.push({ path: url.pathname + url.search, body: JSON.parse(req.postData() || "{}") });
     if (url.pathname === "/api/state" || url.pathname === "/api/set") return json(state());
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/agents/cli") return json({ agents: {}, pending: false });
     if (url.pathname === "/api/gateway/trace") {

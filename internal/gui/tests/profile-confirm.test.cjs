@@ -36,7 +36,6 @@ function server(lang, calls) {
       if (action === "delete") profiles = profiles.filter((p) => p.name !== name);
       return route.fulfill({ json: { ...state(), changed: 1 } });
     }
-    if (url.pathname === "/api/plugins") return route.fulfill({ json: { plugins: [] } });
     if (url.pathname === "/api/usage/quotas") return route.fulfill({ json: [] });
     if (url.pathname === "/api/groups") return route.fulfill({ json: { groups: [] } });
     if (url.pathname === "/api/providers") return route.fulfill({ json: { providers: [], gateway: { running: true } } });

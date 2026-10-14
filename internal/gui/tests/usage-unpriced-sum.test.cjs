@@ -66,7 +66,6 @@ function serve(lang, some) {
     if (url.pathname === "/api/usage/requests") return json(requests(url.searchParams.get("period"), some));
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/sessions/progress") return json({ indexing: false });
     if (url.pathname === "/api/sessions") return json({ sessions: [session], dirs: [] });
     if (url.pathname === "/api/sessions/stats") return json({ from: today, to: today, days: [{ date: today, usage, active: [] }], agents: { codex: "Codex" } });

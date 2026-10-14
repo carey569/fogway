@@ -32,7 +32,6 @@ function serve(lang, saves) {
       return err ? json({ error: err }, 502) : json(providers);
     }
     if (url.pathname === "/api/settings") return json({ theme: "light", lang, tray: "panel", currency: "usd", version: "0.1.1080", lanURLs: [], redactWords: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);

@@ -62,7 +62,6 @@ function serve(lang, posted) {
       return json({ key: "tvly-dev-0123456789abcd" });
     }
     if (url.pathname === "/api/copy") { posted.push({ copied: JSON.parse(r.request().postData()).text }); return json({}); }
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/groups") return json({ models: [], groups: [], pools: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true, window: true, url: "http://127.0.0.1:3999" } });
     if (url.pathname.startsWith("/api/")) return json({});

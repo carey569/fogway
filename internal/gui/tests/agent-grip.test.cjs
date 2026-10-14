@@ -31,7 +31,6 @@ function fixture(lang) {
     if (url.pathname === "/api/state") return json(state);
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true, window: true } });
     if (url.pathname === "/api/groups") return json({ groups: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/agents/arrange") {
       const body = request.postDataJSON();

@@ -65,7 +65,6 @@ function server(lang, ctl) {
       } else ctl.gets++;
       return json(view(ctl));
     }
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname.startsWith("/api/")) return json({});

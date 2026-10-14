@@ -39,7 +39,6 @@ function serve(lang, agents, late = 0) {
     // late: the agents read after the page is drawn, as at a start (#1519)
     if (url.pathname === "/api/state") return setTimeout(() => json(state).catch(() => {}), late);
     if (url.pathname === "/api/settings") return json(cur);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/gateway/trace") {
       if (url.searchParams.get("wait")) return new Promise(() => {});
       return json({ mine: true, now: new Date().toISOString(), seq: 1, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });

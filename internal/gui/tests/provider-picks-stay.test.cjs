@@ -36,7 +36,6 @@ function serve(lang, gate, posts) {
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (req.method() === "POST" && url.pathname.startsWith("/api/")) posts.push({ path: url.pathname, body: req.postDataJSON() || {} });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/providers") {
       // a list asked for while the gate is shut comes back once it opens
       if (gate.shut) { gate.waiting++; await gate.shut; }

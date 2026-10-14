@@ -39,7 +39,6 @@ async function serve(route, lang) {
   if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
   if (url.pathname === "/api/state") return json({ ...state, settings: { ...state.settings, lang } });
   if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true, window: true } });
-  if (url.pathname === "/api/plugins") return json({ plugins: [] });
   if (url.pathname.startsWith("/api/")) return json({});
   const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
   const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];

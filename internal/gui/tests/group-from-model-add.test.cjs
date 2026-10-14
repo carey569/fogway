@@ -31,7 +31,6 @@ function serve(lang, posts, refuse) {
     if (url.pathname === "/wails/runtime.js") return r.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (req.method() === "POST" && url.pathname.startsWith("/api/")) posts.push({ path: url.pathname, body: JSON.parse(req.postData() || "{}") });
     if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/agents/cli") return json({ agents: {}, pending: false });
     if (url.pathname === "/api/gateway/trace") {

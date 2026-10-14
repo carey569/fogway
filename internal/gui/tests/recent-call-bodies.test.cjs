@@ -48,7 +48,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           return json({ requestBody: "", responseBody: "" });
         }
         if (url.pathname === "/api/groups") return json({ groups: [] });
-        if (url.pathname === "/api/plugins") return json({ plugins: [] });
         if (url.pathname === "/api/gateway/trace") {
           if (url.searchParams.has("wait")) await new Promise((r) => setTimeout(r, 1000));
           return json({ mine: true, now: calls[0].time, seq: 1, totals: {}, routes: [] });

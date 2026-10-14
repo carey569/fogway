@@ -44,7 +44,6 @@ function server(lang, arranged) {
       settings.agentsHidden = b.hidden;
       return json({ ...settings, agentsShown: b.shown });
     }
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/agents/cli") return json({ agents: {}, pending: false });

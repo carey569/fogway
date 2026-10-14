@@ -59,7 +59,6 @@ function serve(lang, posts) {
       return json({ mine: true, now: new Date().toISOString(), seq: 7, totals: { requests: 1, rerouted: 0, errors: 0 }, routes });
     }
     if (url.pathname === "/api/gateway/history") return json({ cut: false, days: [], routes: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/groups") return json(groups());
     if (url.pathname.startsWith("/api/groups/")) {
       posts.push({ path: url.pathname, body: JSON.parse(r.request().postData() || "{}") });
