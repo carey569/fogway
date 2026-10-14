@@ -741,8 +741,7 @@ function renderProfiles() {
     const c = el("button", "chip");
     c._profile = p.name;
     if (profilePending.has(p.name)) c.classList.add("pending");
-    const lib = profileLibrary(p.library);
-    c.title = [p.inUse && t("In use"), p.summary, lib].filter(Boolean).join("\n");
+    c.title = [p.inUse && t("In use"), p.summary].filter(Boolean).join("\n");
     // the one the setup is now, ticked as a menu ticks the item in effect
     if (p.inUse) {
       c.classList.add("cur");
@@ -750,7 +749,6 @@ function renderProfiles() {
       c.append(el("span", "cur-tick", "✓"));
     }
     c.append(el("span", "", p.name));
-    if (lib) c.append(el("span", "lib"));
     // the setup as it is now, saved over this profile; it, and ×, on a
     // second click (#478)
     const u = el("span", "x");
@@ -917,9 +915,6 @@ function profileDetail(p, footed) {
     // the models its list shows, which applying it switches to (#1368)
     const m = g.models;
     if (m) row(t("Model list"), m.only ? t("only the {n} picked", { n: m.picked }) : m.hidden ? t("{n} hidden", { n: m.hidden }) : t("every model shown"), m.only || m.hidden ? "" : "pd-default");
-    if (g.servers?.length) row(t("MCP servers"), g.servers.join(t(", ")));
-    if (g.skills?.length) row(t("Skills"), g.skills.join(t(", ")));
-    if (g.instructions) row(t("Instructions"), t("on"));
     sec.append(gh, rows);
     d.append(sec);
   }
@@ -5204,17 +5199,6 @@ document.addEventListener("keydown", (e) => {
 
 // ---------- profiles ----------
 
-// profileLibrary is what a profile gives out from the Library, in a few
-// words; "" for one saved without it.
-function profileLibrary(l) {
-  if (!l) return "";
-  const parts = [];
-  if (l.servers) parts.push(t(l.servers === 1 ? "{n} server" : "{n} servers", { n: l.servers }));
-  if (l.skills) parts.push(t(l.skills === 1 ? "{n} skill" : "{n} skills", { n: l.skills }));
-  if (l.instructions) parts.push(t("instructions"));
-  return parts.length ? t("+ Library: {what}", { what: parts.join(t(", ")) }) : t("+ Library: nothing on");
-}
-
 // profilePending are the profiles a save, update, delete or use is on its
 // way for. What the click does shows at once — the chip saved is there, the
 // one deleted gone, the name field closed — rather than when fogway has read
@@ -5243,11 +5227,7 @@ async function profileAction(action, name, update) {
       // left them there, their × doing nothing)
       closeProfileDetail();
       closeProfiles(); // the agents, as they are now, in sight
-      let msg = t(data.changed === 1 ? "{name} applied · {n} setting changed" : "{name} applied · {n} settings changed", { name, n: data.changed });
-      const lib = data.library;
-      if (lib?.missing?.length) msg += " · " + t("skipped, no longer in the Library: {names}", { names: lib.missing.map((m) => m.replace(/^\w+:/, "")).join(", ") });
-      if (lib?.problems?.length) status(msg + " · " + t("some of the Library couldn't be given; see Library"), "err", 6000);
-      else status(msg, "ok", lib?.missing?.length ? 6000 : 3500);
+      status(t(data.changed === 1 ? "{name} applied · {n} setting changed" : "{name} applied · {n} settings changed", { name, n: data.changed }), "ok", 3500);
     }
     else if (action === "save") status(t(update ? "Updated {name} to the current setup" : "Saved {name}", { name }), "ok");
     else status(t("Deleted {name}", { name }));

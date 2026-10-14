@@ -5,8 +5,8 @@
 // chip opens its details: the agents' names, each one's fields under their
 // labels (an empty one the agent's default, one that reads as a key shown as
 // dots, each of Claude Code's four tiers, one left to follow the main model
-// saying so and what that is: #480, they were missing), what the Library
-// gives it; nothing is applied, and the chip clicked
+// saying so and what that is: #480, they were missing), the model list it
+// switches to; nothing is applied, and the chip clicked
 // stays where it is on the screen. Apply in the details applies it, once; a
 // second click on the chip closes them; ↻ and × are still on the chip. In the
 // window and in the tray panel (its list scrolled to its end), in English
@@ -23,7 +23,6 @@ const agent = (id, name) => ({ id, name, path: "/test/" + id, fields: [{ key: "m
 const filler = (i) => ({ name: "profile-" + String(i).padStart(2, "0"), summary: "", agents: [] });
 const work = {
   name: "work", summary: "codex gpt-5",
-  library: { servers: 1, skills: 1, instructions: true },
   agents: [
     { id: "claude", name: "Claude Code", fields: [
       { key: "model", label: "model", value: "fogway/a/main" },
@@ -32,12 +31,12 @@ const work = {
       { key: "haiku", label: "haiku", value: "", follows: "model" },
       { key: "fable", label: "fable", value: "", follows: "model" },
       { key: "subagent", label: "subagents", value: "" },
-    ], servers: ["github"], skills: ["review"], models: { hidden: 0 } },
+    ], models: { hidden: 0 } },
     { id: "codex", name: "Codex", fields: [
       { key: "model", label: "model", value: "fogway/openai/gpt-5" },
       { key: "effort", label: "effort", value: "high" },
       { key: "token", label: "token", value: "", hidden: true },
-    ], instructions: true, models: { hidden: 8 } },
+    ], models: { hidden: 8 } },
     // an agent with no fields saved, only a model list: shown only its picks
     { id: "opencode", name: "OpenCode", fields: [], models: { hidden: 0, only: true, picked: 3 } },
   ],
@@ -69,8 +68,8 @@ function server(lang, calls, count) {
 }
 
 const words = {
-  en: { model: "model", effort: "effort", high: "high", def: "agent default", follows: "follows the main model (fogway/a/main)", subagents: "subagents", servers: "MCP servers", skills: "Skills", instructions: "Instructions", on: "on", apply: "Apply", list: "Model list", all: "every model shown", hidden8: "8 hidden", picked3: "only the 3 picked" },
-  zh: { model: "模型", effort: "推理强度", high: "高", def: "Agent 默认值", follows: "跟随主模型（fogway/a/main）", subagents: "子代理", servers: "MCP 服务器", skills: "技能", instructions: "指令", on: "开启", apply: "应用", list: "模型列表", all: "全部显示", hidden8: "已隐藏 8 个", picked3: "仅显示所选的 3 个" },
+  en: { model: "model", effort: "effort", high: "high", def: "agent default", follows: "follows the main model (fogway/a/main)", subagents: "subagents", apply: "Apply", list: "Model list", all: "every model shown", hidden8: "8 hidden", picked3: "only the 3 picked" },
+  zh: { model: "模型", effort: "推理强度", high: "高", def: "Agent 默认值", follows: "跟随主模型（fogway/a/main）", subagents: "子代理", apply: "应用", list: "模型列表", all: "全部显示", hidden8: "已隐藏 8 个", picked3: "仅显示所选的 3 个" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -96,6 +95,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", server(lang, calls, panel ? 30 : 3));
         await page.goto("http://fogway.test/" + (panel ? "?mode=panel" : ""));
         const chip = page.locator("#profiles .chip", { hasText: /^work/ });
+        // clicked on its name, as a reader does: a short name's chip has its
+        // ↻ at the middle, where a bare click lands
+        const name = chip.getByText("work", { exact: true });
         await chip.waitFor({ state: "attached" });
         if (panel) {
           await page.locator("#profBtn").click();
@@ -115,7 +117,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
         // a click opens its details, applying nothing, the chip where it was
         const before = await top();
-        await chip.click();
+        await name.click();
         const detail = page.locator(".prof-detail");
         await detail.waitFor();
         await page.waitForTimeout(350);
@@ -137,17 +139,17 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(read.apply, w.apply);
         assert(read.inView, "the details must be drawn");
         assert.deepEqual(read.groups, [
-          { name: "Claude Code", rows: [`${w.model}=fogway/a/main`, `opus=${w.follows}`, "sonnet=fogway/a/s", `haiku=${w.follows}`, `fable=${w.follows}`, `${w.subagents}=${w.def}`, `${w.list}=${w.all}`, `${w.servers}=github`, `${w.skills}=review`] },
-          { name: "Codex", rows: [`${w.model}=fogway/openai/gpt-5`, `${w.effort}=${w.high}`, "token=••••••", `${w.list}=${w.hidden8}`, `${w.instructions}=${w.on}`] },
+          { name: "Claude Code", rows: [`${w.model}=fogway/a/main`, `opus=${w.follows}`, "sonnet=fogway/a/s", `haiku=${w.follows}`, `fable=${w.follows}`, `${w.subagents}=${w.def}`, `${w.list}=${w.all}`] },
+          { name: "Codex", rows: [`${w.model}=fogway/openai/gpt-5`, `${w.effort}=${w.high}`, "token=••••••", `${w.list}=${w.hidden8}`] },
           { name: "OpenCode", rows: [`${w.list}=${w.picked3}`] },
         ]);
 
         // a second click closes them; a third opens them again
-        await chip.click();
+        await name.click();
         await page.waitForTimeout(200);
         assert.equal(await detail.count(), 0, "a second click closes the details");
         assert(Math.abs((await top()) - before) < 1, "closing them leaves the chip where it is");
-        await chip.click();
+        await name.click();
         await detail.waitFor();
         assert.deepEqual(calls, []);
 
@@ -175,9 +177,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", server(lang, [], 3));
         await page.goto("http://fogway.test/");
         const chip = page.locator("#profiles .chip", { hasText: /^work/ });
+        // clicked on its name, as a reader does: a short name's chip has its
+        // ↻ at the middle, where a bare click lands
+        const name = chip.getByText("work", { exact: true });
         await chip.waitFor({ state: "attached" });
         await chip.scrollIntoViewIfNeeded();
-        await chip.click();
+        await name.click();
         await page.locator(".prof-detail").waitFor();
         const rows = await page.locator(".prof-detail").evaluate((d) =>
           [...d.querySelectorAll(".pd-agent dt")].map((dt) => dt.textContent + "=" + dt.nextElementSibling.textContent));

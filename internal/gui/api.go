@@ -229,9 +229,6 @@ type clientJSON struct {
 type profileJSON struct {
 	Name    string `json:"name"`
 	Summary string `json:"summary"`
-	// Library is what the profile gives out from the library, for one
-	// saved with its setup
-	Library *profileLibraryJSON `json:"library,omitempty"`
 	// Agents is what it holds, by agent, to be read before it is applied
 	// (#467); a value that reads as a key or a token is left out
 	Agents []profile.Group `json:"agents"`
@@ -239,12 +236,6 @@ type profileJSON struct {
 	// nothing (profile.InUse); the page marks it so (superhtoooth on X:
 	// nothing said which profile was in use)
 	InUse bool `json:"inUse,omitempty"`
-}
-
-type profileLibraryJSON struct {
-	Servers      int  `json:"servers"`      // given to at least one agent
-	Skills       int  `json:"skills"`       // given to at least one agent
-	Instructions bool `json:"instructions"` // some agent gets them
 }
 
 type stateJSON struct {

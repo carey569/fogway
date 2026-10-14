@@ -9,18 +9,13 @@ import (
 )
 
 // Group is what a profile holds for one agent, to be read before it is
-// applied (#467): its fields, in the order the agent lists them, and what
-// the library's setup gives it.
+// applied (#467): its fields, in the order the agent lists them, and its
+// model list.
 type Group struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Icon   string `json:"icon,omitempty"`
 	Fields []Item `json:"fields"`
-	// Servers and Skills are the library's it gets, by name; Instructions
-	// whether it gets the instructions (their text is left out)
-	Servers      []string `json:"servers,omitempty"`
-	Skills       []string `json:"skills,omitempty"`
-	Instructions bool     `json:"instructions,omitempty"`
 	// Models is the model list it is switched to (#1368); nil when the
 	// profile keeps none for it, which leaves its list as it is
 	Models *Models `json:"models,omitempty"`
@@ -146,7 +141,7 @@ func Details(p Profile) []Group {
 		if ml, ok := p.Models[id]; ok && (!ml.Default() || len(g.Fields) > 0) {
 			g.Models = &Models{Hidden: len(ml.Hidden), Only: ml.Only, Picked: len(ml.Picked)}
 		}
-		if len(g.Fields) == 0 && len(g.Servers) == 0 && len(g.Skills) == 0 && !g.Instructions && g.Models == nil {
+		if len(g.Fields) == 0 && g.Models == nil {
 			continue
 		}
 		out = append(out, g)
