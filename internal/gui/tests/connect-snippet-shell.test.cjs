@@ -2,6 +2,10 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { execFile, execFileSync } = require("node:child_process");
 const run = require("node:util").promisify(execFile);
+// the shells' curl goes straight to the stand-in on this computer: a proxy
+// in the environment (http_proxy, all_proxy) would take the request, and
+// the key in it, somewhere else
+const direct = { env: Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(https?|all|no)_proxy$/i.test(k))) };
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 const { fixture } = require("./fixtures/caller-keys.cjs");
@@ -92,7 +96,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         for (const sh of shells) {
           const srv = await echoServer(t);
           // async: the stand-in answers on this process's own loop
-          await run(sh, ["-c", curl.replace("http://192.168.1.10:3999", srv.base) + " -sS -o /dev/null --max-time 10"]);
+          await run(sh, ["-c", curl.replace("http://192.168.1.10:3999", srv.base) + " -sS -o /dev/null --max-time 10"], direct);
           assert.equal(srv.got.length, 1, sh);
           assert.equal(srv.got[0].url, "/v1/chat/completions");
           assert.equal(srv.got[0].headers.authorization, `Bearer ${SECRET}`, sh);
