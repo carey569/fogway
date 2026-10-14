@@ -25,6 +25,10 @@ var byFamily = []struct{ prefix, icon string }{
 	{"minimax", "minimax-color"},
 	{"mimo", "mimocode"}, {"xiaomi", "mimocode"},
 	{"step", "stepfun-color"},
+	{"spark", "spark-color"}, {"xspark", "spark-color"}, {"astron", "spark-color"},
+	// other makers' models as iFlytek's Token Plan names them (xopglm52)
+	{"xopglm", "zhipu-color"}, {"xopdeepseek", "deepseek-color"}, {"xopkimi", "kimi"},
+	{"xopqwen", "qwen-color"}, {"xop3qwen", "qwen-color"}, {"xminimax", "minimax-color"},
 }
 
 // providerIcon is the logo of a models.dev provider itself, which for one

@@ -54,7 +54,7 @@ line; agents connected to fogway lose it when it quits.
   use its models through the gateway, with nothing copied and no key to
   paste.
 - **Providers with one field.** Pick a preset (Anthropic, OpenAI, Gemini,
-  DeepSeek, Kimi, GLM, MiniMax, StepFun, Qwen, Baidu Qianfan, Tencent Cloud Token Plan,
+  DeepSeek, Kimi, GLM, MiniMax, StepFun, Qwen, iFlytek Spark, Baidu Qianfan, Tencent Cloud Token Plan,
   Huawei Cloud MaaS, Volcengine Ark, Mistral, Groq, xAI, OpenRouter, Together,
   Fireworks, SiliconFlow, NVIDIA NIM, ModelScope, AiHubMix, PipeLLM, 302.AI, Ollama, LM Studio…),
   paste a key, done. Custom vendors need a name and a base URL. fogway never
@@ -695,6 +695,26 @@ same model on the Qwen AI platform's pay as you go is `qwen-decision`
 (`maas.qianwenaiapi.com`), and on a Bailian workspace `bailian-decision`.
 Neither plan has an API for its credits: the console's subscription page
 shows them, so fogway shows no plan usage for these keys.
+
+iFlytek Spark (讯飞星火) is `iflytek`, with three plans, each on a key that
+only its own endpoints take:
+
+| plan | `plan=` | endpoints | models |
+|---|---|---|---|
+| [Astron Token Plan](https://www.xfyun.cn/doc/spark/TokenPlan.html) (the default) | `token` | Chat Completions at `maas-token-api.cn-huabei-1.xf-yun.com/v2`, Anthropic Messages at `/anthropic` | Spark X2.5 (`spark-x2.5`), Spark X2 Flash and other makers' models by iFlytek's ids (`xopglm52` is GLM-5.2, `xopdeepseekv4pro` DeepSeek V4 Pro) |
+| [Astron Coding Plan](https://www.xfyun.cn/doc/spark/CodingPlan.html) | `coding` | `maas-coding-api.cn-huabei-1.xf-yun.com`: `/v2`, Responses at `/v1`, `/anthropic` | `astron-code-latest`, whichever model its console has picked |
+| [Spark X2](https://www.xfyun.cn/doc/spark/X1http.html) | `x2` | Chat Completions at `spark-api-open.xf-yun.com/x2` | `spark-x`; the key is the APIPassword on the console's X2 page |
+
+```sh
+fogway provider add iflytek <api-key>             # the Token Plan
+fogway provider set iflytek plan=x2               # or coding
+```
+
+None of them lists its models where fogway can ask (the Token Plan's
+`/v2/models` is 404), so the preset carries each plan's documented models.
+models.dev has no entry for iFlytek, so their context windows aren't known:
+set them on the provider (*Context window*, or `fogway model context`),
+256K for Spark X2.5 as its doc gives it. Not yet tried with a real key.
 
 ### Google Vertex AI
 

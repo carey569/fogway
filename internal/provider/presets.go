@@ -211,6 +211,42 @@ var presets = []PresetDef{
 			{ID: "plan-ams", Name: "Plan · Europe", Chat: "https://token-plan-ams.xiaomimimo.com/v1", Responses: "https://token-plan-ams.xiaomimimo.com/v1", Anthropic: "https://token-plan-ams.xiaomimimo.com/anthropic", Catalog: "xiaomi-token-plan-ams, xiaomi"},
 			{ID: "api", Name: "Pay as you go", Chat: "https://api.xiaomimimo.com/v1", Responses: "https://api.xiaomimimo.com/v1", Anthropic: "https://api.xiaomimimo.com/anthropic", Catalog: "xiaomi"},
 		}},
+	// iFlytek Spark (讯飞星火): Astron MaaS's Token Plan and Coding Plan, and
+	// the Spark X2 API, each on a key of its own that only its endpoints
+	// take (their docs: spark/TokenPlan.html, CodingPlan.html, X1http.html
+	// on xfyun.cn).
+	//
+	// The Token Plan serves chat completions at /v2 and Anthropic messages
+	// at /anthropic on maas-token-api (not maas-api, pay as you go's host),
+	// Spark X2.5 and other makers' models by its own ids; its /v2/models is
+	// 404, so its documented models are given, the two it lists as
+	// discontinued (xsparkx2, xsparkx2agent) left out.
+	//
+	// The Coding Plan answers every request with the model picked in its
+	// console, asked for as astron-code-latest; Responses at /v1.
+	//
+	// Spark X2 is spark-x at /x2 (X1.5 is spark-x at /v2), its key the
+	// APIPassword of the console's X2 page: each Spark version has its own.
+	// The host answers 401 on any path without a key, so whether it lists
+	// models can't be told; spark-x is given.
+	{ID: "iflytek", Name: "iFlytek Spark", Icon: "spark-color", Kind: KindVendor,
+		Chat: "https://maas-token-api.cn-huabei-1.xf-yun.com/v2", Anthropic: "https://maas-token-api.cn-huabei-1.xf-yun.com/anthropic",
+		Note:    "Astron Token Plan · Coding Plan · Spark X2",
+		Website: "https://www.xfyun.cn/doc/spark/TokenPlan.html", KeysURL: "https://maas.xfyun.cn/tokenPlan/subscription",
+		RegionLabel: "Plan", Regions: []Region{
+			{ID: "token", Name: "Token Plan", Chat: "https://maas-token-api.cn-huabei-1.xf-yun.com/v2", Anthropic: "https://maas-token-api.cn-huabei-1.xf-yun.com/anthropic",
+				Website: "https://www.xfyun.cn/doc/spark/TokenPlan.html", KeysURL: "https://maas.xfyun.cn/tokenPlan/subscription",
+				Models: []string{"spark-x2.5", "xsparkx2flash", "xopglm52", "xopglm51", "xopglm5", "xopglmv47flash",
+					"xopdeepseekv4pro", "xopdeepseekv4flash", "xopdeepseekv32", "xopkimik26", "xopkimik25", "xminimaxm25",
+					"xopqwen35397b", "xopqwen36v35b", "xopqwen35v35b", "xop3qwencodernext"}},
+			{ID: "coding", Name: "Coding Plan", Chat: "https://maas-coding-api.cn-huabei-1.xf-yun.com/v2", Responses: "https://maas-coding-api.cn-huabei-1.xf-yun.com/v1", Anthropic: "https://maas-coding-api.cn-huabei-1.xf-yun.com/anthropic",
+				Website: "https://www.xfyun.cn/doc/spark/CodingPlan.html", KeysURL: "https://maas.xfyun.cn/packageSubscription",
+				Models: []string{"astron-code-latest"}},
+			{ID: "x2", Name: "Spark X2", Chat: "https://spark-api-open.xf-yun.com/x2",
+				Website: "https://www.xfyun.cn/doc/spark/X1http.html", KeysURL: "https://console.xfyun.cn/services/bmx1",
+				Models: []string{"spark-x"}},
+		},
+		NoList: true},
 	// Baidu Qianfan: a personal and an enterprise Token Plan, each at its
 	// own endpoints under qianfan.baidubce.com on a key of its own; pay as
 	// you go is the v2 API at the host's root, which serves its model list
