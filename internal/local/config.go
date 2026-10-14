@@ -18,13 +18,17 @@ type Model struct {
 	// Name is what agents and the router know it by; the file's name
 	// without .gguf when empty.
 	Name string `json:"name,omitempty"`
+	// Title is its name for people: Spark X2.5 4B.
+	Title string `json:"title,omitempty"`
 	// Size is the file's size as the catalog has it, for a picker before
 	// it is asked; the download goes by what Hugging Face says.
 	Size uint64 `json:"size,omitempty"`
 	// Need is the memory it wants to run at its context: the file and the
 	// cache, roughly.
 	Need uint64 `json:"need,omitempty"`
-	Note string `json:"note,omitempty"`
+	// Params is how many weights it has, what reading a prompt costs.
+	Params uint64 `json:"params,omitempty"`
+	Note   string `json:"note,omitempty"`
 }
 
 // ID is the model's name as the gateway serves it: local/<ID>.
@@ -35,27 +39,51 @@ func (m Model) ID() string {
 	return strings.ToLower(strings.TrimSuffix(filepath.Base(m.File), ".gguf"))
 }
 
-// Catalog is the models Fogway offers to set up, smallest first; any other
-// repository and file can be given.
+// Spark X2.5 (iFlytek's, Apache 2.0, https://huggingface.co/XHToken):
+// the models Fogway recommends, the 4B where it runs smoothly, else the
+// 1.7B. Need is the file, the cache of a 32K window (one layer in four
+// keeps the whole window, the others 512 tokens) and llama.cpp's buffers.
+var (
+	Spark17 = Model{Repo: "XHToken/Spark-X2.5-1.7B-GGUF", File: "Spark-X2.5-1.7B-Q4_K_M.gguf", Name: "spark-x2.5-1.7b", Title: "Spark X2.5 1.7B",
+		Size: 1_107_457_856, Need: 2_400_000_000, Params: 1_707_657_216,
+		Note: "for 8 GB of memory: routes and masks well, does small tasks"}
+	Spark4 = Model{Repo: "XHToken/Spark-X2.5-4B-GGUF", File: "Spark-X2.5-4B-Q4_K_M.gguf", Name: "spark-x2.5-4b", Title: "Spark X2.5 4B",
+		Size: 2_600_224_352, Need: 4_600_000_000, Params: 4_112_079_360,
+		Note: "for 16 GB: steadier judgements, a fair coder for its size"}
+)
+
+// Catalog is the models Fogway offers to set up: Spark X2.5, then others;
+// any other repository and file can be given.
 var Catalog = []Model{
-	{Repo: "unsloth/Qwen3.5-2B-GGUF", File: "Qwen3.5-2B-Q4_K_M.gguf", Name: "qwen3.5-2b", Size: 1_280_000_000, Need: 3 << 30,
-		Note: "for 8 GB of memory: routes and masks well, does small tasks"},
-	{Repo: "unsloth/Qwen3.5-4B-GGUF", File: "Qwen3.5-4B-Q4_K_M.gguf", Name: "qwen3.5-4b", Size: 2_740_000_000, Need: 5 << 30,
-		Note: "for 16 GB: the default, a fair coder for its size"},
-	{Repo: "unsloth/Qwen3.5-9B-GGUF", File: "Qwen3.5-9B-Q4_K_M.gguf", Name: "qwen3.5-9b", Size: 5_680_000_000, Need: 9 << 30,
-		Note: "for 32 GB, or a GPU with 10 GB and more"},
+	Spark17,
+	Spark4,
+	{Repo: "unsloth/Qwen3.5-2B-GGUF", File: "Qwen3.5-2B-Q4_K_M.gguf", Name: "qwen3.5-2b", Title: "Qwen3.5 2B", Size: 1_280_835_840, Need: 3 << 30, Params: 1_880_000_000,
+		Note: "Qwen's, for 8 GB"},
+	{Repo: "unsloth/Qwen3.5-4B-GGUF", File: "Qwen3.5-4B-Q4_K_M.gguf", Name: "qwen3.5-4b", Title: "Qwen3.5 4B", Size: 2_740_000_000, Need: 5 << 30,
+		Note: "Qwen's, for 16 GB"},
+	{Repo: "unsloth/Qwen3.5-9B-GGUF", File: "Qwen3.5-9B-Q4_K_M.gguf", Name: "qwen3.5-9b", Title: "Qwen3.5 9B", Size: 5_680_000_000, Need: 9 << 30,
+		Note: "Qwen's, for 32 GB, or a GPU with 10 GB and more"},
 }
 
-// Recommend is the largest catalog model the hardware runs comfortably,
-// the smallest when even that is a squeeze.
-func Recommend(h Hardware) Model {
-	best := Catalog[0]
+// CatalogModel is the catalog's model with id.
+func CatalogModel(id string) (Model, bool) {
 	for _, m := range Catalog {
-		if h.Budget() >= m.Need {
-			best = m
+		if strings.EqualFold(m.ID(), id) {
+			return m, true
 		}
 	}
-	return best
+	return Model{}, false
+}
+
+// Recommend is the model recommended for this computer, as Assessed has
+// it: Spark X2.5 4B where it runs smoothly, else the 1.7B, which is also
+// what runs when the assessment says none is worth it here and the local
+// model is turned on all the same.
+func Recommend() Model {
+	if m, ok := CatalogModel(Assessed().Pick); ok {
+		return m
+	}
+	return Spark17
 }
 
 // Config is the local model's setup, kept in local.json beside fogway's
@@ -134,9 +162,9 @@ func Save(c Config) error {
 
 // Picked is the model the setup runs: its own, else the one recommended
 // for this computer.
-func (c Config) Picked(h Hardware) Model {
+func (c Config) Picked() Model {
 	if c.Model.Repo != "" && c.Model.File != "" {
 		return c.Model
 	}
-	return Recommend(h)
+	return Recommend()
 }

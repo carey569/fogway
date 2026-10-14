@@ -22,6 +22,18 @@
 #view-local .lm-cloud { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
 #view-local .lm-member { display: inline-flex; align-items: center; gap: 4px; background: var(--pill); border-radius: 6px; padding: 2px 4px 2px 8px; font-family: var(--code); font-size: 12px; }
 #view-local .lm-card > button { margin-top: 10px; }
+#view-local .lm-verdict { border-radius: 8px; padding: 10px 12px; margin: 4px 0 8px; }
+#view-local .lm-verdict.lm-yes { background: var(--green-soft); }
+#view-local .lm-verdict.lm-no { background: var(--amber-soft); }
+#view-local .lm-verdict strong { font-size: 14px; }
+#view-local .lm-verdict p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; }
+#view-local .lm-facts { flex: 1; min-width: 0; font-size: 12.5px; overflow-wrap: anywhere; }
+#view-local .lm-grade { flex: none; font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--pill); }
+#view-local .lm-g-smooth { background: var(--green-soft); color: var(--green); }
+#view-local .lm-g-usable { background: var(--accent-soft); color: var(--accent); }
+#view-local .lm-g-slow, #view-local .lm-g-tight, #view-local .lm-g-memory, #view-local .lm-g-disk { background: var(--amber-soft); color: var(--amber); }
+#view-local .lm-how { flex: none; color: var(--faint); font-size: 11.5px; }
+#view-local .lm-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 @media (max-width: 560px) {
   #view-local { padding: 14px 16px 32px; }
   #view-local .lm-row { flex-wrap: wrap; }

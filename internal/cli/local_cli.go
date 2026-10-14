@@ -15,6 +15,7 @@ import (
 )
 
 const localUsage = `usage: fogway local [status] [--json]
+       fogway local check [--json]
        fogway local models
        fogway local setup [<model>|<repo> <file>] [--hf <endpoint>] [--github-mirror <prefix>]
        fogway local use <model>|<repo> <file>
@@ -31,11 +32,18 @@ const localUsage = `usage: fogway local [status] [--json]
   named (fogway local models lists them; any repository and .gguf file of it
   can be given). --hf takes a mirror (https://hf-mirror.com); HF_ENDPOINT and
   HF_TOKEN are read too. The app, or fogway serve, runs it while on.
+  check measures this computer (about a second) and says which model suits
+  it: Spark X2.5 4B where it runs smoothly, else Spark X2.5 1.7B, or that
+  none is worth running here. A model that runs is measured too, and what
+  it did corrects the estimates.
   mask on has group/auto mask a sensitive turn before it goes to the cloud,
   and keep a sensitive turn the local model takes on this computer even when
   it fails; off routes by what the local model can do alone.
   think on lets the local model reason before it answers, slower; off (the
   default) has it answer at once.`
+
+// localAssess is local.Assess; a test stands in for this computer.
+var localAssess = local.Assess
 
 func localCmd(args []string) error {
 	rest := args[1:]
@@ -46,6 +54,8 @@ func localCmd(args []string) error {
 	switch sub {
 	case "", "status":
 		return localStatus(len(rest) > 0 && (rest[0] == "--json" || rest[0] == "-j"))
+	case "check":
+		return localCheck(len(rest) > 0 && (rest[0] == "--json" || rest[0] == "-j"))
 	case "models":
 		return localModels()
 	case "setup":
@@ -74,10 +84,20 @@ func localCmd(args []string) error {
 			return err
 		}
 		c.On = sub == "on"
+		if c.On && c.Model.Repo == "" {
+			// the model recommended now, kept: a later assessment won't
+			// swap it for another download
+			c.Model = local.Recommend()
+		}
 		if err := local.Save(c); err != nil {
 			return err
 		}
 		fmt.Println(green.Render("✓"), "the local model is", sub)
+		if c.On {
+			if a := local.Assessed(); a.Pick == "" {
+				fmt.Println(muted.Render("  fogway local check doesn't recommend a local model here: " + a.Reason()))
+			}
+		}
 		return nil
 	case "mask":
 		return localMask(rest)
@@ -121,7 +141,7 @@ func localModelOf(args []string) (local.Model, error) {
 		if !strings.Contains(args[0], "/") || !strings.HasSuffix(strings.ToLower(args[1]), ".gguf") {
 			return local.Model{}, fmt.Errorf("give a Hugging Face repository (owner/name) and a .gguf file in it")
 		}
-		return local.Model{Repo: args[0], File: args[1]}, nil
+		return local.Canon(local.Model{Repo: args[0], File: args[1]}), nil
 	}
 	return local.Model{}, fmt.Errorf("fogway local use <model>   or   fogway local use <repo> <file.gguf>")
 }
@@ -133,7 +153,7 @@ func localStatus(asJSON bool) error {
 	}
 	h := local.Detect()
 	if asJSON {
-		b, _ := json.MarshalIndent(map[string]any{"config": c, "hardware": h, "model": c.Picked(h), "status": gatewayLocal()}, "", "  ")
+		b, _ := json.MarshalIndent(map[string]any{"config": c, "hardware": h, "model": c.Picked(), "status": gatewayLocal(), "assessment": local.Assessed()}, "", "  ")
 		fmt.Println(string(b))
 		return nil
 	}
@@ -141,7 +161,7 @@ func localStatus(asJSON bool) error {
 	if c.On {
 		state = "on"
 	}
-	m := c.Picked(h)
+	m := c.Picked()
 	fmt.Println(bold.Render("local model"), state, muted.Render("· "+local.Ref(m)))
 	fmt.Println(muted.Render("  model    "), m.Repo, muted.Render(m.File))
 	fmt.Println(muted.Render("  computer "), fmt.Sprintf("%s/%s, %s memory", h.OS, h.Arch, gib(h.RAM)), gpuWords(h), muted.Render("· llama.cpp "+cmpOr(c.Backend, h.Backend())))
@@ -195,17 +215,111 @@ func cmpOr(a, b string) string {
 }
 
 func localModels() error {
-	h := local.Detect()
-	rec := local.Recommend(h)
+	a := local.Assessed()
 	for _, m := range local.Catalog {
 		mark := "  "
-		if m.ID() == rec.ID() {
+		if m.ID() == a.Pick {
 			mark = green.Render("★ ")
 		}
-		fmt.Printf("%s%-12s %-28s %s  %s\n", mark, m.ID(), m.Repo, gib(m.Size), muted.Render(m.Note))
+		fmt.Printf("%s%-16s %-30s %.1f GB  %s\n", mark, m.ID(), m.Repo, float64(m.Size)/(1<<30), muted.Render(m.Note))
 	}
-	fmt.Println(muted.Render("★ recommended for this computer (" + gib(h.RAM) + " memory) · fogway local setup <name> · or any repo and .gguf file"))
+	if a.Pick == "" {
+		fmt.Println(muted.Render("none is recommended for this computer: " + a.Reason()))
+	} else {
+		fmt.Println(muted.Render("★ recommended for this computer · fogway local check says why · fogway local setup <name> · or any repo and .gguf file"))
+	}
 	return nil
+}
+
+// localCheck measures this computer and says which model suits it, and
+// measures the model the gateway runs, if one does.
+func localCheck(asJSON bool) error {
+	a := localAssess()
+	if st := gatewayLocal(); st != nil && st.Phase == local.Ready && st.URL != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		s, err := local.Measure(ctx, st.URL)
+		cancel()
+		if err == nil {
+			s.Backend, s.Build = st.Backend, st.Build
+			a = local.RecordSpeed(local.Canon(st.Model).ID(), s)
+		} else if !asJSON {
+			fmt.Fprintln(os.Stderr, muted.Render("measuring "+st.Model.ID()+": "+err.Error()))
+		}
+	}
+	if asJSON {
+		b, _ := json.MarshalIndent(a, "", "  ")
+		fmt.Println(string(b))
+		return nil
+	}
+	h := a.Hardware
+	comp := fmt.Sprintf("%s/%s", h.OS, h.Arch)
+	if h.CPU != "" {
+		comp = h.CPU
+	}
+	comp += fmt.Sprintf(" · %d cores · %s memory", h.Cores, gib(h.RAM))
+	switch {
+	case h.GPU != "":
+		comp += " · " + h.GPU + " " + gib(h.VRAM)
+	case h.Unified && h.GPUCores > 0:
+		comp += fmt.Sprintf(" · GPU %d cores, memory shared", h.GPUCores)
+	}
+	if a.Disk > 0 {
+		comp += " · " + gib(a.Disk) + " free"
+	}
+	fmt.Println(muted.Render("this computer "), comp)
+	fmt.Println(muted.Render("measured      "), fmt.Sprintf("memory read at %.0f GB/s · %.0f billion multiply-adds a second", a.Bench.Bandwidth, a.Bench.Compute))
+	fmt.Println()
+	fmt.Println(muted.Render(fmt.Sprintf("  %-16s %-8s %-15s %-12s %-6s %s", "", "memory", "judges a turn", "writes", "on", "")))
+	for _, e := range a.Models {
+		mark := "  "
+		if e.Model == a.Pick {
+			mark = green.Render("★ ")
+		}
+		how := ""
+		switch {
+		case e.Measured:
+			how = "measured"
+		case e.Corrected:
+			how = "estimated, set by a measurement"
+		default:
+			how = "estimated"
+		}
+		fmt.Printf("%s%-16s %-8s %-15s %-12s %-6s %s %s\n", mark, e.Model, fmt.Sprintf("%.1f GB", float64(e.Need)/(1<<30)), fmt.Sprintf("%.1f s", e.Judge),
+			fmt.Sprintf("%.0f tok/s", e.Gen), strings.ToUpper(e.Where), gradeWord(e.Grade), muted.Render(how))
+	}
+	fmt.Println()
+	if m, ok := local.CatalogModel(a.Pick); ok {
+		fmt.Println(green.Render("✓"), "recommended:", bold.Render(m.Title), muted.Render("— "+a.Reason()))
+		fmt.Println(muted.Render("  fogway local setup " + m.ID() + " installs it"))
+	} else {
+		fmt.Println(bold.Render("a local model isn't recommended here"), muted.Render("— "+a.Reason()))
+		if a.Why == "runtime" {
+			fmt.Println(muted.Render("  group/auto needs one; the cloud models serve agents without it"))
+		} else {
+			fmt.Println(muted.Render("  group/auto needs one; the cloud models serve agents without it. To try anyway: fogway local setup " + local.Spark17.ID()))
+		}
+	}
+	return nil
+}
+
+func gradeWord(g local.Grade) string {
+	switch g {
+	case local.Smooth:
+		return green.Render("smooth")
+	case local.Usable:
+		return "usable"
+	case local.Slow:
+		return "too slow"
+	case local.Tight:
+		return "too much memory"
+	case local.NoRoom:
+		return "doesn't fit"
+	case local.NoDisk:
+		return "no disk room"
+	case local.NoRuntime:
+		return "llama.cpp can't run"
+	}
+	return string(g)
 }
 
 // localSetup downloads llama.cpp and the model in the terminal, then turns
@@ -238,6 +352,18 @@ func localSetup(args []string) error {
 			return err
 		}
 		c.Model = m
+	} else if c.Model.Repo == "" {
+		// none named or set: the one this computer suits, measured now
+		a := localAssess()
+		m, ok := local.CatalogModel(a.Pick)
+		if !ok {
+			if a.Why == "runtime" {
+				return fmt.Errorf("a local model can't run on this computer: %s", a.Reason())
+			}
+			return fmt.Errorf("a local model isn't recommended for this computer: %s (fogway local check). To install one anyway, name it: fogway local setup %s", a.Reason(), local.Spark17.ID())
+		}
+		fmt.Println(green.Render("✓"), "this computer suits", bold.Render(m.Title), muted.Render("— "+a.Reason()))
+		c.Model = m
 	}
 	ctx, stop := interruptContext()
 	defer stop()
@@ -254,7 +380,7 @@ func localSetup(args []string) error {
 		}
 	}
 	h := local.Detect()
-	m := c.Picked(h)
+	m := c.Picked()
 	fmt.Println("setting up", bold.Render(m.ID()), muted.Render("("+m.Repo+")"), "for", h.OS+"/"+h.Arch, muted.Render("· llama.cpp "+cmpOr(c.Backend, h.Backend())))
 	if _, err := local.Prepare(ctx, c, tell); err != nil {
 		fmt.Fprintln(os.Stderr)

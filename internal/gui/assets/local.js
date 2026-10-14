@@ -1,8 +1,10 @@
-// Local: the model on this computer and the edge-cloud route. The status
-// card says where llama.cpp and the model are (downloading, loading,
-// serving, or why not); the setup picks the model — the one recommended
-// for this computer's memory, another of the catalog, or any GGUF on
-// Hugging Face — and where it is pulled from; the route card is group/auto,
+// Local: the model on this computer and the edge-cloud route. The
+// assessment card measures this computer and recommends Spark X2.5 4B, the
+// 1.7B, or no local model, with the speeds each would run at (estimated,
+// then measured once one runs); the status card says where llama.cpp and
+// the model are (downloading, loading, serving, or why not); the setup
+// picks the model — the one recommended, another of the catalog, or any
+// GGUF on Hugging Face — and where it is pulled from; the route card is group/auto,
 // which sends each turn to the local model or the cloud as the local model
 // judges it, and its masking switch. Everything comes from /api/local and
 // goes back through POST /api/local/{action}.
@@ -49,11 +51,62 @@
     "Add": "添加",
     "Remove": "移除",
     "Saved": "已保存",
+    "This computer's assessment": "本机评测",
+    "Assess again": "重新评测",
+    "Assessing…": "正在评测…",
+    "Recommended: {model}": "推荐安装：{model}",
+    "A local model isn't recommended for this computer": "不建议在本机运行本地模型",
+    "Spark X2.5 1.7B": "星火 X2.5 1.7B",
+    "Spark X2.5 4B": "星火 X2.5 4B",
+    "Qwen3.5 2B": "通义千问 Qwen3.5 2B",
+    "Qwen3.5 4B": "通义千问 Qwen3.5 4B",
+    "Qwen3.5 9B": "通义千问 Qwen3.5 9B",
+    "{big} judges a turn in about {bj} s here and writes {bg} tokens a second.": "{big} 在本机判断一轮约 {bj} 秒，每秒生成 {bg} 个 token，运行流畅。",
+    "{big} would take {bneed}, too much of this computer's {ram}; {small} judges a turn in about {sj} s.": "{big} 需要约 {bneed} 内存，占本机 {ram} 的比例过高；{small} 判断一轮约 {sj} 秒。",
+    "The disk has {disk} free, too little for {big} ({bsize}); {small} judges a turn in about {sj} s.": "磁盘只剩 {disk}，放不下{big}（{bsize}）；{small} 判断一轮约 {sj} 秒。",
+    "{big} would take about {bj} s to judge each turn; {small} about {sj} s.": "{big} 判断一轮约需 {bj} 秒，偏慢；{small} 约 {sj} 秒。",
+    "Even {small} would take {sneed}, too much of this computer's {ram}.": "本机内存 {ram}，连{small}（约 {sneed}）也放不下或过于吃紧。",
+    "The disk has {disk} free, too little for {small} ({ssize}). Free some space first.": "磁盘只剩 {disk}，放不下{small}（{ssize}），请先清理磁盘空间。",
+    "Even {small} would take about {sj} s to judge each turn and write {sg} tokens a second: every turn would wait on it.": "即使是{small}，判断一轮也要约 {sj} 秒、每秒只生成 {sg} 个 token，每轮对话都会明显变慢。",
+    "group/auto needs a local model; without one, agents use the cloud models directly. To try anyway, pick Spark X2.5 1.7B below: it is measured once it runs.": "端云路由（group/auto）需要本地模型；不装的话，Agent 直接使用云端模型即可。如仍想尝试，可在下方选择星火 X2.5 1.7B，运行后会自动实测速度。",
+    "group/auto needs a local model; without one, agents use the cloud models directly.": "端云路由（group/auto）需要本地模型；不装的话，Agent 直接使用云端模型即可。",
+    "{gb} memory": "占用内存 {gb}",
+    "judges a turn in {s} s": "判断一轮约 {s} 秒",
+    "{n} tokens/s": "每秒 {n} token",
+    "Smooth": "流畅",
+    "Usable": "可用",
+    "Too slow": "太慢",
+    "Takes too much memory": "内存吃紧",
+    "Doesn't fit in memory": "内存不足",
+    "No room on the disk": "磁盘空间不足",
+    "llama.cpp can't run here": "无法运行 llama.cpp",
+    "llama.cpp's builds for this computer need glibc {need} or newer, and this Linux has {have}: {systems} run them.": "本机对应的 llama.cpp 构建需要 glibc {need} 或更新版本，而这台 Linux 是 {have}：需要 {systems} 才能运行。",
+    "Ubuntu 22.04, Debian 12 or later": "Ubuntu 22.04、Debian 12 或更新的系统",
+    "Ubuntu 24.04, Debian 13 or later": "Ubuntu 24.04、Debian 13 或更新的系统",
+    "measured": "实测",
+    "estimated": "估算",
+    "estimated, set by a measurement": "估算（已按实测校正）",
+    "{n} cores": "{n} 核",
+    "GPU {n} cores, memory shared": "GPU {n} 核（与内存共享）",
+    "{gb} free on the disk": "磁盘剩余 {gb}",
+    "Measured": "硬件测得",
+    "memory read at {bw} GB/s · {c} billion multiply-adds a second": "内存读取 {bw} GB/s · 每秒 {c10} 亿次乘加",
+    "Speeds marked measured come from the model running here; the others are estimated and set right by it.": "标为“实测”的是模型在本机实际运行测得的速度，其余为估算，并已按实测结果校正。",
+    "Estimates from this computer's figures. A model is measured once it runs here, and that is what counts.": "以上为根据本机硬件测得的估算值；模型装好运行后会自动实测一次，以实测为准。",
+    "Use {model}": "安装并使用{model}",
+    "Measuring…": "正在实测…",
+    "Measure the running model": "实测当前模型",
+    "for 8 GB of memory: routes and masks well, does small tasks": "适合 8 GB 内存：路由判断、脱敏都够用，能做小任务",
+    "for 16 GB: steadier judgements, a fair coder for its size": "适合 16 GB 内存：判断更稳，写代码在同尺寸里不错",
+    "Qwen's, for 8 GB": "通义千问，适合 8 GB 内存",
+    "Qwen's, for 16 GB": "通义千问，适合 16 GB 内存",
+    "Qwen's, for 32 GB, or a GPU with 10 GB and more": "通义千问，适合 32 GB 内存，或 10 GB 以上显存的显卡",
   });
 
   let data = null; // /api/local
   let failed = "";
   let poll = 0;
+  let assessing = false, measuring = false, autoAssessed = false;
 
   const PHASES = {
     off: "Off", preparing: "Getting llama.cpp ready", downloading: "Downloading the model",
@@ -73,6 +126,11 @@
     clearTimeout(poll);
     const ph = data?.status?.phase;
     if (!page.hidden && (ph === "preparing" || ph === "downloading" || ph === "starting")) poll = setTimeout(load, 1000);
+    // never assessed here: measure this computer once, as the page opens
+    if (!page.hidden && data?.assessment?.quick && !autoAssessed && !assessing) {
+      autoAssessed = true;
+      runAssess();
+    }
   }
   window.loadLocal = load;
   // the window opened on this page (a link, or where it was left) before
@@ -89,6 +147,114 @@
     draw();
     clearTimeout(poll);
     poll = setTimeout(load, 800);
+  }
+
+  async function runAssess() {
+    assessing = true;
+    draw();
+    await act("assess");
+    assessing = false;
+    draw();
+  }
+
+  async function runMeasure() {
+    measuring = true;
+    draw();
+    await act("measure");
+    measuring = false;
+    draw();
+  }
+
+  const GRADES = {
+    smooth: "Smooth", usable: "Usable", slow: "Too slow", tight: "Takes too much memory",
+    memory: "Doesn't fit in memory", disk: "No room on the disk", runtime: "llama.cpp can't run here",
+  };
+  const WHY = {
+    fast: "{big} judges a turn in about {bj} s here and writes {bg} tokens a second.",
+    "4b-memory": "{big} would take {bneed}, too much of this computer's {ram}; {small} judges a turn in about {sj} s.",
+    "4b-disk": "The disk has {disk} free, too little for {big} ({bsize}); {small} judges a turn in about {sj} s.",
+    "4b-slow": "{big} would take about {bj} s to judge each turn; {small} about {sj} s.",
+    memory: "Even {small} would take {sneed}, too much of this computer's {ram}.",
+    disk: "The disk has {disk} free, too little for {small} ({ssize}). Free some space first.",
+    slow: "Even {small} would take about {sj} s to judge each turn and write {sg} tokens a second: every turn would wait on it.",
+    runtime: "llama.cpp's builds for this computer need glibc {need} or newer, and this Linux has {have}: {systems} run them.",
+  };
+  const LIBC_SYSTEMS = { "2.34": "Ubuntu 22.04, Debian 12 or later", "2.38": "Ubuntu 24.04, Debian 13 or later" };
+
+  // reasonText is the assessment's why, with its figures, in the reader's
+  // language: the candidates are the 1.7B and the 4B, smallest first
+  function reasonText(a) {
+    const [small = {}, big = {}] = a.models;
+    const sec = (v) => (v || 0).toFixed(1);
+    return WHY[a.why] ? t(WHY[a.why], {
+      big: t(big.title), small: t(small.title), bj: sec(big.judge), sj: sec(small.judge),
+      bg: Math.round(big.gen || 0), sg: Math.round(small.gen || 0), bneed: gb(big.need || 0), sneed: gb(small.need || 0),
+      ram: gb(a.hardware?.ram || 0), disk: gb(a.disk || 0), bsize: gb(big.size || 0), ssize: gb(small.size || 0),
+      need: a.libcNeed || "", have: (a.hardware?.libc || "").replace(/^glibc /, ""), systems: t(LIBC_SYSTEMS[a.libcNeed] || ""),
+    }) : "";
+  }
+
+  // assessCard is this computer measured, and the model recommended for
+  // it: Spark X2.5 4B, the 1.7B, or none
+  function assessCard() {
+    const a = data.assessment;
+    const card = el("section", "card lm-card lm-assess");
+    const head = el("div", "lm-head");
+    head.append(el("h3", "", t("This computer's assessment")));
+    const again = el("button", "text action", t(assessing ? "Assessing…" : "Assess again"));
+    again.disabled = assessing || measuring;
+    again.onclick = runAssess;
+    head.append(again);
+    card.append(head);
+    if (!a?.models?.length) return card;
+    const pick = a.models.find((m) => m.model === a.pick);
+    const verdict = el("div", "lm-verdict " + (pick ? "lm-yes" : "lm-no"));
+    verdict.append(el("strong", "", pick ? t("Recommended: {model}", { model: t(pick.title) }) : t("A local model isn't recommended for this computer")));
+    verdict.append(el("p", "", reasonText(a)));
+    if (!pick) verdict.append(el("p", "", t(a.why === "runtime"
+      ? "group/auto needs a local model; without one, agents use the cloud models directly."
+      : "group/auto needs a local model; without one, agents use the cloud models directly. To try anyway, pick Spark X2.5 1.7B below: it is measured once it runs.")));
+    card.append(verdict);
+    for (const m of a.models) {
+      const r = el("div", "lm-row lm-cand");
+      r.append(el("span", "lm-k", t(m.title) + (m.model === a.pick ? " ★" : "")));
+      const facts = [t("{gb} memory", { gb: gb(m.need) }), t("judges a turn in {s} s", { s: (m.judge || 0).toFixed(1) }),
+        t("{n} tokens/s", { n: Math.round(m.gen || 0) }), m.where === "gpu" ? "GPU" : "CPU"];
+      r.append(el("span", "lm-facts", facts.join(" · ")));
+      r.append(el("span", "lm-grade lm-g-" + m.grade, t(GRADES[m.grade] || m.grade)));
+      r.append(el("span", "lm-how", t(m.measured ? "measured" : m.corrected ? "estimated, set by a measurement" : "estimated")));
+      card.append(r);
+    }
+    const h = a.hardware || {};
+    let comp = `${h.cpu || h.os + "/" + h.arch} · ${t("{n} cores", { n: h.cores || "?" })} · ${gb(h.ram || 0)} ${t("memory")}`;
+    if (h.gpu) comp += ` · ${h.gpu} ${gb(h.vram || 0)}`;
+    else if (h.unified && h.gpuCores) comp += " · " + t("GPU {n} cores, memory shared", { n: h.gpuCores });
+    if (a.disk) comp += " · " + t("{gb} free on the disk", { gb: gb(a.disk) });
+    card.append(row("Computer", comp));
+    if (!a.quick && a.bench) {
+      const c = a.bench.compute || 0;
+      card.append(row("Measured", t("memory read at {bw} GB/s · {c} billion multiply-adds a second", { bw: Math.round(a.bench.bandwidth || 0), c: Math.round(c), c10: Math.round(c * 10) })));
+    }
+    card.append(el("p", "lm-note", t(a.models.some((m) => m.measured)
+      ? "Speeds marked measured come from the model running here; the others are estimated and set right by it."
+      : "Estimates from this computer's figures. A model is measured once it runs here, and that is what counts.")));
+    const acts = el("div", "lm-acts");
+    const cur = data.config?.model || {};
+    const want = pick && data.catalog.find((c) => c.name === pick.model);
+    if (want && (!data.config?.on || cur.repo !== want.repo || cur.file !== want.file)) {
+      const use = el("button", "text action primary", t("Use {model}", { model: t(pick.title) }));
+      use.disabled = assessing || measuring;
+      use.onclick = () => act("save", { model: { repo: want.repo, file: want.file } });
+      acts.append(use);
+    }
+    if (data.status?.phase === "ready") {
+      const ms = el("button", "text action", t(measuring ? "Measuring…" : "Measure the running model"));
+      ms.disabled = assessing || measuring;
+      ms.onclick = runMeasure;
+      acts.append(ms);
+    }
+    if (acts.childNodes.length) card.append(acts);
+    return card;
   }
 
   function row(label, value) {
@@ -144,7 +310,7 @@
     const custom = c.model?.repo && !data.catalog.some((m) => m.repo === c.model.repo && m.file === c.model.file);
     const pick = el("select");
     for (const m of data.catalog) {
-      const o = el("option", "", `${m.name} · ${gb(m.size)} · ${m.note}${m.name === data.recommended ? " ★ " + t("Recommended for this computer") : ""}`);
+      const o = el("option", "", `${t(m.title || m.name)} · ${gb(m.size)} · ${t(m.note)}${m.name === data.recommended ? " ★ " + t("Recommended for this computer") : ""}`);
       o.value = m.repo + "|" + m.file;
       pick.append(o);
     }
@@ -243,7 +409,7 @@
     head.append(el("p", "lm-note", t("Runs a small model on this computer with llama.cpp, pulled from Hugging Face. Fogway serves it as local/…, and group/auto sends each turn to it or to the cloud.")));
     nodes.push(head);
     if (failed) nodes.push(el("p", "lm-err", failed));
-    if (data) nodes.push(statusCard(), setupCard(), routeCard());
+    if (data) nodes.push(assessCard(), statusCard(), setupCard(), routeCard());
     page.replaceChildren(...nodes);
   }
 })();

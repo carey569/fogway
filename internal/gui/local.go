@@ -1,11 +1,13 @@
 package gui
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/carey569/fogway/internal/local"
 	"github.com/carey569/fogway/internal/provider"
@@ -14,15 +16,16 @@ import (
 // localJSON is the Local page: the setup, what runs, this computer, the
 // catalog and the edge-cloud group.
 type localJSON struct {
-	Config      local.Config   `json:"config"`
-	Status      local.Status   `json:"status"`
-	Hardware    local.Hardware `json:"hardware"`
-	Model       local.Model    `json:"model"` // the one the setup runs
-	Ref         string         `json:"ref"`   // its id: local/<model>
-	Catalog     []catalogModel `json:"catalog"`
-	Recommended string         `json:"recommended"`
-	Log         string         `json:"log"`
-	Hybrid      *hybridJSON    `json:"hybrid"`
+	Config      local.Config     `json:"config"`
+	Status      local.Status     `json:"status"`
+	Hardware    local.Hardware   `json:"hardware"`
+	Model       local.Model      `json:"model"` // the one the setup runs
+	Ref         string           `json:"ref"`   // its id: local/<model>
+	Catalog     []catalogModel   `json:"catalog"`
+	Recommended string           `json:"recommended"` // "" when none is, for this computer
+	Assessment  local.Assessment `json:"assessment"`
+	Log         string           `json:"log"`
+	Hybrid      *hybridJSON      `json:"hybrid"`
 }
 
 type catalogModel struct {
@@ -41,12 +44,13 @@ type hybridJSON struct {
 func localState() localJSON {
 	c, _ := local.Load()
 	h := local.Detect()
-	m := c.Picked(h)
+	m := c.Picked()
 	s := local.Now()
 	if s.Hardware.OS == "" {
 		s.Hardware = h
 	}
-	out := localJSON{Config: c, Status: s, Hardware: h, Model: m, Ref: local.Ref(m), Recommended: local.Recommend(h).ID(),
+	a := local.Assessed()
+	out := localJSON{Config: c, Status: s, Hardware: h, Model: m, Ref: local.Ref(m), Recommended: a.Pick, Assessment: a,
 		Log: filepath.Join(local.Dir(), "llama-server.log")}
 	for _, cm := range local.Catalog {
 		out.Catalog = append(out.Catalog, catalogModel{Model: cm, Name: cm.ID()})
@@ -87,8 +91,27 @@ func localRoutes(mux *http.ServeMux) {
 			return
 		}
 		switch r.PathValue("action") {
+		case "assess":
+			local.Assess()
+			writeJSON(rw, localState())
+			return
+		case "measure":
+			ctx, cancel := context.WithTimeout(r.Context(), 3*time.Minute)
+			_, err := local.MeasureServing(ctx)
+			cancel()
+			if err != nil {
+				fail(rw, err)
+				return
+			}
+			writeJSON(rw, localState())
+			return
 		case "on", "off":
 			c.On = r.PathValue("action") == "on"
+			if c.On && c.Model.Repo == "" {
+				// the model recommended now, kept: a later assessment won't
+				// swap it for another download
+				c.Model = local.Recommend()
+			}
 		case "save":
 			if in.Model != nil {
 				m := local.Model{Repo: strings.TrimSpace(in.Model.Repo), File: strings.TrimSpace(in.Model.File)}

@@ -8,7 +8,10 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"golang.org/x/sys/cpu"
 
 	"github.com/carey569/fogway/internal/proc"
 )
@@ -25,17 +28,59 @@ type Hardware struct {
 	GPU     string `json:"gpu,omitempty"`  // its name
 	NVIDIA  bool   `json:"nvidia,omitempty"`
 	Unified bool   `json:"unified,omitempty"`
+	// CPU is the processor's name, as the system has it.
+	CPU string `json:"cpu,omitempty"`
+	// Cores are the cores llama.cpp computes on: the physical ones, and
+	// of a CPU with two kinds, the performance ones.
+	Cores int `json:"cores,omitempty"`
+	// GPUCores are Apple silicon's GPU cores.
+	GPUCores int `json:"gpuCores,omitempty"`
+	// SIMD is the widest vector instructions llama.cpp's CPU code can use
+	// here: avx512, avx2, avx or neon; "" when none of them.
+	SIMD string `json:"simd,omitempty"`
+	// Libc is Linux's C library and its version, "glibc 2.35": llama.cpp's
+	// Linux builds need a recent one. "" elsewhere, or when unknown.
+	Libc string `json:"libc,omitempty"`
 }
 
 // Detect reads the hardware. It never fails: what it can't read is zero.
-func Detect() Hardware {
+// It is read once: a computer's hardware doesn't change while fogway runs.
+func Detect() Hardware { return detected() }
+
+var detected = sync.OnceValue(func() Hardware {
 	h := Hardware{OS: runtime.GOOS, Arch: runtime.GOARCH, RAM: totalRAM()}
 	h.Unified = runtime.GOOS == "darwin" && runtime.GOARCH == "arm64"
 	if runtime.GOOS != "darwin" {
 		h.GPU, h.VRAM = nvidiaGPU()
 		h.NVIDIA = h.GPU != ""
 	}
+	h.CPU, h.Cores = cpuInfo()
+	// a container or an affinity mask may give fogway fewer CPUs than the
+	// computer has: Go counts the ones it may run on
+	if n := runtime.NumCPU(); h.Cores <= 0 || h.Cores > n {
+		h.Cores = n
+	}
+	if h.Unified {
+		h.GPUCores = appleGPUCores()
+	}
+	h.SIMD = simd()
+	h.Libc = libc()
 	return h
+})
+
+// simd is Hardware.SIMD for this processor.
+func simd() string {
+	switch {
+	case cpu.X86.HasAVX512F:
+		return "avx512"
+	case cpu.X86.HasAVX2:
+		return "avx2"
+	case cpu.X86.HasAVX:
+		return "avx"
+	case runtime.GOARCH == "arm64":
+		return "neon" // every arm64 has it
+	}
+	return ""
 }
 
 // nvidiaGPU is the first NVIDIA card's name and memory, as nvidia-smi

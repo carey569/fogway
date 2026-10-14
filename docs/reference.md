@@ -1826,6 +1826,89 @@ fogway, and offers the download when it is not installed. The parameters
 stay in the fragment, which browsers never send to a server. The full guide,
 with a link builder: <https://usemagpie.ai/docs/import>.
 
+## The local model
+
+Fogway runs a small model on this computer with llama.cpp's `llama-server`,
+downloaded for the platform (Metal on Apple silicon, CUDA with an NVIDIA
+card, else Vulkan, else the CPU), and serves it as `local/<model>`.
+`group/auto` puts it in front of the cloud models: as each user turn begins,
+it judges whether it can do the turn and whether the turn carries what
+mustn't leave the computer.
+
+```sh
+fogway local check                    # which model suits this computer, and how fast each would run
+fogway local setup                    # download llama.cpp and the model recommended, and turn it on
+fogway local setup spark-x2.5-1.7b    # a model of the catalog by name, or <repo> <file.gguf>
+fogway local models                   # the catalog, ★ the model recommended here
+fogway local use <model>              # another model; fogway local on|off
+fogway local mask on                  # mask a sensitive turn before group/auto sends it to the cloud
+fogway local think on                 # let the model reason before it answers: steadier, slower
+fogway local                          # what runs, where, and how group/auto is set up
+```
+
+### Which model suits this computer
+
+`fogway local check`, and the Local page's assessment, read the computer —
+its memory, an NVIDIA card's memory, Apple silicon's GPU cores, the cores
+llama.cpp computes on, the disk's free space, and on Linux the C library —
+and measure in about a second how fast its cores read memory and multiply.
+From those they estimate how iFlytek's [Spark X2.5](https://huggingface.co/XHToken)
+1.7B and 4B (Q4_K_M, Apache 2.0) would run:
+
+| | Spark X2.5 1.7B | Spark X2.5 4B |
+|---|---|---|
+| download | 1.1 GB | 2.6 GB |
+| memory at a 32K window | 2.2 GB | 4.3 GB |
+
+- *reading*: tokens a second through a prompt, which is arithmetic;
+- *writing*: tokens a second of an answer, which reads every weight once,
+  so goes as fast as memory is read;
+- *judging a turn*: the seconds group/auto's question takes, 700 tokens in
+  and 40 out, which every turn waits for.
+
+A model runs on the GPU with Metal, or on an NVIDIA card it fits on in
+full (85% of the card's memory; the computer needs 7 GB of its own
+besides); otherwise it is estimated on the CPU (llama.cpp's Vulkan build
+may find an AMD or Intel GPU, which the measurement below then shows).
+Each is graded:
+
+| grade | when |
+|---|---|
+| smooth | judges a turn within 4 s and writes 15 tokens a second or more |
+| usable | within 6 s, 8 tokens a second or more |
+| too slow | slower |
+| too much memory | it runs, but takes more than a third of the memory |
+| doesn't fit | it would take more than half of the memory (60% on a Mac) |
+| no disk room | the disk hasn't its download and 1 GB more free |
+| llama.cpp can't run | Linux with a glibc older than llama.cpp's build needs: 2.34 on x64 (Ubuntu 22.04, Debian 12), 2.38 on arm64 (Ubuntu 24.04) |
+
+The 4B is recommended where it is smooth; else the 1.7B, where it is
+smooth or usable; else no local model, and the reason says why. The cloud
+models serve agents without one; `group/auto` needs one. `fogway local
+setup` with no model named installs the one recommended, and stops where
+none is; naming one installs it all the same. Turned on with no model of
+its own, the local model keeps the one recommended then, so a later
+assessment doesn't swap it for another download.
+
+What the estimates make of some computers:
+
+| computer | 1.7B judges a turn | 4B judges a turn | recommended |
+|---|---|---|---|
+| M4 Pro, 24 GB | 0.8 s | 1.6 s | 4B |
+| M1, 16 GB | 2.3 s | 5.2 s | 1.7B |
+| M1, 8 GB | 2.3 s | (too much memory) | 1.7B |
+| 8-core desktop, CPU only, 32 GB | 4.0 s | 9.3 s | 1.7B |
+| 4-core laptop, CPU only, 16 GB | 8.2 s | 19 s | none |
+| 4 GB of memory | (doesn't fit) | (doesn't fit) | none |
+
+The first time a model serves with a llama.cpp build, it is measured: once
+`llama-server` is idle, it reads a 700-token prompt and writes 48 tokens,
+twice. What it did replaces its estimate, and sets the other model's right
+by how far its own estimate was off. `fogway local check` measures the
+model running again, as does *Measure the running model* on the Local
+page. The assessment is kept in `~/.cache/fogway/local/assessment.json`,
+and made again for another computer.
+
 ## Install
 
 Download the app for macOS or Windows, or the terminal build for macOS,
@@ -2462,6 +2545,10 @@ FOGWAY_GITHUB_MIRROR=https://gh.example fogway serve
 - `~/.cache/fogway/models.json` — models.dev catalog (OpenCode's cache at
   `~/.cache/opencode/models.json` is used when present)
 - `~/.cache/fogway/models/<provider>.json` — model lists fetched from vendors
+- `~/.config/fogway/local.json` — the [local model](#the-local-model)'s setup
+- `~/.cache/fogway/local/` — llama.cpp, the models (`models/<owner>--<repo>/`),
+  `llama-server.log`, and `assessment.json`, this computer's assessment and
+  the speeds measured on it
 - `~/.cache/fogway/partner-counts.json` — partner counts not yet sent (at most
   14 days)
 

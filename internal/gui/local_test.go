@@ -29,8 +29,28 @@ func TestLocalPage(t *testing.T) {
 	localRoutes(mux)
 
 	code, st, raw := localCall(t, mux, "GET", "/api/local", "")
-	if code != 200 || len(st.Catalog) != len(local.Catalog) || st.Recommended == "" || st.Config.On || st.Hybrid != nil {
+	if code != 200 || len(st.Catalog) != len(local.Catalog) || st.Recommended != st.Assessment.Pick || st.Config.On || st.Hybrid != nil {
 		t.Fatalf("%d %s", code, raw)
+	}
+	// never assessed here: the page asks for an assessment, and gets one
+	// with this computer measured
+	if !st.Assessment.Quick || len(st.Assessment.Models) != len(local.Candidates) {
+		t.Fatalf("before an assessment: %+v", st.Assessment)
+	}
+	if code, st, raw = localCall(t, mux, "POST", "/api/local/assess", ""); code != 200 || st.Assessment.Quick || st.Assessment.Bench.Bandwidth <= 0 || st.Assessment.Bench.Compute <= 0 {
+		t.Fatalf("assess: %d %s", code, raw)
+	}
+	// turned on with no model of its own, it keeps the one recommended:
+	// a later assessment won't swap it for another download
+	if code, st, raw = localCall(t, mux, "POST", "/api/local/on", ""); code != 200 || !st.Config.On || st.Config.Model.ID() != local.Recommend().ID() {
+		t.Fatalf("on: %d %s", code, raw)
+	}
+	if code, st, _ = localCall(t, mux, "POST", "/api/local/off", ""); code != 200 || st.Config.On || st.Config.Model.Repo == "" {
+		t.Fatalf("off: %d %+v", code, st.Config)
+	}
+	// nothing runs: there is nothing to measure
+	if code, _, raw = localCall(t, mux, "POST", "/api/local/measure", ""); code != 400 || !strings.Contains(raw, "off") {
+		t.Fatalf("measure while off: %d %s", code, raw)
 	}
 
 	// a model of the user's own: any repository and .gguf file in it

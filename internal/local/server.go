@@ -116,7 +116,7 @@ func Stop() {
 // that lasted), until ctx ends.
 func run(ctx context.Context, c Config) {
 	h := Detect()
-	m := c.Picked(h)
+	m := c.Picked()
 	backend := c.Backend
 	if backend == "" {
 		backend = h.Backend()
@@ -238,6 +238,7 @@ func serve(ctx context.Context, c Config, bin, model string, m Model) error {
 	select {
 	case <-ready:
 		set(func(s *Status) { s.Phase, s.Since = Ready, time.Now() })
+		go measureOnce(ctx, m)
 	case <-exited:
 		return fmt.Errorf("llama-server stopped as it loaded %s (%v): see %s", m.ID(), exitErr, logPath)
 	case <-ctx.Done():
@@ -250,6 +251,20 @@ func serve(ctx context.Context, c Config, bin, model string, m Model) error {
 	case <-ctx.Done():
 		stopProcess(cmd, exited)
 		return ctx.Err()
+	}
+}
+
+// measureOnce measures m as it starts to serve, the first time it runs
+// here with this build: what the assessment then goes by.
+func measureOnce(ctx context.Context, m Model) {
+	st := Now()
+	if measuredHere(Canon(m).ID(), st.Backend, st.Build) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	defer cancel()
+	if _, err := MeasureServing(ctx); err != nil && ctx.Err() == nil {
+		log.Println("local model: measuring", m.ID()+":", err)
 	}
 }
 
@@ -342,7 +357,7 @@ func Prepare(ctx context.Context, c Config, tell func(Progress)) (string, error)
 			return "", err
 		}
 	}
-	return pullModel(ctx, c, c.Picked(h), tell)
+	return pullModel(ctx, c, c.Picked(), tell)
 }
 
 // reasoning is llama-server's --reasoning: off unless Think, as the turns

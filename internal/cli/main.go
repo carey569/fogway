@@ -54,6 +54,7 @@ const usage = `fogway — the edge-cloud model gateway for every agent
   fogway <command> --help         what a command or an agent takes; -h or --help anywhere does nothing else
 
   fogway local [status]           the model on this computer: llama.cpp running a GGUF model from Hugging Face
+  fogway local check              measure this computer: Spark X2.5 4B, 1.7B, or no local model, and how fast each runs
   fogway local setup [<model>]    download llama.cpp and the model now, and turn it on (fogway local models lists them)
   fogway local use|on|off|mask    pick another model, switch it, or mask what group/auto sends the cloud
                                   group/auto: the local model judges each turn, keeps what it can do, sends the rest to the cloud
