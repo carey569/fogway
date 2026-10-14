@@ -243,13 +243,6 @@ func codexThroughProxy(cfg, base string) (ok, known bool, proxy, from string) {
 	return ok, known, proxy, from
 }
 
-// codexProxyOK is codexThroughProxy waited for: whether Codex gets to the
-// gateway at base, a proxy in its way tried now when it hasn't been.
-func codexProxyOK(cfg, base string) bool {
-	proxy, _ := codexProxyFor(cfg, base)
-	return proxy == "" || probedNow("proxy "+proxy+" "+base, func() bool { return proxyProbe(base, proxy) })
-}
-
 // codexProxiedDetail says what keeps Codex off fogway through proxy, and
 // how to get it there.
 func codexProxiedDetail(base, proxy, from string) string {

@@ -1,12 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Codex's sign-in has three ways: ChatGPT (the default), which says that
-// fogway is Codex's provider while the Codex app blocks the ChatGPT account
-// (out of allowance, no credits left), so the app still sends; Always
-// ChatGPT, which never does that and says what it costs; and fogway API,
-// which says Codex's Chrome control needs the ChatGPT sign-in (#1824).
-// The square opens the app's picker with each way's sentence whole, in
-// the page's language; Always ChatGPT is posted as "chatgpt" and lights the
-// square, ChatGPT posts "" again. A click scrolls nothing. At 1100px and
+// Codex's sign-in has two ways: ChatGPT (the default), fogway's models
+// beside Codex's own, and fogway API, which says Codex's Chrome control
+// needs the ChatGPT sign-in (#1824). The square opens the app's picker
+// with each way's sentence whole, in the page's language; fogway API is
+// posted as "api" and lights the square, ChatGPT posts "" again. A click scrolls nothing. At 1100px and
 // 440px, English, Chinese (both), Japanese and German, Chromium and WebKit; no
 // backend, the API is faked here.
 const assert = require("node:assert/strict");
@@ -19,8 +16,7 @@ const assets = path.resolve(__dirname, "../assets");
 const models = [{ value: "gpt-5.5", label: "GPT-5.5", ref: "openai/gpt-5.5" }];
 // as internal/agent/codex.go has them
 const ways = [
-  { value: "", label: "ChatGPT", note: "fogway's models join Codex's own; Codex stays signed in to ChatGPT, and while the Codex app blocks its account (out of allowance, no credits left) fogway is Codex's provider, so the app still sends" },
-  { value: "chatgpt", label: "Always ChatGPT", note: "as ChatGPT, and kept so while the Codex app blocks its account: fogway never becomes Codex's provider. The Codex app may then send nothing till the account has room; Codex CLI goes on through fogway" },
+  { value: "", label: "ChatGPT", note: "fogway's models join Codex's own; Codex stays signed in to ChatGPT" },
   { value: "api", label: "fogway API", note: "fogway is Codex's provider; the Codex app is in its API state, with fogway's models only. Codex's Chrome control needs the ChatGPT sign-in, so pick ChatGPT to keep it" },
 ];
 const fresh = () => ({
@@ -64,13 +60,13 @@ const codex = '.row.agent[data-id="codex"]';
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh", "zh-TW", "ja", "de"]) {
-    test(`${engine} ${lang}: Codex's sign-in can be kept on ChatGPT while the Codex app blocks its account`, async (t) => {
+    test(`${engine} ${lang}: Codex's sign-in is ChatGPT or fogway API, each said in full`, async (t) => {
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       const pages = [];
       t.after(async () => {
         if (process.env.ARTIFACT_DIR) {
           await fs.mkdir(process.env.ARTIFACT_DIR, { recursive: true });
-          for (const [i, p] of pages.entries()) await p.screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${lang}-codex-signin-always-${i}.png`) });
+          for (const [i, p] of pages.entries()) await p.screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${lang}-codex-signin-ways-${i}.png`) });
         }
         await browser.close();
       });
@@ -85,8 +81,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.locator(codex).waitFor();
         const words = await page.evaluate(([ways, lang]) => ways.map((w) => lang === "en" ? [w.label, w.note] : [I18N[lang][w.label] || w.label, I18N[lang][w.note]]), [ways, lang]);
         assert(words.every(([, n]) => n), `every sentence has its ${lang}`);
-        assert.match(words[2][1], /Chrome.*ChatGPT/, `fogway API says Chrome control needs ChatGPT in ${lang}`);
-        assert.equal(words[1][0] === "Always ChatGPT", lang === "en", `"Always ChatGPT" has its ${lang}`);
+        assert.match(words[1][1], /Chrome.*ChatGPT/, `fogway API says Chrome control needs ChatGPT in ${lang}`);
         await page.locator(`${codex} .ag-link`).click();
         await page.locator(`${codex} .ag-exp`).waitFor();
         const square = page.locator(`${codex} .field[data-key="login"]`).first();
@@ -104,7 +99,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const way = (i) => page.locator("#pop #list li").filter({ has: page.locator(".n", { hasText: words[i][1] }) });
         await way(1).click();
         await page.waitForFunction(() => document.querySelector('.row.agent[data-id="codex"] .field.set[data-key="login"]'));
-        assert.deepEqual(sets, [{ agent: "codex", field: "login", value: "chatgpt" }]);
+        assert.deepEqual(sets, [{ agent: "codex", field: "login", value: "api" }]);
         await square.click();
         await page.locator("#pop:not([hidden]) #list li").first().waitFor();
         assert.equal(await page.locator("#pop #list li.cur .v").textContent(), words[1][0]);

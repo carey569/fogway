@@ -604,12 +604,6 @@ func (a *Agent) connect() (Connection, error) {
 			sub = o.Value
 		}
 	}
-	// the model it is on, of its own, as fogway serves it on a sign-in of
-	// the user's, which its field lists as its own (Codex's on a ChatGPT
-	// account it can't join, #940)
-	if same == "" && alike == "" && cur != "" && a.OwnVia != nil {
-		same = a.OwnVia(cur)
-	}
 	how := "first"
 	switch {
 	case same != "":

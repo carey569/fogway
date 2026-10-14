@@ -1125,25 +1125,18 @@ func offEntries() []Entry {
 	return out
 }
 
-// CodexListTag names the list Codex is handed, for its ETag: fogway's models,
-// the account's own taken out of it, the order they are in, the windows set on them, the auto-review model, and whether its OpenAI models say
-// multi-agent V1 (settings.CodexAgentsV1), so any of them changing has
-// Codex ask for the list again.
-func CodexListTag() string { return codexListTag("") }
-
-// CodexOwnListTag names the list a Codex that reaches fogway for account
-// failover alone is handed, its own models without fogway's (#1385). Neither
-// it nor CodexListTag's is a part of the other, so Codex asks again when it
-// moves from one list to the other; a V1 list's mark stays in front.
-func CodexOwnListTag() string { return codexListTag("own") }
-
-func codexListTag(kind string) string {
+// CodexListTag names the list Codex is handed, for its ETag: fogway's
+// models, the order they are in, the windows set on them, the auto-review
+// model, and whether its OpenAI models say multi-agent V1
+// (settings.CodexAgentsV1), so any of them changing has Codex ask for the
+// list again.
+func CodexListTag() string {
 	ms := CodexListed()
 	// and the models the user disabled (#1867)
 	for _, pat := range DisabledModels() {
 		ms = append(ms, catalog.Model{ID: "!" + pat})
 	}
-	// and the order the user put them in, the account's own among them
+	// and the order the user put them in
 	for _, id := range ModelOrder("codex") {
 		ms = append(ms, catalog.Model{ID: "^" + id})
 	}
@@ -1162,7 +1155,7 @@ func codexListTag(kind string) string {
 	if v := codexcat.NewSessionEffort(); v != "" {
 		ms = append(ms, catalog.Model{ID: "~effort:" + v})
 	}
-	return codexcat.PolicyTag(kind + codexcat.Tag(ms))
+	return codexcat.PolicyTag(codexcat.Tag(ms))
 }
 
 // CodexListed is the catalog as a Codex signed in to ChatGPT is handed it,

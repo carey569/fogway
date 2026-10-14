@@ -158,28 +158,11 @@ type Agent struct {
 	// own written in by the agent: still connected, as joined, though the
 	// change is told as drift (#940).
 	Beside func() bool
-	// OwnVia is the catalog id fogway serves one of the agent's own models
-	// by on a sign-in of the user's, which its model field lists as its
-	// own rather than as fogway's ("codex/gpt-5.5" for Codex's gpt-5.5),
-	// "" for none: Connect keeps the agent on that model through fogway
-	// where it can't Join (#940: Codex went to an unrelated model).
-	OwnVia func(model string) string
 	// Routed reports that the agent's config sends whatever model it
 	// names to fogway's gateway (Codex's openai_base_url or fogway as its
 	// provider), so a model's name the gateway takes as a routing group
 	// is that group's (#750).
 	Routed func() bool
-	// FailingOver reports an agent that isn't connected whose requests
-	// still go through fogway's gateway, for account failover alone (Codex
-	// signed in to ChatGPT with more of its accounts on in fogway, #1385):
-	// the Agents page says so and what turns it off, and the gateway lists
-	// it only its own models.
-	FailingOver func() bool
-	// EndFailover takes out what account failover wrote, for fogway
-	// quitting: left there, the agent would be pointed at a gateway that
-	// no longer answers, and retry till fogway is open again (Leon920717
-	// on X). The next start's Sync writes it again.
-	EndFailover func() error
 	// Follow, for an agent whose own picker moves its main model where
 	// fogway keeps other settings following it (Claude Code's /model and
 	// its tiers), brings those along to the model picked there. Run as the

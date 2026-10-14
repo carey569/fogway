@@ -13,8 +13,7 @@ import (
 // (its /model, or a Codex app still running on its old pick): its own
 // models are in its list beside fogway's, as when it joined (#940: Codex
 // read as not connected then, its config still on fogway's gateway).
-// Disconnect leaves it on that model. Made fogway's provider (the Codex
-// app blocking its account), it is not beside the sign-in.
+// Disconnect leaves it on that model.
 func TestCodexOwnPickAfterFogwayModelStaysConnected(t *testing.T) {
 	home, read := codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, "model = \"gpt-5.5\"\n")
 	cx := codex(home)
@@ -39,22 +38,5 @@ func TestCodexOwnPickAfterFogwayModelStaysConnected(t *testing.T) {
 	}
 	if cfg := read(); cx.Wired() || strings.Contains(cfg, "openai_base_url") || !strings.Contains(cfg, `model = "gpt-6.1-sol"`) {
 		t.Fatalf("disconnected:\n%s", cfg)
-	}
-
-	// out of its allowance, fogway is its provider: an own model written
-	// back is a change from outside, not a pick beside fogway's
-	codexUsedUp = func() bool { return true }
-	if err := cx.Fields[0].Set("fake/m1"); err != nil {
-		t.Fatal(err)
-	}
-	path := filepath.Join(home, ".codex", "config.toml")
-	if err := edit.SetTOMLTop(path, edit.KV{Path: "model", Value: "gpt-6.1-sol"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := edit.DelTOMLTop(path, "model_provider"); err != nil {
-		t.Fatal(err)
-	}
-	if cx.Wired() {
-		t.Fatalf("still beside the sign-in after fogway became its provider:\n%s", read())
 	}
 }

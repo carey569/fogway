@@ -8,9 +8,8 @@ import (
 )
 
 // A base URL the user wrote in config.toml by hand, to have Codex's own
-// models go through fogway, stays when fogway starts (Sync) with no other
-// ChatGPT account on to fail over to: failover takes away only the one it
-// wrote (#856: it was gone again after every fogway update).
+// models go through fogway, stays when fogway starts (Sync) (#856: it was
+// gone again after every fogway update).
 func TestCodexHandWrittenBaseURLStays(t *testing.T) {
 	base := gateway.URL() + gateway.CodexPath
 	home, read := codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`,

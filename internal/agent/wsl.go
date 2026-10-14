@@ -270,11 +270,6 @@ var wslKinds = []wslKind{
 			switch key {
 			case "model", "subagent":
 				return func(map[string]string) []Option {
-					// over several accounts fogway routes, so they are
-					// offered via fogway too, as on a live Codex (#1603)
-					if codexFailover() {
-						return append(group("OpenAI", options(ownCodex(), "")), viaFogway("codex", "")...)
-					}
 					return append(group("OpenAI", options(ownCodex(), "")), viaFogwayFor("codex", "")...)
 				}
 			case "effort":

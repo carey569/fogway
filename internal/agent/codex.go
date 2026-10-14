@@ -3,7 +3,6 @@ package agent
 import (
 	"cmp"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -430,7 +429,7 @@ func codexIn(at place) *Agent {
 			return false
 		}
 		u := t["base_url"]
-		return u == "" || (u == at.codexURL() && (stashLoad()[at.key("codex.mirror_failover")] == p || slices.Contains(mirrorsTaken(), p)))
+		return u == "" || (u == at.codexURL() && slices.Contains(mirrorsTaken(), p))
 	}
 	// profileNamed are the provider tables a profile of config.toml names:
 	// the user's to pick, each left as it is
@@ -552,7 +551,7 @@ func codexIn(at place) *Agent {
 		}
 		for _, id := range taken {
 			t, err := edit.GetTOMLTable(path, "model_providers."+id)
-			if err != nil || t["base_url"] != at.codexURL() || stashLoad()[at.key("codex.mirror_failover")] == id {
+			if err != nil || t["base_url"] != at.codexURL() {
 				continue
 			}
 			if err := edit.DelTOMLKey(path, "model_providers."+id, "base_url"); err != nil {
@@ -615,30 +614,11 @@ func codexIn(at place) *Agent {
 	// api: the user wants fogway as Codex's provider even while Codex is
 	// signed in to ChatGPT
 	api := func() bool { return stashLoad()[at.key("codex.login")] == "api" }
-	// out reports whether the Codex app holds the ChatGPT account Codex is
-	// signed in to (codexUsedUp), for fogway to become Codex's provider
-	// while it does (#540): never with the sign-in kept on ChatGPT
-	// (chatgpt), where the user would rather the Codex app wait for the
-	// account than leave its ChatGPT state
-	out := func() bool { return stashLoad()[at.key("codex.login")] != "chatgpt" && codexUsedUp() }
 	dropBase := func() error {
-		forget(at.key("codex.failover"))
 		if !viaBase() {
 			return nil
 		}
 		return edit.DelTOMLTop(path, "openai_base_url")
-	}
-	dropMirrorFailover := func() error {
-		p := stashLoad()[at.key("codex.mirror_failover")]
-		if p == "" {
-			return nil
-		}
-		forget(at.key("codex.mirror_failover"))
-		t, _ := edit.GetTOMLTable(path, "model_providers."+p)
-		if t["base_url"] == at.codexURL() {
-			return edit.DelTOMLKey(path, "model_providers."+p, "base_url")
-		}
-		return nil
 	}
 	// the model spawned subagents start on, when not the parent's; one of
 	// fogway's goes when fogway steps out, as Codex could no longer find it
@@ -705,87 +685,6 @@ func codexIn(at place) *Agent {
 		}
 		return nil
 	}
-	// the user disconnected Codex and hasn't connected it since: fogway
-	// writes nothing of its own back (paynezhuang on Discord: the base URL
-	// was back after every update)
-	disconnected := func() bool { return stashLoad()[at.key("codex"+disconnectedKey)] == "1" }
-	// Codex on one of its own models goes through fogway too while more of
-	// its ChatGPT accounts are on there, so one out of its allowance hands
-	// the turn to the next; with none, or once the user disconnected Codex,
-	// it goes straight to OpenAI again
-	failover := func() error {
-		if wired() || asProvider() {
-			return nil
-		}
-		p := get("model_provider")
-		mirror := isCCSwitchMirror(p)
-		if !mirror {
-			_ = dropMirrorFailover()
-		}
-		if p != "" && p != "openai" && !mirror {
-			return nil
-		}
-		on := !disconnected() && codexFailover()
-		// failover is fogway's own idea, not the user's: never handed
-		// Codex's requests while a proxy they'd go through doesn't pass
-		// them on to fogway, which would have every turn fail with 502
-		// (codex_proxy.go); one written before goes again
-		if on && at.spell == nil && !codexProxyOK(path, at.gw()) {
-			on = false
-		}
-		if mirror {
-			t, _ := edit.GetTOMLTable(path, "model_providers."+p)
-			hasGateway := t["base_url"] == at.codexURL()
-			switch {
-			case on && !hasGateway:
-				if err := edit.SetTOMLKey(path, "model_providers."+p, "base_url", at.codexURL()); err != nil {
-					return err
-				}
-				stash(map[string]string{at.key("codex.mirror_failover"): p})
-			case !on && hasGateway:
-				if err := edit.DelTOMLKey(path, "model_providers."+p, "base_url"); err != nil {
-					return err
-				}
-				forget(at.key("codex.mirror_failover"))
-			}
-			return nil
-		}
-		// the base URL failover wrote is marked (codex.failover), and only
-		// that one goes again: one the user wrote in config.toml by hand,
-		// to have Codex's own models go through fogway, stays (#856: it was
-		// gone again each time fogway started). One already there while
-		// failover is on is taken as failover's, as a fogway from before
-		// the mark wrote it.
-		owned := stashLoad()[at.key("codex.failover")] == "1"
-		switch {
-		case on && !viaBase():
-			if err := edit.SetTOMLTop(path, edit.KV{Path: "openai_base_url", Value: at.codexURL()}); err != nil {
-				return err
-			}
-			stash(map[string]string{at.key("codex.failover"): "1"})
-		case on && !owned:
-			stash(map[string]string{at.key("codex.failover"): "1"})
-		case !on && viaBase() && owned:
-			return dropBase()
-		}
-		return nil
-	}
-	// failingOver: Codex reaches fogway for account failover alone, by the
-	// base URL failover wrote (codex.failover) or by CC Switch's OpenAI
-	// mirror pointed at fogway for it (codex.mirror_failover), with nothing
-	// of fogway's connected. It read as not connected while every request
-	// went through fogway, fogway's models in its list (#1385).
-	failingOver := func() bool {
-		if wired() || asProvider() {
-			return false
-		}
-		s := stashLoad()
-		if p := get("model_provider"); p != "" && p != "openai" {
-			t, _ := edit.GetTOMLTable(path, "model_providers."+p)
-			return s[at.key("codex.mirror_failover")] == p && t["base_url"] == at.codexURL()
-		}
-		return viaBase() && s[at.key("codex.failover")] == "1"
-	}
 	modelOptions := func(withFogway bool) []Option {
 		var own []Option
 		// each of Codex's own says which way it goes, as Claude Code's do:
@@ -814,19 +713,14 @@ func codexIn(at place) *Agent {
 			own = say(group(p, options(catalog.Codex(), "")))
 		} else {
 			own = say(group("OpenAI", options(ownCodex(), "")))
-			// with fogway Codex's provider (fogway API, or a fogway model
-			// picked with no ChatGPT sign-in beside it), Codex's own models
-			// are reached through fogway on a ChatGPT account there: picked
-			// so, set so (#701). One fogway doesn't serve is picked off
-			// fogway, straight to OpenAI, and says so: it said via fogway,
-			// and picking it took Codex off fogway at once (#1269)
-			if api() || asProvider() {
-				for i, o := range own {
-					if id := codexOwnViaFogway(o.Value); id != "" {
-						own[i].Label, own[i].Value, own[i].Ref = o.Value, id, id
-					} else if !api() {
-						own[i].Via, own[i].Direct = false, "OpenAI"
-					}
+			// with fogway Codex's provider (a fogway model picked with no
+			// ChatGPT sign-in beside it), which serves none of Codex's own
+			// models, one is picked off fogway, straight to OpenAI, and says
+			// so: it said via fogway, and picking it took Codex off fogway
+			// at once (#1269)
+			if asProvider() && !api() {
+				for i := range own {
+					own[i].Via, own[i].Direct = false, "OpenAI"
 				}
 			}
 		}
@@ -841,7 +735,7 @@ func codexIn(at place) *Agent {
 		// (#1603: Codex on CC Switch's custom relay, two accounts, GPT
 		// models direct only). Routed, Codex's own say via fogway already.
 		onSignIn := (p == "" || p == "openai" || isCCSwitchMirror(p)) && chatGPT()
-		if !through && (!onSignIn || codexFailover()) {
+		if !through && !onSignIn {
 			return append(own, viaFogway("codex", "")...)
 		}
 		return append(own, viaFogwayFor("codex", "")...)
@@ -851,7 +745,7 @@ func codexIn(at place) *Agent {
 	// provider, catalog and effort); it answers the model Codex was on
 	// then, for Unwire to go back to
 	unroute := func() (string, error) {
-		forget(at.key("codex.out"), at.key("codex.joined"), at.key("codex.beside"))
+		forget(at.key("codex.joined"), at.key("codex.beside"))
 		if err := giveTables(); err != nil {
 			return "", err
 		}
@@ -893,9 +787,6 @@ func codexIn(at place) *Agent {
 			if err := giveTables(); err != nil {
 				return err
 			}
-			if err := dropMirrorFailover(); err != nil {
-				return err
-			}
 			// Codex as installed: OpenAI, its own catalog, its default model
 			if err := dropBase(); err != nil {
 				return err
@@ -904,37 +795,23 @@ func codexIn(at place) *Agent {
 				return err
 			}
 			dropList()
-			forget(at.key("codex.model"), at.key("codex.effort"), at.key("codex.provider"), at.key("codex.catalog"), at.key("codex.out"), at.key("codex.joined"), at.key("codex.beside"))
+			forget(at.key("codex.model"), at.key("codex.effort"), at.key("codex.provider"), at.key("codex.catalog"), at.key("codex.joined"), at.key("codex.beside"))
 			return nil
 		}
-		// fogway API: fogway stays Codex's provider whichever model is the
-		// default, so one of Codex's own goes as fogway serves it, on the
-		// ChatGPT account there; taking fogway out for it took fogway's
+		// fogway API: fogway stays Codex's provider, and serves none of
+		// Codex's own models; taking fogway out for one took fogway's
 		// models out of Codex's picker with it (#701)
 		if api() && !isFogway(v) {
-			id := codexOwnViaFogway(v)
-			if id == "" {
-				return fmt.Errorf("Codex's sign-in is fogway API, and fogway serves no %s: switch Codex's ChatGPT subscription on in fogway, or set Codex's sign-in to ChatGPT", v)
-			}
-			v = id
+			return fmt.Errorf("Codex's sign-in is fogway API, whose models are fogway's alone, not %s: pick one of them, or set Codex's sign-in to ChatGPT", v)
 		}
 		if isFogway(v) {
-			if err := dropMirrorFailover(); err != nil {
-				return err
-			}
 			if !routed() {
 				stash(map[string]string{at.key("codex.model"): get("model"), at.key("codex.effort"): get("model_reasoning_effort"),
 					at.key("codex.provider"): get("model_provider"), at.key("codex.catalog"): get("model_catalog_json")})
 			}
-			// a ChatGPT account the Codex app holds (out of allowance and
-			// of credits) keeps it from sending at all, a fogway model's
-			// request too; as a provider of Codex's own, fogway is past
-			// that. Wired so for that alone, it is marked (codex.out), for
-			// Sync to put it back beside the sign-in once the account has
-			// room again.
-			chatgpt := !api() && chatGPT()
-			if chatgpt && !out() {
-				forget(at.key("codex.out"))
+			// signed in with ChatGPT, fogway's models go beside the
+			// sign-in, by the base URL
+			if !api() && chatGPT() {
 				if err := dropProvider(); err != nil {
 					return err
 				}
@@ -958,11 +835,6 @@ func codexIn(at place) *Agent {
 					return err
 				}
 				return settle()
-			}
-			if chatgpt {
-				stash(map[string]string{at.key("codex.out"): "1"})
-			} else {
-				forget(at.key("codex.out"))
 			}
 			// fogway is its provider now, not beside the sign-in
 			forget(at.key("codex.beside"))
@@ -1007,9 +879,6 @@ func codexIn(at place) *Agent {
 		if err := edit.SetTOMLTop(path, edit.KV{Path: "model", Value: v}); err != nil {
 			return err
 		}
-		if err := failover(); err != nil {
-			return err
-		}
 		return settle()
 	}
 
@@ -1049,20 +918,16 @@ func codexIn(at place) *Agent {
 		// was on, the one last picked in its /model (the owner: 让 Codex 记住
 		// 上次的选择), and fogway's models join its list
 		Join: func() (bool, error) {
-			if api() || !chatGPT() || out() || isFogway(get("model")) {
+			if api() || !chatGPT() || isFogway(get("model")) {
 				return false, nil
 			}
 			if p := get("model_provider"); p != "" && p != "openai" && !isCCSwitchMirror(p) {
 				return false, nil
 			}
-			if err := dropMirrorFailover(); err != nil {
-				return false, err
-			}
 			if !routed() {
 				stash(map[string]string{at.key("codex.model"): get("model"), at.key("codex.effort"): get("model_reasoning_effort"),
 					at.key("codex.provider"): get("model_provider"), at.key("codex.catalog"): get("model_catalog_json")})
 			}
-			forget(at.key("codex.out"))
 			if err := dropProvider(); err != nil {
 				return false, err
 			}
@@ -1085,17 +950,9 @@ func codexIn(at place) *Agent {
 			}
 			return true, settle()
 		},
-		Joined:      joined,
-		Beside:      beside,
-		Routed:      routed,
-		FailingOver: failingOver,
-		EndFailover: func() error {
-			if !failingOver() {
-				return nil
-			}
-			return errors.Join(dropMirrorFailover(), dropBase())
-		},
-		OwnVia: codexOwnViaFogway,
+		Joined: joined,
+		Beside: beside,
+		Routed: routed,
 		Sync: func() error {
 			// model_provider = "fogway" left with its table gone (taken by
 			// another tool, or a hand edit), which keeps Codex from loading
@@ -1106,35 +963,11 @@ func codexIn(at place) *Agent {
 					return err
 				}
 			}
-			if err := failover(); err != nil {
-				return err
-			}
-			// fogway API on one of Codex's own models, as an older fogway
-			// left it unwired: wired again, as picking it does now (#701);
-			// not one the user disconnected, which this left the same
-			if m := get("model"); api() && !disconnected() && !isFogway(m) && !asProvider() && codexOwnViaFogway(m) != "" {
-				return set(m)
-			}
 			// on a fogway model by the base URL alone with no ChatGPT
 			// sign-in, as an older fogway left a Codex signed in with an
 			// API key: its picker never had fogway's models (#322)
 			if m := get("model"); isFogway(m) && viaBase() && get("model_provider") == "" && !chatGPT() {
 				return set(m)
-			}
-			// the ChatGPT account ran out (of its allowance and its
-			// credits) after a fogway model was picked beside its sign-in:
-			// the Codex app then sends nothing, a fogway model's turn
-			// included, in a new thread or an old one (#540), so fogway
-			// becomes Codex's provider as set does for an account already
-			// out; and once the account has room again (or Codex is on
-			// one with room), Codex's own models join fogway's again
-			if m := get("model"); isFogway(m) && !api() && chatGPT() {
-				switch {
-				case viaBase() && !asProvider() && out():
-					return set(m)
-				case asProvider() && stashLoad()[at.key("codex.out")] == "1" && !out():
-					return set(m)
-				}
 			}
 			// a table taken away before (by an older fogway) comes back
 			// while fogway is wired, for the threads that name it
@@ -1164,10 +997,6 @@ func codexIn(at place) *Agent {
 						return err
 					}
 				}
-			case failingOver():
-				// the list the gateway hands a Codex there for failover
-				// alone: its own models, without fogway's (#1385)
-				return codexStaleCache(filepath.Join(dir, "models_cache.json"), provider.CodexOwnListTag())
 			case viaBase():
 				if err := codexStaleCache(filepath.Join(dir, "models_cache.json"), provider.CodexListTag()); err != nil {
 					return err
@@ -1384,39 +1213,26 @@ func codexIn(at place) *Agent {
 			},
 			{
 				// how Codex takes fogway's models: beside its ChatGPT
-				// sign-in (openai_base_url), fogway its provider only while
-				// the Codex app holds the account (""); beside it always,
-				// held or not (chatgpt); or with fogway as its provider,
-				// the Codex app in its API state. Codex's getAuthStatus has
+				// sign-in (openai_base_url, ""), or with fogway as its
+				// provider, the Codex app in its API state (api). Codex's getAuthStatus has
 				// no token for a provider without requires_openai_auth, so
 				// its Chrome control needs ChatGPT; the api note says so
 				// (#1824). Kept in the stash, where set("") leaves it.
 				Key: "login", Label: "sign-in", Quiet: true,
 				Get: func() string { return stashLoad()[at.key("codex.login")] },
 				Set: func(v string) error {
-					if v != "" && v != "api" && v != "chatgpt" {
-						return fmt.Errorf("sign-in is api, chatgpt or empty (ChatGPT), not %q", v)
+					if v != "" && v != "api" {
+						return fmt.Errorf("sign-in is api or empty (ChatGPT), not %q", v)
 					}
 					stash(map[string]string{at.key("codex.login"): v})
-					m := get("model")
-					switch {
-					case v != "api" && codexOwnOf(m) != "":
-						// back beside the sign-in, Codex's own model goes to
-						// OpenAI itself again, not by a hop through fogway
-						return set(codexOwnOf(m))
-					case isFogway(m):
-						return set(m)
-					case v == "api" && codexOwnViaFogway(m) != "":
-						// fogway API on one of Codex's own models: wired as
-						// for fogway's, so its models are in Codex's picker
+					if m := get("model"); isFogway(m) {
 						return set(m)
 					}
 					return nil
 				},
 				Options: func(map[string]string) []Option {
 					return []Option{
-						{Value: "", Label: "ChatGPT", Note: "fogway's models join Codex's own; Codex stays signed in to ChatGPT, and while the Codex app blocks its account (out of allowance, no credits left) fogway is Codex's provider, so the app still sends"},
-						{Value: "chatgpt", Label: "Always ChatGPT", Note: "as ChatGPT, and kept so while the Codex app blocks its account: fogway never becomes Codex's provider. The Codex app may then send nothing till the account has room; Codex CLI goes on through fogway"},
+						{Value: "", Label: "ChatGPT", Note: "fogway's models join Codex's own; Codex stays signed in to ChatGPT"},
 						{Value: "api", Label: "fogway API", Note: "fogway is Codex's provider; the Codex app is in its API state, with fogway's models only. Codex's Chrome control needs the ChatGPT sign-in, so pick ChatGPT to keep it"},
 					}
 				},
@@ -1547,25 +1363,6 @@ func ownCodex() []catalog.Model {
 	return out
 }
 
-// codexOwnViaFogway is the catalog id fogway serves one of Codex's own
-// models by on a ChatGPT account of the user's ("codex/gpt-5.5"), those
-// shown to Codex first; "" when none serves it.
-func codexOwnViaFogway(model string) string {
-	if model == "" || isFogway(model) {
-		return ""
-	}
-	return "" // no ChatGPT account serves Codex's own models in Fogway
-}
-
-// codexOwnOf is the model of Codex's own a catalog id serves on a ChatGPT
-// account (codexOwnViaFogway's way back); "" for any other.
-func codexOwnOf(id string) string {
-	if !isFogway(id) || strings.HasPrefix(id, provider.GroupPrefix) {
-		return ""
-	}
-	return ""
-}
-
 // codexKeptGateway is the gateway's URL for this machine's Codex: the
 // address its config names when that is fogway's gateway on a host other
 // than this one's loopback (openai_base_url at the Codex path, or
@@ -1648,46 +1445,6 @@ func codexStaleCache(path, tag string) error {
 		return err
 	}
 	return edit.WriteAtomic(path, out)
-}
-
-// codexUsedUp reports whether the ChatGPT account Codex is signed in to
-// is held by the Codex app, out of its allowance with no credits to go on
-// with (provider.CodexUsedUpKnown). A var so tests can say.
-//
-// What is known is used, never a reading asked for here: this runs from
-// SyncCatalog, which a write's own request runs before it answers (a
-// routing group's Save), and asking waits on the vendor — 1.1s of a
-// user's Save. KeepOnAnAccountWithRoom asks on its own loop with the time
-// for it, and tells the catalog when the answer changes.
-var codexUsedUp = func() bool {
-	return false
-}
-
-// codexFailover reports whether Codex is signed in to a ChatGPT account
-// with more of its accounts on in fogway, behind it: fogway holds no
-// accounts, so never.
-func codexFailover() bool { return false }
-
-// EndCodexFailover takes account failover out of this machine's Codex
-// as the fogway serving its gateway quits (EndFailover): Codex goes
-// straight to OpenAI again rather than retrying a gateway that's gone.
-// The app-server codex sessions share read the old base URL as it started
-// and keeps it, and KeepCodexDaemonCurrent ends with fogway, so it is
-// restarted here, when no session is on it (thisisvainxx on X: back on
-// its own config, Codex took "several restarts").
-func EndCodexFailover() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	a := codex(home)
-	if !a.FailingOver() {
-		return nil
-	}
-	if err := a.EndFailover(); err != nil {
-		return err
-	}
-	return nil
 }
 
 // codexChatGPT reports whether Codex is signed in to a ChatGPT account:

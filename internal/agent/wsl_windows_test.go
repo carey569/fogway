@@ -32,9 +32,6 @@ func TestWSLCodexLive(t *testing.T) {
 		t.Setenv(k, home)
 	}
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	usedUp := codexUsedUp
-	codexUsedUp = func() bool { return false }
-	t.Cleanup(func() { codexUsedUp = usedUp })
 	if err := provider.Save(provider.Provider{ID: "fake", Name: "Fake", Key: "k", Chat: "http://127.0.0.1:1/v1", Models: []string{"m1"}}); err != nil {
 		t.Fatal(err)
 	}

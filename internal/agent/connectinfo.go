@@ -88,18 +88,6 @@ func (a *Agent) Source() string {
 	return ""
 }
 
-// FailoverSaid is, for an agent not connected whose requests still go
-// through fogway for account failover alone (FailingOver), what the CLI
-// and the TUI say of it, the Agents page's line in words of their own:
-// why it goes through fogway, and what turns that off (#1385). "" when it
-// doesn't.
-func (a *Agent) FailoverSaid() string {
-	if a.FailingOver == nil || !a.FailingOver() {
-		return ""
-	}
-	return "not connected · goes through fogway only to fail over to your other ChatGPT accounts; tick Only switch Codex's sign-in under Providers › Codex (fogway accounts switch-only codex on), or switch them off, to stop it"
-}
-
 // startsWith is, for an agent that reads fogway's models only as it
 // starts, how to find its processes (patterns for pgrep -f), the files it
 // reads them from, and the part of those files fogway writes for it. The

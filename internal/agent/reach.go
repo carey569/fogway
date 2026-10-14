@@ -176,25 +176,6 @@ func probed(key string, probe func() bool) (ok, known bool) {
 	return a.ok, !a.at.IsZero()
 }
 
-// probedNow is probed waited for: the last answer while it is fresh, else
-// one asked now, which the next probed of key gets too.
-func probedNow(key string, probe func() bool) bool {
-	reach.Lock()
-	a := reach.m[key]
-	reach.Unlock()
-	if !a.at.IsZero() && time.Since(a.at) <= reachAge {
-		return a.ok
-	}
-	ok := probe()
-	reach.Lock()
-	if reach.m == nil {
-		reach.m = map[string]reachAnswer{}
-	}
-	reach.m[key] = reachAnswer{at: time.Now(), ok: ok}
-	reach.Unlock()
-	return ok
-}
-
 // offLoopback: base is an http(s) address on a host other than this
 // machine's loopback and the gateway's own.
 func offLoopback(base string) bool {

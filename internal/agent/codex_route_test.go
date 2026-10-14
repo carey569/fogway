@@ -31,9 +31,6 @@ func codexHome(t *testing.T, auth, config string) (home string, read func() stri
 	t.Setenv("APPDATA", filepath.Join(home, "AppData", "Roaming"))
 	t.Setenv("LOCALAPPDATA", filepath.Join(home, "AppData", "Local"))
 	noKeychain(t)
-	usedUp := codexUsedUp
-	codexUsedUp = func() bool { return false }
-	t.Cleanup(func() { codexUsedUp = usedUp })
 	dir := filepath.Join(home, ".codex")
 	os.MkdirAll(dir, 0o755)
 	if auth != "" {
@@ -115,21 +112,6 @@ func TestCodexSpacedProviderTable(t *testing.T) {
 	if cfg = read(); strings.Count(cfg, "model_providers") != 1 || strings.Contains(cfg, "model_provider =") ||
 		strings.Contains(cfg, "model =") || !strings.Contains(cfg, "[[skills.config]]") {
 		t.Fatalf("reset:\n%s", cfg)
-	}
-}
-
-// A ChatGPT account that has used its allowance up keeps the Codex app from
-// sending, so fogway is a provider of Codex's then, as when signed out.
-func TestCodexUsedUpUsesProvider(t *testing.T) {
-	home, read := codexHome(t, `{"tokens":{"access_token":"x","id_token":"x.e30.x"}}`, "")
-	codexUsedUp = func() bool { return true }
-	if err := codex(home).Fields[0].Set("fake/m1"); err != nil {
-		t.Fatal(err)
-	}
-	cfg := read()
-	if !strings.Contains(cfg, "openai_base_url") || !strings.Contains(cfg, `model_provider = "fogway"`) ||
-		!strings.Contains(cfg, "[model_providers.fogway]") || !strings.Contains(cfg, `model = "fake/m1"`) {
-		t.Fatalf("\n%s", cfg)
 	}
 }
 

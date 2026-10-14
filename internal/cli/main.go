@@ -556,10 +556,6 @@ func list(agents []*agent.Agent, detectedOnly bool, dimFrom int) error {
 				r.name = faint.Render(a.Name) + " " + faint.Render("hidden")
 			}
 			r.vals = strings.Join(parts, label.Render("  ·  "))
-			// through fogway for account failover while not connected (#1385)
-			if said := a.FailoverSaid(); said != "" {
-				r.vals += label.Render("  ·  " + said)
-			}
 			if a.Import != nil {
 				if a.Added != nil && a.Added() {
 					r.vals = value.Render("fogway added")
