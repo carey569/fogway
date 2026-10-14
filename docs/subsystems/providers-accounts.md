@@ -82,7 +82,7 @@ go test -tags nogui ./internal/provider -run 'TestGeminiBase|TestCustomGeminiPro
 go test -tags nogui ./internal/provider
 go test -tags nogui ./internal/provider ./internal/agent -run 'TestAccountDiscovery'
 go test -tags nogui ./internal/provider ./internal/gateway ./internal/gui -run ExtraBody
-go test -tags nogui ./internal/provider ./internal/davsync ./internal/gui -run 'KeepsAccessKey|AccessKeySecret|PlanCardWithoutAccessKey|KeepsVolcengineSecret'
+go test -tags nogui ./internal/provider ./internal/gui -run 'KeepsAccessKey|AccessKeySecret|PlanCardWithoutAccessKey|KeepsVolcengineSecret'
 node --test internal/gui/tests/extra-body.test.cjs
 ```
 
