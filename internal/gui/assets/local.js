@@ -272,7 +272,7 @@
     const head = el("div", "lm-head");
     const dot = el("span", "lm-dot lm-" + s.phase);
     head.append(dot, el("h3", "", t(PHASES[s.phase] || s.phase)));
-    const toggle = el("button", c.on ? "" : "primary", t(c.on ? "Turn off" : "Turn on"));
+    const toggle = el("button", c.on ? "text action" : "text action primary", t(c.on ? "Turn off" : "Turn on"));
     toggle.onclick = () => act(c.on ? "off" : "on");
     head.append(toggle);
     card.append(head);
@@ -349,7 +349,7 @@
     ctx.value = c.context || 32768;
     card.append(row("Context window", ctx));
 
-    const save = el("button", "primary", t("Save and restart"));
+    const save = el("button", "text action primary", t("Save and restart"));
     save.onclick = () => {
       let model = null;
       if (pick.value === "custom") model = { repo: repo.value.trim(), file: file.value.trim() };
