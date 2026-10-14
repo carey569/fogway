@@ -471,6 +471,11 @@ button.rt-session { cursor: pointer; }
   body.web .rt-req .to.upstreamed { flex-wrap: wrap; row-gap: 0; }
   body.web .rt-req .to.upstreamed .said { flex: 1 1 0; min-width: 0; }
   body.web .rt-req .to .upstream { flex-basis: 100%; padding-left: 12px; }
+  /* nor is who answered cut to a sliver beside its model (#1926 kept the
+     model whole): the model goes under it */
+  body.web .rt-req .to .said.split { flex-wrap: wrap; }
+  body.web .rt-req .to .said.split .who { min-width: 0; max-width: 100%; }
+  body.web .rt-req .to .said.split .mdl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
   body.web #view-routing > .row-head .note { flex: 1 1 100%; order: 1; margin: 0; }
 }
 .rt-gsec .segs .opt { white-space: nowrap; }
