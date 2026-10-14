@@ -28,19 +28,15 @@ func chinaOn(t *testing.T) {
 
 func TestChinaFirst(t *testing.T) {
 	for raw, want := range map[string]string{
-		"https://registry.npmjs.org/@magpie-community%2fopencode-kiro-auth":                  "https://registry.npmmirror.com/@magpie-community%2fopencode-kiro-auth",
-		"https://registry.npmjs.org/-/v1/search?text=opencode&size=20":                       "https://registry.npmmirror.com/-/v1/search?text=opencode&size=20",
-		"https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-aarch64.zip": "https://registry.npmmirror.com/-/binary/bun/bun-v1.4.2/bun-darwin-aarch64.zip",
-		"https://raw.githubusercontent.com/magpie-community/plugins/main/registry.json":      "https://cdn.jsdelivr.net/gh/magpie-community/plugins@main/registry.json",
+		"https://registry.npmjs.org/@anthropic-ai%2fclaude-code":       "https://registry.npmmirror.com/@anthropic-ai%2fclaude-code",
+		"https://registry.npmjs.org/-/v1/search?text=opencode&size=20": "https://registry.npmmirror.com/-/v1/search?text=opencode&size=20",
 		// npm's download counts are npmjs's own: npmmirror counts its own
 		"https://api.npmjs.org/downloads/point/last-week/pkg": "",
-		// nothing else of GitHub's: no proxy stands in for it
-		"https://github.com/oven-sh/bun/releases/download/":                          "",
-		"https://github.com/o/r/releases/download/v1/x.zip":                          "",
-		"https://api.github.com/repos/oven-sh/bun/releases/latest":                   "",
-		"https://raw.githubusercontent.com/someone/else/main/registry.json":          "",
-		"https://raw.githubusercontent.com/magpie-community/plugins/main/x.json?t=1": "",
-		"http://registry.npmjs.org/pkg":                                              "",
+		// nothing of GitHub's: no proxy stands in for it
+		"https://github.com/o/r/releases/download/v1/x.zip":                 "",
+		"https://api.github.com/repos/o/r/releases/latest":                  "",
+		"https://raw.githubusercontent.com/someone/else/main/registry.json": "",
+		"http://registry.npmjs.org/pkg":                                     "",
 	} {
 		if got := chinaFirst(raw); got != want {
 			t.Errorf("chinaFirst(%s) = %q, want %q", raw, got, want)
@@ -64,11 +60,12 @@ func TestChinaComesFirst(t *testing.T) {
 	if got := strings.Join(URLs(raw), " "); got != "https://registry.npmmirror.com/pkg "+raw {
 		t.Fatalf("switch and fallback on: URLs = %q", got)
 	}
-	// GitHub's fallback proxy stays after the official address
-	gh := "https://raw.githubusercontent.com/magpie-community/plugins/main/registry.json"
-	want := "https://cdn.jsdelivr.net/gh/magpie-community/plugins@main/registry.json " + gh + " https://gh-proxy.com/" + gh
+	// GitHub's fallback proxy stays after the official address, with no
+	// mirror in China before it
+	gh := "https://github.com/carey569/fogway/releases/download/v0.1.0/fogway.zip"
+	want := gh + " https://gh-proxy.com/" + gh
 	if got := strings.Join(URLs(gh), " "); got != want {
-		t.Fatalf("plugin list URLs = %q, want %q", got, want)
+		t.Fatalf("GitHub URLs = %q, want %q", got, want)
 	}
 }
 

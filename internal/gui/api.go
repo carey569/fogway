@@ -1088,7 +1088,7 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		in.CodexAutoReview = cur.CodexAutoReview
 		// and the model Codex's subagents are put on, set in Codex's row
 		in.CodexSubagentModel = cur.CodexSubagentModel
-		in.ChinaMirror = cur.ChinaMirror // the Plugins page's, set on its own
+		in.ChinaMirror = cur.ChinaMirror // in settings.json only
 		// and the text size, which the keyboard changes too (text-size below)
 		in.TextSize = cur.TextSize
 		// the version the Update pill was hidden for, set from the pill

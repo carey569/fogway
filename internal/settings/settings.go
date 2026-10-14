@@ -345,10 +345,9 @@ type Settings struct {
 	// off, in tokens: 0 is WorkingWindow (#876: 272K was the only one).
 	// A provider's or a model's own (ModelCompacts) comes before it.
 	CompactAt int `json:"compactAt,omitempty"`
-	// ChinaMirror is the Plugins page's 「国内镜像」 switch: the plugin list,
-	// npm (the plugins' packages and what npm says of them) and Bun's
-	// downloads are asked of mirrors in China first, and of their official
-	// addresses after (see source.China).
+	// ChinaMirror is the 「国内镜像」 switch, set in settings.json by hand:
+	// npm's registry (the agents' CLI versions) is asked of npmmirror first,
+	// and of its official address after (see source.China).
 	ChinaMirror bool `json:"chinaMirror,omitempty"`
 	// TextSize is how large the window's and the tray panel's pages are
 	// drawn, in percent (one of TextSizes): the webviews' own zoom, as a

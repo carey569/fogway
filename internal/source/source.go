@@ -1,8 +1,8 @@
 // Package source chooses where fogway reads from, with a mirror as a
 // fallback when the official address can't be reached. The official source
-// stays first; a mirror is only asked when it fails. The Plugins page's
-// 「国内镜像」 switch (China) puts a mirror in China first for the few
-// addresses one serves byte for byte.
+// stays first; a mirror is only asked when it fails. The 「国内镜像」 switch
+// (China) puts a mirror in China first for the address one serves byte for
+// byte: npm's registry.
 package source
 
 import (
@@ -22,25 +22,19 @@ import (
 const (
 	npmMirror    = "https://registry.npmmirror.com"
 	githubMirror = "https://gh-proxy.com"
-	// with the 「国内镜像」 switch: Bun's releases at npmmirror, and the
-	// plugin list at jsDelivr, both copies of the very files
-	bunMirror  = "https://registry.npmmirror.com/-/binary/bun"
-	listMirror = "https://cdn.jsdelivr.net/gh/magpie-community/plugins@"
 )
 
 // NPMMirror is npm's registry in China, npmmirror.
 const NPMMirror = npmMirror
 
-// China is whether the Plugins page's 「国内镜像」 switch is on
-// (settings.ChinaMirror); a var for tests.
+// China is whether the 「国内镜像」 switch is on (settings.ChinaMirror); a
+// var for tests.
 var China = func() bool { return settings.Load().ChinaMirror }
 
 // chinaFirst is the mirror in China asked before raw with the switch on,
-// "" when there is none. Only mirrors that serve the same bytes as the
-// official address: npmmirror for npm's registry and Bun's releases (whose
-// zips are checked against Bun's checksums all the same), jsDelivr for the
-// community repo's plugin list. Never a proxy such as gh-proxy, which
-// would hand fogway whatever it liked.
+// "" when there is none. Only a mirror that serves the same bytes as the
+// official address: npmmirror for npm's registry. Never a proxy such as
+// gh-proxy, which would hand fogway whatever it liked.
 func chinaFirst(raw string) string {
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" {
@@ -49,17 +43,6 @@ func chinaFirst(raw string) string {
 	switch strings.ToLower(u.Hostname()) {
 	case "registry.npmjs.org":
 		return npmMirror + u.RequestURI()
-	case "github.com":
-		if rest, ok := strings.CutPrefix(u.EscapedPath(), "/oven-sh/bun/releases/download/"); ok && rest != "" {
-			return bunMirror + "/" + rest
-		}
-	case "raw.githubusercontent.com":
-		// /magpie-community/plugins/<branch>/<path>
-		if rest, ok := strings.CutPrefix(u.EscapedPath(), "/magpie-community/plugins/"); ok {
-			if ref, path, ok := strings.Cut(rest, "/"); ok && ref != "" && path != "" && u.RawQuery == "" {
-				return listMirror + ref + "/" + path
-			}
-		}
 	}
 	return ""
 }
