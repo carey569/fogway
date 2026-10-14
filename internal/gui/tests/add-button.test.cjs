@@ -21,8 +21,10 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
+// as many as the app lists (44), so the sheet is as tall as it is there
 const presets = ["anthropic", "openai", "deepseek", "moonshot", "xai", "openrouter", "siliconflow", "groq"]
-  .map((id, i) => ({ id, name: id, icon: "openai", kind: i < 5 ? "vendor" : "relay", chat: `https://api.${id}.example.com/v1`, added: false }));
+  .map((id, i) => ({ id, name: id, icon: "openai", kind: i < 5 ? "vendor" : "relay", chat: `https://api.${id}.example.com/v1`, added: false }))
+  .concat(Array.from({ length: 36 }, (_, i) => ({ id: "v" + i, name: "Vendor " + i, icon: "openai", kind: i < 22 ? "vendor" : "relay", chat: `https://api.v${i}.example.com/v1`, added: false })));
 const providers = Array.from({ length: 22 }, (_, i) => ({
   id: "p" + i, name: "Provider " + i, icon: ["openai", "deepseek", "claude"][i % 3], preset: "", host: "api.example.com",
   models: [], agents: [], key: { set: true, masked: "sk-…ab12" },

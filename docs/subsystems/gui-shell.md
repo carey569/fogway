@@ -304,11 +304,6 @@ dirty group draft; Cancel retains the draft and Discard opens the new editor.
 `newGroupWith` applies the same guard when creating a group from a model and
 waits for `show` to accept navigation before creating its draft.
 
-The Plugins page updates the npm search-results section when a search answers,
-leaving suggested plugin cards in place so a click begun before the answer still
-opens the intended plugin. `plugin-market.test.cjs` holds the search response
-between pointerdown and pointerup to check this in Chromium and WebKit.
-
 ## Verification
 
 The session readers include Cursor CLI chat stores, Cursor editor project

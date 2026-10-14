@@ -274,12 +274,6 @@ English and Chinese, Chromium and WebKit.
 waits for the reader, gone once it's updated, and the "Auto-updated" chip on a
 plugin fogway updated by itself.
 
-`plugin-signin.test.cjs` checks a provider an OpenCode plugin signs in to:
-the add sheet lists it under "From plugins"; its sign-in asks the way, the
-method's questions (a pick, then a text the plugin checks), then takes the
-code the browser page shows; an API-key way opens the account. English and
-Chinese, Chromium and WebKit, with the API faked.
-
 `plugin-move-overflow.test.cjs` checks a Plugins card that offers a
 built-in's accounts: the button is one word beside the name, as Install is
 ("Move", its title saying whose accounts and how many), on one line, and it
@@ -299,21 +293,6 @@ English and Chinese, light and dark, Chromium and WebKit.
 naming several built-in subscriptions a community plugin can run: its Take a
 look opens the Plugins tab, whose cards offer each one's Move, not the first
 one's editor. English and Chinese, Chromium and WebKit, with the API faked.
-
-`plugin-key-hint.test.cjs` checks a plugin's API-key way: its label titles
-the key's field and its placeholder is the field's hint, while a way labelled
-only "API key" keeps "<name> API key"; the provider's own icon shows on its
-row. English and Chinese, Chromium and WebKit, with the API faked.
-
-`plugin-market.test.cjs` checks the Plugins tab: Discover lists the
-suggested plugins in their two sections, a card installs its plugin and
-then offers its sign-in, which opens in the Providers add sheet; a search
-filters the list at once and adds what npm has; a card opens the plugin's
-page with its README (no pictures, links opened outside); Installed shows
-why one didn't load, updates one and removes one. The add sheet's
-"More in Plugins" row (the providers list has no button of its own) and
-"look for a plugin" link lead there. English and Chinese, Chromium and WebKit,
-with the API faked.
 
 `plugin-git.test.cjs` checks a plugin installed from a git repository: the
 market's field says it takes a GitHub repo, and Install sends
@@ -1552,17 +1531,10 @@ accent. If the delete fails while the provider is still there, the editor
 stays open and shows the error. The checks run in English and Chinese, in
 Chromium and WebKit.
 
-`signin-link.test.cjs` checks a sign-in that is waiting (Factory's device
-flow). Its link appears on one line inside the box and is selected whole
-with a click, with no left-border accent. The copy button beside it
-(titled Copy link) posts the whole link to /api/copy, and the status line
-says it was copied. Open again is still there, and nothing scrolls. The
-checks run in English and Chinese, in Chromium and WebKit.
-
 `copy-command.test.cjs` copies from a tab with no clipboard API, as
 `fogway web` on a NAS is when opened from another computer over http:
 /api/copy refuses and navigator.clipboard is missing, so the copy command
-copies the sign-in link, the status line says it was copied, the textarea
+copies the Gateway page's Base URL, the status line says it was copied, the textarea
 it used is gone, and nothing scrolls. English and Chinese, in Chromium and
 WebKit.
 
@@ -1576,32 +1548,6 @@ signin/<id>/cancel, stops the polling and brings Add another back without
 moving the page, and so do the editor's Cancel and Save, so the editor
 opened again has no box. English and Chinese, Chromium and WebKit;
 the API is faked.
-
-`signin-paste-codex.test.cjs` checks a ChatGPT sign-in finished from its
-pasted address, for a fogway the browser can't reach (on a server, in
-Docker). While the sign-in waits, the box says to copy the address of the
-page that won't load, and a Callback URL field sits inside it with no
-left-border accent. Finish sign-in stays off until something is typed, then
-posts the address to the sign-in's callback route once, and the account is
-named in the status line. Nothing scrolls. The checks run in English and
-Chinese, in Chromium and WebKit.
-
-`signin-port-blocked.test.cjs` checks a ChatGPT sign-in whose port 1455
-couldn't be opened (#1782): the box says why, Windows reserving the port or
-another program holding it, with the port named, in place of the
-server-or-Docker guess, and the pasted address finishes the sign-in. Every
-language, Chromium and WebKit, 900 and 420 wide.
-
-`signin-paste-key.test.cjs` checks Command Code signed in to from a browser
-that can't reach fogway (on a server, in Docker), where Command Code's page
-posts its key to fogway unseen and leaves no address to paste. While the
-sign-in waits, the box says to make an API key on Command Code's keys page,
-a link opens that page, and a hidden API key field sits inside the box with
-no left-border accent; Finish sign-in posts the key once to the sign-in's
-callback route. A plugin's browser sign-in offers "Use an API key instead"
-while it waits: the click cancels it and asks the plugin's API key way.
-Nothing scrolls. The checks run in English and Chinese, in Chromium and
-WebKit.
 
 `tray-inuse.test.cjs` checks Settings, Allowances in the menu bar. A
 subscription with two accounts lists "Account in use" before each account;
@@ -1640,11 +1586,6 @@ page, and nothing has a left-border accent. In English and Chinese.
 reset used by itself: a try out of its week says whose reset was used and
 that the request was asked again, and Codex's own sign-in answering after
 one says so before it answered; English and Chinese, Chromium and WebKit.
-
-`claude-risk.test.cjs` checks starting a Claude sign-in first says Anthropic
-may ban the account, as Command Code's does, and asks nothing of the backend
-until "Sign in anyway"; the click moves nothing, no left-border accent.
-English and Chinese, Chromium and WebKit.
 
 `claude-usage-asked.test.cjs` checks a Claude account's usage is only asked
 for when the reader opens Usage or presses Refresh (the header's, the only
@@ -1687,14 +1628,6 @@ key; saving without an address says the other fogway's address is needed,
 and saving posts the `remote-fogway` preset with the key and the address as
 typed. OpenAI's editor has no address field. No click moves the page;
 English and Chinese, Chromium and WebKit.
-
-`qoder-cn-tile.test.cjs` checks Qoder CN (#349): the Add sheet has a Qoder CN
-tile beside Qoder's, which is labelled the international site's (qoder.com);
-each tile's title says which accounts it is for, Qoder CN's sign-in warning
-says it takes qoder.cn accounts (Alibaba Cloud or phone number) above Qoder's
-risk note, nothing is asked of the backend until "Sign in anyway", which asks
-for `qoder-cn`, and the click moves nothing; English and Chinese, Chromium and
-WebKit.
 
 `library-loading.test.cjs` holds the Library while it loads: the real tabs,
 the last one open picked, its rows in outline that come in only after a

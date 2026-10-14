@@ -49,10 +49,10 @@ function server(lang, list, counted) {
 }
 
 const L = {
-  en: { head: ["Partners", "fogway's sponsors"], subs: "Subscriptions", rows: ["Acme AI", "Taken"], note: "Fast relay" },
-  zh: { head: ["合作伙伴", "赞助 fogway 的服务"], subs: "订阅", rows: ["Acme AI", "China Only", "Taken"], note: "快速中转" },
-  ja: { head: ["パートナー", "fogway のスポンサー"], subs: null, rows: ["Acme AI", "Taken"], note: "高速な中継" },
-  de: { head: ["Partner", "Sponsoren von fogway"], subs: null, rows: ["Acme AI", "Taken"], note: "Fast relay" },
+  en: { head: ["Partners", "fogway's sponsors"], next: "Vendors", rows: ["Acme AI", "Taken"], note: "Fast relay" },
+  zh: { head: ["合作伙伴", "赞助 fogway 的服务"], next: "供应商", rows: ["Acme AI", "China Only", "Taken"], note: "快速中转" },
+  ja: { head: ["パートナー", "fogway のスポンサー"], next: null, rows: ["Acme AI", "Taken"], note: "高速な中継" },
+  de: { head: ["Partner", "Sponsoren von fogway"], next: null, rows: ["Acme AI", "Taken"], note: "Fast relay" },
 };
 
 async function openSheet(page) {
@@ -81,7 +81,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // first, under a heading that says they are sponsors
         const kinds = await sheet.locator(".kind").evaluateAll((ks) => ks.map((k) => [k.querySelector("b").textContent, k.querySelector("span")?.textContent || ""]));
         assert.deepEqual(kinds[0], w.head);
-        if (w.subs) assert.equal(kinds[1][0], w.subs);
+        if (w.next) assert.equal(kinds[1][0], w.next);
 
         // its rows: listed in the page's language only, one quiet line each
         // with no badge, the tagline in the title
@@ -180,7 +180,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const sheet = await openSheet(page);
       const heads = await sheet.locator(".kind b").allTextContents();
       assert(!heads.includes("Partners"), heads.join(","));
-      assert.equal(heads[0], "Subscriptions");
+      assert.equal(heads[0], "Vendors");
       await page.context().close();
     });
   });

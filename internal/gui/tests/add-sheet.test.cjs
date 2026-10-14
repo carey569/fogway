@@ -1,11 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // The Providers page's add sheet as quiet rows (Image #24: 这个页面看起来有点
-// 乱糟糟的, then #25's design A3): under Subscriptions, Vendors, Relays and On
-// this machine, each named with a word on what it is, the choices sit three
-// to a line as an icon and a short name, with no frame and no second line
-// (the plans, a long name and the host are in the row's title). One already
-// added is not faded and says no word: a small green dot after its name, a
-// subscription's account count beside it when more than one. A vendor's
+// 乱糟糟的, then #25's design A3): under Vendors, Relays and On this machine,
+// each named with a word on what it is, the choices sit three to a line as
+// an icon and a short name, with no frame and no second line (the plans, a
+// long name and the host are in the row's title). No subscription is
+// offered: Fogway reaches the cloud through API keys alone. One already
+// added is not faded and says no word: a small green dot after its name. A vendor's
 // global and China presets are one row with nothing added to it, the
 // regions' hosts in its title, its editor switching between them with
 // the key kept. A custom provider is one line
@@ -32,10 +32,7 @@ const presets = [
   preset("ollama", "Ollama", "local", false, { noKey: true }),
 ];
 const prov = (id, name, extra = {}) => ({ id, name, icon: "openai", preset: id, models: [], agents: [], key: { set: true, masked: "sk-…ab12" }, ...extra });
-const providers = [
-  prov("anthropic", "Anthropic"), prov("openrouter", "OpenRouter"),
-  prov("claude", "Claude", { preset: "", account: { agent: "claude", logins: [{ user: "a" }, { user: "b" }] } }),
-];
+const providers = [prov("anthropic", "Anthropic"), prov("openrouter", "OpenRouter")];
 
 function server(lang, list = providers) {
   return async (route) => {
@@ -56,11 +53,11 @@ function server(lang, list = providers) {
 
 const L = {
   en: {
-    kinds: [["Subscriptions", "sign in, no key"], ["Vendors", "the makers' own APIs"], ["Relays", "one key, many vendors"], ["On this machine", ""]],
+    kinds: [["Vendors", "the makers' own APIs"], ["Relays", "one key, many vendors"], ["On this machine", ""]],
     regionField: "Region", china: "China", custom: "Custom provider", customHint: "any OpenAI or Anthropic compatible URL",
   },
   zh: {
-    kinds: [["订阅", "登录即可，无需密钥"], ["供应商", "模型厂商的 API"], ["中转", "一个密钥，多家模型"], ["本机", ""]],
+    kinds: [["供应商", "模型厂商的 API"], ["中转", "一个密钥，多家模型"], ["本机", ""]],
     regionField: "区域", china: "中国", custom: "自定义供应商", customHint: "任意 OpenAI / Anthropic 兼容的 URL",
   },
 };
@@ -110,23 +107,22 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.equal(l.over, false);
           assert(l.h <= 40, "row " + l.h + "px tall");
         }
-        const tops = await sheet.locator(".kind").nth(1).evaluate((k) => [...k.nextElementSibling.children].map((r) => Math.round(r.getBoundingClientRect().top)));
+        const tops = await sheet.locator(".kind").nth(0).evaluate((k) => [...k.nextElementSibling.children].map((r) => Math.round(r.getBoundingClientRect().top)));
         assert.equal(tops.filter((y) => y === tops[0]).length, 3, "three vendors on the first line");
 
-        // added: a green dot and no word, a subscription's count beside it
+        // added: a green dot and no word
         const row = (name) => rows.filter({ has: page.locator(".n", { hasText: new RegExp("^" + name + "$") }) });
-        for (const name of ["Anthropic", "OpenRouter", "Claude", "Kimi"]) assert.equal(await row(name).locator(".have").count(), 1, name);
+        for (const name of ["Anthropic", "OpenRouter", "Kimi"]) assert.equal(await row(name).locator(".have").count(), 1, name);
         assert.equal(await row("OpenAI").locator(".have").count(), 0);
         assert.equal(await sheet.locator(".tile .st.added").count(), 0);
-        assert.equal(await row("Claude").locator(".cnt").textContent(), "2");
         assert.equal(await row("Anthropic").locator(".cnt").count(), 0);
+        // no subscription, nor a way to one, even when searched for
+        for (const name of ["Claude", "ChatGPT", "Grok", "Copilot", "Cursor"]) assert.equal(await row(name).count(), 0, name);
+        assert.equal(await sheet.locator(".more-plugins").count(), 0);
         const dot = await row("Anthropic").locator(".have").evaluate((e) => { const r = e.getBoundingClientRect(); return [r.width, r.height, getComputedStyle(e).backgroundColor]; });
         assert.deepEqual(dot.slice(0, 2), [6, 6]);
         assert.notEqual(dot[2], "rgba(0, 0, 0, 0)");
         assert.match(await row("OpenAI").getAttribute("title"), /api\.openai\.example\.com/);
-        // short names, the long one in the title
-        assert.equal(await row("Grok").count(), 1);
-        assert.match(await row("Grok").getAttribute("title"), /SuperGrok/);
         assert.equal(await row("Tencent Cloud").count(), 1);
         // a vendor's global and China presets: one row
         assert.equal(await sheet.locator(".tile .n", { hasText: "China" }).count(), 0);
@@ -146,6 +142,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await foot.count(), 0);
         await sheet.locator(".find").fill("china");
         assert.deepEqual(await rows.locator(".n").allTextContents(), ["Kimi"]);
+        await sheet.locator(".find").fill("claude");
+        assert.deepEqual(await rows.locator(".n").allTextContents(), []);
+        assert.equal(await sheet.locator(".none button").count(), 1, "only the custom provider is offered");
         await sheet.locator(".find").fill("");
 
         // the pair's row adds the one not added (global here); its editor

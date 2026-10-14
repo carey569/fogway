@@ -7549,16 +7549,9 @@ function renderAdd() {
       tiles.append(k, grid);
       return grid;
     };
+    // Fogway reaches the cloud through vendors' API keys alone: no
+    // subscription is signed in to here, so the sheet offers none
     let any = false;
-    // one moved onto its plugin stays where it was, signing in through it;
-    // a deprecated one whose plugin is installed is that plugin's row alone
-    // (ARNO on Discord: Qoder CN twice), and one with no account isn't
-    // offered at all: it is the Plugins page's, installed from there
-    // (yetone: 对于新用户来说，这里应该只显示内置的 provider), unless it is
-    // signing in now. A search naming one finds it there.
-    const named = (x) => !f || x.name.toLowerCase().includes(f) || x.agent.includes(f) || "subscription".includes(f);
-    const subs = SUBS.filter((x) => !(replacedSub(x.agent) || unusedSub(x.agent)) || signing?.agent === x.agent).map((x) => subOf(x.agent)).filter(named);
-    const inPlugins = f && SUBS.some((x) => unusedSub(x.agent) && signing?.agent !== x.agent && named(subOf(x.agent)));
     // partners pay to be listed first, under a heading that says so; who
     // they are comes from usemagpie.ai (internal/provider/partners.go), and
     // each may name the languages it is shown in
@@ -7575,48 +7568,6 @@ function renderAdd() {
       for (const p of partners) p.new = false;
       markNewPartners();
     }
-    if (subs.length || inPlugins) {
-      any = true;
-      const grid = section("Subscriptions", "sign in, no key");
-      for (const x of subs) grid.append(subTile(x));
-      if (!f || inPlugins) grid.append(morePluginsTile(f));
-      const w = subs.find((x) => signing?.agent === x.agent);
-      if (w) tiles.append(renderSigning(w));
-    }
-    const plugged = pluginSubs().filter((x) => !(movedSub(x.agent) && SUBS.some((y) => y.agent === x.agent))).filter((x) => !f || x.name.toLowerCase().includes(f) || x.agent.includes(f) || "plugin".includes(f));
-    if (plugged.length) {
-      any = true;
-      const grid = section("From plugins", "signed in by an OpenCode plugin or a pi package");
-      for (const x of plugged) grid.append(subTile(x));
-      const w = plugged.find((x) => signing?.agent === x.agent);
-      if (w) tiles.append(renderSigning(w));
-    }
-    // the removed ones the user asked not to be reminded of, each with its
-    // two ways out side by side: added back as it was, or signed out for
-    // good (#694, mintonight: no menu to open first, and no "Don't show
-    // here": hiding one left its sign-in where it was). One hidden before
-    // (#116) is listed with the rest.
-    const gone = (providers.excluded || []).filter((x) => x.quiet && x.provider && (!f || x.agentName.toLowerCase().includes(f) || x.agent.includes(f)));
-    if (gone.length) {
-      any = true;
-      const grid = section("Removed from fogway", "still signed in");
-      for (const x of gone) {
-        const r = el("div", "tile removed");
-        r.dataset.pick = "removed:" + x.provider; // not the subscription's own row, named alike
-        const nm = el("span", "nm");
-        nm.append(el("span", "n", x.agentName));
-        const back = el("button", "text action", t("Add it back"));
-        back.title = t("its accounts and model picks as they were");
-        back.onclick = (e) => { e.stopPropagation(); providerAction("show", { id: x.provider }, t("{name} added back", { name: x.agentName })); };
-        const out = el("button", "text action danger", t("Sign out…"));
-        out.title = t("fogway forgets its accounts; adding it again signs in afresh");
-        out.onclick = (e) => { e.stopPropagation(); askForgetAccount(x); };
-        const acts = el("span", "acts");
-        acts.append(back, out);
-        r.append(icon(x.agentIcon), nm, acts);
-        grid.append(r);
-      }
-    }
     // another computer's fogway is no relay: a heading of its own, after
     // this machine's (Avalon on Discord didn't find it among the relays)
     for (const [kind, title, hint] of [["vendor", "Vendors", "the makers' own APIs"], ["relay", "Relays", "one key, many vendors"], ["local", "On this machine", ""], ["remote", "Another computer's fogway", "shared on its network"]]) {
@@ -7628,14 +7579,12 @@ function renderAdd() {
       const grid = section(title, hint);
       for (const [pr, cn] of rows) grid.append(cn ? pairTile(pr, cn) : tile(pr));
     }
-    if (!any) {
+    if (!any && f) {
       const none = el("div", "none");
       none.append(t("Nothing called “{q}”. ", { q: presetQuery.trim() }));
       const b = el("button", "link", t("Add it as a custom provider"));
       b.onclick = () => { editing = { custom: true }; draft = null; renderProviders(); };
-      const pl = el("button", "link", t("look for a plugin"));
-      pl.onclick = () => openPlugins(presetQuery.trim());
-      none.append(b, t(", or "), pl);
+      none.append(b);
       tiles.append(none);
     } else if (!f) {
       // a vendor not listed: one line under them all
@@ -7664,21 +7613,6 @@ function pickRow(ic, name, cls = "") {
   const nm = el("span", "nm");
   nm.append(el("span", "n", name));
   b.append(icon(ic), nm);
-  return b;
-}
-
-// morePluginsTile: the add sheet's way to the Plugins tab, where more
-// subscriptions are, each signed in to by a plugin
-function morePluginsTile(q) {
-  const b = el("button", "tile more-plugins");
-  b.dataset.pick = "plugins";
-  const nm = el("span", "nm");
-  nm.append(el("span", "n", t("More in Plugins")));
-  const ic = el("span", "puzzle");
-  ic.append(svg(PUZZLE, 15, 1.4));
-  b.append(ic, nm, svg(CHEV_R, 11, 1.6));
-  b.title = t("Subscriptions fogway doesn't sign in to itself: install a plugin for one in the Plugins tab");
-  b.onclick = () => openPlugins(q);
   return b;
 }
 

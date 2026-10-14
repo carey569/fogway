@@ -4,52 +4,38 @@
 // copy it couldn't read back (/api/copy answers 501), and the page tries the
 // clipboard API, then the copy command, and says it failed only when none
 // copied, with the text to copy by hand. A copy fogway made is not copied
-// again. Every language, Chromium and WebKit; no backend, the API is faked.
+// again. Tried on the Gateway page's Base URL. Every language, Chromium and
+// WebKit; no backend, the API is faked.
 const assert = require("node:assert/strict");
-const fs = require("node:fs/promises");
-const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
+const { fixture } = require("./fixtures/caller-keys.cjs");
 
-const assets = path.resolve(__dirname, "../assets");
-const LINK = "https://factory.example/device?code=WDJB-MJHT&state=" + "x".repeat(40);
-
+// the Gateway page as the fixture has it; fogwayCopies: /api/copy copies
 function server(lang, fogwayCopies) {
+  const rest = fixture(lang, "light", []);
   return async (route) => {
-    const url = new URL(route.request().url());
-    const json = (data) => route.fulfill({ json: data });
-    if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:false};` });
-    if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
-    if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
-    if (url.pathname === "/api/providers") return json({ providers: [{ id: "openai", name: "OpenAI", icon: "openai", preset: "openai", models: [], agents: [], key: { set: true, masked: "sk-…ab12" } }], presets: [], excluded: [], gateway: { running: true, window: true } });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
-    if (url.pathname === "/api/groups") return json({ groups: [], pools: [] });
-    if (url.pathname === "/api/gateway/trace") return json({ routes: [] });
-    const signing = { id: "s1", agent: "factory", state: "waiting", url: LINK, code: "WDJB-MJHT" };
-    if (url.pathname === "/api/signin" || url.pathname.startsWith("/api/signin/")) return json(signing);
-    if (url.pathname === "/api/copy") return route.fulfill({ status: fogwayCopies ? 204 : 501, body: "" });
-    if (url.pathname.startsWith("/api/")) return json({});
-    const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
-    const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
-    try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
+    if (new URL(route.request().url()).pathname === "/api/copy") return route.fulfill({ status: fogwayCopies ? 204 : 501, body: "" });
+    return rest(route);
   };
 }
 
 const W = {
-  en: { anyway: "Sign in anyway", copied: "Sign-in link copied", failed: "Couldn't copy. Select it here and copy it yourself: " + LINK },
-  zh: { anyway: "仍然登录", copied: "已复制登录链接", failed: "复制失败，请在这里选中后自行复制：" + LINK },
-  "zh-TW": { anyway: "仍然登入", copied: "已複製登入連結", failed: "複製失敗，請在這裡選取後自行複製：" + LINK },
-  ja: { anyway: "それでもサインイン", copied: "サインインリンクをコピーしました", failed: "コピーできませんでした。ここで選択してコピーしてください：" + LINK },
-  de: { anyway: "Trotzdem anmelden", copied: "Anmeldelink kopiert", failed: "Kopieren fehlgeschlagen. Hier markieren und selbst kopieren: " + LINK },
+  en: { copied: "Base URL copied", failed: "Couldn't copy. Select it here and copy it yourself: " },
+  zh: { copied: "已复制Base URL", failed: "复制失败，请在这里选中后自行复制：" },
+  "zh-TW": { copied: "已複製Base URL", failed: "複製失敗，請在這裡選取後自行複製：" },
+  ja: { copied: "Base URLをコピーしました", failed: "コピーできませんでした。ここで選択してコピーしてください：" },
+  de: { copied: "Base URL kopiert", failed: "Kopieren fehlgeschlagen. Hier markieren und selbst kopieren: " },
 };
 
 // fogway: /api/copy copies; api: the clipboard API copies; command: the
-// copy command copies; none: nothing does
+// copy command copies; none: nothing does. writes and commands: whether
+// the clipboard API and the copy command are asked
 const CASES = [
-  { name: "fogway copies", fogway: true, api: true, command: true, want: "copied", writes: [], commands: [] },
-  { name: "fogway refuses, the clipboard API copies", fogway: false, api: true, command: true, want: "copied", writes: [LINK], commands: [] },
-  { name: "fogway and the clipboard API refuse, the copy command copies", fogway: false, api: false, command: true, want: "copied", writes: [LINK], commands: [LINK] },
-  { name: "nothing copies", fogway: false, api: false, command: false, want: "failed", writes: [LINK], commands: [LINK] },
+  { name: "fogway copies", fogway: true, api: true, command: true, want: "copied", writes: false, commands: false },
+  { name: "fogway refuses, the clipboard API copies", fogway: false, api: true, command: true, want: "copied", writes: true, commands: false },
+  { name: "fogway and the clipboard API refuse, the copy command copies", fogway: false, api: false, command: true, want: "copied", writes: true, commands: true },
+  { name: "nothing copies", fogway: false, api: false, command: false, want: "failed", writes: true, commands: true },
 ];
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -78,17 +64,15 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
         await page.route("**/*", server(lang, c.fogway));
-        await page.goto("http://fogway.test/?view=providers");
-        await page.locator("#addProvider").click();
-        const sheet = page.locator("#addSheet");
-        await sheet.locator('.tile[data-pick="Factory"]').click();
-        const box = sheet.locator(".signing");
-        await box.locator("button", { hasText: w.anyway }).click();
-        const cp = box.locator(".signlink button.copy");
-        await cp.waitFor();
+        await page.goto("http://fogway.test/?view=gateway");
+        const val = page.locator("#connect .val").first();
+        await val.locator("code").waitFor();
+        const base = (await val.locator("code").textContent()).trim();
+        assert.match(base, /^http:\/\/127\.0\.0\.1:\d+\/v1$/);
+        const cp = val.locator("button.copy");
 
         await cp.click();
-        const want = w[c.want];
+        const want = c.want === "failed" ? w.failed + base : w.copied;
         await page.waitForFunction((s) => document.querySelector("#status").textContent === s, want);
         const st = page.locator("#status");
         if (c.want === "failed") {
@@ -100,8 +84,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.ok(await st.evaluate((e) => e.classList.contains("ok")));
           assert.ok(await cp.evaluate((b) => b.classList.contains("done")), "the button says it copied");
         }
-        assert.deepEqual(await page.evaluate(() => window.__writes), c.writes, "clipboard API calls");
-        assert.deepEqual(await page.evaluate(() => window.__commands), c.commands, "copy command calls");
+        assert.deepEqual(await page.evaluate(() => window.__writes), c.writes ? [base] : [], "clipboard API calls");
+        assert.deepEqual(await page.evaluate(() => window.__commands), c.commands ? [base] : [], "copy command calls");
         assert.equal(await page.locator("textarea[readonly]").count(), 0, "the textarea is gone");
         assert.deepEqual(errors, []);
       });

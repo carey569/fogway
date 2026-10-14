@@ -3,41 +3,26 @@
 // `fogway web` on a NAS, opened from another computer over http, the
 // gateway's API key copy did nothing). fogway can't copy for such a tab
 // (/api/copy refuses) and the page, not a secure context, has no
-// navigator.clipboard; the copy command still copies there. English and
-// Chinese, Chromium and WebKit; no backend, the API is faked here.
+// navigator.clipboard; the copy command still copies there. Tried on the
+// Gateway page's Base URL. English and Chinese, Chromium and WebKit; no
+// backend, the API is faked here.
 const assert = require("node:assert/strict");
-const fs = require("node:fs/promises");
-const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
+const { fixture } = require("./fixtures/caller-keys.cjs");
 
-const assets = path.resolve(__dirname, "../assets");
-const LINK = "https://factory.example/device?code=WDJB-MJHT&state=" + "x".repeat(120);
-
+// the Gateway page as the fixture has it, with fogway's own copy refused
 function server(lang) {
+  const rest = fixture(lang, "light", []);
   return async (route) => {
-    const url = new URL(route.request().url());
-    const json = (data) => route.fulfill({ json: data });
-    if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:false};` });
-    if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
-    if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
-    if (url.pathname === "/api/providers") return json({ providers: [{ id: "openai", name: "OpenAI", icon: "openai", preset: "openai", models: [], agents: [], key: { set: true, masked: "sk-…ab12" } }], presets: [], excluded: [], gateway: { running: true, window: true } });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
-    if (url.pathname === "/api/groups") return json({ groups: [], pools: [] });
-    if (url.pathname === "/api/gateway/trace") return json({ routes: [] });
-    const signing = { id: "s1", agent: "factory", state: "waiting", url: LINK, code: "WDJB-MJHT" };
-    if (url.pathname === "/api/signin" || url.pathname.startsWith("/api/signin/")) return json(signing);
-    if (url.pathname === "/api/copy") return route.fulfill({ status: 501, body: "" });
-    if (url.pathname.startsWith("/api/")) return json({});
-    const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
-    const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
-    try { await route.fulfill({ body: await fs.readFile(file), contentType }); } catch { await route.fulfill({ status: 404, body: "" }); }
+    if (new URL(route.request().url()).pathname === "/api/copy") return route.fulfill({ status: 501, body: "" });
+    return rest(route);
   };
 }
 
 const W = {
-  en: { anyway: "Sign in anyway", copied: "Sign-in link copied" },
-  zh: { anyway: "仍然登录", copied: "已复制登录链接" },
+  en: { copied: "Base URL copied" },
+  zh: { copied: "已复制Base URL" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -63,20 +48,18 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", server(lang));
-      await page.goto("http://fogway.test/?view=providers");
-      await page.locator("#addProvider").click();
-      const sheet = page.locator("#addSheet");
-      await sheet.locator('.tile[data-pick="Factory"]').click();
-      const box = sheet.locator(".signing");
-      await box.locator("button", { hasText: w.anyway }).click();
-      const cp = box.locator(".signlink button.copy");
-      await cp.waitFor();
+      await page.goto("http://fogway.test/?view=gateway");
+      const val = page.locator("#connect .val").first();
+      await val.locator("code").waitFor();
+      const base = (await val.locator("code").textContent()).trim();
+      assert.match(base, /^http:\/\/127\.0\.0\.1:\d+\/v1$/);
+      const cp = val.locator("button.copy");
 
-      const scrolls = () => page.evaluate(() => [window.scrollY, ...[...document.querySelectorAll("#addSheet, #addSheet *")].filter((e) => e.scrollTop).map((e) => e.scrollTop)]);
+      const scrolls = () => page.evaluate(() => [window.scrollY, ...[...document.querySelectorAll("#view-gateway, #view-gateway *")].filter((e) => e.scrollTop).map((e) => e.scrollTop)]);
       const before = await scrolls();
       await cp.click();
       await page.waitForFunction((s) => document.querySelector("#status").textContent === s, w.copied);
-      assert.deepEqual(await page.evaluate(() => window.__copied), [LINK]);
+      assert.deepEqual(await page.evaluate(() => window.__copied), [base]);
       assert.equal(await page.locator("textarea[readonly]").count(), 0, "the textarea is gone");
       assert.notEqual(await page.evaluate(() => document.activeElement?.tagName), "TEXTAREA", "the focus went back");
       assert.deepEqual(await scrolls(), before, "nothing scrolled");
