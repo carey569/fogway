@@ -232,10 +232,6 @@ func (s *Server) Relisten() error {
 // including a stale named key.
 func lanGuard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if ownCallback(r) {
-			next.ServeHTTP(w, r)
-			return
-		}
 		// the allow list comes before the key: one that leaked is of no
 		// use from an address left out of it
 		if refuseNotAllowed(w, r) {
@@ -268,29 +264,6 @@ func lanGuard(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-// callbacks are the callback tokens of the Claude subscription runs now
-// live (addCallback, dropCallback).
-var callbacks = struct {
-	sync.Mutex
-	tokens map[string]bool
-}{tokens: map[string]bool{}}
-
-// ownCallback: r is the MCP helper of a Claude Code fogway runs handing a
-// tool call back, on the path it was given — POST claudeMCPPath and the
-// callback token of a run now live, nothing else. It is let in without a
-// gateway key from wherever it comes: the helper calls the address the
-// gateway listens on, and with FOGWAY_ADDR on one interface's address (a
-// LAN, Tailscale or loopback-alias IP), which isn't loopback, it was asked
-// for a key it doesn't have (401). Its tool call never reached the run,
-// so every turn with tool results found no run waiting and started a new
-// Claude Code told the whole conversation, its prompt cache written anew
-// (#1546, jiayeZhu). The token, unguessable and handed to the helper in a
-// file only this user reads, is what lets it in: a wrong, spent or missing
-// one, another method, or any other path is judged as every request is.
-func ownCallback(r *http.Request) bool {
-	return false
 }
 
 // rebound: a browser sent this request to loopback under a hostname that
