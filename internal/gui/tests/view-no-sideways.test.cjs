@@ -24,13 +24,8 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const HOME = "/Users/a";
-const lib = {
-  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
-  agents: [{ id: "codex", name: "Codex", icon: "", skills: `${HOME}/.codex/skills`, mcp: `${HOME}/.codex/mcp.json` }],
-  instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [], skills: [], servers: [],
-};
-const rtk = { path: "", version: "", agents: [{ id: "claude", name: "Claude Code", icon: "", on: false }, { id: "codex", name: "Codex", icon: "", on: false }, { id: "pi", name: "Pi", icon: "", on: false }] };
+// GET /api/local from a fresh fogway, local model off
+const local = require("./fixtures/local-off.json");
 
 function server(lang, web) {
   return async (route) => {
@@ -39,9 +34,7 @@ function server(lang, web) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:${web}};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
-    if (url.pathname === "/api/library") return json(lib);
-    if (url.pathname === "/api/library/rtk") return json(rtk);
+    if (url.pathname === "/api/local" || url.pathname.startsWith("/api/local/")) return json(local); // the page measures this computer as it opens
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], gateway: { running: true } });
     if (url.pathname === "/api/usage/quotas") return json([]);
@@ -74,7 +67,7 @@ const sideways = () => {
   };
 };
 
-const VIEWS = ["agents", "providers", "gateway", "routing", "usage", "sessions", "library", "plugins", "settings"];
+const VIEWS = ["agents", "providers", "gateway", "routing", "usage", "sessions", "local", "settings"];
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   test(engine + ": no page scrolls sideways (#1236)", async (t) => {
@@ -91,7 +84,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         for (const width of web ? [360, 440, 1000] : [560, 1000]) {
           await t.test(`${lang} ${web ? "browser" : "window"} ${width}px`, async () => {
             const ctx = await browser.newContext({ viewport: { width, height: 720 } });
-            await ctx.addInitScript(() => { try { localStorage.setItem("fogway.libTab", "rtk"); } catch {} });
             const page = await ctx.newPage();
             page.setDefaultTimeout(5000);
             page.on("pageerror", (e) => errors.push(e.message));

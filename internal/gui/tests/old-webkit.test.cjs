@@ -23,6 +23,8 @@ const path = require("node:path");
 const { test } = require("node:test");
 const { webkit } = require("playwright");
 const { babelParse } = require("playwright/lib/transform/babelBundle");
+// GET /api/local from a fresh fogway, local model off
+const local = require("./fixtures/local-off.json");
 
 const assets = path.resolve(__dirname, "../assets");
 const scripts = async () => (await fs.readdir(assets)).filter((f) => f.endsWith(".js")).sort();
@@ -204,6 +206,7 @@ async function serve(route) {
     return json({ mine: true, now: new Date().toISOString(), seq: 0, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });
   }
   if (url.pathname === "/api/gateway/history") return json({ cut: false, days: [], routes: [] });
+  if (url.pathname === "/api/local" || url.pathname.startsWith("/api/local/")) return json(local); // the page measures this computer as it opens
   if (url.pathname === "/api/sessions/manage") {
     const last = new Date(Date.now() - 3600e3).toISOString();
     return json({
@@ -242,7 +245,7 @@ test("with Safari 15.0's built-ins, the panel and the window draw every page", a
         await page.locator("#save").click();
         assert(await page.locator(".profiles.naming > .chip-input").isVisible(), "Save current opens the name field");
       } else {
-        for (const v of ["providers", "gateway", "routing", "usage", "sessions", "library", "agents"]) {
+        for (const v of ["providers", "gateway", "routing", "usage", "sessions", "local", "agents"]) {
           await page.locator(`#nav [data-view="${v}"]`).click();
           await page.locator(`#view-${v}`).waitFor();
           await page.waitForTimeout(200);

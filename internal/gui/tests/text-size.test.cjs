@@ -14,6 +14,8 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
+// GET /api/local from a fresh fogway, local model off
+const local = require("./fixtures/local-off.json");
 
 const assets = path.resolve(__dirname, "../assets");
 
@@ -73,7 +75,7 @@ function server(lang, theme, size, posts) {
       return json(cur);
     }
     if (url.pathname === "/api/usage") return json(usage);
-    if (url.pathname === "/api/library") return json({ dir: "~/.config/fogway/library", backups: "", home: "~", agents: [], instructions: { agents: [], sets: [] }, servers: [], foundServers: [], skills: [] });
+    if (url.pathname === "/api/local" || url.pathname.startsWith("/api/local/")) return json(local); // the page measures this computer as it opens
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/providers") return json(providers);
@@ -259,7 +261,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           // the smallest window at 150% is 840×630 points, 560×420 CSS pixels
           for (const [zoom, size] of [[1, 100], [1.5, 150]]) {
             const page = await open(lang, theme, size, [], { width: Math.round(840 / zoom), height: Math.round(630 / zoom), zoom });
-            for (const v of ["agents", "providers", "gateway", "routing", "usage", "library", "settings"]) {
+            for (const v of ["agents", "providers", "gateway", "routing", "usage", "local", "settings"]) {
               await page.locator(v === "settings" ? "#prefs" : `[data-view="${v}"]`).click();
               await page.waitForTimeout(250);
               assert.deepEqual(await overflow(page), [], `${v} at ${size}%`);

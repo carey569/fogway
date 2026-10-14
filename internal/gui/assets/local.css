@@ -15,6 +15,10 @@
 #view-local .lm-k { width: 120px; flex: none; color: var(--muted); }
 #view-local .lm-v { min-width: 0; overflow-wrap: anywhere; font-family: var(--code); font-size: 12px; }
 #view-local .lm-row select, #view-local .lm-row input { flex: 1; min-width: 0; max-width: 100%; }
+/* WebKit counts a select's whole option text, past its own box, as the
+   view's to scroll sideways; overflow: hidden doesn't stop it, paint
+   containment does */
+#view-local .lm-row select { contain: paint; }
 #view-local .lm-bar { height: 6px; border-radius: 3px; background: var(--pill); overflow: hidden; margin: 2px 0 8px; }
 #view-local .lm-fill { height: 100%; background: var(--accent); transition: width .3s; }
 #view-local .lm-err { color: var(--red); background: var(--red-soft); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; overflow-wrap: anywhere; }

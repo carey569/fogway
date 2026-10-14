@@ -1,0 +1,325 @@
+{
+ "config": {
+  "on": false,
+  "model": {
+   "repo": "",
+   "file": ""
+  }
+ },
+ "status": {
+  "phase": "off",
+  "model": {
+   "repo": "",
+   "file": ""
+  },
+  "since": "0001-01-01T00:00:00Z",
+  "hardware": {
+   "os": "darwin",
+   "arch": "arm64",
+   "ram": 25769803776,
+   "unified": true,
+   "cpu": "Apple M4 Pro",
+   "cores": 10,
+   "gpuCores": 20,
+   "simd": "neon"
+  }
+ },
+ "hardware": {
+  "os": "darwin",
+  "arch": "arm64",
+  "ram": 25769803776,
+  "unified": true,
+  "cpu": "Apple M4 Pro",
+  "cores": 10,
+  "gpuCores": 20,
+  "simd": "neon"
+ },
+ "model": {
+  "repo": "XHToken/Spark-X2.5-4B-GGUF",
+  "file": "Spark-X2.5-4B-Q4_K_M.gguf",
+  "name": "spark-x2.5-4b",
+  "title": "Spark X2.5 4B",
+  "size": 2600224352,
+  "window": 1048576,
+  "kv": 36864,
+  "params": 4112079360,
+  "note": "for 16 GB: steadier judgements, a fair coder for its size"
+ },
+ "ref": "local/spark-x2.5-4b",
+ "catalog": [
+  {
+   "repo": "XHToken/Spark-X2.5-1.7B-GGUF",
+   "file": "Spark-X2.5-1.7B-Q4_K_M.gguf",
+   "title": "Spark X2.5 1.7B",
+   "size": 1107457856,
+   "window": 1048576,
+   "kv": 14336,
+   "params": 1707657216,
+   "note": "for 8 GB of memory: routes well and does small tasks; the 4B catches more of what is sensitive",
+   "name": "spark-x2.5-1.7b"
+  },
+  {
+   "repo": "XHToken/Spark-X2.5-4B-GGUF",
+   "file": "Spark-X2.5-4B-Q4_K_M.gguf",
+   "title": "Spark X2.5 4B",
+   "size": 2600224352,
+   "window": 1048576,
+   "kv": 36864,
+   "params": 4112079360,
+   "note": "for 16 GB: steadier judgements, a fair coder for its size",
+   "name": "spark-x2.5-4b"
+  },
+  {
+   "repo": "unsloth/Qwen3.5-2B-GGUF",
+   "file": "Qwen3.5-2B-Q4_K_M.gguf",
+   "title": "Qwen3.5 2B",
+   "size": 1280835840,
+   "window": 262144,
+   "kv": 12288,
+   "params": 1880000000,
+   "note": "Qwen's, for 8 GB",
+   "name": "qwen3.5-2b"
+  },
+  {
+   "repo": "unsloth/Qwen3.5-4B-GGUF",
+   "file": "Qwen3.5-4B-Q4_K_M.gguf",
+   "title": "Qwen3.5 4B",
+   "size": 2740000000,
+   "window": 262144,
+   "kv": 32768,
+   "note": "Qwen's, for 16 GB",
+   "name": "qwen3.5-4b"
+  },
+  {
+   "repo": "unsloth/Qwen3.5-9B-GGUF",
+   "file": "Qwen3.5-9B-Q4_K_M.gguf",
+   "title": "Qwen3.5 9B",
+   "size": 5680000000,
+   "window": 262144,
+   "kv": 32768,
+   "note": "Qwen's, for 32 GB, or a GPU with 10 GB and more",
+   "name": "qwen3.5-9b"
+  }
+ ],
+ "recommended": "spark-x2.5-4b",
+ "assessment": {
+  "at": "0001-01-01T00:00:00Z",
+  "hardware": {
+   "os": "darwin",
+   "arch": "arm64",
+   "ram": 25769803776,
+   "unified": true,
+   "cpu": "Apple M4 Pro",
+   "cores": 10,
+   "gpuCores": 20,
+   "simd": "neon"
+  },
+  "bench": {
+   "bandwidth": 0,
+   "compute": 0
+  },
+  "quick": true,
+  "disk": 152223383552,
+  "models": [
+   {
+    "model": "spark-x2.5-1.7b",
+    "title": "Spark X2.5 1.7B",
+    "size": 1107457856,
+    "need": 2077219904,
+    "where": "gpu",
+    "prompt": 2050,
+    "gen": 68,
+    "judge": 1.1,
+    "grade": "smooth"
+   },
+   {
+    "model": "spark-x2.5-4b",
+    "title": "Spark X2.5 4B",
+    "size": 2600224352,
+    "need": 4308183904,
+    "where": "gpu",
+    "prompt": 851,
+    "gen": 29,
+    "judge": 2.4,
+    "grade": "smooth"
+   }
+  ],
+  "pick": "spark-x2.5-4b",
+  "why": "fast"
+ },
+ "log": "/Users/me/.cache/fogway/local/llama-server.log",
+ "hybrid": null,
+ "windows": {
+  "XHToken/Spark-X2.5-1.7B-GGUF|Spark-X2.5-1.7B-Q4_K_M.gguf": [
+   {
+    "tokens": 8192,
+    "need": 1724898368
+   },
+   {
+    "tokens": 16384,
+    "need": 1842338880
+   },
+   {
+    "tokens": 32768,
+    "need": 2077219904
+   },
+   {
+    "tokens": 65536,
+    "need": 2546981952
+   },
+   {
+    "tokens": 131072,
+    "need": 3486506048
+   },
+   {
+    "tokens": 262144,
+    "need": 5365554240
+   },
+   {
+    "tokens": 524288,
+    "need": 9123650624,
+    "room": "tight"
+   },
+   {
+    "tokens": 1048576,
+    "need": 16639843392,
+    "room": "memory"
+   }
+  ],
+  "XHToken/Spark-X2.5-4B-GGUF|Spark-X2.5-4B-Q4_K_M.gguf": [
+   {
+    "tokens": 8192,
+    "need": 3402214240
+   },
+   {
+    "tokens": 16384,
+    "need": 3704204128
+   },
+   {
+    "tokens": 32768,
+    "need": 4308183904
+   },
+   {
+    "tokens": 65536,
+    "need": 5516143456
+   },
+   {
+    "tokens": 131072,
+    "need": 7932062560
+   },
+   {
+    "tokens": 262144,
+    "need": 12763900768,
+    "room": "tight"
+   },
+   {
+    "tokens": 524288,
+    "need": 22427577184,
+    "room": "memory"
+   },
+   {
+    "tokens": 1048576,
+    "need": 41754930016,
+    "room": "memory"
+   }
+  ],
+  "custom": [
+   {
+    "tokens": 8192
+   },
+   {
+    "tokens": 16384
+   },
+   {
+    "tokens": 32768
+   },
+   {
+    "tokens": 65536
+   },
+   {
+    "tokens": 131072
+   }
+  ],
+  "unsloth/Qwen3.5-2B-GGUF|Qwen3.5-2B-Q4_K_M.gguf": [
+   {
+    "tokens": 8192,
+    "need": 1881499136
+   },
+   {
+    "tokens": 16384,
+    "need": 1982162432
+   },
+   {
+    "tokens": 32768,
+    "need": 2183489024
+   },
+   {
+    "tokens": 65536,
+    "need": 2586142208
+   },
+   {
+    "tokens": 131072,
+    "need": 3391448576
+   },
+   {
+    "tokens": 262144,
+    "need": 5002061312
+   }
+  ],
+  "unsloth/Qwen3.5-4B-GGUF|Qwen3.5-4B-Q4_K_M.gguf": [
+   {
+    "tokens": 8192,
+    "need": 3508435456
+   },
+   {
+    "tokens": 16384,
+    "need": 3776870912
+   },
+   {
+    "tokens": 32768,
+    "need": 4313741824
+   },
+   {
+    "tokens": 65536,
+    "need": 5387483648
+   },
+   {
+    "tokens": 131072,
+    "need": 7534967296
+   },
+   {
+    "tokens": 262144,
+    "need": 11829934592,
+    "room": "tight"
+   }
+  ],
+  "unsloth/Qwen3.5-9B-GGUF|Qwen3.5-9B-Q4_K_M.gguf": [
+   {
+    "tokens": 8192,
+    "need": 6448435456
+   },
+   {
+    "tokens": 16384,
+    "need": 6716870912
+   },
+   {
+    "tokens": 32768,
+    "need": 7253741824
+   },
+   {
+    "tokens": 65536,
+    "need": 8327483648
+   },
+   {
+    "tokens": 131072,
+    "need": 10474967296,
+    "room": "tight"
+   },
+   {
+    "tokens": 262144,
+    "need": 14769934592,
+    "room": "tight"
+   }
+  ]
+ }
+}
