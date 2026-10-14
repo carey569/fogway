@@ -9,7 +9,7 @@ const choice = (family, weight, style) => ({ family, name: "Chosen", weight, sty
 
 for (const [name, engine] of [["chromium", chromium], ["webkit", webkit]]) {
   test(`${name}: font reset restores the original cascade and explicit emphasis`, async () => {
-    const css = (await Promise.all(["app.css", "library.css", "routing.css", "sessions.css", "plugins.css"].map(f => fs.readFile(path.join(assets, f), "utf8")))).join("\n");
+    const css = (await Promise.all((await fs.readdir(assets)).filter(f => f.endsWith(".css")).map(f => fs.readFile(path.join(assets, f), "utf8")))).join("\n");
     const js = await fs.readFile(path.join(assets, "fonts.js"), "utf8");
     const browser = await engine.launch();
     try {
@@ -18,7 +18,7 @@ for (const [name, engine] of [["chromium", chromium], ["webkit", webkit]]) {
         <div class="sess-line"><b><code id="code">model-id</code></b></div>
         <b><span class="key none" id="ui">No key</span></b>
         <div class="acc"><input id="emphasis" class="rename mono" value="Account"></div>
-        <span id="badge" class="mk-badge">Code badge</span>`);
+        <div class="gw"><span class="url"><code id="badge">http://127.0.0.1:3725</code></span></div>`);
       await page.addScriptTag({ content: js });
       const read = () => page.evaluate(() => ["code", "ui", "emphasis", "badge"].map(id => {
         const s = getComputedStyle(document.getElementById(id));
@@ -39,7 +39,7 @@ for (const [name, engine] of [["chromium", chromium], ["webkit", webkit]]) {
       await page.evaluate(s => window.desktopFonts.apply(s), { uiFont: choice("Arial", 600, "italic"), codeFont: choice("Consolas", 400, "normal") });
       const independent = await read();
       assert.equal(independent[3].weight, "400");
-      assert.equal(independent[3].style, "normal", "code badges don't inherit the chosen interface slope");
+      assert.equal(independent[3].style, "normal", "code doesn't inherit the chosen interface slope");
     } finally { await browser.close(); }
   });
 }

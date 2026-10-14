@@ -10,7 +10,8 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const sheets = ["app.css", "library.css", "routing.css", "sessions.css", "plugins.css"];
+// every stylesheet the page has
+const sheets = require("node:fs").readdirSync(path.resolve(__dirname, "../assets")).filter((f) => f.endsWith(".css"));
 
 test("no stylesheet names a monospace stack of its own", async () => {
   for (const f of sheets) {
@@ -26,10 +27,11 @@ test("code text on Windows is Cascadia Mono / Consolas with YaHei UI", async () 
   try {
     const page = await browser.newPage();
     await page.setContent(`<style>${css}</style>
-      <span class="mk-badge">远程 · 需登录</span><span class="mk-id">atlassian</span>
       <div class="rt-accts"><b><code class="mdl">gpt-6.1-sol</code></b></div>
-      <div class="signing"><div class="signlink"><code>https://x</code></div></div>`);
-    const fams = () => page.evaluate(() => [".mk-badge", ".mk-id", ".rt-accts code.mdl", ".signing .signlink code"].map((s) => getComputedStyle(document.querySelector(s)).fontFamily));
+      <div class="rt-req"><code>deepseek/v4</code></div>
+      <div class="rt-group"><div class="nm"><code class="mdl">group/auto</code></div></div>
+      <div class="disabled-model"><span class="name">kimi/k3 远程</span></div>`);
+    const fams = () => page.evaluate(() => [".rt-accts code.mdl", ".rt-req code", ".rt-group .nm code.mdl", ".disabled-model .name"].map((s) => getComputedStyle(document.querySelector(s)).fontFamily));
     for (const f of await fams()) assert.match(f, /^ui-monospace, "?SF Mono"?, Menlo/, "the Mac's stack off Windows");
     await page.evaluate(() => document.documentElement.classList.add("win"));
     for (const f of await fams()) assert.match(f, /^"?Cascadia Mono"?, Consolas, "?Microsoft YaHei UI"?/, "Windows' stack");
