@@ -211,10 +211,10 @@ var presets = []PresetDef{
 			{ID: "plan-ams", Name: "Plan · Europe", Chat: "https://token-plan-ams.xiaomimimo.com/v1", Responses: "https://token-plan-ams.xiaomimimo.com/v1", Anthropic: "https://token-plan-ams.xiaomimimo.com/anthropic", Catalog: "xiaomi-token-plan-ams, xiaomi"},
 			{ID: "api", Name: "Pay as you go", Chat: "https://api.xiaomimimo.com/v1", Responses: "https://api.xiaomimimo.com/v1", Anthropic: "https://api.xiaomimimo.com/anthropic", Catalog: "xiaomi"},
 		}},
-	// iFlytek Spark (讯飞星火): Astron MaaS's Token Plan and Coding Plan, and
-	// the Spark X2 API, each on a key of its own that only its endpoints
-	// take (their docs: spark/TokenPlan.html, CodingPlan.html, X1http.html
-	// on xfyun.cn).
+	// iFlytek Spark (讯飞星火): Astron MaaS's Token Plan and Coding Plan, the
+	// Spark X2 API, and Astron MaaS pay as you go, each on a key of its own
+	// that only its endpoints take (their docs: spark/TokenPlan.html,
+	// CodingPlan.html, X1http.html and 推理服务-http.html on xfyun.cn).
 	//
 	// The Token Plan serves chat completions at /v2 and Anthropic messages
 	// at /anthropic on maas-token-api (not maas-api, pay as you go's host),
@@ -229,9 +229,17 @@ var presets = []PresetDef{
 	// APIPassword of the console's X2 page: each Spark version has its own.
 	// The host answers 401 on any path without a key, so whether it lists
 	// models can't be told; spark-x is given.
+	//
+	// Pay as you go is Astron MaaS's inference services on maas-api: chat
+	// completions at /v2 for a service published from 2026-01-10 (older
+	// ones at /v1, which a key of either still takes), Anthropic messages
+	// at /anthropic, each model the modelId on its service's card. Its
+	// /v2/models answers an empty list and /v2 has no Responses (/v1 has),
+	// so spark-x2.6-preview is given: tried with a real key on 2026-10-14,
+	// chat, streaming, tool calls and Anthropic messages.
 	{ID: "iflytek", Name: "iFlytek Spark", Icon: "spark-color", Kind: KindVendor,
 		Chat: "https://maas-token-api.cn-huabei-1.xf-yun.com/v2", Anthropic: "https://maas-token-api.cn-huabei-1.xf-yun.com/anthropic",
-		Note:    "Astron Token Plan · Coding Plan · Spark X2",
+		Note:    "Astron Token Plan · Coding Plan · Spark X2 · pay as you go",
 		Website: "https://www.xfyun.cn/doc/spark/TokenPlan.html", KeysURL: "https://maas.xfyun.cn/tokenPlan/subscription",
 		RegionLabel: "Plan", Regions: []Region{
 			{ID: "token", Name: "Token Plan", Chat: "https://maas-token-api.cn-huabei-1.xf-yun.com/v2", Anthropic: "https://maas-token-api.cn-huabei-1.xf-yun.com/anthropic",
@@ -245,6 +253,9 @@ var presets = []PresetDef{
 			{ID: "x2", Name: "Spark X2", Chat: "https://spark-api-open.xf-yun.com/x2",
 				Website: "https://www.xfyun.cn/doc/spark/X1http.html", KeysURL: "https://console.xfyun.cn/services/bmx1",
 				Models: []string{"spark-x"}},
+			{ID: "api", Name: "Pay as you go", Chat: "https://maas-api.cn-huabei-1.xf-yun.com/v2", Anthropic: "https://maas-api.cn-huabei-1.xf-yun.com/anthropic",
+				Website: "https://www.xfyun.cn/doc/spark/%E6%8E%A8%E7%90%86%E6%9C%8D%E5%8A%A1-http.html", KeysURL: "https://maas.xfyun.cn/",
+				Models: []string{"spark-x2.6-preview"}},
 		},
 		NoList: true},
 	// Baidu Qianfan: a personal and an enterprise Token Plan, each at its

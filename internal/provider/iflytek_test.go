@@ -13,8 +13,8 @@ import (
 
 // iFlytek Spark's plans serve no model list fogway can ask (the Token
 // Plan's /v2/models is 404; Spark X2's host answers 401 on any path, so its
-// list can't be told from none), so each carries the models its doc gives
-// and is never asked; a key at one plan gets that plan's models. A new
+// list can't be told from none; pay as you go's is empty), so each carries
+// the models its doc gives and is never asked; a key at one plan gets that plan's models. A new
 // provider is at the Token Plan, and the models the plan's doc calls
 // discontinued aren't offered.
 func TestIFlytekPlans(t *testing.T) {
@@ -26,15 +26,15 @@ func TestIFlytekPlans(t *testing.T) {
 		w.Write([]byte(`{"data":[{"id":"not-a-plan-model"}]}`))
 	}))
 	t.Cleanup(srv.Close)
+	// each plan at its own endpoints, as written: the Token Plan and pay as
+	// you go share their paths, their hosts tell them apart. A request for
+	// models would go to srv, never to iFlytek
+	old := http.DefaultClient.Transport
+	http.DefaultClient.Transport = rewrite{srv}
+	t.Cleanup(func() { http.DefaultClient.Transport = old })
 	pr := Preset("iflytek")
-	if pr == nil || pr.Kind != KindVendor || len(pr.Regions) != 3 {
+	if pr == nil || pr.Kind != KindVendor || len(pr.Regions) != 4 {
 		t.Fatalf("preset %v", pr)
-	}
-	at := func(u string) string {
-		if u == "" {
-			return ""
-		}
-		return srv.URL + basePath(u)
 	}
 	for _, r := range pr.Regions {
 		t.Run(r.ID, func(t *testing.T) {
@@ -43,7 +43,7 @@ func TestIFlytekPlans(t *testing.T) {
 				t.Fatal(err)
 			}
 			p.ID, p.Key = "iflytek-"+r.ID, "test-key"
-			p.Chat, p.Responses, p.Anthropic = at(r.Chat), at(r.Responses), at(r.Anthropic)
+			p.Chat, p.Responses, p.Anthropic = r.Chat, r.Responses, r.Anthropic
 			if err := catalog.SaveLive(p.ID, p.Chat, []catalog.Model{{ID: "not-a-plan-model"}}); err != nil {
 				t.Fatal(err)
 			}

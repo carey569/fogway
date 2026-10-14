@@ -668,7 +668,7 @@ same model on the Qwen AI platform's pay as you go is `qwen-decision`
 Neither plan has an API for its credits: the console's subscription page
 shows them, so fogway shows no plan usage for these keys.
 
-iFlytek Spark (讯飞星火) is `iflytek`, with three plans, each on a key that
+iFlytek Spark (讯飞星火) is `iflytek`, with four plans, each on a key that
 only its own endpoints take:
 
 | plan | `plan=` | endpoints | models |
@@ -676,17 +676,27 @@ only its own endpoints take:
 | [Astron Token Plan](https://www.xfyun.cn/doc/spark/TokenPlan.html) (the default) | `token` | Chat Completions at `maas-token-api.cn-huabei-1.xf-yun.com/v2`, Anthropic Messages at `/anthropic` | Spark X2.5 (`spark-x2.5`), Spark X2 Flash and other makers' models by iFlytek's ids (`xopglm52` is GLM-5.2, `xopdeepseekv4pro` DeepSeek V4 Pro) |
 | [Astron Coding Plan](https://www.xfyun.cn/doc/spark/CodingPlan.html) | `coding` | `maas-coding-api.cn-huabei-1.xf-yun.com`: `/v2`, Responses at `/v1`, `/anthropic` | `astron-code-latest`, whichever model its console has picked |
 | [Spark X2](https://www.xfyun.cn/doc/spark/X1http.html) | `x2` | Chat Completions at `spark-api-open.xf-yun.com/x2` | `spark-x`; the key is the APIPassword on the console's X2 page |
+| [Astron MaaS, pay as you go](https://www.xfyun.cn/doc/spark/%E6%8E%A8%E7%90%86%E6%9C%8D%E5%8A%A1-http.html) | `api` | Chat Completions at `maas-api.cn-huabei-1.xf-yun.com/v2`, Anthropic Messages at `/anthropic` | `spark-x2.6-preview`; any other inference service by the modelId on its card |
 
 ```sh
 fogway provider add iflytek <api-key>             # the Token Plan
-fogway provider set iflytek plan=x2               # or coding
+fogway provider set iflytek plan=api              # or coding, x2
 ```
 
 None of them lists its models where fogway can ask (the Token Plan's
-`/v2/models` is 404), so the preset carries each plan's documented models.
+`/v2/models` is 404, pay as you go's is empty), so the preset carries each
+plan's documented models; add another with `fogway provider models`.
 models.dev has no entry for iFlytek, so their context windows aren't known:
 set them on the provider (*Context window*, or `fogway model context`),
-256K for Spark X2.5 as its doc gives it. Not yet tried with a real key.
+256K for Spark X2.5 as its doc gives it.
+
+Pay as you go was tried with a real key (2026-10-14): `spark-x2.6-preview`
+answered through fogway on Chat Completions (streaming and tool calls),
+Anthropic Messages and Responses (which fogway sends as Chat Completions:
+`/v2` has no Responses). A service published before 2026-01-10 is at
+`/v1` instead; set `chat=https://maas-api.cn-huabei-1.xf-yun.com/v1`.
+The Token Plan, Coding Plan and Spark X2 aren't tried yet: that key has
+no order on the Token Plan and isn't taken by the others.
 
 ### Google Vertex AI
 
