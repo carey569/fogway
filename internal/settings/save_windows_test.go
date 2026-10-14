@@ -16,7 +16,7 @@ func TestSaveKeepsReadBlockedSettings(t *testing.T) {
 	if err := os.MkdirAll(Dir(), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	original := []byte(`{"theme":"dark","githubToken":"SYNTHETIC_PRIVATE_TOKEN"}`)
+	original := []byte(`{"theme":"dark","lanKey":"SYNTHETIC_PRIVATE_TOKEN"}`)
 	if err := os.WriteFile(Path(), original, 0o600); err != nil {
 		t.Fatal(err)
 	}

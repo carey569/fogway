@@ -13,13 +13,13 @@ import (
 func TestSaveKeepsCorruptSettings(t *testing.T) {
 	const token = "SYNTHETIC_PRIVATE_TOKEN"
 	for _, tc := range []struct{ name, body string }{
-		{"truncated", `{"theme":"dark","githubToken":"` + token + `"`},
-		{"theme type", `{"theme":7,"githubToken":"` + token + `"}`},
-		{"proxy type", `{"proxy":7,"githubToken":"` + token + `"}`},
-		{"nested type", `{"otel":{"headers":7},"githubToken":"` + token + `"}`},
-		{"BOM truncated", "\ufeff" + `{"theme":"dark","githubToken":"` + token + `"`},
-		{"BOM type", "\ufeff" + `{"theme":7,"githubToken":"` + token + `"}`},
-		{"non-JSON whitespace", "\u00a0" + `{"theme":"dark","githubToken":"` + token + `"}`},
+		{"truncated", `{"theme":"dark","lanKey":"` + token + `"`},
+		{"theme type", `{"theme":7,"lanKey":"` + token + `"}`},
+		{"proxy type", `{"proxy":7,"lanKey":"` + token + `"}`},
+		{"nested type", `{"otel":{"headers":7},"lanKey":"` + token + `"}`},
+		{"BOM truncated", "\ufeff" + `{"theme":"dark","lanKey":"` + token + `"`},
+		{"BOM type", "\ufeff" + `{"theme":7,"lanKey":"` + token + `"}`},
+		{"non-JSON whitespace", "\u00a0" + `{"theme":"dark","lanKey":"` + token + `"}`},
 		{"array", `[]`},
 		{"trailing JSON", `{"theme":"dark"} {}`},
 	} {
@@ -98,12 +98,12 @@ func TestSettingsBOM(t *testing.T) {
 		t.Fatal(err)
 	}
 	const token = "SYNTHETIC_PRIVATE_TOKEN"
-	body := "\ufeff" + ` {"theme":"dark","proxy":"direct","lang":"zh","githubToken":"` + token + `"}`
+	body := "\ufeff" + ` {"theme":"dark","proxy":"direct","lang":"zh","lanKey":"` + token + `"}`
 	if err := os.WriteFile(Path(), []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	s := Load()
-	if s.Theme != "dark" || s.Proxy != "direct" || s.Lang != "zh" || s.GitHubToken != token {
+	if s.Theme != "dark" || s.Proxy != "direct" || s.Lang != "zh" || s.LANKey != token {
 		t.Error("loading a BOM file lost existing fields")
 	}
 	s.NoAutoUpdate = true
@@ -111,7 +111,7 @@ func TestSettingsBOM(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := Load()
-	if !got.NoAutoUpdate || got.Theme != "dark" || got.Proxy != "direct" || got.Lang != "zh" || got.GitHubToken != token {
+	if !got.NoAutoUpdate || got.Theme != "dark" || got.Proxy != "direct" || got.Lang != "zh" || got.LANKey != token {
 		t.Fatal("editing a BOM file lost existing fields")
 	}
 }
@@ -124,7 +124,7 @@ func TestSaveKeepsUnreadableSettings(t *testing.T) {
 	if err := os.MkdirAll(Dir(), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	original := []byte(`{"theme":"dark","githubToken":"SYNTHETIC_PRIVATE_TOKEN"}`)
+	original := []byte(`{"theme":"dark","lanKey":"SYNTHETIC_PRIVATE_TOKEN"}`)
 	if err := os.WriteFile(Path(), original, 0o200); err != nil {
 		t.Fatal(err)
 	}

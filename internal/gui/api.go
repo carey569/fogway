@@ -431,10 +431,6 @@ type settingsJSON struct {
 	// the providers on that aren't offered, as they can't search the web
 	// by themselves (#825)
 	SearchLeftOut []string `json:"searchLeftOut,omitempty"`
-	// the GitHub token the library asks GitHub with, masked, and where it
-	// is from ("settings", GITHUB_TOKEN or GH_TOKEN); never the token
-	GitHubTokenMask string `json:"githubTokenMask,omitempty"`
-	GitHubTokenFrom string `json:"githubTokenFrom,omitempty"`
 	// where other machines reach the gateway while it is shared
 	LANURLs []string `json:"lanURLs,omitempty"`
 	// LANURLs are a container's own addresses, not the host's: the page
@@ -549,7 +545,6 @@ func settingsState() settingsJSON {
 	s.Web = webPage.Load()
 	s.GatewayOn, s.GatewayWhy = gatewayMode(s.Web)
 	s.LANKey = "" // the retained credential belongs on disk, not in UI state
-	s.GitHubToken = ""
 	if found, err := discoverTerminals(); err == nil {
 		for _, app := range found.Apps {
 			s.TerminalApps = append(s.TerminalApps, terminalChoice{ID: app.ID, Name: app.Name})
@@ -1080,7 +1075,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		in.Port = cur.Port                                 // set on its own (port below), which moves the gateway
 		in.CORSOrigins = cur.CORSOrigins                   // set on its own (cors below)
 		in.AllowIPs = cur.AllowIPs                         // set on its own (allowips below)
-		in.GitHubToken = cur.GitHubToken                   // set on its own (github-token below), never sent to the page
 		in.RequestArchive = cur.RequestArchive             // the Gateway page's, set on its own
 		in.RequestArchiveMaxMB = cur.RequestArchiveMaxMB   // in settings.json only
 		in.GatewayConversations = cur.GatewayConversations // Sessions' explicit recording consent
@@ -1679,29 +1673,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 			return
 		}
 		s.RedactRules = next
-		if err := settings.Save(s); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// the GitHub token the library's requests to GitHub carry: set, or
-	// taken away with ""
-	mux.HandleFunc("POST /api/settings/github-token", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct {
-			Token string `json:"token"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		tok := strings.TrimSpace(in.Token)
-		if strings.ContainsFunc(tok, func(c rune) bool { return c <= ' ' || c == 0x7f }) {
-			fail(rw, fmt.Errorf("a GitHub token is one word, without spaces"))
-			return
-		}
-		s := settings.Load()
-		s.GitHubToken = tok
 		if err := settings.Save(s); err != nil {
 			fail(rw, err)
 			return

@@ -23,7 +23,7 @@ func testSaveConcurrent(t *testing.T, linked bool) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	const token = "SYNTHETIC_PRIVATE_TOKEN"
-	if err := Save(Settings{Theme: "dark", Lang: "zh", Proxy: "direct", GitHubToken: token}); err != nil {
+	if err := Save(Settings{Theme: "dark", Lang: "zh", Proxy: "direct", LANKey: token}); err != nil {
 		t.Fatal(err)
 	}
 	other := filepath.Join(Dir(), "linked-settings.json")
@@ -34,7 +34,7 @@ func testSaveConcurrent(t *testing.T, linked bool) {
 	}
 	var saveErrors, lostFields, readErrors, reads atomic.Int64
 	check := func(s Settings) {
-		if s.Theme != "dark" || s.Lang != "zh" || s.Proxy != "direct" || s.GitHubToken != token {
+		if s.Theme != "dark" || s.Lang != "zh" || s.Proxy != "direct" || s.LANKey != token {
 			lostFields.Add(1)
 		}
 	}

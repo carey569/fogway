@@ -10,8 +10,8 @@ import (
 
 func TestUpdateAutoKeepsCorruptSettings(t *testing.T) {
 	for _, tc := range []struct{ name, body string }{
-		{"truncated", `{"theme":"dark","githubToken":"SYNTHETIC_PRIVATE_TOKEN"`},
-		{"theme type", `{"theme":7,"githubToken":"SYNTHETIC_PRIVATE_TOKEN"}`},
+		{"truncated", `{"theme":"dark","lanKey":"SYNTHETIC_PRIVATE_TOKEN"`},
+		{"theme type", `{"theme":7,"lanKey":"SYNTHETIC_PRIVATE_TOKEN"}`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			groupsHome(t)
@@ -58,7 +58,7 @@ func TestUpdateAutoWithBOMSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	const token = "SYNTHETIC_PRIVATE_TOKEN"
-	body := "\ufeff" + `{"theme":"dark","proxy":"direct","lang":"zh","githubToken":"` + token + `"}`
+	body := "\ufeff" + `{"theme":"dark","proxy":"direct","lang":"zh","lanKey":"` + token + `"}`
 	if err := os.WriteFile(settings.Path(), []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestUpdateAutoWithBOMSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := settings.Load()
-	if !got.NoAutoUpdate || got.Theme != "dark" || got.Proxy != "direct" || got.Lang != "zh" || got.GitHubToken != token {
+	if !got.NoAutoUpdate || got.Theme != "dark" || got.Proxy != "direct" || got.Lang != "zh" || got.LANKey != token {
 		t.Fatal("the update command lost fields from the BOM file")
 	}
 }

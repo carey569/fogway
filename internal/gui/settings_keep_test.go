@@ -36,7 +36,7 @@ func TestSettingsSaveKeepsCorruptFile(t *testing.T) {
 				t.Fatal(err)
 			}
 			const token = "SYNTHETIC_PRIVATE_TOKEN"
-			original := []byte(`{"theme":"dark","githubToken":"` + token + `"`)
+			original := []byte(`{"theme":"dark","lanKey":"` + token + `"`)
 			if err := os.WriteFile(settings.Path(), original, 0o600); err != nil {
 				t.Fatal(err)
 			}
@@ -136,7 +136,6 @@ func TestSettingsSaveKeepsWhatItDoesNotSend(t *testing.T) {
 		Port:                 3591,
 		CORSOrigins:          []string{"http://localhost:3000"},
 		AllowIPs:             []string{"203.0.113.7"},
-		GitHubToken:          "ghp_kept",
 		RequestArchive:       true,
 		RequestArchiveMaxMB:  64,
 		GatewayConversations: true,

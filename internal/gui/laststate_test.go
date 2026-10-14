@@ -28,7 +28,7 @@ func TestLastKnownState(t *testing.T) {
 	os.MkdirAll(filepath.Join(h, ".codex"), 0o755)
 	os.WriteFile(filepath.Join(h, ".codex", "config.toml"), []byte("model = \"gpt-5.4\"\n"), 0o600)
 	s := settings.Load()
-	s.GitHubToken = "ghp_secret1519"
+	s.LANKey = "sk-lan-secret1519"
 	s.Theme = "light"
 	if err := settings.Save(s); err != nil {
 		t.Fatal(err)
@@ -66,8 +66,8 @@ func TestLastKnownState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the read was not kept: %v", err)
 	}
-	if strings.Contains(string(file), "ghp_secret1519") {
-		t.Error("the kept state holds the GitHub token")
+	if strings.Contains(string(file), "sk-lan-secret1519") {
+		t.Error("the kept state holds the LAN key")
 	}
 
 	// the user changes a setting, and fogway starts again
@@ -82,8 +82,8 @@ func TestLastKnownState(t *testing.T) {
 	if !last.Last || !hasCodex(last) {
 		t.Fatalf("last-known state: last=%v codex=%v", last.Last, hasCodex(last))
 	}
-	if last.Settings.Theme != "dark" || last.Settings.GitHubToken != "ghp_secret1519" {
-		t.Errorf("last-known state's settings are not today's: theme %q token %q", last.Settings.Theme, last.Settings.GitHubToken)
+	if last.Settings.Theme != "dark" || last.Settings.LANKey != "sk-lan-secret1519" {
+		t.Errorf("last-known state's settings are not today's: theme %q key %q", last.Settings.Theme, last.Settings.LANKey)
 	}
 
 	// another version's is not drawn
