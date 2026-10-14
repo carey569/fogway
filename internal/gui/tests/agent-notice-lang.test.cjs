@@ -1,7 +1,8 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // An agent's advice after a change (state.notice) reads in the window's
 // language (#1508, NovaTrailX): a Chinese window said "ZCode 已接入
-// fogway. ZCode reads its providers at start-up — …" in English. Every
+// fogway. ZCode reads its providers at start-up — …" in English; Goose's
+// stands in for it here. Every
 // template in NOTICES, its slots filled, a notice of several joined, and
 // one from a plugin (no template: as given), in every language, in Chromium
 // and WebKit, at a wide and a narrow window. No backend: the API is faked.
@@ -12,28 +13,28 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const ZCODE = "ZCode reads its providers at start-up — restart ZCode to see fogway's models in its picker.";
+const GOOSE = "Goose loads its providers at start-up — quit and reopen Goose (and open goose sessions) to use fogway's models.";
 const models = [{ value: "fogway/deepseek/pro", label: "fogway/deepseek/pro", ref: "deepseek/pro" }];
 const agent = (id, name) => ({
   id, name, path: "/test/" + id, wired: true,
   fields: [{ key: "model", label: "model", value: "fogway/deepseek/pro", options: models }],
 });
-const zcode = (on) => ({
-  id: "zcode", name: "ZCode", icon: "zcode", path: "/test/zcode", wired: on,
+const goose = (on) => ({
+  id: "goose", name: "Goose", icon: "goose", path: "/test/goose", wired: on,
   fields: [{ key: "model", label: "model", value: on ? "fogway/deepseek/pro" : "", options: models }],
 });
 
 function server(lang) {
   let on = false;
-  const st = () => ({ agents: [agent("claude", "Claude Code"), agent("codex", "Codex"), zcode(on)], profiles: [], settings: { lang, theme: "light" } });
+  const st = () => ({ agents: [agent("claude", "Claude Code"), agent("codex", "Codex"), goose(on)], profiles: [], settings: { lang, theme: "light" } });
   return async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:true};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return route.fulfill({ json: st() });
-    if (url.pathname === "/api/agents/connect/zcode") {
+    if (url.pathname === "/api/agents/connect/goose") {
       on = true;
-      return route.fulfill({ json: { ...st(), connected: { how: "fogway" }, notice: ZCODE } });
+      return route.fulfill({ json: { ...st(), connected: { how: "fogway" }, notice: GOOSE } });
     }
     if (url.pathname === "/api/usage/quotas") return route.fulfill({ json: [] });
     if (url.pathname === "/api/groups") return route.fulfill({ json: { groups: [] } });
@@ -88,24 +89,24 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
             const own = "Restart Foo to see this.";
             if (tNotice(own) !== own || tNotice(zc + " " + own) !== zc + " " + own) out.push({ own, got: tNotice(zc + " " + own) });
             return out;
-          }, ZCODE).catch((e) => [String(e)]);
+          }, GOOSE).catch((e) => [String(e)]);
           assert.deepEqual(bad, [], lang);
 
-          // and as the reporter saw it: connecting ZCode
+          // and as the reporter saw it: connecting an agent
           await page.locator(".agent-more").click();
-          const sw = page.locator(`.row.agent[data-id="zcode"] .ag-conn`);
+          const sw = page.locator(`.row.agent[data-id="goose"] .ag-conn`);
           await sw.waitFor({ state: "visible" });
           await sw.click();
           // connected: the row is drawn anew, and may sit elsewhere in the
           // list by then, so the switch's state is read, not its visibility
-          await page.waitForFunction(() => document.querySelector('.row.agent[data-id="zcode"] .ag-conn')?.getAttribute("aria-checked") === "true");
+          await page.waitForFunction(() => document.querySelector('.row.agent[data-id="goose"] .ag-conn')?.getAttribute("aria-checked") === "true");
           await page.waitForFunction(() => document.querySelector("#status")?.textContent.trim());
           const said = (await page.locator("#status").textContent()).trim();
-          const want = await page.evaluate((z) => t(z), ZCODE);
+          const want = await page.evaluate((z) => t(z), GOOSE);
           assert.ok(said.endsWith(want), said);
-          assert.ok(said.startsWith(await page.evaluate(() => t("{agent} is connected to fogway", { agent: "ZCode" }))), said);
-          if (lang === "zh") assert.ok(said.endsWith("ZCode 启动时读取供应商，需重启 ZCode 才能在它的模型选择器中看到 fogway 的模型。"), said);
-          if (lang !== "en") assert.ok(!said.includes("reads its providers"), said);
+          assert.ok(said.startsWith(await page.evaluate(() => t("{agent} is connected to fogway", { agent: "Goose" }))), said);
+          if (lang === "zh") assert.ok(said.endsWith("Goose 启动时加载供应商，需退出并重新打开 Goose（以及已打开的 goose 会话）才能使用 fogway 的模型。"), said);
+          if (lang !== "en") assert.ok(!said.includes("loads its providers"), said);
           const fits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
           assert.ok(fits, "the status runs past the window");
         });

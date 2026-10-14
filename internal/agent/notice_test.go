@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -61,6 +62,52 @@ func i18nTables(t *testing.T) (map[string]map[string]string, []string) {
 		list = append(list, unq(strings.TrimSuffix(strings.TrimSpace(line), ",")))
 	}
 	return tables, list
+}
+
+// Every notice an agent gives (newNotice) is in i18n.js's NOTICES, which
+// tNotice matches notices against, with a translation in every language
+// the GUI has, its {slots} the English's; and NOTICES lists no notice no
+// agent gives (#1508).
+func TestEveryNoticeIsTranslated(t *testing.T) {
+	tables, list := i18nTables(t)
+	if len(tables) < 4 {
+		t.Fatalf("read %d language tables from i18n.js", len(tables))
+	}
+	var ns []string
+	for _, n := range notices {
+		ns = append(ns, string(n))
+	}
+	slices.Sort(ns)
+	ns = slices.Compact(ns)
+	if len(ns) < 20 {
+		t.Fatalf("only %d notices listed", len(ns))
+	}
+	slots := regexp.MustCompile(`\{\w+\}`)
+	marks := func(s string) []string {
+		m := slots.FindAllString(s, -1)
+		slices.Sort(m)
+		return slices.Compact(m)
+	}
+	for _, n := range ns {
+		if !slices.Contains(list, n) {
+			t.Errorf("not in i18n.js's NOTICES: %q", n)
+		}
+		for name, table := range tables {
+			tr, ok := table[n]
+			if !ok {
+				t.Errorf("%s has no translation of %q", name, n)
+				continue
+			}
+			if !slices.Equal(marks(tr), marks(n)) {
+				t.Errorf("%s's %q has slots %v, the English %v", name, tr, marks(tr), marks(n))
+			}
+		}
+	}
+	for _, n := range list {
+		if !slices.Contains(ns, n) {
+			t.Errorf("NOTICES lists %q, which no agent gives", n)
+		}
+	}
 }
 
 // A notice is written as a newNotice template, never as English in the
