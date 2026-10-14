@@ -82,7 +82,5 @@ remembering its layer (`Source`):
   `TestPluginsImportOnlyCore`, `TestCompose`, `TestSettleAndSet`,
   `TestBrokenFileIsKept`), `go test ./internal/settings/ -run TestRanBefore`.
 - `go test ./internal/gui/ -run 'TestBuiltin|TestBootSaysBuiltinsOff'`.
-- `internal/gui/tests/builtins.test.cjs` in Chromium and WebKit, every
-  language, 1100, 800 and 420 points.
 - By hand, under a sandbox HOME: `fogway plugin builtin`, `fogway plugin
   builtin on groups`, `fogway plugin dump`, and a plugins.yml broken by hand.

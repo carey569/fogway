@@ -78,5 +78,5 @@ go test -tags nogui ./internal/edit -run 'BOM|CRLF'
 go test -tags nogui ./internal/agent -run 'TestCodexHandWrittenBaseURLStays|TestCodexProxyFor|TestRealProxyProbe|TestCodexEnvTakesLoginShell|TestCodexProxiedDrift'
 go test -tags nogui ./internal/tune ./internal/agent -run 'TestCompact|TestCacheTTL|TestTune'
 node --test internal/gui/tests/context-tune.test.cjs
-node --test internal/gui/tests/agent-connect.test.cjs internal/gui/tests/agent-disconnect-preview.test.cjs internal/gui/tests/claude-signin.test.cjs internal/gui/tests/agent-proxied.test.cjs internal/gui/tests/plugin-agent.test.cjs
+node --test internal/gui/tests/agent-connect.test.cjs internal/gui/tests/agent-disconnect-preview.test.cjs internal/gui/tests/claude-signin.test.cjs internal/gui/tests/agent-proxied.test.cjs
 ```

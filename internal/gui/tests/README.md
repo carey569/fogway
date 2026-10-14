@@ -260,34 +260,6 @@ node --test internal/gui/tests/agent-unreachable.test.cjs
 rows. At 601, the default 660 and 960 pixels, controls remain aligned beside
 the names. English and Chinese, Chromium and WebKit.
 
-`plugin-updates.test.cjs` checks the dot on Plugins while a plugin's update
-waits for the reader, gone once it's updated, and the "Auto-updated" chip on a
-plugin fogway updated by itself.
-
-`plugin-move-overflow.test.cjs` checks a Plugins card that offers a
-built-in's accounts: the button is one word beside the name, as Install is
-("Move", its title saying whose accounts and how many), on one line, and it
-stays inside the card and the plugin's name and "fogway community" aren't
-cut, in a three-, two- and one-column window. English and Chinese, Chromium and WebKit, with the API
-faked.
-
-`plugin-movable-review.test.cjs` checks the line over the Providers list
-naming several built-in subscriptions a community plugin can run: its Take a
-look opens the Plugins tab, whose cards offer each one's Move, not the first
-one's editor. English and Chinese, Chromium and WebKit, with the API faked.
-
-`plugin-git.test.cjs` checks a plugin installed from a git repository: the
-market's field says it takes a GitHub repo, and Install sends
-`github:owner/repo` as typed; Installed names it by the package its
-repository holds, its Update fetches the repository again, and its page shows
-the README it came with, no npm link and a Source link to the repository.
-No click scrolls. English and Chinese, Chromium and WebKit, with the API
-faked:
-
-```sh
-node --test --test-concurrency=1 internal/gui/tests/plugin-git.test.cjs
-```
-
 `panel-fold.test.cjs` expands and collapses on the Agents page with the list
 scrolled to its end, in the tray panel (one agent open) and in the window:
 "Show {n} more" unrolls the rest under the button, the view going down with
@@ -1095,56 +1067,6 @@ cancelled read is never said as an error; a refresh afterwards reads afresh.
 Chromium and WebKit, at 1180 and 560. `FOGWAY_ASSETS` points it at an older
 assets directory to see it fail there.
 
-`shared-skills.test.cjs` opens the Library's Skills tab with skills found in
-the user-wide `~/.agents/skills` (#227): one row for a skill there that
-agents link or junction to, "shared in ~/.agents/skills/…" with those
-agents' icons and no "differs in"; a link in the shared folder also saying
-where it points; a copy of an agent's own still "differs in ZCode"; Bring in
-saying it stays where it is and posting the name; in English and Chinese.
-
-`library-toggle-status.test.cjs` opens the Library's Skills and MCP tabs
-and clicks an agent's icon on a row (#332): turned on, the status says
-"Written to DeepSeek Harness"; turned off again, "Removed from DeepSeek
-Harness", and an agent that had it from the start turned off, "Removed from
-Codex"; Chromium and WebKit, in English and Chinese, with `/api/plugins`
-faked.
-
-`import-all-skills.test.cjs` opens the Library's Skills tab with three skills
-found in the agents: Bring in all beside "In your agents" posts every
-name at once, the rows go and the toast says "3 skills are in the library
-now", or names the one that couldn't be brought in, which stays listed; the
-click scrolls nothing; in English and Chinese, with `/api/plugins` faked.
-
-`every-skill.test.cjs` opens the Library's Skills tab with three skills and
-three agents that take skills, and one that doesn't (#443): Turn all on
-beside "In the library" posts the three agents with on, at once, and every
-chip is lit; Turn all off asks in the page first (a browser dialog fails the
-test), Cancel posts nothing, and its own button posts them with off and no
-chip is lit; each button is greyed once there's nothing for it to do; the
-clicks scroll nothing; Chromium and WebKit, in English and Chinese, with
-`/api/plugins` faked.
-
-`by-agent.test.cjs` opens the Library's Skills and MCP tabs with Copilot CLI
-hidden on the Agents page but still given two skills and a server (#475): By
-agent beside "In the library" opens a sheet of the agents that take them,
-each with how many it has; the hidden one is tagged Hidden and has no Turn
-all on, and its Turn all off posts it alone to `…/agents-all` with off and
-leaves it listed with none; Codex's Turn all on posts Codex alone with on and
-lights its chip on every row while Claude Code keeps what it had, and for
-servers isn't offered again once the only one it can reach (not the SSE one)
-is on; the clicks scroll nothing; Chromium and WebKit, in English and
-Chinese, with `/api/plugins` faked.
-
-`remove-all-skills.test.cjs` opens the Library's Skills tab with three
-skills, two kept by fogway and one linked from a folder of the user's
-(#449): Remove all beside Turn all on/off is red, and asks in the page first
-(a browser dialog fails the test), naming the agents that lose them, the two
-folders that go to fogway's backups and the one only unlinked; Cancel posts
-nothing; its own button posts every skill's name to
-`library/skills/remove-all` once, and no row is left; the clicks scroll
-nothing; Chromium and WebKit, in English and Chinese, with `/api/plugins`
-faked.
-
 `header-centre.test.cjs` sweeps a Windows window from 1100 to 560 points at
 text size 100, 110 and 125%, with an Update pill waiting (emo172, #442): the
 header's tabs never touch the buttons; whenever they aren't in the row
@@ -1152,13 +1074,6 @@ they're in the middle of the window, and the closer-together tabs are tried
 there before the row; in the row they have as much room either side, give or
 take the header's padding against the gap before the buttons; Chromium and
 WebKit, in English and Chinese, with `/api/plugins` faked.
-
-`library-row-open-scroll.test.cjs` opens the Default set of Library →
-Instructions, wheels down to the foot of the agents' list and clicks an
-agent's row open and shut (emo172, #458): the Library draws its whole page
-again on a click, and the row clicked still stays where it is on the screen,
-under a long set in a short window and a shorter set in a tall window.
-Chromium and WebKit, English and Chinese, with `/api/plugins` faked.
 
 `header-zoom-fit.test.cjs` sweeps a Windows window from 1300 to 700 points at
 text size 110 and 125%, with an Update pill waiting (emo172, #457): a wider
@@ -1183,16 +1098,6 @@ Chromium and WebKit, with `/api/settings` faked.
 the Sessions page's agents and a provider's regions) in Chromium with its
 scrollbars shown (ARNO on Discord): off a Mac it scrolls under the app's
 6px thumb, not Windows' classic bar; on a Mac the system's bar is left.
-
-`own-skill.test.cjs` opens the Library with Claude Code's own impeccable in
-the library skill's way (StringKe, JasonLeeForOnly on Discord): the warning
-row says so in the reader's language and has "Use the library's" and "Keep
-Claude Code's", which post `skills/use-library` and `skills/keep-own` with
-the skill and the agent; the warning goes, the toast says what was done, and
-the click scrolls nothing; no coloured stripe down the card or the row. A
-found skill with a byte copy in another agent shows both agents' icons and
-no "differs in"; one that really differs still says so. Chromium and
-WebKit, in English and Chinese, with `/api/plugins` faked.
 
 `model-pick.test.cjs` picks Claude Code's model with the Agents page
 scrolled while a faked `/api/set` takes 2.5s to answer: the row shows the
@@ -1397,9 +1302,6 @@ rest, tagged "proxy not reachable", in English and Chinese, never "an error
 another account wouldn't fix"; picking the request doesn't move the page.
 Chromium and WebKit, API faked.
 
-`s3-sync.test.cjs` sets up sync to an S3 bucket from Settings (#296). It
-works as follows, in English and Chinese:
-
 - WebDAV is picked first. Picking S3 shows the fields for the endpoint,
   bucket, prefix, region, access key, secret and path-style, each label
   fitting its column. Switching between WebDAV and S3 leaves the page where
@@ -1410,47 +1312,6 @@ works as follows, in English and Chinese:
   The row then reads "S3 sync" with the bucket and server.
 - Edit opens the form with S3 picked, marked "S3 · on", and the fields as
   saved. The secret field is empty, with "saved" as its placeholder.
-
-`github-sync.test.cjs` checks that Settings offers GitHub beside WebDAV and
-S3 in English, Chinese, Traditional Chinese, Japanese and German at 900px and 440px. It verifies
-the owner/repo, optional folder and branch, separate GitHub token, passphrase
-and sync toggles are posted as expected, rejects an incomplete binding and
-reopens the saved setup with the token kept secret. The API is faked; the
-test never contacts GitHub.
-
-`sync-other-kind.test.cjs` checks that moving sync between WebDAV and S3
-keeps the other's settings (ARNO on Discord: trying S3 wiped the WebDAV
-address, user and password). With S3 synced to and a WebDAV server kept,
-the row ends "WebDAV settings kept", the form marks S3 "on" and says the
-WebDAV settings are kept; picking WebDAV, which leaves the page where it
-was, shows the kept address and user, the password as saved, says saving
-moves sync there and the button reads "Move sync to WebDAV". Saving posts
-that server with the password left empty for the one kept, and the row
-then reads "WebDAV sync", "S3 settings kept". English and Chinese,
-Chromium and WebKit, API faked. Before the fix the WebDAV fields were
-empty and nothing said which was on or kept.
-
-`webdav-settings-refresh.test.cjs` checks the Settings page's sync row
-against a setup changed behind the window (#305: fogway webdav / fogway s3
-at the terminal): the faked `/api/davsync` answers differently between
-reads, and the window's focus — or the page becoming visible again — must
-re-read it, the row, its status and the form's ticks following what the CLI
-left (a WebDAV setup with agents and the library out, then an S3 one) rather
-than what the page first read. A focus while a form is open never rebuilds
-it: what was typed stays (#104). Off, the description is built from the
-view's toggles and names only what is turned on — providers without their
-API keys, no agents' models — as the CLI's list does; a view that says
-nothing of the toggles reads as the whole lot. English and Chinese,
-Chromium and WebKit. Before the fix, the row kept the first view it had
-read and the description was the hardcoded whole list.
-
-`market-have.test.cjs` checks that the Library's Discover cards follow
-the library without the window being focused again (#300). Removing a
-server (Remove from the library) turns its card from "✓ Added" back to
-Add at once and asks the market again; a server added by hand with the
-same name is marked added; a skill removed turns its card back to Add. No
-window focus or visibility change happens during the test, the click does
-not scroll the page, and the checks run in English and Chinese.
 
 `sessions-today.test.cjs` checks that today's bar in Usage › Sessions › By
 day keeps its tooltip while the sessions are read again (#309). The fake API
@@ -1484,24 +1345,6 @@ one with a single account does not. Ticking it saves `claude|*`, the pill
 names the subscription, and reopening the menu shows it ticked. No click
 moves the page. The checks run in English and Chinese, in Chromium and
 WebKit.
-
-`library-all.test.cjs` opens the Library with an All chip ahead of each
-server's and skill's agent chips (Discord: MCP 服务器 SKILL 都得一个个选):
-one click posts the agents that can take it in one write — not Pi for a
-server (no MCP file), not Codex or Droid for an SSE server (no SSE), a
-hidden agent keeping what it has — the chips light, the toast says it is on
-for all of them or, when one couldn't take it, "on for 1 of 2 agents" and
-which and why; a second click takes it from all; the click scrolls nothing
-and doesn't open the row. Chromium and WebKit, in English and Chinese.
-
-`library-own-folder.test.cjs` (#595) shows a skill put in the library's own
-folder by hand among the skills found, said to be "in the library's folder,
-not listed" with its path, and Bring in saying it is listed where it is; a
-library skill kept in ~/.agents/skills has Codex's and Gemini CLI's chips
-lit and disabled, each saying it reads that folder itself, and a click on
-Pi's chip or on All never sends them; Remove says a linked skill's folder
-stays and the library's own is moved to the backups. No click scrolls the
-page, and nothing has a left-border accent. In English and Chinese.
 
 `panel-effort.test.cjs` opens a row in the tray panel whose effort is not one
 of the levels offered (omp at auto, an agent with none set): the slider shows
@@ -1848,15 +1691,6 @@ window and the tray panel, light and dark, English and Chinese, Chromium and
 WebKit:
 node --test internal/gui/tests/favorite-star.test.cjs
 
-`list-sort.test.cjs` checks the installed lists' order, the reader's pick
-(#481): the Library's MCP servers and the installed plugins by name A→Z (the
-plugins no longer in the order they were installed) or Z→A, and the
-Library's skills by source, as before, or as one flat list by name A→Z or
-Z→A; each list keeps its own pick through a reload, and a pick leaves its
-control where it was on the screen. It runs in Chromium and WebKit, in
-English and Chinese:
-node --test internal/gui/tests/list-sort.test.cjs
-
 `quota-name-translated.test.cjs` holds the rule that a window's name is
 what fogway translates while its display is shown as it came (#1001): a
 plugin that puts its sentence in the display keeps the card English in
@@ -1870,15 +1704,6 @@ is nowrap with no ellipsis, so one wider than its `.quota` is cut off
 mid-word in silence. 440 is the narrowest the card is seen at and 560 the
 window minimum; 1000 alone could never catch a name that is too wide:
 node --test internal/gui/tests/quota-name-translated.test.cjs
-
-`plugin-progressive.test.cjs` checks the Plugins page is drawn in parts
-(#488) while `/api/plugins/market` never answers: Installed from
-`/api/plugins` at once (no skeleton, no update chip yet), Discover's cards
-from `/api/plugins/listings` with their buttons waiting on npm, and once
-`/api/plugins/npm` answers (held until then) the downloads, the version,
-Install and the installed plugin's "v… out". It runs in Chromium and
-WebKit, in English and Chinese:
-node --test internal/gui/tests/plugin-progressive.test.cjs
 
 `lightweight.test.cjs` checks Settings → General's Lightweight mode row
 (#580): off by default, On and Off saved as `lightweight` true and false
@@ -2069,14 +1894,6 @@ every string has zh, ja and de. English and Chinese, Chromium and WebKit.
 node --test internal/gui/tests/ledger-protocol.test.cjs
 ```
 
-`library-rtk-nohook.test.cjs` checks that an agent RTK has no hook for
-(DeepSeek Harness) is listed in Library › RTK with a No RTK hook tag saying
-why, and that its switch can't be turned on, while Pi's can. English and
-Chinese, Chromium and WebKit.
-
-```sh
-node --test internal/gui/tests/library-rtk-nohook.test.cjs
-```
 
 ## Local Provider Discovery
 
