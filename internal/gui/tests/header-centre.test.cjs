@@ -57,6 +57,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       if (errors.length) console.log(errors);
       await browser.close();
     });
+    // the row is reached in each language at some text size: with seven
+    // pages, Chinese at 100% fits in the middle all the way down to 560
+    const rowed = { zh: 0, en: 0 };
     for (const lang of ["zh", "en"]) for (const zoom of [1, 1.1, 1.25]) {
       await t.test(`${lang} at ${Math.round(zoom * 100)}%`, async () => {
         const ctx = await browser.newContext({ viewport: { width: Math.round(1100 / zoom), height: 600 }, deviceScaleFactor: zoom });
@@ -88,10 +91,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           if (h.cls.includes("cramped") && !h.cls.includes("inrow")) middle += 1000;
         }
         assert(middle > 1000, `the closer tabs were never in the middle (${middle})`);
-        assert(inrow > 0, "the narrowest windows never put the tabs in the row");
+        rowed[lang] += inrow;
         await ctx.close();
       });
     }
+    for (const lang in rowed) assert(rowed[lang] > 0, `${lang}: the narrowest windows never put the tabs in the row`);
     assert.deepEqual(errors, []);
   });
 }

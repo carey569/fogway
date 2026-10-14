@@ -1,9 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // #1984: Settings → the menu bar can show fogway's own tokens and cost for
 // today or the last 7 days, beside the allowances or alone. The picker lists
-// both after the subscriptions, ticked and saved as a card is ("usage:today",
+// both after the plans, ticked and saved as a card is ("usage:today",
 // "usage:7d"); the pill names a total alone, and counts a mix of them without
-// calling it subscriptions. A total clicked in the menu bar opens the Usage
+// calling it plans. A total clicked in the menu bar opens the Usage
 // page's Overview, or the panel's Usage tab, at its period. Every language,
 // both engines, wide and narrow; no click moves the page; no backend, the API
 // is faked here.
@@ -22,11 +22,11 @@ const quotas = [
 ];
 
 const want = {
-  en: { off: "Off", today: "Tokens and cost today", week: "Tokens and cost, last 7 days", note: "Every agent's, as the Usage page counts them", two: "2 shown", subs: "2 subscriptions", days: "7 days" },
-  zh: { off: "关闭", today: "今天的 token 数和费用", week: "最近 7 天的 token 数和费用", note: "所有 Agent 的合计，与用量页的统计一致", two: "已选 2 项", subs: "2 个订阅", days: "7 天" },
-  "zh-TW": { off: "關閉", today: "今天的 token 數和費用", week: "最近 7 天的 token 數和費用", note: "所有 Agent 的合計，與用量頁的統計一致", two: "已選 2 項", subs: "2 個訂閱", days: "7 天" },
-  ja: { off: "オフ", today: "今日のトークン数と費用", week: "直近 7 日間のトークン数と費用", note: "すべてのエージェントの合計（使用量ページと同じ集計）", two: "2 件を表示", subs: "2 件のサブスクリプション", days: "7 日" },
-  de: { off: "Aus", today: "Tokens und Kosten heute", week: "Tokens und Kosten, letzte 7 Tage", note: "Alle Agenten zusammen, wie die Nutzungsseite sie zählt", two: "2 angezeigt", subs: "2 Abos", days: "7 Tage" },
+  en: { off: "Off", today: "Tokens and cost today", week: "Tokens and cost, last 7 days", note: "Every agent's, as the Usage page counts them", two: "2 shown", subs: "2 plans", days: "7 days" },
+  zh: { off: "关闭", today: "今天的 token 数和费用", week: "最近 7 天的 token 数和费用", note: "所有 Agent 的合计，与用量页的统计一致", two: "已选 2 项", subs: "2 个套餐", days: "7 天" },
+  "zh-TW": { off: "關閉", today: "今天的 token 數和費用", week: "最近 7 天的 token 數和費用", note: "所有 Agent 的合計，與用量頁的統計一致", two: "已選 2 項", subs: "2 個套餐", days: "7 天" },
+  ja: { off: "オフ", today: "今日のトークン数と費用", week: "直近 7 日間のトークン数と費用", note: "すべてのエージェントの合計（使用量ページと同じ集計）", two: "2 件を表示", subs: "2 件のプラン", days: "7 日" },
+  de: { off: "Aus", today: "Tokens und Kosten heute", week: "Tokens und Kosten, letzte 7 Tage", note: "Alle Agenten zusammen, wie die Nutzungsseite sie zählt", two: "2 angezeigt", subs: "2 Tarife", days: "7 Tage" },
 };
 
 function settingsPayload(over) {
@@ -113,7 +113,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           await pill.scrollIntoViewIfNeeded();
           const before = await view(page);
 
-          // the two totals follow the subscriptions, each with a box to tick
+          // the two totals follow the plans, each with a box to tick
           await pill.click();
           const menu = page.locator(".proto-menu");
           await menu.waitFor();
@@ -134,14 +134,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           assert.deepEqual(posts.at(-1).trayUsages, ["usage:today"]);
           assert.equal(await page.locator("#trayEveryRow").isVisible(), true, "how often it is read again shows with a total picked");
 
-          // with a subscription beside it: counted, not called subscriptions
+          // with a plan beside it: counted, not called plans
           await pill.click();
           await items.nth(2).click();
           await page.keyboard.press("Escape");
           await pillIs(page, w.two);
           assert.deepEqual(posts.at(-1).trayUsages, ["copilot", "usage:today"], "in the menu's order");
 
-          // two subscriptions alone are still subscriptions
+          // two plans alone are still plans
           await pill.click();
           await items.nth(3).click();
           await items.nth(1).click();

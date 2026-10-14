@@ -133,9 +133,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           // several accounts: the next one is set apart from a curve's legend
           await card.locator(".quota-more").click();
           const second = card.locator(".subscription-account", { hasText: "b@x.com" });
-          // (after the curve, a Codex account's Auto-use row, #719, then its
-          // Use credits row, which closes its section)
-          assert.deepEqual(await second.evaluate((e) => [e.previousElementSibling.previousElementSibling.previousElementSibling.className, e.previousElementSibling.previousElementSibling.className, e.previousElementSibling.className]), ["quota-curve", "quota-autoreset", "quota-credits on"]);
+          // (the first account, its windows, and its curve, which closes its
+          // section: the Codex rows after it, Auto-use and Use credits, went
+          // with the subscriptions)
+          assert.deepEqual(await second.evaluate((e) => [e.previousElementSibling.previousElementSibling.previousElementSibling.className, e.previousElementSibling.previousElementSibling.className, e.previousElementSibling.className]), ["subscription-account", "quota-windows", "quota-curve"]);
           assert.notEqual(await second.evaluate((e) => getComputedStyle(e).borderTopStyle), "none", "a rule between the accounts");
           const choose = async (name) => {
             await pick.click();

@@ -63,12 +63,14 @@ function server(lang, posts, problem) {
 const view = (page) => page.locator("#view-settings").evaluate((v) => v.scrollTop);
 
 // wheelTo scrolls the settings with the wheel, as a reader would (a script
-// setting scrollTop is put back), until the alert rows are mid-page.
+// setting scrollTop is put back), until the page has moved and the alert
+// rows are in view, clear of the window's foot. Allowances is a short tab
+// now (no warm-ups): it scrolls a little at 480 high, not to mid-page.
 async function wheelTo(page) {
   await page.locator("#view-settings").hover();
   for (let i = 0; i < 40; i++) {
     const box = await page.locator("#balanceAlertRow").boundingBox();
-    if (box && box.y + box.height < 300 && await view(page) > 0) return;
+    if (box && box.y + box.height < 440 && await view(page) > 0) return;
     await page.mouse.wheel(0, 120);
     await page.waitForTimeout(30);
   }
@@ -134,8 +136,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await page.locator("#balanceAlertSegs .opt.on").textContent(), w.off);
         assert.equal(await page.locator("#usageAlertSegs input, #balanceAlertSegs input").count(), 0, "no field while off");
 
-        // scrolled down with the wheel (the rows to the middle, clear of
-        // the footer), turning it on moves nothing
+        // scrolled down with the wheel (the rows in view, clear of the
+        // window's foot), turning it on moves nothing
         await wheelTo(page);
         const before = await view(page);
         assert(before > 0, "the settings list must be long enough to scroll");

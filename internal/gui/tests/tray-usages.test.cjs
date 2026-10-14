@@ -79,8 +79,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     });
 
     for (const [lang, off, three, two] of [
-      ["en", "Off", "3 subscriptions", "2 subscriptions"],
-      ["zh", "关闭", "3 个订阅", "2 个订阅"],
+      ["en", "Off", "3 plans", "2 plans"],
+      ["zh", "关闭", "3 个套餐", "2 个套餐"],
     ]) {
       await t.test(lang, async () => {
         const errors = [], posts = [];
