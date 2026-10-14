@@ -127,7 +127,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           for (let i = 0; i < 40; i++) {
             const box = await apply.boundingBox();
             if (box && box.y > 80 && box.y + box.height < 340 && (await scroll()) > 0) break;
-            await page.mouse.wheel(0, 120);
+            await page.mouse.wheel(0, 40);
             await page.waitForTimeout(30);
           }
           await page.waitForTimeout(500); // the wheel's scroll come to rest
