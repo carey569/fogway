@@ -146,7 +146,11 @@ jobs:
           DIGEST=$(docker buildx imagetools inspect "$IMAGE:$REF_TAG" --format '{{json .}}' | jq -r '.manifest.digest')
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
+      # GitHub keeps attestations only for public repositories (and
+      # organizations' private ones): a user's private repository is
+      # refused, which failed the run after the image was pushed.
       - name: Attest build provenance
+        if: ${{ !github.event.repository.private }}
         uses: actions/attest-build-provenance@v3
         with:
           push-to-registry: true
