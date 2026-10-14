@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +24,7 @@ const localUsage = `usage: fogway local [status] [--json]
        fogway local on|off
        fogway local mask [on|off]
        fogway local think [on|off]
+       fogway local context [<tokens>]
   the model on this computer: llama.cpp's llama-server, downloaded for this
   platform (Metal on a Mac, CUDA with an NVIDIA card, else Vulkan or the CPU),
   running a GGUF model pulled from Hugging Face. It is served as local/<model>,
@@ -40,7 +43,10 @@ const localUsage = `usage: fogway local [status] [--json]
   and keep a sensitive turn the local model takes on this computer even when
   it fails; off routes by what the local model can do alone.
   think on lets the local model reason before it answers, slower; off (the
-  default) has it answer at once.`
+  default) has it answer at once.
+  context sets the window the local model runs at (32k by default, 256k, 1m),
+  up to what the model was trained for and what this computer's memory holds;
+  with none, it lists the windows and the memory each takes.`
 
 // localAssess is local.Assess; a test stands in for this computer.
 var localAssess = local.Assess
@@ -74,6 +80,9 @@ func localCmd(args []string) error {
 			return err
 		}
 		fmt.Println(green.Render("✓"), "the local model is", bold.Render(m.ID()), muted.Render("("+m.Repo+" · "+m.File+")"))
+		if n := c.ContextOr(); c.Context > n {
+			fmt.Println(muted.Render("  it runs at " + local.Tokens(n) + " tokens of context, the most it holds here of the " + local.Tokens(c.Context) + " set"))
+		}
 		if c.On {
 			fmt.Println(muted.Render("  the gateway loads it next; fogway local setup downloads it now"))
 		}
@@ -119,11 +128,73 @@ func localCmd(args []string) error {
 		}
 		fmt.Println(green.Render("✓"), "thinking", rest[0], muted.Render("· the local model restarts with it"))
 		return nil
+	case "context":
+		return localContext(rest)
 	case "help", "-h", "--help":
 		fmt.Println(localUsage)
 		return nil
 	}
 	return fmt.Errorf("%s", localUsage)
+}
+
+// localContext shows the windows the local model can run at here, or sets
+// one: 256k, 1m or a number of tokens.
+func localContext(args []string) error {
+	c, err := local.Load()
+	if err != nil {
+		return err
+	}
+	m, h := c.Picked(), local.Detect()
+	if len(args) == 0 {
+		fmt.Printf("%s runs at %s tokens of context\n", cmp.Or(local.Canon(m).Title, m.ID()), local.Tokens(c.ContextOr()))
+		for _, w := range local.Windows(m, h) {
+			mark := "  "
+			if w.Tokens == c.ContextOr() {
+				mark = "▸ "
+			}
+			need := ""
+			if w.Need > 0 {
+				need = fmt.Sprintf("%.1f GB", float64(w.Need)/(1<<30))
+			}
+			note := map[local.Grade]string{local.Tight: "tight on memory", local.NoRoom: "too much for this computer"}[w.Room]
+			fmt.Printf("%s%-6s %-8s %s\n", mark, local.Tokens(w.Tokens), need, muted.Render(note))
+		}
+		return nil
+	}
+	n, err := localTokens(args[0])
+	if err != nil {
+		return err
+	}
+	if err := local.FitWindow(m, h, n); err != nil {
+		return err
+	}
+	c.Context = n
+	if err := local.Save(c); err != nil {
+		return err
+	}
+	fmt.Println(green.Render("✓"), "context", local.Tokens(n), "tokens", muted.Render("· the local model restarts with it"))
+	return nil
+}
+
+// localTokens reads a window as the windows are named: 256k is 256×1024
+// tokens, 1m 1024×1024; a plain number is tokens.
+func localTokens(v string) (int, error) {
+	s := strings.ToLower(strings.TrimSpace(v))
+	mul := 1
+	switch {
+	case strings.HasSuffix(s, "k"):
+		mul, s = 1<<10, strings.TrimSuffix(s, "k")
+	case strings.HasSuffix(s, "m"):
+		mul, s = 1<<20, strings.TrimSuffix(s, "m")
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n <= 0 || n > 64<<20/mul {
+		return 0, fmt.Errorf("%q is not a window: give 32k, 256k, 1m or a number of tokens", v)
+	}
+	if n*mul < 2048 {
+		return 0, fmt.Errorf("a window of %d tokens is too small to hold a turn", n*mul)
+	}
+	return n * mul, nil
 }
 
 // localModelOf is the model args name: a catalog model by its name, or a
@@ -169,6 +240,9 @@ func localStatus(asJSON bool) error {
 		line := string(st.Phase)
 		if st.URL != "" && st.Phase == local.Ready {
 			line += " at " + st.URL
+			if st.Context > 0 {
+				line += " · " + local.Tokens(st.Context) + " tokens of context"
+			}
 		}
 		if st.Progress != nil && st.Progress.Total > 0 {
 			line += fmt.Sprintf(" · %s %d%%", st.Progress.What, st.Progress.Done*100/st.Progress.Total)

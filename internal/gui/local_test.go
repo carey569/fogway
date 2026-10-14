@@ -32,6 +32,13 @@ func TestLocalPage(t *testing.T) {
 	if code != 200 || len(st.Catalog) != len(local.Catalog) || st.Recommended != st.Assessment.Pick || st.Config.On || st.Hybrid != nil {
 		t.Fatalf("%d %s", code, raw)
 	}
+	// each model's windows, up to the most it was trained for, and up to
+	// 128K for one of the user's own
+	last := func(ws []local.Window) int { return ws[len(ws)-1].Tokens }
+	if len(st.Windows) != len(local.Catalog)+1 || last(st.Windows[local.Spark4.Repo+"|"+local.Spark4.File]) != 1<<20 ||
+		last(st.Windows["unsloth/Qwen3.5-2B-GGUF|Qwen3.5-2B-Q4_K_M.gguf"]) != 256<<10 || last(st.Windows["custom"]) != 128<<10 || st.Windows["custom"][0].Need != 0 {
+		t.Fatalf("windows: %+v", st.Windows)
+	}
 	// never assessed here: the page asks for an assessment, and gets one
 	// with this computer measured
 	if !st.Assessment.Quick || len(st.Assessment.Models) != len(local.Candidates) {
@@ -63,6 +70,15 @@ func TestLocalPage(t *testing.T) {
 	}
 	if code, _, raw = localCall(t, mux, "POST", "/api/local/save", `{"model":{"repo":"no-owner","file":"x.bin"}}`); code != 400 {
 		t.Fatalf("a bad model: %d %s", code, raw)
+	}
+	// a window past what the model was trained for isn't kept
+	code, _, raw = localCall(t, mux, "POST", "/api/local/save", `{"model":{"repo":"unsloth/Qwen3.5-2B-GGUF","file":"Qwen3.5-2B-Q4_K_M.gguf"},"context":1048576}`)
+	if c, _ := local.Load(); code != 400 || !strings.Contains(raw, "256K") || c.Context != 0 {
+		t.Fatalf("a window past the model's: %d %s %+v", code, raw, c)
+	}
+	code, st, raw = localCall(t, mux, "POST", "/api/local/save", `{"model":{"repo":"unsloth/Qwen3.5-2B-GGUF","file":"Qwen3.5-2B-Q4_K_M.gguf"},"context":65536}`)
+	if c, _ := local.Load(); code != 200 || c.Context != 64<<10 || c.Model.Window != 256<<10 {
+		t.Fatalf("a window: %d %s %+v", code, raw, c)
 	}
 	if code, st, _ = localCall(t, mux, "POST", "/api/local/off", ``); code != 200 || st.Config.On {
 		t.Fatalf("off: %d %+v", code, st.Config)

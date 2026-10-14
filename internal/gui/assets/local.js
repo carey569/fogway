@@ -34,6 +34,10 @@
     "Hugging Face": "Hugging Face 官方",
     "hf-mirror.com (China)": "hf-mirror.com（国内镜像）",
     "Context window": "上下文窗口",
+    "about {gb}": "约 {gb}",
+    "tight on memory": "内存吃紧",
+    "The memory shown is taken as the model loads, whether the window fills or not. A long conversation is slow to read the first time: the 4B took about 15 minutes over 140K tokens on an M4 Pro; after that only what is new is read.": "所示内存在模型加载时就会占用，不论窗口是否用满。很长的对话第一次读入会很慢：在 M4 Pro 上，4B 读 14 万 token 用了约 15 分钟；之后每轮只读新增的部分。",
+    "too much for this computer": "本机内存不够",
     "tokens": "tokens",
     "Save and restart": "保存并重启",
     "Computer": "本机",
@@ -112,6 +116,7 @@
     off: "Off", preparing: "Getting llama.cpp ready", downloading: "Downloading the model",
     starting: "Loading the model", ready: "Serving", failed: "Stopped",
   };
+  const tokens = (n) => (n >= 1 << 20 && n % (1 << 20) === 0 ? n / (1 << 20) + "M" : n >= 1024 && n % 1024 === 0 ? n / 1024 + "K" : String(n));
   const gb = (n) => (n >= 1 << 30 ? (n / (1 << 30)).toFixed(n >= 10 * (1 << 30) ? 0 : 1) + " GB" : Math.round(n / (1 << 20)) + " MB");
 
   async function load() {
@@ -286,7 +291,7 @@
       bar.append(fill);
       card.append(row(p.what, `${gb(p.done)} / ${gb(p.total)}`), bar);
     }
-    if (s.phase === "ready" && s.url) card.append(row("Serving", `${s.url} · ${s.context || c.context || 32768} ${t("tokens")}`));
+    if (s.phase === "ready" && s.url) card.append(row("Serving", `${s.url} · ${tokens(s.context || c.context || 32768)} ${t("tokens")}`));
     if (s.error) card.append(el("p", "lm-err", s.error));
     const h = data.hardware || {};
     let comp = `${h.os}/${h.arch} · ${gb(h.ram || 0)} ${t("memory")}`;
@@ -328,7 +333,6 @@
     const customBox = el("div", "lm-custom");
     customBox.append(row("Repository", repo), row("File", file));
     customBox.hidden = pick.value !== "custom";
-    pick.onchange = () => (customBox.hidden = pick.value !== "custom");
     card.append(row("Model", pick), customBox);
 
     const from = el("select");
@@ -340,14 +344,35 @@
     from.value = c.hfEndpoint || "";
     card.append(row("Download from", from));
 
+    // the windows the model picked can run at here, each with the memory it
+    // takes; one that doesn't fit can't be picked, and the window kept is
+    // the largest that fits within the one asked for
     const ctx = el("select");
-    for (const n of [8192, 16384, 32768, 65536, 131072]) {
-      const o = el("option", "", `${n / 1024}K ${t("tokens")}`);
-      o.value = n;
-      ctx.append(o);
-    }
-    ctx.value = c.context || 32768;
+    const windows = () => {
+      const want = +ctx.value || c.context || 32768;
+      const ws = data.windows?.[pick.value] || data.windows?.custom || [];
+      ctx.replaceChildren();
+      let keep = 0;
+      for (const w of ws) {
+        let label = `${tokens(w.tokens)} ${t("tokens")}`;
+        if (w.need) label += " · " + t("about {gb}", { gb: gb(w.need) });
+        if (w.room === "tight") label += " · " + t("tight on memory");
+        if (w.room === "memory") label += " · " + t("too much for this computer");
+        const o = el("option", "", label);
+        o.value = w.tokens;
+        o.disabled = w.room === "memory";
+        ctx.append(o);
+        if (!o.disabled && w.tokens <= want) keep = w.tokens;
+      }
+      ctx.value = keep || ws[0]?.tokens || 32768;
+    };
+    windows();
+    pick.onchange = () => {
+      customBox.hidden = pick.value !== "custom";
+      windows();
+    };
     card.append(row("Context window", ctx));
+    card.append(el("p", "lm-note", t("The memory shown is taken as the model loads, whether the window fills or not. A long conversation is slow to read the first time: the 4B took about 15 minutes over 140K tokens on an M4 Pro; after that only what is new is read.")));
 
     const save = el("button", "text action primary", t("Save and restart"));
     save.onclick = () => {

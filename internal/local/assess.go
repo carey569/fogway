@@ -29,7 +29,7 @@ type Estimate struct {
 	Model string `json:"model"` // its ID
 	Title string `json:"title"`
 	Size  uint64 `json:"size"` // its download, bytes
-	Need  uint64 `json:"need"` // the memory it takes, bytes
+	Need  uint64 `json:"need"` // the memory it takes at DefaultContext, bytes
 	// Where it would run: "gpu" (Metal, or an NVIDIA card it fits on) or
 	// "cpu" (any other computer: llama.cpp's Vulkan build may find a GPU
 	// there, which a measurement then shows).
@@ -230,7 +230,7 @@ func simdShare(h Hardware) float64 {
 
 // estimate is how m would run on h with bench b.
 func estimate(h Hardware, b Bench, m Model) Estimate {
-	e := Estimate{Model: m.ID(), Title: m.Title, Size: m.Size, Need: m.Need, Where: "cpu"}
+	e := Estimate{Model: m.ID(), Title: m.Title, Size: m.Size, Need: m.NeedAt(DefaultContext), Where: "cpu"}
 	params, size := float64(m.Params), float64(m.Size)
 	if params == 0 {
 		params = size * 8 / 4.85 // Q4_K_M's bits a weight
@@ -254,7 +254,7 @@ func estimate(h Hardware, b Bench, m Model) Estimate {
 		}
 		e.Prompt = appleCorePrompt * appleClock(h.CPU) * cores / params
 		e.Gen = genShareGPU * bw / size
-	case h.NVIDIA && float64(h.VRAM)*0.85 >= float64(m.Need):
+	case h.onCard(e.Need):
 		e.Where = "gpu"
 		e.Prompt = nvidiaPrompt / params
 		e.Gen = genShareGPU * nvidiaBandwidth / size
@@ -264,6 +264,33 @@ func estimate(h Hardware, b Bench, m Model) Estimate {
 		e.Gen = min(genShareCPU*bw/size, cpuGenPerOp*comp/params*s)
 	}
 	return e
+}
+
+// onCard: need bytes fit on this computer's NVIDIA card, where the model
+// then runs.
+func (h Hardware) onCard(need uint64) bool {
+	return h.NVIDIA && float64(h.VRAM)*0.85 >= float64(need)
+}
+
+// room is how need bytes sit in h's memory: "" when they take a third of
+// it at most (the rest the system's and the agents'), or fit on its
+// NVIDIA card; Tight within what llama.cpp can have (Budget), or on a card
+// beside less than 7 GB; NoRoom beyond. Unknown memory, or an unknown
+// need, is "": speed alone decides.
+func (h Hardware) room(need uint64) Grade {
+	switch {
+	case h.RAM == 0 || need == 0:
+	case h.onCard(need):
+		if h.RAM < 7<<30 {
+			return Tight
+		}
+	case float64(need)*3 <= float64(h.RAM):
+	case need <= h.Budget():
+		return Tight
+	default:
+		return NoRoom
+	}
+	return ""
 }
 
 // judge is the seconds a judgement takes at e's speeds.
@@ -277,20 +304,8 @@ func (e Estimate) judge() float64 {
 // grade is how well e runs on h with disk bytes free: memory first, then
 // the disk, then speed.
 func (e Estimate) grade(h Hardware, disk uint64, downloaded bool) Grade {
-	need := float64(e.Need)
-	switch {
-	case h.RAM == 0:
-		// memory unknown: speed alone decides
-	case e.Where == "gpu" && h.NVIDIA:
-		if h.RAM < 7<<30 {
-			return Tight
-		}
-	case need*3 <= float64(h.RAM):
-		// a third of the memory at most, the rest the system's and the agents'
-	case e.Need <= h.Budget():
-		return Tight
-	default:
-		return NoRoom
+	if g := h.room(e.Need); g != "" {
+		return g
 	}
 	if !downloaded && disk > 0 && disk < e.Size+1<<30 {
 		return NoDisk
@@ -681,7 +696,6 @@ func Canon(m Model) Model {
 func (a Assessment) Reason() string {
 	small, _ := a.Estimate(Spark17.ID())
 	big, _ := a.Estimate(Spark4.ID())
-	gb := func(n uint64) string { return fmt.Sprintf("%.1f GB", float64(n)/(1<<30)) }
 	switch a.Why {
 	case "fast":
 		return fmt.Sprintf("it judges a turn in about %.1f s here and writes %.0f tokens a second", big.Judge, big.Gen)
@@ -702,3 +716,6 @@ func (a Assessment) Reason() string {
 	}
 	return ""
 }
+
+// gb is n bytes for people: 4.3 GB.
+func gb(n uint64) string { return fmt.Sprintf("%.1f GB", float64(n)/(1<<30)) }

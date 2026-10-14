@@ -26,6 +26,9 @@ type localJSON struct {
 	Assessment  local.Assessment `json:"assessment"`
 	Log         string           `json:"log"`
 	Hybrid      *hybridJSON      `json:"hybrid"`
+	// Windows are the context windows each model can run at here, by
+	// "repo|file" as the model picker has them; "custom" for another.
+	Windows map[string][]local.Window `json:"windows"`
 }
 
 type catalogModel struct {
@@ -52,8 +55,10 @@ func localState() localJSON {
 	a := local.Assessed()
 	out := localJSON{Config: c, Status: s, Hardware: h, Model: m, Ref: local.Ref(m), Recommended: a.Pick, Assessment: a,
 		Log: filepath.Join(local.Dir(), "llama-server.log")}
+	out.Windows = map[string][]local.Window{"custom": local.Windows(local.Model{}, h)}
 	for _, cm := range local.Catalog {
 		out.Catalog = append(out.Catalog, catalogModel{Model: cm, Name: cm.ID()})
+		out.Windows[cm.Repo+"|"+cm.File] = local.Windows(cm, h)
 	}
 	if g, _, ok := provider.FindGroup(provider.GroupPrefix + provider.HybridGroupID); ok && g.Hybrid != nil {
 		hj := &hybridJSON{Group: provider.GroupPrefix + g.ID, Local: g.Hybrid.Local, Mask: g.Hybrid.Mask, Cloud: []string{}, Choices: []string{}}
@@ -130,6 +135,10 @@ func localRoutes(mux *http.ServeMux) {
 				c.HFEndpoint = strings.TrimSpace(*in.HFEndpoint)
 			}
 			if in.Context > 0 {
+				if err := local.FitWindow(c.Picked(), local.Detect(), in.Context); err != nil {
+					fail(rw, err)
+					return
+				}
 				c.Context = in.Context
 			}
 			c.On = true

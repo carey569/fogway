@@ -26,8 +26,8 @@ func TestAssessPicks(t *testing.T) {
 	rtx := Hardware{OS: "windows", Arch: "amd64", RAM: 16 * gib, NVIDIA: true, GPU: "NVIDIA GeForce RTX 3060", VRAM: 12 * gib, Cores: 6, SIMD: "avx2"}
 	gtx := Hardware{OS: "linux", Arch: "amd64", RAM: 8 * gib, NVIDIA: true, GPU: "NVIDIA GeForce GTX 1650", VRAM: 4 * gib, Cores: 4, SIMD: "avx2"}
 	small := Hardware{OS: "linux", Arch: "amd64", RAM: 4 * gib, Cores: 4, SIMD: "avx2"}
-	six := small
-	six.RAM = 6 * gib
+	five, six := small, small
+	five.RAM, six.RAM = 5*gib, 6*gib
 	old := desktop
 	old.SIMD = ""
 
@@ -49,7 +49,8 @@ func TestAssessPicks(t *testing.T) {
 		{"an RTX 3060", rtx, Bench{40, 30}, 100 * gib, none, Spark4.ID(), "fast"},
 		{"a 4 GB card", gtx, Bench{30, 20}, 100 * gib, none, Spark17.ID(), "4b-memory"},
 		{"4 GB of memory", small, Bench{20, 12}, 100 * gib, none, "", "memory"},
-		{"6 GB of memory", six, Bench{20, 12}, 100 * gib, none, "", "memory"},
+		{"5 GB of memory", five, Bench{20, 12}, 100 * gib, none, "", "memory"},
+		{"6 GB of memory: room for the 1.7B, too slow", six, Bench{20, 12}, 100 * gib, none, "", "slow"},
 		{"no AVX", old, Bench{45, 36}, 100 * gib, none, "", "slow"},
 		{"a full disk", m4pro, fast, 2 * gib, none, "", "disk"},
 		{"room for the 1.7B only", m4pro, fast, 3 * gib, none, Spark17.ID(), "4b-disk"},

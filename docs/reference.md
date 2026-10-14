@@ -1843,6 +1843,7 @@ fogway local models                   # the catalog, ★ the model recommended h
 fogway local use <model>              # another model; fogway local on|off
 fogway local mask on                  # mask a sensitive turn before group/auto sends it to the cloud
 fogway local think on                 # let the model reason before it answers: steadier, slower
+fogway local context 256k             # the window it runs at; with none, each window and its memory
 fogway local                          # what runs, where, and how group/auto is set up
 ```
 
@@ -1857,8 +1858,8 @@ From those they estimate how iFlytek's [Spark X2.5](https://huggingface.co/XHTok
 
 | | Spark X2.5 1.7B | Spark X2.5 4B |
 |---|---|---|
-| download | 1.1 GB | 2.6 GB |
-| memory at a 32K window | 2.2 GB | 4.3 GB |
+| download | 1.0 GB | 2.4 GB |
+| memory at a 32K window | 1.9 GB | 4.0 GB |
 
 - *reading*: tokens a second through a prompt, which is arithmetic;
 - *writing*: tokens a second of an answer, which reads every weight once,
@@ -1899,7 +1900,7 @@ What the estimates make of some computers:
 | M1, 8 GB | 2.2 s | (too much memory) | 1.7B |
 | 8-core desktop, CPU only, 32 GB | 3.7 s | 8.7 s | 1.7B |
 | 4-core laptop, CPU only, 16 GB | 7.8 s | 18 s | none |
-| 4 GB of memory | (doesn't fit) | (doesn't fit) | none |
+| 4 GB of memory | (too much memory) | (doesn't fit) | none |
 
 The first time a model serves with a llama.cpp build, it is measured: once
 `llama-server` is idle, it reads a 700-token prompt and writes 48 tokens,
@@ -1908,6 +1909,42 @@ by how far its own estimate was off. `fogway local check` measures the
 model running again, as does *Measure the running model* on the Local
 page. The assessment is kept in `~/.cache/fogway/local/assessment.json`,
 and made again for another computer.
+
+### The context window
+
+The window is how much of a conversation the local model holds: the
+agent's instructions and tools, the turns so far and the answer. It is
+32K tokens unless set, on the Local page or with `fogway local context`,
+up to what the model was trained for: 1M for both Spark X2.5 models, 256K
+for Qwen3.5, 128K offered for a model of your own. llama-server takes the
+window's cache from memory as the model loads, whether the window fills
+or not. One layer in four keeps the whole window (the others 512 tokens),
+so a token takes 14 KB with the 1.7B and 36 KB with the 4B:
+
+| window | Spark X2.5 1.7B | Spark X2.5 4B |
+|---|---|---|
+| 32K | 1.9 GB | 4.0 GB |
+| 128K | 3.2 GB | 7.4 GB |
+| 256K | 5.0 GB | 11.9 GB |
+| 512K | 8.5 GB | 20.9 GB |
+| 1M | 15.5 GB | 38.9 GB |
+
+These are the file, the cache and 0.5 GB for llama.cpp's buffers; what
+`llama-server` took, measured at 32K to 512K, came within 0.3 GB below
+them. The Local page and `fogway local context` list each window with
+the memory it takes on this computer. A window that takes more
+than a third of the memory is marked tight on memory; one that takes more
+than llama.cpp can have (half the memory, 60% on a Mac, 85% of an NVIDIA
+card's) can't be set, as `llama-server` loads it and then fails every
+request: the 1.7B at 1M ran out of GPU memory on a 24 GB M4 Pro. A window
+set for another model runs at the most the model now in use holds.
+
+A large window is slow to fill. With 140K tokens in a 256K window, the 4B
+on an M4 Pro read 153 tokens a second on average (815 on a short prompt)
+and wrote 11 (77), about 15 minutes before its answer, which found the
+one line asked for. `llama-server` keeps what it has read: the next turn
+of the same conversation reads only what is new, even with group/auto's
+judgement in between.
 
 ## Install
 

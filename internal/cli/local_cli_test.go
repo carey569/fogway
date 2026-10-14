@@ -24,6 +24,23 @@ func TestLocalCLI(t *testing.T) {
 	if c, _ := local.Load(); c.Model.ID() != "qwen3.5-4b" || c.On {
 		t.Fatalf("use: %+v", c)
 	}
+	// its window: up to the 256K Qwen3.5 was trained for, as 16k or 1m
+	if _, err := stdoutOf(t, func() error { return localCmd([]string{"local", "context", "1m"}) }); err == nil || !strings.Contains(err.Error(), "256K") {
+		t.Fatalf("a window past the model's own: %v", err)
+	}
+	if _, err := stdoutOf(t, func() error { return localCmd([]string{"local", "context", "lots"}) }); err == nil {
+		t.Fatal("took a window that isn't one")
+	}
+	if _, err := stdoutOf(t, func() error { return localCmd([]string{"local", "context", "16k"}) }); err != nil {
+		t.Fatal(err)
+	}
+	if c, _ := local.Load(); c.Context != 16<<10 {
+		t.Fatalf("context: %+v", c)
+	}
+	out, err = stdoutOf(t, func() error { return localCmd([]string{"local", "context"}) })
+	if err != nil || !strings.Contains(out, "Qwen3.5 4B runs at 16K") || !strings.Contains(out, "▸ 16K") || !strings.Contains(out, "256K") || strings.Contains(out, "512K") {
+		t.Fatalf("context: %v %s", err, out)
+	}
 	if _, err := stdoutOf(t, func() error {
 		return localCmd([]string{"local", "use", "Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"})
 	}); err != nil {
