@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // held answers once `want` requests are in at once (or after a while), so

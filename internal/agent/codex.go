@@ -17,13 +17,13 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/codexcat"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/codexcat"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Codex talks the OpenAI Responses API. Signed in to ChatGPT, it is

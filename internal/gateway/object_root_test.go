@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The refusals of a union at a tool's root, as each vendor words them.

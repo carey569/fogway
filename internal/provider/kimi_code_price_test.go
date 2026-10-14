@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // useKimiCodeCatalog puts testdata/kimi_code_catalog.json in the catalog

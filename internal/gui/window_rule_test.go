@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The window opens at the size it was last given, the default before

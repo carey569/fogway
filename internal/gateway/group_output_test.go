@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A group tells agents the longest reply a member of it gives, and each

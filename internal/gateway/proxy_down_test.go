@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // TestProxyDownDoesNotRest (#381): a member whose proxy isn't listening

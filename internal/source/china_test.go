@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // the 「国内镜像」 switch is off in every test but those that turn it on,

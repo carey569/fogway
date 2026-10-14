@@ -13,19 +13,19 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/pluginrt"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/profile"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/tui"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/pluginrt"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/profile"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/tui"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // version is the root main package's, set at build time

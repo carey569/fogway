@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Settings' disabled models (#1867) are set on their own: the page is told

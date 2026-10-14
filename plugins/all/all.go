@@ -3,6 +3,6 @@
 package all
 
 import (
-	_ "github.com/fogway/fogway/plugins/groups"
-	_ "github.com/fogway/fogway/plugins/sessions"
+	_ "github.com/carey569/fogway/plugins/groups"
+	_ "github.com/carey569/fogway/plugins/sessions"
 )

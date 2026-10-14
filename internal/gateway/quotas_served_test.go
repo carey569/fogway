@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // GET /v1/fogway/quotas tells when each key last answered a request through

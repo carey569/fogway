@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Rename gives a provider another id, the one its models are picked by

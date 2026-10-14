@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/codexcat"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/codexcat"
 )
 
 // A ChatGPT account's model in a catalog fogway writes (model_catalog_json)

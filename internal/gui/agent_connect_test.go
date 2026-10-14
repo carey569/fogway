@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The Agents page's switch: connecting Codex puts it on fogway with the

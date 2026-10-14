@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // zenServer is a gateway whose provider zen is OpenCode Zen (chat

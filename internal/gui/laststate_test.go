@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // forgetLastState is a new run: nothing kept in memory, the file read

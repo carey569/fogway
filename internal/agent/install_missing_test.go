@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // An agent whose settings are left but whose CLI is gone (#843: dsh

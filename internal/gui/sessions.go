@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // sessionJSON is a session with what the UI needs to draw its agent.

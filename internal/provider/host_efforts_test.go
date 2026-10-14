@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // ARNO on Discord: 我发现是之前很多能自动推导 reasoning_efforts 列表的模型

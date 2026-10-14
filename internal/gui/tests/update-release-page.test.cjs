@@ -14,7 +14,7 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const URL_ = "https://github.com/fogway/fogway/releases/tag/v0.1.901";
+const URL_ = "https://github.com/carey569/fogway/releases/tag/v0.1.901";
 
 const words = {
   en: { page: "Open the release page", download: "Download", check: "Check" },

@@ -13,7 +13,7 @@ import (
 
 	"github.com/godbus/dbus/v5"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 func saveZedCredential(url string) error {

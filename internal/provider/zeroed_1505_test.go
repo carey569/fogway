@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // writePrivate, which writes logins.json, migrations.json and

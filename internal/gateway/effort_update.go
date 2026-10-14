@@ -31,7 +31,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // effortThread is a thread's reasoning as fogway sends it.

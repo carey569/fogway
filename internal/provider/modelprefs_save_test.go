@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The provider editor's Names & levels are made with its Save, all at

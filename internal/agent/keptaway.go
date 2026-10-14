@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // synced runs an agent's sync, which brings fogway's models in its files up

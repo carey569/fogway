@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 func TestClaudeTiers(t *testing.T) {

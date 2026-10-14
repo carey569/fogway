@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // holdUsageClock stops usage.Clock at at for the test and gives at back, for

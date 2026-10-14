@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // trayCards are three cards as the Usage page has them: Claude and Codex

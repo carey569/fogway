@@ -22,12 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/codexcat"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/filememo"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/codexcat"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // Quota cards, readings and file helpers that the key-based providers

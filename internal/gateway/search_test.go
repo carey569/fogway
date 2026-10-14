@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A client's web search, offered to a model that can't search: the model

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usageapi"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usageapi"
 )
 
 // The Usage page's numbers are read over the gateway too (HoGee_xxl on

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
+	"github.com/carey569/fogway/internal/access"
 )
 
 // Rekey leaves an agent on this machine's loopback as it is: its key

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A group's patience (#1418): when every member has failed in a way that

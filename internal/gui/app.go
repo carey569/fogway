@@ -19,15 +19,15 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/autostart"
-	"github.com/fogway/fogway/internal/local"
-	"github.com/fogway/fogway/internal/omarchy"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/shortcut"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/autostart"
+	"github.com/carey569/fogway/internal/local"
+	"github.com/carey569/fogway/internal/omarchy"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/shortcut"
+	"github.com/carey569/fogway/internal/update"
 )
 
 //go:embed tray.png

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/fogway/fogway/internal/pluginrt"
+	"github.com/carey569/fogway/internal/pluginrt"
 )
 
 // builtinCmd: `fogway plugin builtin [on|off <id>]` — fogway's built-in

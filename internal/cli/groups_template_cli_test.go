@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // fogway group template lists the templates as the user's models make them,

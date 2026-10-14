@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The member picker offers the models kept out of the lists agents see:

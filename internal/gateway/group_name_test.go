@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A routing group renamed keeps its id, and a client the user typed the

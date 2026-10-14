@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The ledger lists a period's calls newest first, each with the model

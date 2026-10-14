@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/redact"
 )
 
 // HybridHit is what the trace tells of the edge-cloud route's decision.

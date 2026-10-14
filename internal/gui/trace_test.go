@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // The tray panel's Routing tab opens the window's Routing page on the

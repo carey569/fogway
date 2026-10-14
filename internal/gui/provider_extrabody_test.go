@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A provider's extra body fields (#1604) are saved from the editor, shown

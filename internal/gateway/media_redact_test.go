@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/redact"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/settings"
 	"github.com/tidwall/gjson"
 )
 

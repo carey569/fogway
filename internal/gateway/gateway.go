@@ -28,12 +28,12 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/fogway/fogway/internal/awake"
+	"github.com/carey569/fogway/internal/awake"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/redact"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // DefaultAddr is where the gateway listens unless Settings' port or

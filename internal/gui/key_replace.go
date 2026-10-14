@@ -1,8 +1,8 @@
 package gui
 
 import (
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // replaceKey puts a new value in place of one of a provider's keys

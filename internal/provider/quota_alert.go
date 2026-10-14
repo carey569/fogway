@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // QuotaAlert is one thing to tell the user: a window used past the share

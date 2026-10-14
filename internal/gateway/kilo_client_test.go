@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The Kilo Gateway's free models are served with no key: a Kilo provider

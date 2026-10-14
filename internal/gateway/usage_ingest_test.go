@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/budget"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/usage"
-	"github.com/fogway/fogway/internal/usageapi"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/budget"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/usageapi"
 )
 
 type ingestReply struct {

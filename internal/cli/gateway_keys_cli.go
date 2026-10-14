@@ -11,9 +11,9 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/budget"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/budget"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 func gatewayKeys(args []string) error { return gatewayKeysTo(os.Stdout, args) }

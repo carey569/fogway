@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A provider's MaxConcurrency (Discord, Lemon: a Codex account is

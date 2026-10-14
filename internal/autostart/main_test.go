@@ -3,7 +3,7 @@ package autostart
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // The tests run in a home of their own, never the user's real files.

@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // takeHold runs caffeinate -i, which keeps the Mac from idle sleep while it

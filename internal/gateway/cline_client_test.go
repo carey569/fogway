@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Cline's free models (cline-free/…) answer 403 "only available via Cline

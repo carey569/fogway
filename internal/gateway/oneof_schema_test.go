@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A tool schema's oneOf goes to Cline, Kilo and OpenRouter as anyOf: the

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // strictRelay checks the request as CHCP and Keenc's Vertex relay do

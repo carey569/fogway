@@ -4,8 +4,8 @@
 package groups
 
 import (
-	"github.com/fogway/fogway/internal/pluginrt"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/pluginrt"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 func init() {

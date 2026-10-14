@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // museReasoningID is the reasoning item id Muse Spark on OpenCode handed

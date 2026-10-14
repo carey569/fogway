@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 func clientResponseID(t *testing.T, proto provider.Protocol, body string, stream bool) string {

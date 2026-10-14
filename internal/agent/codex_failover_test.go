@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // A base URL the user wrote in config.toml by hand, to have Codex's own

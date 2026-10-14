@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // unreachable answers every request as a relay does that can't reach its

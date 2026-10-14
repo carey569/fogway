@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A rate limit that counts tokens ("Too many tokens, please wait…", Bedrock's

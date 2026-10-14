@@ -1,6 +1,6 @@
 package gui
 
-import "github.com/fogway/fogway/internal/settings"
+import "github.com/carey569/fogway/internal/settings"
 
 // The main window opens as it was last left: at the size it was last given
 // (settings.Window) and maximised again if it was (settings.WindowMaximised).

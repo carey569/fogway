@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #1387 (worksyang): MiniMax Code names a model under fogway with one

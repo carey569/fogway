@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // liteRequest is a request as Codex's Responses Lite sends it: no tools and

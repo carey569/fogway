@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // GET /v1/fogway/quotas answers another machine with the key of the

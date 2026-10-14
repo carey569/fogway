@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // sameGroup compares two values of a field, one of them read back from the

@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // runningAlready is whether another fogway, this same one on this config,

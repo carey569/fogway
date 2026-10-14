@@ -46,7 +46,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // clineSlot is the provider fogway takes in Cline.

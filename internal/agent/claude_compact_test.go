@@ -4,10 +4,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // TestClaudeCompactWindow: on fogway Claude Code compacts at the working

@@ -1,7 +1,7 @@
 package usage
 
 import (
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 	"math/rand"
 	"reflect"
 	"strconv"

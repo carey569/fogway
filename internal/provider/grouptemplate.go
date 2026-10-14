@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // A template is a routing group made of the user's own models for a need

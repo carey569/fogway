@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // routing=weight routes a group by its members' weights (#1910, DD on

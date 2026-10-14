@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // ctxRoute is a done request of agent in session whose prompt holds base

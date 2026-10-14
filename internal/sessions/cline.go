@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // Cline's CLI (3, on the Cline SDK) keeps a session in a folder of its own

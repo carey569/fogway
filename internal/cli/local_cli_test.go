@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/local"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/local"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // fogway local names the catalog, picks a model of it or of the user's

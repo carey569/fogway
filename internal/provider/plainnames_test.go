@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // With PlainNames (#335: 希望 Codex 模型列表里的显示名可以不带 · routing group

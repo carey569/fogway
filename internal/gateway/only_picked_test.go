@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // An agent shown only the models picked for it (nianlee-official, #1337):

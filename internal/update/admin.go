@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // ErrCanceled is the administrator's password prompt dismissed.

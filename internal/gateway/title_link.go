@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 	"github.com/tidwall/gjson"
 )
 

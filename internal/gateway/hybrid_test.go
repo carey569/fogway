@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // hybridGroup is group/auto over a local model and two cloud models.

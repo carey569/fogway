@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/agentenv"
 )
 
 // isolateFetchHome keeps a fetch's fixtures out of the user's own fogway

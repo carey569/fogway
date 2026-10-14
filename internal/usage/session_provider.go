@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fogway/fogway/internal/filememo"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 type desktopSessionInfo struct {

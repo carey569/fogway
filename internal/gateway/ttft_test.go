@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // paced is a vendor that streams its events a gap apart, the first at

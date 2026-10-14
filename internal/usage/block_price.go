@@ -4,8 +4,8 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // swapKnown marks a row whose Swapped flag was settled when it was priced,

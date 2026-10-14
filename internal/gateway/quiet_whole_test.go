@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A group's first member, its stream held while its vendor said nothing,

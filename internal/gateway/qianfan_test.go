@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // qianfan plays the plan's own endpoints: chat completions and Responses

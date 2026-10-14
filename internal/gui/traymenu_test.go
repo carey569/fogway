@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The tray menu is in the page's language: the setting, or the system's

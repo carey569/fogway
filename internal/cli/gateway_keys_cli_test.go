@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func TestGatewayKeyCLI(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // installedShells are the shells installed here that a terminal may open:

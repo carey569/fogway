@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/fx"
-	"github.com/fogway/fogway/internal/settings"
-	stats "github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/fx"
+	"github.com/carey569/fogway/internal/settings"
+	stats "github.com/carey569/fogway/internal/usage"
 )
 
 // costCurrency and costRate are cost's currency and, for cny, the

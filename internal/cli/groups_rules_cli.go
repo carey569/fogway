@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A group's rules from the terminal: fogway group rule add|rm|mv …, as the

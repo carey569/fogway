@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/filelock"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/filelock"
 )
 
 // plugins.yml says which built-in plugins are on, and each one's config:

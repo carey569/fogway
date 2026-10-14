@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // fogway quota --json tells when each key last answered through the gateway

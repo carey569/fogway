@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A routing group switched off (PAMI on Discord) is not in /v1/models, a

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The bodies of these requests, as a vendor gets them, were saved from

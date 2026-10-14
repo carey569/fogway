@@ -25,11 +25,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/source"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/source"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // CLI is what fogway knows of an agent's command-line program.

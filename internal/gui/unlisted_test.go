@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A provider set to "Only through routing groups" keeps its models out of

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Disconnect leaves Codex as it was before fogway was wired in (Fate on

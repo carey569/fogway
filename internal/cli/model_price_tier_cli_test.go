@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // PAMI on Discord: fogway model price m 10,50,1,12.5 --tier 272k 20,75,2,25

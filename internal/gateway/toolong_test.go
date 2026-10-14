@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A vendor's "too long" reaches the agent in its own API's words, so it

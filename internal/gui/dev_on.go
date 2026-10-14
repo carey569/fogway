@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // Development build (`make dev`): the UI is read from internal/gui/assets on

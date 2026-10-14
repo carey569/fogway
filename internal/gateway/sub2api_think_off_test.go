@@ -6,7 +6,7 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // sub2apiNoneRefused is Sub2API's answer, on its Messages API, to a

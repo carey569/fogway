@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #1370 (maicent): the Usage page counted a Kimi Code membership's k3 at

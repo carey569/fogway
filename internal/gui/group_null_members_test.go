@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A group made of patterns only whose provider stops listing the models

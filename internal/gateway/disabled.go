@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Disabled models (#1867, provider/disabled.go): a model the user turned

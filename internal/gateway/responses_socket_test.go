@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A client opening Responses over a WebSocket (Pi's Responses WS

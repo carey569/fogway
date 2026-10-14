@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // standInsEnv names the folder of a test binary's stand-in CLIs, for a

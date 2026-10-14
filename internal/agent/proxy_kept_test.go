@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // corpProxy is a company's reverse proxy in front of the gateway, with a

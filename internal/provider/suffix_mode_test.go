@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Provider in model names has three ways (#92): on, as by default and as a

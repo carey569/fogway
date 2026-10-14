@@ -19,7 +19,7 @@ package gateway
 import (
 	"sync"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // wrr is each weighted provider's round: every key's current weight, and

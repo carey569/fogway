@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fogway/fogway/internal/redact"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // Recent-call bodies are diagnostics, not an unbounded traffic log. Keeping the

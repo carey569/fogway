@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Before an agent is disconnected the user is shown what changes in its

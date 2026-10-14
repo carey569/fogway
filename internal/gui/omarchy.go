@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fogway/fogway/internal/omarchy"
+	"github.com/carey569/fogway/internal/omarchy"
 )
 
 // onOmarchy is whether fogway runs on Omarchy, asked once: its windows then

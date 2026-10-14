@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // codexThreads makes Codex's state database with a thread on each of the

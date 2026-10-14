@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // Which APIs a vendor or relay serves behind the one URL the user typed is

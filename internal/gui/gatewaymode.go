@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Gateway mode (Player on Discord): `fogway web` on a server that is only

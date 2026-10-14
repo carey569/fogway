@@ -4,10 +4,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Every agent's model picker has two halves: the models the agent reaches

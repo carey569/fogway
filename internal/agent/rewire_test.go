@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // setPort is Settings' gateway port set to p, as the Settings page saves it.

@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // AIHubMix's /models leaves out gpt-image-2, which its key draws with; its

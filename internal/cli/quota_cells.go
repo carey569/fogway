@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // openInBrowser opens url in the user's browser. It is a variable so the

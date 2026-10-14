@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Claude Desktop, pointed at a third-party gateway, keeps a model only when

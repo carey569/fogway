@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Gemini's thought signatures as its thought-signatures guide gives them:

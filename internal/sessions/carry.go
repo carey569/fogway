@@ -17,7 +17,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // Carry is another agent a session can be carried on in, and the shell

@@ -151,5 +151,5 @@ config, so it is not how an app registers itself.
   key), not an agent or an app; see [Import links](reference.md#import-links).
 
 Questions, or an adapter you'd like to discuss first: open an issue at
-<https://github.com/fogway/fogway/issues> or ask on
+<https://github.com/carey569/fogway/issues> or ask on
 [Discord](https://discord.gg/vGSnD3ZKQF).

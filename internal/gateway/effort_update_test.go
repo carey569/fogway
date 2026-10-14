@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // effortTurns are a thread's requests as an agent sends them: the

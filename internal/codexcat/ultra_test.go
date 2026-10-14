@@ -3,7 +3,7 @@ package codexcat
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // A model offering Codex's Ultra that no ChatGPT account answers for

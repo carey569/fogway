@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 // defaultWindow is the window a prompt is measured against when the

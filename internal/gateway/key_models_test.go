@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A gateway key held to some models (#882) sees only those in the model

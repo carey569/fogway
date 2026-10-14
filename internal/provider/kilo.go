@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // KiloVersion is the Kilo CLI release fogway says it is to the Kilo

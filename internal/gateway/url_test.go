@@ -9,8 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 func TestPublicURL(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // StringKe on Discord: the menu bar shows one account's use, picked in

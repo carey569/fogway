@@ -17,8 +17,8 @@ import (
 
 	"github.com/klauspost/compress/gzhttp"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // `fogway web` serves the window's page to a browser, for a computer that

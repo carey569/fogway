@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // TurnEnd is a turn that ran at least as long as Settings' TurnDoneAlert.

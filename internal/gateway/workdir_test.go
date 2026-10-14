@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The fixtures are requests the agents sent a fake upstream, run in a

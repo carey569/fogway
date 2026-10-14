@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // A gateway FOGWAY_ADDR puts on the network (the Docker image) asks other

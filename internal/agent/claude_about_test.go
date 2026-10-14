@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // claudeAboutSetup is #1227's settings.json before fogway: every tier on the

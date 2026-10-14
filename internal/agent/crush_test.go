@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // crushHome is effortHome with Crush's data folder in the sandbox too, and

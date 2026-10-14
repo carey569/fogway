@@ -10,8 +10,8 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // watchTrayUsage keeps the tray's cards up to date, and plain "fogway" in

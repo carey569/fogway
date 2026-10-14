@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/filememo"
-	"github.com/fogway/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/redact"
 )
 
 func TestRoundTrip(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fogway/fogway/internal/fonts"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/fonts"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 func TestFontChoicesPersistAndStayLocal(t *testing.T) {

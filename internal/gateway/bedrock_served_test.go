@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // bareBedrock answers Anthropic's messages as Bedrock does for an inference

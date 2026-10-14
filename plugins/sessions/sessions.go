@@ -5,8 +5,8 @@
 package sessions
 
 import (
-	"github.com/fogway/fogway/internal/pluginrt"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/pluginrt"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func init() {

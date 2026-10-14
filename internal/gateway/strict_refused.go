@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"regexp"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // OpenCode 2 (its @ai-sdk/openai-compatible) puts "strict": false on every

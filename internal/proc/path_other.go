@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/agentenv"
 )
 
 // UserPath gives the desktop app the PATH a terminal of the user's has. One

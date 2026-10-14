@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // A request turned away by a key's or account's queue answers 429 (that part

@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // ruleClock is the time a turn's rules look at (a rule's hours), and its

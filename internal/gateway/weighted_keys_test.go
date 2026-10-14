@@ -3,7 +3,7 @@ package gateway
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A key's weight is saved with it, the first key's too, and 1 is the

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // AI Studio's Gemini thinks silently unless asked for its thoughts: Claude

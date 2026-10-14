@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // What a model makes, as the user says it (shen-joe, #1399): a provider set

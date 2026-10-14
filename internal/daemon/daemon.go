@@ -16,10 +16,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/autostart"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/autostart"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // Name is the service's name: fogway.service, com.yetone.fogway.serve.

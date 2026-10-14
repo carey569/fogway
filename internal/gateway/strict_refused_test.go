@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // strictRefusal is #1980's refusal ("Unsupported Chat Completions API

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // wslMore is each CLI #515 brings into WSL distros: the file under the

@@ -21,9 +21,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/steady"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 const (

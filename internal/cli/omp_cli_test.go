@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/agent"
 	"gopkg.in/yaml.v3"
 )
 

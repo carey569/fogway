@@ -3,7 +3,7 @@ package gateway
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // A record kept for an agent on another computer, passed on by its fogway,

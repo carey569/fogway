@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // Hardware is what this computer offers a local model: its memory, and a

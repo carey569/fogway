@@ -7,7 +7,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // StringKe on Discord: fogway restarted for an update while another app was

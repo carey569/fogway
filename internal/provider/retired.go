@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // retiredFor is how long a model retired so stays out of the lists: the

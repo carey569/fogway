@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // dialsOut has fogway's own requests go as netproxy.Install has them, and

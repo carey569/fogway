@@ -3,7 +3,7 @@ package codexcat
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // What this fogway tells another that has it as its provider: the tiers

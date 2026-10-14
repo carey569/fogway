@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // groupsJSON is what the Routing view manages: the routing groups, the

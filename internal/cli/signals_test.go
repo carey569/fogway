@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // deaths records what the signal handler would die of, and takes the

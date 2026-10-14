@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // The 「接入」 switch keeps an agent on the model it was on, now through

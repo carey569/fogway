@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // GET /v1/fogway/route tells an agent's UI where its session's turn went

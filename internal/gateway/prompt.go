@@ -24,7 +24,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The kinds of a prompt's parts, in the order they are shown.

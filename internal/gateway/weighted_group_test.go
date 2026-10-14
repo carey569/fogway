@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A group routed by weight (#1910, DD on Discord): members weighing 3, 1

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 // The sources a query parses are read several at a time, each handed back

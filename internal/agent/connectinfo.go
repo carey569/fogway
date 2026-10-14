@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // What the Agents page says beside an agent's 「接入」 switch (the owner's

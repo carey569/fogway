@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 // Call is one model call of an agent's conversation, as tune replays it.

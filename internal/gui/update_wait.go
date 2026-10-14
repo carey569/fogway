@@ -3,7 +3,7 @@ package gui
 import (
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // A restart to update ends the gateway this process serves, and with it

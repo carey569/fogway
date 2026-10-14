@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // OpenCode Zen's free models (-free) are served to OpenCode alone: a

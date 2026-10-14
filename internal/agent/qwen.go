@@ -30,7 +30,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/jsonc"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 const (

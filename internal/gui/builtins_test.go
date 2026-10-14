@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/pluginrt"
-	_ "github.com/fogway/fogway/plugins/all"
+	"github.com/carey569/fogway/internal/pluginrt"
+	_ "github.com/carey569/fogway/plugins/all"
 )
 
 func builtinHome(t *testing.T) http.Handler {

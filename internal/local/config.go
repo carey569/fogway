@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // Model is a GGUF file on Hugging Face: the repository and the file in it.

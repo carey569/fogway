@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // One account's daily check-in is turned off and on by itself (#1902,

@@ -3,8 +3,8 @@ package usage
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 func TestSessionOfficialLoginRequiresMatchedAccount(t *testing.T) {

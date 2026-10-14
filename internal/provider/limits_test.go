@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // limitsHome keeps a test off the machine's own settings, providers and

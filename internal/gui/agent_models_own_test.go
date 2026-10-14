@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // DeepSeek Harness's own DeepSeek models, beside fogway's in its picker,

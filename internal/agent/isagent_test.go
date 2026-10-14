@@ -3,7 +3,7 @@ package agent
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // The gateway takes a client that is no agent fogway knows, with the plain

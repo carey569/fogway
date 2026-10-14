@@ -3,7 +3,7 @@ package gateway
 import (
 	"context"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // claudeFastBeta is the beta Claude's fast mode (speed "fast") is asked

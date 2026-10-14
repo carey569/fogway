@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // InstallCmd is one way to install an agent's CLI.

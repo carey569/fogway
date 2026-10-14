@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // A tool off PATH is found in the folders it is installed in, by its

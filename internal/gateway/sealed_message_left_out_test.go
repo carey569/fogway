@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // sealedWorkerMessage is what Codex (codex-rs protocol.rs,

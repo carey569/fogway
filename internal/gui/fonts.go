@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/fogway/fogway/internal/fonts"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/fonts"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // onFonts updates existing webviews even while the other one has focus.

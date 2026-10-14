@@ -24,7 +24,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // MemberEfforts are the levels a group's member may be fixed at, lowest

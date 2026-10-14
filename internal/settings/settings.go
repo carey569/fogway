@@ -24,14 +24,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/filememo"
-	"github.com/fogway/fogway/internal/fonts"
-	"github.com/fogway/fogway/internal/lastgood"
-	"github.com/fogway/fogway/internal/redact"
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/fonts"
+	"github.com/carey569/fogway/internal/lastgood"
+	"github.com/carey569/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // Settings is what the user chose. "" and "system" both mean "follow the OS".

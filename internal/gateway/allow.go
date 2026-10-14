@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The allow list (lc on Discord, fogway in Docker on a public host): the

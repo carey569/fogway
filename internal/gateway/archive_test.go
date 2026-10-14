@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // memBucket is a bucket in memory, or one that refuses every write.

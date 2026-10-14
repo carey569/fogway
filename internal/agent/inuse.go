@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Models are fogway's models the agent is set to, as catalog ids

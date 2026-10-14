@@ -19,9 +19,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/filelock"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/filelock"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 const Prefix = "sk-fogway-key-"

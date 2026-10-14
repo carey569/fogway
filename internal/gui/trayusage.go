@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/fx"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/fx"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // Settings → Allowances in the menu bar: the windows of the subscriptions and

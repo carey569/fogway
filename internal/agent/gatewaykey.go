@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // keyAt is the key an agent that reaches the gateway at gw sends it. On

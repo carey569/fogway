@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A provider switched off or removed, or the last account of a sign-in

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // bigPNG is as many bytes as #1576's 4K PNG (10.6 MB), a PNG by its

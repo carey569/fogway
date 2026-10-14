@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The usage bodies sparrowbits got from ModelScope's API-Inference for the

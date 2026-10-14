@@ -23,7 +23,7 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // quietTo is whether pid/model is known not to think: fogway has a word on

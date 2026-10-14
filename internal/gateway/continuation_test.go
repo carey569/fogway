@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // cutChat is a Chat upstream that severs the reply mid-stream on the calls

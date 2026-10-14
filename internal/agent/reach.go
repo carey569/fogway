@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/wslrun"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/wslrun"
 )
 
 // An agent pointed at fogway by an address other than this machine's

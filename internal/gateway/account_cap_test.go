@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // capUsage stands in for the accounts' windows as last read: the five

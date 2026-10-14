@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 func TestQueryPageIOOutsideCacheLock(t *testing.T) {

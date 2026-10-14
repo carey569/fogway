@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // sandbox is a home with Claude Code and Codex in it and nothing on PATH.

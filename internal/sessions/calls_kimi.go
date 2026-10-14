@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // Kimi Code's calls (#1607, infinitr0us: its direct calls to api.kimi.com

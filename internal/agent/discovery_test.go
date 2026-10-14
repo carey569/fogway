@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // fifoWatch turns each path into a FIFO and notes every open of one for

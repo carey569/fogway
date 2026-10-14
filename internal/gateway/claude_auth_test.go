@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // claudeRefuses has the fake Claude Code fail as Claude Code does on a

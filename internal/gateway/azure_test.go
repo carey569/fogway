@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // azureUp plays an Azure OpenAI resource's v1 API: chat completions and

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/redact"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // A masking rule is changed in place (nf1qaz2w on Discord: rules could only

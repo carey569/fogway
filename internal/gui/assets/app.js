@@ -4045,7 +4045,7 @@ async function backAsNew(was) {
 // the Mac, a folder it may not write to, such as C:\ (#1277), or a
 // container, whose image is what gets updated.
 function updateStuck(u) {
-  if (u.stuck === "container") return t("fogway runs in a container, so it can't update itself; pull the new image (docker pull ghcr.io/fogway/fogway:latest) and recreate the container.");
+  if (u.stuck === "container") return t("fogway runs in a container, so it can't update itself; pull the new image (docker pull ghcr.io/carey569/fogway:latest) and recreate the container.");
   if (u.stuck === "not-writable") return t("fogway can't write to the folder it runs from ({dir}), so it can't update itself; move it to a folder you can write to and open it from there.", { dir: u.stuckDir || "" });
   return u.stuck === "translocated"
     ? t("macOS is running fogway from a temporary copy, so it can't update itself; move fogway to Applications and open it from there.")
@@ -4058,7 +4058,7 @@ function updateStuck(u) {
 // their issue was fixed). Not in the tray's panel, where a dialog has no
 // room; Settings' version row opens it again, and with an update waiting,
 // that one's notes first.
-const ISSUES = "https://github.com/fogway/fogway/issues/";
+const ISSUES = "https://github.com/carey569/fogway/issues/";
 let whatsNewAsked = false;
 // cliBehindOnce: the terminal's fogway is a copied file rather than the
 // installer's link, so it can't follow the app's updates (#531's lesson: a
@@ -21396,8 +21396,8 @@ function renderSettings() {
   const repo = el("button", "github");
   repo.innerHTML = GITHUB_SVG;
   repo.append(el("span", "", "GitHub"));
-  repo.title = "github.com/fogway/fogway";
-  repo.onclick = () => api("open", { url: "https://github.com/fogway/fogway" }).catch(() => {});
+  repo.title = "github.com/carey569/fogway";
+  repo.onclick = () => api("open", { url: "https://github.com/carey569/fogway" }).catch(() => {});
   row(t("Community"), t("questions, ideas and feedback, on Discord or GitHub"), "", join, repo);
   // gateway mode leaves out what is written into this computer's agents'
   // files, and the alerts its desktop would show

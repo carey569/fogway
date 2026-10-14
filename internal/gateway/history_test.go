@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // historyNoon holds the history's clock at noon of a past day and returns

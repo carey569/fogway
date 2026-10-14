@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A key or account whose stream says it's rate limited (a 429 as an error

@@ -29,7 +29,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // streamRetries is how many times a cut reply is asked to go on before it

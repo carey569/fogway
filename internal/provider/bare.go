@@ -3,7 +3,7 @@ package provider
 import (
 	"strings"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Model ids without the provider (settings.BareModelIDs; love1sbug on X):

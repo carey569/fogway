@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // Codex signed in with ChatGPT, connected on one of fogway's models beside

@@ -17,7 +17,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // Name is what the shortcut is called, and what Windows search finds.

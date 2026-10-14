@@ -3,7 +3,7 @@ package tui
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A local server's preset (Ollama, LM Studio) is asked

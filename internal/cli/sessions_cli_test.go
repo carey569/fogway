@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // sessionsHome is a sandbox HOME with the sessions package's fixtures as

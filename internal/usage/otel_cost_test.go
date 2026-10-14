@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func TestOTelGenerationCosts(t *testing.T) {

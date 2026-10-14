@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // claudeBinHome is a Windows home with no Claude Code folder, no

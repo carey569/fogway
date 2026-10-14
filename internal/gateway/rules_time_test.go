@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A rule's hours are looked at as a turn begins, on the clock then: a turn

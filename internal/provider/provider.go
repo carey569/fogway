@@ -23,11 +23,11 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/lastgood"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/lastgood"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // Protocol is a wire API fogway can speak to an upstream.

@@ -12,11 +12,11 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // Unexpanded folder variables must not send a config write into ./~/….

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func TestSettingsMigratesOldLANCredentialToManagedKey(t *testing.T) {

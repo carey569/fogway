@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // Pi's enabledModels (settings.json) is its Ctrl+P cycle and /scoped-models

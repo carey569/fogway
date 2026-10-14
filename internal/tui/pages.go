@@ -18,11 +18,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/fx"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/fx"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 type page int

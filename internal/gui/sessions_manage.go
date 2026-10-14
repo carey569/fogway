@@ -12,10 +12,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // The Sessions page: every session of an agent, by folder, to pick up again

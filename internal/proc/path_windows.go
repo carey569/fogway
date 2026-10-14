@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/sys/windows/registry"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // UserPath has nothing to do on Windows: an app started from the Start menu

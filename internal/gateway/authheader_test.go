@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Aloha on Discord: a relay answering 401 "鉴权 header， x-api-key 和

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // The terminal build on a Mac (fogway-cli-darwin, which `fogway web` runs
@@ -41,7 +41,7 @@ func TestUpdateTakesTheMacTerminalBuild(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		json.NewEncoder(w).Encode(update.Release{Version: "0.1.11", URL: "https://github.com/fogway/fogway/releases/tag/v0.1.11",
+		json.NewEncoder(w).Encode(update.Release{Version: "0.1.11", URL: "https://github.com/carey569/fogway/releases/tag/v0.1.11",
 			Assets: map[string]update.Asset{
 				update.BinaryAsset(): {URL: "http://" + r.Host + "/asset"}}})
 	}))

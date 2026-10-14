@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Cursor Private Inference reads fogway's /models for each model's APIs

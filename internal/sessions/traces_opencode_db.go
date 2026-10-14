@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // These connections belong to the trace reader, not the Sessions listing cache.

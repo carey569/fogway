@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // slowVendor streams a reply's first chunk at once and its end only when

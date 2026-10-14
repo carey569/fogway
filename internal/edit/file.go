@@ -16,8 +16,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/fogway/fogway/internal/filememo"
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // Read returns the file contents, or (nil, nil) when the file does not exist.

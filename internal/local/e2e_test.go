@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // TestE2E downloads llama.cpp for this computer and a tiny model from

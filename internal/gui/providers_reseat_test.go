@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #200: switching a provider off moves Claude Code off its model, to the

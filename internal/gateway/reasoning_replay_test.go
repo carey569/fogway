@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // TestReasoningReplayed (#388): Codex offers its web_search, so its request

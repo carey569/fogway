@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
 	"gopkg.in/yaml.v3"
 )
 

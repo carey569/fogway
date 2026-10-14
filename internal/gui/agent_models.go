@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Which of the catalog an agent's lists show, picked one model at a time

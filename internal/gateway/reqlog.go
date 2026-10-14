@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // What the usage log keeps of a call besides its tokens: the path it came

@@ -14,9 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // prefsHome is a sandbox home where two providers serve the same model,

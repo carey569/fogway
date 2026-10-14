@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The web search APIs, from the terminal: fogway search (#419).

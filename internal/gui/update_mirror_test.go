@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // Settings › About › Download source (#893): the mirror is set and taken
@@ -55,7 +55,7 @@ func TestUpdateMirrorSetting(t *testing.T) {
 	defer mirror.Close()
 	feed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(update.Release{Version: "0.1.11", Assets: map[string]update.Asset{
-			update.BinaryAsset(): {URL: "https://github.com/fogway/fogway/releases/download/v0.1.11/x", SHA256: strings.Repeat("0", 64)},
+			update.BinaryAsset(): {URL: "https://github.com/carey569/fogway/releases/download/v0.1.11/x", SHA256: strings.Repeat("0", 64)},
 		}})
 	}))
 	defer feed.Close()

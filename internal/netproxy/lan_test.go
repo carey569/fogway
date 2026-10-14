@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // stubLookup answers names from m for the test, and forgets what earlier

@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Install routes http.DefaultTransport (and so http.DefaultClient) through

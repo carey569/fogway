@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // The Cursor plugin's step that collected an earlier step's late usage

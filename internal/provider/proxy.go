@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Via is ctx for requests made on the provider's behalf: they go through

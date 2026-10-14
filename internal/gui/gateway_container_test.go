@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // A fogway in a container holding the gateway's port (leslie_luo on

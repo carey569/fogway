@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"regexp"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A tool whose parameters are an anyOf, oneOf or allOf at the root, as

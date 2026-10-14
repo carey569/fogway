@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The update feed and a release's download go through the proxy set in

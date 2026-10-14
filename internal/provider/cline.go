@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // ClineVersion is the Cline desktop release fogway says it is to the Cline

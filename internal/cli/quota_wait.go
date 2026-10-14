@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // How often fogway quota wait reads the allowance again: shortly after the

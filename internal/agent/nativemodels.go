@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/filememo"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // A Pi-family agent's built-in providers are the ones its own model

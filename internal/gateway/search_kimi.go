@@ -9,8 +9,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // A Kimi Code plan searches the web with its own key, as kimi-cli's

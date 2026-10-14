@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // restAs rests ids (a provider, a key, or a provider's model) as routing

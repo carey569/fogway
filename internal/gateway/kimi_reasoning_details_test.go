@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // kimiRefuseDetails answers as api.kimi.com/coding/v1 did on 2026-10-12 a

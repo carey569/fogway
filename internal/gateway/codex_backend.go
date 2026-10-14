@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/codexcat"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/codexcat"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // codexAPIBase is where a Codex signed in with an API key sends its requests;

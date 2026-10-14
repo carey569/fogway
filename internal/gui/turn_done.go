@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // turnDoneText is the notification that an agent's turn is done (itieniu

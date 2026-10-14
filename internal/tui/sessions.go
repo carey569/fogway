@@ -19,10 +19,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // sessRange is a range the page offers: its name and days (0 for all).

@@ -23,14 +23,14 @@ const words = {
   de: { why: "fogway kann nicht in den Ordner schreiben, aus dem es läuft (C:\\), und kann sich daher nicht selbst aktualisieren; verschieben Sie es in einen Ordner mit Schreibrechten und öffnen Sie es von dort." },
 };
 
-const folder = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/fogway/fogway/releases/tag/v0.1.401", stuck: "not-writable", stuckDir: DIR };
-const container = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/fogway/fogway/releases/tag/v0.1.401", stuck: "container" };
+const folder = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/carey569/fogway/releases/tag/v0.1.401", stuck: "not-writable", stuckDir: DIR };
+const container = { state: "available", current: "0.1.400", latest: "0.1.401", url: "https://github.com/carey569/fogway/releases/tag/v0.1.401", stuck: "container" };
 const pull = {
-  en: "fogway runs in a container, so it can't update itself; pull the new image (docker pull ghcr.io/fogway/fogway:latest) and recreate the container.",
-  zh: "fogway 运行在容器里，无法自动更新；请拉取新镜像（docker pull ghcr.io/fogway/fogway:latest）并重新创建容器。",
-  "zh-TW": "fogway 在容器中執行，無法自動更新；請拉取新映像（docker pull ghcr.io/fogway/fogway:latest）並重新建立容器。",
-  ja: "fogway はコンテナで実行されているため、自動アップデートできません。新しいイメージを取得し（docker pull ghcr.io/fogway/fogway:latest）、コンテナを作り直してください。",
-  de: "fogway läuft in einem Container und kann sich daher nicht selbst aktualisieren; laden Sie das neue Image (docker pull ghcr.io/fogway/fogway:latest) und erstellen Sie den Container neu.",
+  en: "fogway runs in a container, so it can't update itself; pull the new image (docker pull ghcr.io/carey569/fogway:latest) and recreate the container.",
+  zh: "fogway 运行在容器里，无法自动更新；请拉取新镜像（docker pull ghcr.io/carey569/fogway:latest）并重新创建容器。",
+  "zh-TW": "fogway 在容器中執行，無法自動更新；請拉取新映像（docker pull ghcr.io/carey569/fogway:latest）並重新建立容器。",
+  ja: "fogway はコンテナで実行されているため、自動アップデートできません。新しいイメージを取得し（docker pull ghcr.io/carey569/fogway:latest）、コンテナを作り直してください。",
+  de: "fogway läuft in einem Container und kann sich daher nicht selbst aktualisieren; laden Sie das neue Image (docker pull ghcr.io/carey569/fogway:latest) und erstellen Sie den Container neu.",
 };
 const cases = [
   { name: "a fogway that can't write to its folder says why it can't update", update: folder, langs: ["en", "zh", "ja", "de"], why: (lang) => words[lang].why },

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 // Summaries is Summarize(p) and Direct(p) asked at one moment, for a page

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // OpenCode keeps a session as rows, not a file of lines: since 1.2 in its

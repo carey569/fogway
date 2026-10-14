@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // fakeWait runs quotaWait on a clock that moves only when it sleeps, and

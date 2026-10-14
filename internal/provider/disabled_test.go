@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func TestDisabledGlob(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // keys/import adds the keys pasted at once (361 on Discord), says how many

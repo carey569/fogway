@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // inZone runs the test with the local time zone at a fixed offset.

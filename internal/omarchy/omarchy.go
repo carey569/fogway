@@ -24,8 +24,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // Detect reports whether fogway runs on Omarchy. FOGWAY_OMARCHY=1 says it

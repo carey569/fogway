@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/testenv"
 	"gopkg.in/yaml.v3"
 )
 

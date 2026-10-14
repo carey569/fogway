@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/netproxy"
 )
 
 // upstreamTLS is what the gateway's transports dial TLS with: nil, the

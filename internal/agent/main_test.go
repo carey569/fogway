@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // TestMain gives the package a home of its own (testenv). A home an agent is

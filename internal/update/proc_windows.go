@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 const (

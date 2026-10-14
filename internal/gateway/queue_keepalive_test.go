@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // streamVendor streams a short reply on chat completions, Responses and

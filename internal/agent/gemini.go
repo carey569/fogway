@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Gemini CLI only speaks Google's own API, so "provider" here is how it

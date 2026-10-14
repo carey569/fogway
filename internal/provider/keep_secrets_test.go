@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/agentenv"
 )
 
 func keepSecretsHome(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 func record() string {

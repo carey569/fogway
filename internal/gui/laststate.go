@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The last-known state (#1519, fatkun). state() reads every agent's config

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // laneRig is a gateway in front of slow vendors, and a way to send it

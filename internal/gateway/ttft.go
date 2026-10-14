@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // firstMost is the most of a stream read for its first tokens: a reply

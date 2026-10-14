@@ -13,11 +13,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/budget"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/budget"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // The gateway accepts named caller keys locally and, while shared or on the

@@ -19,9 +19,9 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 	"github.com/tidwall/gjson"
 
-	"github.com/fogway/fogway/internal/filememo"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // Codex lists, in its history and its resume picker, only the sessions made

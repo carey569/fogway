@@ -3,7 +3,7 @@ package agent
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // Every agent's requests are told by what its own description says.

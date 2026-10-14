@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // connectProxy is an HTTP proxy that notes the host:port of each CONNECT

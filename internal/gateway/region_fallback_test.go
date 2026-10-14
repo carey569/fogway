@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // googleRegion400 is Google's answer from a place it doesn't serve the API

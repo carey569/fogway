@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #473: dsh (pi-ai, Chat Completions) on WorkBuddy AI's deepseek-v4.1-flash

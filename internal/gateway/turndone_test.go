@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // turnsFollowed has turns followed for a test: a turn as long as the

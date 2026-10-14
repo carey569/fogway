@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // notAnAPIReply turns a 2xx reply that can't be a model API's answer into

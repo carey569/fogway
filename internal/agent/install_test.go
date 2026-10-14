@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // The install commands are the vendors' own (#727): the installer their

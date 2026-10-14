@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 func main() {

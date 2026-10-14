@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // usageHalfLife is how fast the tokens a key served stop counting against

@@ -7,11 +7,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // served is the gateway this process serves, nil while another fogway

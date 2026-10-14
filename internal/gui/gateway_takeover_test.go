@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // fakeOlderGateway is the test binary run as another process holding the

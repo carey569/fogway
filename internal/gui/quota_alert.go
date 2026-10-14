@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // onAlerts is told when the Settings page turns a usage or balance alert

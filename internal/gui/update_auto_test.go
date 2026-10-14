@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The feed is asked by itself as often as Settings says, every six hours

@@ -15,7 +15,7 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // bodyTier is the service tier a request body in proto asks for, in

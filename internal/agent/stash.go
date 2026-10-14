@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The stash remembers what an agent's config said before fogway pointed it

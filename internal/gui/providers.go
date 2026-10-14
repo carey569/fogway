@@ -14,13 +14,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/update"
-	"github.com/fogway/fogway/internal/upstream"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/update"
+	"github.com/carey569/fogway/internal/upstream"
 )
 
 // The providers page: the vendors the user added, the presets they can add

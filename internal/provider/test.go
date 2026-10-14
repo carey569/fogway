@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // Result is what a probe of one endpoint came back with.

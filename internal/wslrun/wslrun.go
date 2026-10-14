@@ -21,8 +21,8 @@ import (
 	"time"
 	"unicode/utf16"
 
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // A Tool is a command of a WSL distro's own.

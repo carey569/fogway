@@ -28,7 +28,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // Valid is whether b is a good copy of a file's contents.

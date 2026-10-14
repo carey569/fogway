@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // The `fogway` command in a terminal (PAMI on Discord: a way in the app to

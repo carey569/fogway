@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // Qoder's CLI (qodercli, and qoderclicn for the China site: one build)

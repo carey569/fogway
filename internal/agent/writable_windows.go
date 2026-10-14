@@ -1,6 +1,6 @@
 package agent
 
-import "github.com/fogway/fogway/internal/update"
+import "github.com/carey569/fogway/internal/update"
 
 // writable says whether this user can write in dir. npm's global folder is
 // the user's own (%APPDATA%\npm) by default, but Node.js's own folder

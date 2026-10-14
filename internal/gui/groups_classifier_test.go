@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #1929 (versun): a group whose classifier couldn't say the last time it

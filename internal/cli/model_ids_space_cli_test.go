@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A model id can hold a space ("Opus 5.5" on a relay, #1976): models=,

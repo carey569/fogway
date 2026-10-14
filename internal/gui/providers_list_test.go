@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The add form's Fetch models (#578) asks the vendor for its list with the

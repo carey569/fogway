@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // quietFast makes watch keep a quiet stream's agent alive within

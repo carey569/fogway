@@ -15,15 +15,15 @@ import (
 	"time"
 	"unicode/utf16"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/wslrun"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/wslrun"
 )
 
 // An agent installed in a WSL distro reads its config there, not in

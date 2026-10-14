@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // vertexHome gives a test a home of its own with no Google credentials in

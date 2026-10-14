@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 // Another fogway replacing the file (a write is a temp file renamed over

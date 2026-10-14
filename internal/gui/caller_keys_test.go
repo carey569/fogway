@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 func TestCallerKeyManagementAndUsageRoutes(t *testing.T) {

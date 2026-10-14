@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 func scaleShardBytes(t *testing.T) int64 {

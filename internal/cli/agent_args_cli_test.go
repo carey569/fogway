@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // cliHome is groupsHome with every other folder an agent keeps files in

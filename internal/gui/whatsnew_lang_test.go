@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/update"
 )
 
 const (

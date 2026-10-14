@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func errorf(format string, a ...any) error { return fmt.Errorf(format, a...) }

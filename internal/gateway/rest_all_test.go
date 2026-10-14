@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // deadKeys answers as #1772's mock did: a key starting with "dead" is

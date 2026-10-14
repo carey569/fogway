@@ -34,7 +34,7 @@ const NOTES_604 = [
   "- See [the guide](https://usemagpie.ai/docs) and [not a link](javascript:window.__pwned=2).",
 ].join("\n");
 const RELEASES = [
-  { version: "0.1.604", notes: NOTES_604, url: "https://github.com/fogway/fogway/releases/tag/v0.1.604" },
+  { version: "0.1.604", notes: NOTES_604, url: "https://github.com/carey569/fogway/releases/tag/v0.1.604" },
   { version: "0.1.603", notes: "## Bug Fixes\n\n- Fixed reading Kimi keys. (#446)" },
 ];
 
@@ -131,7 +131,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await dialog(page).waitFor();
         await page.evaluate(() => { window.open = (u) => { window.__opened = u; return null; }; });
         await dialog(page).getByRole("link", { name: "#446" }).click();
-        assert.equal(await page.evaluate(() => window.__opened), "https://github.com/fogway/fogway/issues/446");
+        assert.equal(await page.evaluate(() => window.__opened), "https://github.com/carey569/fogway/issues/446");
         assert.equal(page.url(), "http://fogway.test/");
         assert.equal(ctl.seen, 1);
         assert.deepEqual(errors, []);
@@ -170,8 +170,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert((await notes.locator("li").nth(1).textContent()).startsWith('<img src=x onerror="window.__pwned=1"> <b>raw</b> tags stay text.'));
       // links: issues, markdown http(s) links; javascript: is text
       const issue = notes.getByRole("link", { name: "#464" });
-      assert.equal(await issue.getAttribute("href"), "https://github.com/fogway/fogway/issues/464");
-      assert.equal(await dialog(page).getByRole("link", { name: "#446" }).getAttribute("href"), "https://github.com/fogway/fogway/issues/446");
+      assert.equal(await issue.getAttribute("href"), "https://github.com/carey569/fogway/issues/464");
+      assert.equal(await dialog(page).getByRole("link", { name: "#446" }).getAttribute("href"), "https://github.com/carey569/fogway/issues/446");
       assert.equal(await notes.getByRole("link", { name: "the guide" }).getAttribute("href"), "https://usemagpie.ai/docs");
       assert.equal(await notes.getByRole("link", { name: "not a link" }).count(), 0, "a javascript: link is not a link");
       assert.equal(await dialog(page).locator("a[href^='javascript']").count(), 0);
@@ -181,7 +181,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const before = await body.evaluate((e) => [e.scrollTop, document.scrollingElement.scrollTop]);
       await issue.click();
       for (let i = 0; i < 40 && !ctl.opened.length; i++) await page.waitForTimeout(25);
-      assert.deepEqual(ctl.opened, ["https://github.com/fogway/fogway/issues/464"]);
+      assert.deepEqual(ctl.opened, ["https://github.com/carey569/fogway/issues/464"]);
       assert.deepEqual(await body.evaluate((e) => [e.scrollTop, document.scrollingElement.scrollTop]), before, "the click moved the page");
       assert.equal(page.url(), "http://fogway.test/", "the page didn't navigate");
       assert.equal(await page.evaluate(() => window.__pwned), undefined, "nothing in the notes ran");
@@ -211,7 +211,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(await dialog(page).count(), 0, "shown once");
 
       // Settings → What's new → Open opens them again, the waiting update's first
-      ctl.update = { state: "ready", current: "0.1.604", latest: "0.1.605", notes: "## New Features\n\n- A new thing. (#470)", url: "https://github.com/fogway/fogway/releases/tag/v0.1.605" };
+      ctl.update = { state: "ready", current: "0.1.604", latest: "0.1.605", notes: "## New Features\n\n- A new thing. (#470)", url: "https://github.com/carey569/fogway/releases/tag/v0.1.605" };
       await watchSettingsReads(page);
       await page.goto("http://fogway.test/?view=settings&tab=about");
       await settingsDrawn(page); // rows found are the ones that stay (#1659)

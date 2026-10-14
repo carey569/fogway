@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #378: Codex's compaction summary goes without its tools; xAI's API turns

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Settings' Codex thread titles (#705) is set on its own: off, a model

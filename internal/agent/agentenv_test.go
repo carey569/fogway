@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/agentenv"
 )
 
 // readsEnv matches the two ways these packages name a variable they read to

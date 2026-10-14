@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // Every one of Pi's levels is in the map, the model's own mapped and the

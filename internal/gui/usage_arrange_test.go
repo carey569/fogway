@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The tray panel's Allowances tab leaves out the subscriptions set hidden

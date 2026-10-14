@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	lm "github.com/fogway/fogway/internal/local"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	lm "github.com/carey569/fogway/internal/local"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // TestEdgeCloudE2E runs group/auto with a real model on this computer as

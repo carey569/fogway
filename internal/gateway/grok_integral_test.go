@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // codexShellTools are Codex's exec_command and write_stdin as it offers

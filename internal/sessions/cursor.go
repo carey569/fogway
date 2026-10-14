@@ -15,7 +15,7 @@ import (
 
 	"net/url"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // Cursor's CLI (cursor-agent) keeps a chat in a folder of its own under its

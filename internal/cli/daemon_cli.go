@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fogway/fogway/internal/daemon"
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/daemon"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 const daemonUsage = "usage: fogway daemon [install|uninstall|start|stop|restart|status]"

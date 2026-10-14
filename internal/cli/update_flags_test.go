@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // fogway update takes --proxy and --mirror, as --flag value or

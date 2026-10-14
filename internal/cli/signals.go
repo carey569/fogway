@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/fogway/fogway/internal/local"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/local"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // endProbesOnSignal: the probes fogway asks a CLI with lead a session of

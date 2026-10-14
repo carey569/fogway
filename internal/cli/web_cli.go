@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/gui"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gui"
 )
 
 // webAddr is where `fogway web` listens unless told: beside the gateway.

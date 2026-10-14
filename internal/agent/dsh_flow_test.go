@@ -8,8 +8,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // A profile's patch list written in flow style, as dsh's own writers leave

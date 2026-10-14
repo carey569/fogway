@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/steady"
+	"github.com/carey569/fogway/internal/steady"
 )
 
 type entry struct {

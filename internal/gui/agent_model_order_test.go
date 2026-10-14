@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Codex's model list goes in the order dragged on the Agents page (#855):

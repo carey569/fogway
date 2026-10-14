@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The pauses a group takes add up to its patience, whatever it is set to,

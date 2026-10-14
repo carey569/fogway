@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #597: Pi on a routing group of DeepSeek V4 Pro (TokenHub's, and the Token

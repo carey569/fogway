@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // An order dragged on the Agents page reaches every agent, not only Codex

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // miseWrapperScript is the script deluxe (Discord, Omarchy Linux) had in

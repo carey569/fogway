@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // geminiSigUpstream is Gemini's OpenAI-compatible API as far as thought

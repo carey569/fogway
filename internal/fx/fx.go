@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // rateURL is a free, no-key endpoint that gives every currency's rate

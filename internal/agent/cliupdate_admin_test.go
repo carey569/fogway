@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // On Windows npm's global folder may be Node.js's own, C:\Program

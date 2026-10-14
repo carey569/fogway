@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // OpenCodeVersion is the OpenCode release fogway says it is to OpenCode's

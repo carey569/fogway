@@ -3,7 +3,7 @@ package agent
 import (
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Every model in a picker carries its vendor's real logo. A models.dev

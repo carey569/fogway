@@ -7,9 +7,9 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Sorghum on Discord: each of fogway's models in Kimi Code has the name

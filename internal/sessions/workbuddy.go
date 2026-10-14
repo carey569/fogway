@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // WorkBuddy (Tencent's desktop agent) keeps its sessions much as Claude

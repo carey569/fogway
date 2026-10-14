@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // relayOfEvery is a relay that answers on Chat, Responses and Anthropic's

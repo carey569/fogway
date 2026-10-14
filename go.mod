@@ -1,4 +1,4 @@
-module github.com/fogway/fogway
+module github.com/carey569/fogway
 
 go 1.26.8
 

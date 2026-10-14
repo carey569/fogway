@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 func GatewaySessionWindowExcept(since time.Time, nativeKeys map[string]bool) ([]GatewaySession, []GatewayDayUsage) {

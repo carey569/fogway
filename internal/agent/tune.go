@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // The settings tune knows.

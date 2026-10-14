@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // The Gateway page's button (leslie_luo on Discord): with an older fogway

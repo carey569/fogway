@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 func traceLine(t *testing.T, c *traceCursor, at time.Time, typ string, payload any, bodies bool) []TraceSpan {

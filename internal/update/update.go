@@ -29,17 +29,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/source"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/source"
 )
 
 // Site is fogway's home, where a release is downloaded by hand.
-const Site = "https://github.com/fogway/fogway"
+const Site = "https://github.com/carey569/fogway"
 
 // FeedURL is the update feed a release is built with (-ldflags "-X
-// github.com/fogway/fogway/internal/update.FeedURL=https://…/api/latest"):
+// github.com/carey569/fogway/internal/update.FeedURL=https://…/api/latest"):
 // a JSON description of the newest release, its files and their SHA-256.
 // A build without one checks for no update.
 var FeedURL = ""

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/lastgood"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/lastgood"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // lc on Discord, fogway in Docker on a public host: with an allow list,

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Allowances read only when asked (#1518, RooobinYe): with Settings →

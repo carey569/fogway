@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // fogway provider account-concurrency gives a key its own limit on

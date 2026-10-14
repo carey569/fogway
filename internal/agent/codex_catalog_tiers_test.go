@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fogway/fogway/internal/codexcat"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/codexcat"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // The Codex CLI that names fogway its provider reads its models from

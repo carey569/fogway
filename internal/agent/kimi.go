@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // kimiModelTable is the header prefix of every model table fogway writes.

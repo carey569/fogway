@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Managing sessions: every session of one agent, to look through and pick

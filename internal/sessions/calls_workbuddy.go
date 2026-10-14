@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // WorkBuddy's calls, read from the same lines its session summary is

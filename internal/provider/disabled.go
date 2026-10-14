@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Disabled models (#1867): models the user turned off for every request

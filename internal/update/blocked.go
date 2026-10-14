@@ -19,8 +19,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // BlockedError is a new version that couldn't be started on this computer.

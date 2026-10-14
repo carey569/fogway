@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // traceJSON is the gateway's routing trace since the page last asked.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/fogway/fogway/internal/pluginrt"
+	"github.com/carey569/fogway/internal/pluginrt"
 )
 
 // Plugins › Built-in (Lxxyx on X: "功能太多了"): fogway's built-in plugins

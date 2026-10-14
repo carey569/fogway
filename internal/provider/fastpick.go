@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // An agent's pick of a model may be sent in its vendor's fast mode (#954),

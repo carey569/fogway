@@ -1,6 +1,6 @@
 package netproxy
 
-import "github.com/fogway/fogway/internal/proc"
+import "github.com/carey569/fogway/internal/proc"
 
 // system reads what System Settings → Network → Proxies says, through
 // scutil (the same dictionary CFNetwork uses).

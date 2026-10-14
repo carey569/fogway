@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/sessions"
 )
 
 // sessions/purge erases trashed sessions for good, the keys named or every

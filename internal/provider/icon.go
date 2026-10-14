@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/iconproxy"
+	"github.com/carey569/fogway/internal/iconproxy"
 )
 
 // A provider's own picture lives in the icons folder beside providers.json,

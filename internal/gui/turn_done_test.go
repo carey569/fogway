@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/gateway"
 )
 
 // A turn's end is said in the page's language: the agent, how long the

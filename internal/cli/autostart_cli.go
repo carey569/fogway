@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/fogway/fogway/internal/autostart"
+	"github.com/carey569/fogway/internal/autostart"
 )
 
 // fogway autostart [on|off]: whether fogway opens at login, in the tray.

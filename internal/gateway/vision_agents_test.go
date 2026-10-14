@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/codexcat"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/codexcat"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A text-only model is offered to agents as taking images while fogway

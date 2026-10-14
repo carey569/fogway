@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // An update check that failed going direct is tried again as soon as a

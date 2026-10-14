@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func TestLegacyLANFallbackBeforeMigration(t *testing.T) {

@@ -3,7 +3,7 @@ package usage
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // TestMain gives the package a home of its own (testenv): a test that

@@ -3,7 +3,7 @@ package agent
 import (
 	"time"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // Rescan forgets what was found of the agents on this machine a while ago,

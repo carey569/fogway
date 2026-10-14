@@ -3,8 +3,8 @@ package gateway
 import (
 	"net/http"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // SubagentPick is a Codex subagent's request put on the model the user

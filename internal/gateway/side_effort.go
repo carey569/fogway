@@ -1,8 +1,8 @@
 package gateway
 
 import (
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The reasoning level picked in Settings for a model fogway asks on its

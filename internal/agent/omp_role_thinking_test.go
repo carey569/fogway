@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // #1397 (KKKKKKKEM): omp's plan, vision and advisor roles can be put on a

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // droidUser is a settings.json as droid leaves it for someone with a BYOK

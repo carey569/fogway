@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // shim is a version manager's shim an agent's CLI was found as.

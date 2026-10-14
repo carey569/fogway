@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/sessions"
-	stats "github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/sessions"
+	stats "github.com/carey569/fogway/internal/usage"
 )
 
 const sessionsUsage = "usage: fogway sessions [--days N|today|all] [--model <model>] [--folder <folder>] [--limit N] [--json]"

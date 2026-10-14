@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // John on Discord, again after v0.1.1119: Kimi Code (api.kimi.ai, Chat,

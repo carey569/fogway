@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/redact"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Putter is a bucket the archive is written to.

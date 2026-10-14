@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // A network that can't reach GitHub can have a release's file come

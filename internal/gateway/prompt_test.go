@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 func fixturePrompt(t *testing.T, name string, from provider.Protocol) *Prompt {

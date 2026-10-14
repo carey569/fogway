@@ -3,8 +3,8 @@
 package cli
 
 import (
-	"github.com/fogway/fogway/internal/gui"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/gui"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 const hasGUI = true

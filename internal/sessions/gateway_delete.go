@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // Deleting a gateway session (lc on Discord: a Claude Code session seen only

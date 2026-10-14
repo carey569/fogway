@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 )
 
 // legacyID is what agents knew the gateway by before fogway was called fogway.

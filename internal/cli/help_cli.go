@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fogway/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/agent"
 )
 
 // helpAsked is whether args ask for help rather than for the command to

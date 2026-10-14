@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/local"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/local"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 const localUsage = `usage: fogway local [status] [--json]

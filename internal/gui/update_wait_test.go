@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // fakeBusy stands in for the gateway's Busy in these tests.

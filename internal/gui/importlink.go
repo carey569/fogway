@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // An import link (fogway://import?…, see provider.ParseImport) is parsed

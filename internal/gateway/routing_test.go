@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Tests don't ask vendors how much of an allowance is used: the gateway

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // servedBy is a vendor that answers in its protocol, streamed when asked,

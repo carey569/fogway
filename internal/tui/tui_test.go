@@ -9,8 +9,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // home is a sandbox: a home of its own with Claude Code and Codex in it,

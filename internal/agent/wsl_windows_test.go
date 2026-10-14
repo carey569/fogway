@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // On a real WSL: FOGWAY_WSL_TEST_DISTRO names a throwaway distro with a

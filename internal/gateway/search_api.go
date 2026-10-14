@@ -15,7 +15,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // When no provider can search, fogway's web_search tool is answered by a

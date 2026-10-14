@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // A providers.json from before #1818 has no models key: the vendor's

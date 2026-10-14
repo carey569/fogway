@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // searchAPIs is a fake of every search API fogway asks, each on its own

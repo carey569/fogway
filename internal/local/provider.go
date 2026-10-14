@@ -4,7 +4,7 @@ import (
 	"log"
 	"slices"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // ProviderID is the provider the gateway serves the local model under:

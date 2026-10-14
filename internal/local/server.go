@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // Phase is where the local model is: off, getting ready, or serving.

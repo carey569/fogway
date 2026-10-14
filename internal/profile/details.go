@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fogway/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/agent"
 )
 
 // Group is what a profile holds for one agent, to be read before it is

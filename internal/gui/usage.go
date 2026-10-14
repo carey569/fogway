@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/usage"
-	"github.com/fogway/fogway/internal/usageapi"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/usageapi"
 )
 
 // The Usage page's JSON is built in usageapi, which the gateway's

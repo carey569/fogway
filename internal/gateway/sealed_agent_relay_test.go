@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // relayOfChatGPT is a Responses provider in front of the ChatGPT backend,

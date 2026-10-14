@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/local"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/local"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // localJSON is the Local page: the setup, what runs, this computer, the

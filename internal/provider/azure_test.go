@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/agentenv"
 )
 
 func azureHome(t *testing.T) {

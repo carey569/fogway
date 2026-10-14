@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 // #304: PI_CODING_AGENT_DIR moves Pi's agent folder (config.js,

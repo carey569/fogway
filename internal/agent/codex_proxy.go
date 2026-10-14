@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/netproxy"
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // Codex sends its requests to fogway's gateway, http://127.0.0.1:3725, the

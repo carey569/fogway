@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // retrieveTimeout bounds an embeddings or rerank call: a vendor answers

@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/netproxy"
 )
 
 // An image a caller names by URL (an edit's, or one to draw from) is

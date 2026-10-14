@@ -1,6 +1,6 @@
 package gateway
 
-import "github.com/fogway/fogway/internal/provider"
+import "github.com/carey569/fogway/internal/provider"
 
 // usageEncoder reads the encoder's chosen ID after it starts writing. Upstream
 // IDs can be absent or acquire a protocol prefix, so KStart.MsgID is not enough.

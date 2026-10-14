@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The allow list (lc on Discord) is saved cleaned; an entry that isn't an

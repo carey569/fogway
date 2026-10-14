@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // An agent on a routing group whose ref carries Claude Code's [1m] mark is

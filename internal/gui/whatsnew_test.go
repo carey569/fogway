@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // The version last run is kept in fogway's folder, and the notes since are

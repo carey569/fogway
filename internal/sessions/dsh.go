@@ -15,7 +15,7 @@ import (
 	"sync"
 	"unicode/utf16"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // DeepSeek Harness (dsh) keeps a session in a folder of its own, under

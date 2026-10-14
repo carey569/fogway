@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // Before an update is put in, the page asks what changed (Hu9956, #844):

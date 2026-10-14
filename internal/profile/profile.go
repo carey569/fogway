@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/edit"
-	"github.com/fogway/fogway/internal/lastgood"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/lastgood"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // Profile is every agent's fields and model lists.

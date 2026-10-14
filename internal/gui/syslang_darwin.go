@@ -3,7 +3,7 @@ package gui
 import (
 	"os"
 
-	"github.com/fogway/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/proc"
 )
 
 // systemLang is the first of the Mac's preferred languages, the one the

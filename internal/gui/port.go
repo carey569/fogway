@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/proc"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/proc"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // portJSON is what setting the gateway's port did: the port it is on, the

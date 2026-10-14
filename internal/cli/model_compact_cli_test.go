@@ -3,8 +3,8 @@ package cli
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // fogway model compact off runs Codex's and Claude Code's conversations to

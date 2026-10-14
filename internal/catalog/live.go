@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/filememo"
 )
 
 // A vendor's own /models endpoint is the truth about what it serves today;

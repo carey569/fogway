@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // routeWaitMax caps how long one ask waits for the route to change.

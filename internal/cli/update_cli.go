@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // updateExecutable, updateCanElevate and updateInContainer are
@@ -192,7 +192,7 @@ func updateCmd(args []string) error {
 	// the Docker image's /fogway, run as nonroot: the image is what is
 	// updated, and a replace would only fail with "permission denied"
 	if exe, err := updateExecutable(); err == nil && !update.Writable(filepath.Dir(exe)) && !updateCanElevate() && updateInContainer() {
-		return fmt.Errorf("this fogway runs in a container and can't replace itself; pull the new image (docker pull ghcr.io/fogway/fogway:latest) and recreate the container")
+		return fmt.Errorf("this fogway runs in a container and can't replace itself; pull the new image (docker pull ghcr.io/carey569/fogway:latest) and recreate the container")
 	}
 	if exe, err := update.Executable(); err == nil && update.Homebrew(exe) {
 		return fmt.Errorf("this fogway was installed with Homebrew; update it with: brew upgrade fogway")

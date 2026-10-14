@@ -29,8 +29,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // GroupPrefix starts a group's id in the catalog: "group/<id>".

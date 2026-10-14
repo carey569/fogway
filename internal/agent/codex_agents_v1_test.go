@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // setAgentsV1 turns settings.CodexAgentsV1 on or off as the Settings page's

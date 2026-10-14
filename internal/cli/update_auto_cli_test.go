@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func TestUpdateAutoKeepsCorruptSettings(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // useXiaomiCatalog puts testdata/xiaomi_catalog.json in the catalog cache:

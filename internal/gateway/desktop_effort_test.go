@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // desktopPicker is Claude Desktop's tIt (index.chunk-D3OyLXgG.js, 2.7032):

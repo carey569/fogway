@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A request that names no reply limit (Codex's Responses turns) is sent on

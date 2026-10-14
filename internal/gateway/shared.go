@@ -16,9 +16,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/fogway/fogway/internal/codexcat"
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/codexcat"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 	"github.com/tidwall/gjson"
 )
 

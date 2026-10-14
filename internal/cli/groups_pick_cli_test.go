@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // fogway group pick / pick= route a group manually (#317): every request

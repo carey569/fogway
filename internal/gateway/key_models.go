@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A gateway key may be held to some models (#882, access.Key.Models): it

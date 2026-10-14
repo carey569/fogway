@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agentenv"
-	"github.com/fogway/fogway/internal/redact"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/redact"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func TestSettingsSaveKeepsCorruptFile(t *testing.T) {

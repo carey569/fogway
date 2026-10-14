@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/fogway/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/agent"
 )
 
 func TestRuntimeUnavailableJSONKeepsMessageAndAction(t *testing.T) {

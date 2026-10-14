@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // #1277: a fogway.exe kept at C:\ may not write there, so it can't replace

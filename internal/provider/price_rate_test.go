@@ -3,7 +3,7 @@ package provider
 import (
 	"testing"
 
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // A provider's price rate (#819) scales the list price a call is counted

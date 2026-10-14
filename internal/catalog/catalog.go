@@ -18,8 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
-	"github.com/fogway/fogway/internal/filememo"
+	"github.com/carey569/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/filememo"
 )
 
 // Model is one entry the picker can offer.

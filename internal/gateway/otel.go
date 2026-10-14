@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 type otelRequestKey struct{}

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fogway/fogway/internal/access"
+	"github.com/carey569/fogway/internal/access"
 )
 
 // #969 (pan17): the DeepSeek Harness desktop app, wired through fogway, failed

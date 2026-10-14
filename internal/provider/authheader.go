@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // The headers a third-party Anthropic API's key goes in (Provider.AuthHeader).

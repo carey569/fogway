@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // A vendor's Retry-After reaches routing through a failed request: the

@@ -41,7 +41,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fogway/fogway/internal/appdir"
+	"github.com/carey569/fogway/internal/appdir"
 )
 
 // Dirs are Claude Desktop's folders on one computer.

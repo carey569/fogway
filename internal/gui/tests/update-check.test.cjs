@@ -233,7 +233,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // a click away.
       await t.test(lang + ": an install that failed says why in full", async () => {
         const error = "couldn't move fogway-windows-amd64.exe aside to put the new version in: The process cannot access the file because it is being used by another process; another program has it open (often an antivirus or OneDrive): let fogway through it and restart to update again, or download the new version and put it in place of this one";
-        const url = "https://github.com/fogway/fogway/releases/tag/v0.1.628";
+        const url = "https://github.com/carey569/fogway/releases/tag/v0.1.628";
         const ctl = fresh({ update: { state: "ready", current: "0.1.627", latest: "0.1.628", error, url } });
         const { page, errors } = await open(lang, ctl);
         const opened = [];

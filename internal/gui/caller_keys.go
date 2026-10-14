@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/budget"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/budget"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // keyRow is a gateway key as the Gateway page lists it, with what it has

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 func titleTestKey(t testing.TB) {

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 const imageOmitted = "[Image omitted: this model accepts text only.]"

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/access"
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/access"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // limitedUpstream is a provider whose every call uses 300 input and 50

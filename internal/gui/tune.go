@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fogway/fogway/internal/agent"
-	"github.com/fogway/fogway/internal/sessions"
-	"github.com/fogway/fogway/internal/tune"
+	"github.com/carey569/fogway/internal/agent"
+	"github.com/carey569/fogway/internal/sessions"
+	"github.com/carey569/fogway/internal/tune"
 )
 
 type tuneAdvice struct {

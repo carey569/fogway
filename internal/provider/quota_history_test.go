@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/testenv"
+	"github.com/carey569/fogway/internal/testenv"
 )
 
 func histCard(user string, used5h float64, reset5h time.Time, usedWeek float64, resetWeek time.Time) SubscriptionQuota {

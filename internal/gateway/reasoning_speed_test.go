@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
-	"github.com/fogway/fogway/internal/usage"
+	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 func TestReasoningSpeedEvidence(t *testing.T) {

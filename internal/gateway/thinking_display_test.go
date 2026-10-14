@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // displayVendor answers as Claude Opus 4.7 and later, Sonnet 5, Haiku 5.5,

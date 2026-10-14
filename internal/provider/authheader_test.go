@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fogway/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/catalog"
 )
 
 // What Aloha's service answered on Discord when sent both key headers.

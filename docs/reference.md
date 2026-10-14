@@ -1828,42 +1828,23 @@ with a link builder: <https://usemagpie.ai/docs/import>.
 
 ## Install
 
-Download the app for macOS, Windows or Linux from
-[usemagpie.ai](https://usemagpie.ai), or install it from a terminal (on
-Linux, the desktop app when WebKitGTK 4.1 is installed, the command
-otherwise):
+Download the app for macOS or Windows, or the terminal build for macOS,
+Linux, Windows or Android (Termux), from
+[the releases](https://github.com/carey569/fogway/releases); `SHA256SUMS`
+beside them holds every file's checksum. On Linux, build the desktop
+app from source (below). The builds are not signed yet:
+macOS asks you to allow the app in System Settings › Privacy & Security on
+its first run, and Windows SmartScreen may ask too.
 
-```sh
-curl -fsSL https://usemagpie.ai/install.sh | sh
-```
-
-Behind a firewall, or without access to GitHub, both the installer and
-`fogway update` take `--proxy <url>` (http, https, socks5, socks5h; or
-`FOGWAY_PROXY`, and `HTTPS_PROXY` / `ALL_PROXY` as usual) and
-`--mirror <prefix>`, a GitHub download mirror of your choosing put before
-the release's github.com URL (or `FOGWAY_MIRROR`; `fogway update mirror
-<prefix>|off` keeps one for every update, the app's too):
-
-```sh
-curl -fsSL https://usemagpie.ai/install.sh | sh -s -- --proxy http://127.0.0.1:7890
-fogway update --mirror https://mirror.example/
-```
-
-No mirror is used unless you give one, and the SHA-256 every download is
-checked against still comes from usemagpie.ai, never from the mirror.
-
-Mac releases are signed and notarised; the Windows and Linux builds are not
-signed yet (Windows SmartScreen may ask before the first run). Every build
-keeps itself current: the app
-downloads a new version in the background and installs it when you restart
-(*Restart to Update* in the menu) or quit; `fogway update` does the same from
-a terminal. Every release is on
-[yetone/magpie-releases](https://github.com/fogway/fogway/releases).
+A release build doesn't update itself: it has no update feed, and
+`fogway update` says where to get the new version. A build of your own
+gets one with
+`-ldflags "-X github.com/carey569/fogway/internal/update.FeedURL=https://…"`.
 
 From source:
 
 ```sh
-go install github.com/fogway/fogway@latest
+go install github.com/carey569/fogway@latest
 ```
 
 or build locally:
@@ -2027,7 +2008,7 @@ An example Docker Compose project is:
 ```yaml
 services:
   fogway:
-    image: ghcr.io/fogway/fogway:latest
+    image: ghcr.io/carey569/fogway:latest
     restart: unless-stopped
     ports:
       # 127.0.0.1: the host alone; every caller outside the container needs a gateway key.

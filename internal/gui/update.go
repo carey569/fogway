@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // updater keeps the app current. It asks the feed at start-up and every six

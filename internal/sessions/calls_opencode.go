@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // OpenCode's own calls (#680): each assistant message is one, with its

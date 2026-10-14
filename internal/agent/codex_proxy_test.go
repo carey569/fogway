@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fogway/fogway/internal/gateway"
-	"github.com/fogway/fogway/internal/netproxy"
+	"github.com/carey569/fogway/internal/gateway"
+	"github.com/carey569/fogway/internal/netproxy"
 )
 
 // proxyAs has codexProxyFor read env, sys and goos, and proxyProbe answer

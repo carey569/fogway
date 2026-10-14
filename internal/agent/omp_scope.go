@@ -3,7 +3,7 @@ package agent
 import (
 	"strings"
 
-	"github.com/fogway/fogway/internal/edit"
+	"github.com/carey569/fogway/internal/edit"
 	"gopkg.in/yaml.v3"
 )
 

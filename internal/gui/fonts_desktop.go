@@ -3,7 +3,7 @@
 package gui
 
 import (
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/settings"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 

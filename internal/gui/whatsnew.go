@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fogway/fogway/internal/settings"
-	"github.com/fogway/fogway/internal/update"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/update"
 )
 
 // whatsNew shows what changed once fogway runs a newer release than it last

@@ -13,8 +13,8 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/fogway/fogway/internal/omarchy"
-	"github.com/fogway/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/omarchy"
+	"github.com/carey569/fogway/internal/settings"
 )
 
 // The windows, h.main and h.panel, are nil while lightweight mode has let

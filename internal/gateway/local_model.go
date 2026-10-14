@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	lm "github.com/fogway/fogway/internal/local"
-	"github.com/fogway/fogway/internal/provider"
+	lm "github.com/carey569/fogway/internal/local"
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // keepLocal runs the local model while the gateway serves, as local.json
