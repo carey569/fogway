@@ -50,14 +50,13 @@ func canSearchFor(p provider.Provider) bool {
 }
 
 // searchesOwn is whether p searches for its own models: by its Kimi Code
-// plan's or WorkBuddy plan's search service (#1798), or a Google sign-in's
-// own Gemini. Never with provider search Off in Settings (#1483), which
-// leaves the search APIs alone.
+// plan's search service (#1798). Never with provider search Off in
+// Settings (#1483), which leaves the search APIs alone.
 func searchesOwn(p provider.Provider) bool {
 	if settings.Load().Searcher == "off" {
 		return false
 	}
-	return provider.KimiCodeSearch(p) != "" || googleAccount(p) && searcherModel(p) != ""
+	return provider.KimiCodeSearch(p) != ""
 }
 
 // searchingOn is ctx for the searches made for a model of p.
@@ -66,10 +65,7 @@ func searchingOn(ctx context.Context, p provider.Provider) context.Context {
 }
 
 // ownSearcher is the provider serving the conversation when it searches
-// for itself: by a search service of its own plan (Kimi Code), or, a
-// Google sign-in, by its own Gemini's googleSearch — which a request with
-// function tools can't have (codeAssistSearches), so the search goes out
-// on its own, and not to another subscription's allowance (#757).
+// for itself, by a search service of its own plan (Kimi Code).
 func ownSearcher(ctx context.Context) (provider.Provider, bool) {
 	p, ok := ctx.Value(searchOnKey{}).(provider.Provider)
 	return p, ok && searchesOwn(p)

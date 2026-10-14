@@ -310,7 +310,7 @@ func (f *firstToken) flowFor(reasoning int) int64 {
 // hidesReasoning excludes sealed thinking and Responses summaries even when
 // the upstream omits a separate reasoning-token count.
 func (f *firstToken) hidesReasoning(proto provider.Protocol) bool {
-	return f.hidden || (proto == provider.Responses || proto == provider.Gemini || proto == provider.CodeAssist) && f.reasoning > 0
+	return f.hidden || (proto == provider.Responses || proto == provider.Gemini) && f.reasoning > 0
 }
 
 // reasoningMs requires a paced visible channel. Responses and Gemini summaries

@@ -55,11 +55,11 @@ func TestGeminiReplyKeepsSignatures(t *testing.T) {
 		var calls, texts []map[string]any
 		var parts []map[string]any
 		if whole {
-			parts = geminiReplyParts(translateWhole(t, provider.CodeAssist, provider.Gemini, geminiCallStream...))
-			parts = append(parts, geminiReplyParts(translateWhole(t, provider.CodeAssist, provider.Gemini, geminiTextStream...))...)
+			parts = geminiReplyParts(translateWhole(t, provider.Gemini, provider.Gemini, geminiCallStream...))
+			parts = append(parts, geminiReplyParts(translateWhole(t, provider.Gemini, provider.Gemini, geminiTextStream...))...)
 		} else {
-			parts = geminiReplyParts(translateStream(t, provider.CodeAssist, provider.Gemini, geminiCallStream...)...)
-			parts = append(parts, geminiReplyParts(translateStream(t, provider.CodeAssist, provider.Gemini, geminiTextStream...)...)...)
+			parts = geminiReplyParts(translateStream(t, provider.Gemini, provider.Gemini, geminiCallStream...)...)
+			parts = append(parts, geminiReplyParts(translateStream(t, provider.Gemini, provider.Gemini, geminiTextStream...)...)...)
 		}
 		for _, p := range parts {
 			if p["functionCall"] != nil {

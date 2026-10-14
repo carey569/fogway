@@ -19164,9 +19164,6 @@ function renderSearcher(s, keep, box) {
   const plans = choices.filter((c) => c.service).map((c) => c.name);
   if (!off && plans.length) sub.append(" · ", el("span", "searcher-own",
     t("A Kimi Code plan ({names}) searches for its own models first, with its web search; for other models only when named here", { names: plans.join(", ") })));
-  const googles = choices.filter((c) => c.own).map((c) => c.name);
-  if (!off && googles.length) sub.append(" · ", el("span", "searcher-own",
-    t("{names} search for their own models first, with Gemini's Google Search", { names: googles.join(", ") })));
   if (!off && s.searchRelays?.length) sub.append(" · ", el("span", "searcher-relays",
     t("These relays must be selected manually and are not used for automatic selection or fallback: {names}.", { names: s.searchRelays.join(", ") })));
   // Being left out can also mean no usable model, not just no search support.

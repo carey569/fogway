@@ -9,13 +9,11 @@ import (
 	"github.com/carey569/fogway/internal/catalog"
 )
 
-// ---- Google Code Assist (provider side) --------------------------------------
+// ---- Gemini's request and stream (provider side) ----------------------------
 //
-// Gemini CLI and Antigravity sign in with Google and talk to Code Assist
-// (cloudcode-pa.googleapis.com), which takes a Gemini request wrapped in an
-// envelope — {model, project, request} — and streams replies wrapped the
-// same way, {response}. The gateway builds {model, request}; the account
-// adds the project and the ids its app sends when it signs the request.
+// A Gemini request is built in Code Assist's envelope, {model, request},
+// and unwrapped for Gemini's API and Vertex AI (geminiRequest); a stream's
+// chunks are read bare or wrapped the same way, {response}.
 
 // skipSignature stands in for a thought signature on a function call the
 // model didn't make here: Google checks the ones Gemini 3 hands out, and
@@ -184,8 +182,8 @@ func buildCodeAssistSent(r *Request, sent, agent string) []byte {
 		fc["mode"] = mode
 		req["toolConfig"] = map[string]any{"functionCallingConfig": fc}
 	} else if r.WebSearch {
-		// Google's own search, which Code Assist runs on Gemini as long as
-		// no function is declared beside it (codeAssistSearches)
+		// Google's own search, which Gemini runs as long as no function is
+		// declared beside it
 		req["tools"] = []map[string]any{{"googleSearch": map[string]any{}}}
 	}
 

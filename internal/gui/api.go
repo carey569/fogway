@@ -445,8 +445,6 @@ type searchChoiceJSON struct {
 	// Service is a Kimi Code plan, which searches by its search service:
 	// named by itself, with no model
 	Service bool `json:"service,omitempty"`
-	// Own is a Google sign-in, which searches for its own models first
-	Own bool `json:"own,omitempty"`
 }
 
 type searchVendorJSON struct {
@@ -485,7 +483,7 @@ func searchState(s *settingsJSON) {
 	s.SearchChoices = []searchChoiceJSON{}
 	for _, c := range gateway.Searchers() {
 		p := c.Provider
-		j := searchChoiceJSON{ID: p.ID, Name: p.Name, Icon: p.Icon, Small: c.Small, SmallName: names[p.ID+"/"+c.Small], Models: []modelRef{}, Service: c.Service, Own: c.Own}
+		j := searchChoiceJSON{ID: p.ID, Name: p.Name, Icon: p.Icon, Small: c.Small, SmallName: names[p.ID+"/"+c.Small], Models: []modelRef{}, Service: c.Service}
 		for _, m := range c.Models {
 			id := p.ID + "/" + m.ID
 			j.Models = append(j.Models, modelRef{ID: id, Name: cmp.Or(names[id], m.Name, m.ID), Provider: p.ID, PName: p.Name, Icon: p.Icon})

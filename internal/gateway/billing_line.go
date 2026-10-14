@@ -29,12 +29,6 @@ func keepsBillingLine(to provider.Protocol, model, wire string) bool {
 	return to == provider.Anthropic && (anthropicModel.MatchString(model) || anthropicModel.MatchString(wire))
 }
 
-// dropsBillingLine says whether p's request for model asked on to goes
-// without the billing line.
-func dropsBillingLine(p provider.Provider, to provider.Protocol, model, wire string) bool {
-	return to != provider.CodeAssist && !keepsBillingLine(to, model, wire)
-}
-
 // withoutBillingLine is an Anthropic Messages body without Claude Code's
 // billing line in its system: a block that is the line is left out, and the
 // line at the start of the first block or of a system string is cut from

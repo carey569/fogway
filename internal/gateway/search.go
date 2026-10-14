@@ -101,39 +101,6 @@ func searchesItself(p provider.Provider, proto provider.Protocol) bool {
 	return slices.Contains(searchHosts[proto], provider.HostOf(p.Base(proto)))
 }
 
-// googleAccount is a Google sign-in, Gemini CLI's or Antigravity's, which
-// asks Code Assist; a plugin's is left to the plugin.
-func googleAccount(p provider.Provider) bool {
-	return false
-}
-
-// codeAssistSearches is whether model, on a Google sign-in, searches with
-// Google by itself: Gemini runs googleSearch on Code Assist, but not beside
-// function tools — Antigravity turns the two down together, 400 "Please
-// enable tool_config.include_server_side_tool_invocations to use Built-in
-// tools with Function calling", with that flag set in toolConfig too — so
-// only a request that declares none (searchesFor). One that does is given
-// fogway's search, which the account answers itself (ownSearcher, #757).
-func codeAssistSearches(p provider.Provider, proto provider.Protocol, model string) bool {
-	return proto == provider.CodeAssist && googleAccount(p) && searchModel(model)
-}
-
-// searchModel is a model Code Assist runs googleSearch for: Gemini's, not
-// Claude's or GPT-OSS's on Antigravity, nor an image model.
-func searchModel(model string) bool {
-	l := strings.ToLower(model)
-	return strings.Contains(l, "gemini") && !catalog.DrawsID(l)
-}
-
-// searchesFor is searchesItself for one request: a Google sign-in's Gemini
-// searches by itself only for a request without function tools.
-func searchesFor(p provider.Provider, proto provider.Protocol, model string, req *Request) bool {
-	if searchesModel(p, proto, model) {
-		return true
-	}
-	return codeAssistSearches(p, proto, model) && (len(req.Tools) == 0 || req.ToolChoice == "none")
-}
-
 // searchesModel is searchesItself for one model: a Remote fogway searches
 // for the models its list says it does, on any API (search_remote.go).
 func searchesModel(p provider.Provider, proto provider.Protocol, model string) bool {
@@ -231,12 +198,6 @@ func searchRank(p provider.Provider) int {
 		return 3
 	case searchesItself(p, provider.Chat):
 		return 4
-	case googleAccount(p):
-		// Gemini on a Google sign-in, by googleSearch (#757)
-		return 5
-
-		// another fogway, with the models it searches natively for
-
 	}
 	return -1
 }
@@ -360,7 +321,7 @@ func Searchers() []SearcherChoice {
 		if len(ms) == 0 {
 			continue
 		}
-		out = append(out, SearcherChoice{Provider: p, Small: searcherModel(p), Models: ms, rank: r, ManualOnly: manualOnly, Own: googleAccount(p)})
+		out = append(out, SearcherChoice{Provider: p, Small: searcherModel(p), Models: ms, rank: r, ManualOnly: manualOnly})
 	}
 	slices.SortStableFunc(out, func(a, b SearcherChoice) int { return cmp.Compare(a.rank, b.rank) })
 	return out
@@ -376,9 +337,6 @@ type SearcherChoice struct {
 	// Service is a Kimi Code plan, which searches by its search service,
 	// with no model (and no Small or Models)
 	Service bool
-	// Own is a Google sign-in, whose Gemini searches for the provider's
-	// own models first, whoever is named (ownSearcher)
-	Own bool
 }
 
 // RelaysSaidToSearch are the providers on that are said to search by
@@ -468,9 +426,6 @@ func searcherModel(p provider.Provider) string {
 // searcherReady is searcherModel, and whether it has allowance left
 // (smallReady).
 func searcherReady(p provider.Provider) (string, bool) {
-	if googleAccount(p) {
-		return smallReady(p, func(catalog.Model) bool { return true }, provider.Anthropic)
-	}
 	return smallReady(p, nil, provider.Anthropic)
 }
 

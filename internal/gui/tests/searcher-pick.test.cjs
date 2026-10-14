@@ -34,17 +34,13 @@ const choices = [
   { id: "relay", name: "MyRelay", icon: "generic", small: "claude-haiku-4-5", models: [
     { id: "relay/claude-haiku-4-5", name: "Claude Haiku 4.5", provider: "relay", providerName: "MyRelay" }] },
   { id: "kimi", name: "Kimi Code", icon: "kimi", small: "", models: [], service: true },
-  { id: "antigravity", name: "Antigravity", icon: "antigravity", small: "gemini-3-flash", own: true, models: [
-    { id: "antigravity/gemini-3-flash", name: "Gemini 3 Flash", provider: "antigravity", providerName: "Antigravity" }] },
 ];
 const words = {
   en: { name: "Searches for other models", off: "Off", auto: "Automatic", small: "GPT-5 Mini Named, its small model", unused: "isn't used: it is turned off",
     own: "A Kimi Code plan (Kimi Code) searches for its own models first, with its web search; for other models only when named here", web: "its web search",
-    google: "Antigravity search for their own models first, with Gemini's Google Search",
     more: "A1, A2, A3, A4, A5 and 3 more." },
   zh: { name: "代搜供应商", off: "关闭", auto: "自动", small: "GPT-5 Mini Named（它的小模型）", unused: "没有用 OpenAI · GPT-5 Mini Named：它已关闭",
     own: "Kimi Code 套餐（Kimi Code）的模型优先用套餐自带的联网搜索；其他模型仅在此处选中时使用", web: "它自带的联网搜索",
-    google: "Antigravity 的模型优先用 Gemini 自带的 Google 搜索",
     more: "A1, A2, A3, A4, A5 以及另外 3 个。" },
 };
 const helpWords = {
@@ -185,7 +181,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert((await row.locator(".sub").innerText()).startsWith(h.help), "costs and fallback apply to every search provider");
       assert.equal(await row.locator(".searcher-relays").innerText(), h.relays);
       assert((await row.locator(".sub").innerText()).includes(w.own), "the Kimi Code plan is said to search for its own models");
-      assert((await row.locator(".sub").innerText()).includes(w.google), "a Google sign-in is said to search for its own models (#757)");
       assert.equal(await row.locator(".searcher-left-out").innerText(), h.left);
       // a long list is cut short
       st.leftOut = ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8"];

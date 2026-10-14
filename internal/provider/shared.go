@@ -752,11 +752,6 @@ func undashIn(entries []Entry, id string) (string, bool) {
 	return found, found != ""
 }
 
-// CodeAssist is Google's Code Assist API, which fogway only speaks
-// upstream, to a Gemini CLI or Antigravity account. Not in Protocols: no
-// other provider serves it.
-const CodeAssist Protocol = "codeassist"
-
 // claudeDotted is a Claude model's version written with a dot.
 var claudeDotted = regexp.MustCompile(`(?i)claude-(?:opus|sonnet|haiku|fable|mythos)-\d+(?:\.\d+)+`)
 

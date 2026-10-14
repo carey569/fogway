@@ -106,10 +106,9 @@ func geminiEnds(data []byte) bool {
 }
 
 // geminiKin is an upstream whose chunks the Gemini decoder reads: Gemini
-// (a custom provider's Gemini URL, Vertex AI, Factory's generate route)
-// and Code Assist.
+// (a custom provider's Gemini URL, Vertex AI).
 func geminiKin(actual provider.Protocol) bool {
-	return actual == provider.Gemini || actual == provider.CodeAssist
+	return actual == provider.Gemini
 }
 
 // groupTryKey marks a try of a routing group's member. A member whose
@@ -405,7 +404,7 @@ func (s *Server) streamTranslated(w http.ResponseWriter, r *http.Request, p prov
 		}
 		if err == nil {
 			u.RequestID = requestID(res.Header)
-			summaryUpstream = actual == provider.Responses || actual == provider.Gemini || actual == provider.CodeAssist
+			summaryUpstream = actual == provider.Responses || actual == provider.Gemini
 			empty = emptyFails(actual)
 		}
 		if err == nil && res.StatusCode >= 400 {

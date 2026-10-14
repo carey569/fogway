@@ -3082,7 +3082,7 @@ func (s *Server) passthrough(w http.ResponseWriter, r *http.Request, p provider.
 			// not the plain id Bedrock checks it against (#176)
 			body = withoutFields(body, "metadata")
 		}
-		if dropsBillingLine(p, proto, model, upstream) {
+		if !keepsBillingLine(proto, model, upstream) {
 			// Claude Code's billing line, which changes every turn, to a
 			// vendor's model: its prompt cache missed from the first
 			// byte (#1600, billing_line.go)
@@ -3666,7 +3666,7 @@ func (s *Server) forwardTranslated(ctx context.Context, p provider.Provider, to 
 			req, _ = objectRootsReq(req)
 		}
 		// only a provider that searches by itself is asked to
-		if want := web && searchesFor(p, to, model, req); want != req.WebSearch {
+		if want := web && searchesModel(p, to, model); want != req.WebSearch {
 			r := *req
 			r.WebSearch, req = want, &r
 		}
@@ -3743,7 +3743,7 @@ func (s *Server) forwardTranslated(ctx context.Context, p provider.Provider, to 
 		}
 		wire := provider.UpstreamNameIn(wires, p.ID, model)
 		sent := req
-		if dropsBillingLine(p, to, model, wire) && billingHeader.MatchString(req.System) {
+		if !keepsBillingLine(to, model, wire) && billingHeader.MatchString(req.System) {
 			// Claude Code's billing line, which changes every turn, as the
 			// first words of another API's prompt or a vendor's model's:
 			// its prompt cache missed from the first byte (#1600,
@@ -4318,12 +4318,12 @@ func (s *Server) translate(w http.ResponseWriter, r *http.Request, p provider.Pr
 		// (DeepSeek's Chat) it had no search tool and answered from
 		// nothing (#669)
 		for _, t := range s.usable(p, model) {
-			if searchesFor(p, t, model, request) {
+			if searchesModel(p, t, model) {
 				to = t
 				break
 			}
 		}
-		if !searching(r.Context()) && canSearchFor(p) && !searchesFor(p, to, model, request) {
+		if !searching(r.Context()) && canSearchFor(p) && !searchesModel(p, to, model) {
 			ask := s.askTranslated(p, to, model, r.Header, w.Header())
 			if zen != nil {
 				ask = zenRound(zen.z, ask)
@@ -4434,7 +4434,7 @@ const emptyReply = "an empty reply (the model answered nothing; try again)"
 // with nothing after a tool's result is its answer, so no other
 // protocol's is.
 func emptyFails(proto provider.Protocol) bool {
-	return proto == provider.CodeAssist || proto == provider.Gemini
+	return proto == provider.Gemini
 }
 
 // answersNothing tells whether a reply with nothing said ended for no
@@ -4464,8 +4464,6 @@ func pathOf(proto provider.Protocol) string {
 		return "/chat/completions"
 	case provider.Responses:
 		return "/responses"
-	case provider.CodeAssist:
-		return "/v1internal:streamGenerateContent?alt=sse"
 	case provider.Gemini:
 		// Factory's generateContent; a Gemini API's and Vertex AI's paths
 		// name the model (upstreamPath)
@@ -4579,9 +4577,9 @@ func decoder(proto provider.Protocol) func(data string, emit func(Event)) error 
 	case provider.Responses:
 		d := &responsesDecoder{}
 		return d.decode
-	case provider.CodeAssist, provider.Gemini:
-		// Factory's generateContent is the same Gemini chunks, without
-		// Code Assist's {response} wrapper, which the decoder also reads.
+	case provider.Gemini:
+		// Gemini's chunks, bare or in Code Assist's {response} wrapper,
+		// which the decoder also reads
 		d := &codeAssistDecoder{}
 		return d.decode
 	}
