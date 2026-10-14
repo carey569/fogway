@@ -150,23 +150,26 @@ func (a Assessment) Estimate(id string) (Estimate, bool) {
 // (b11583) beside the bench above, on an M4 Pro (20 GPU cores; memory read
 // at 224–244 GB/s) with Metal, and in Linux on four of its cores (20–21
 // billion multiply-adds a second; memory at 138–152 GB/s): Spark X2.5 1.7B
-// (Q4_K_M, 1.11 GB) and Qwen3.5 2B (Q4_K_M, 1.28 GB).
+// (Q4_K_M, 1.11 GB), Spark X2.5 4B (2.6 GB) and Qwen3.5 2B (1.28 GB).
 const (
 	// Writing a token reads every weight once: tokens a second ≈ a share
-	// of the bandwidth over the file's size. With Metal Spark wrote 161
-	// tokens a second (178 GB/s), Qwen 128 (164 GB/s); in Linux Spark 89
-	// (99 of 152 GB/s), Qwen 65 (83 of 138).
-	genShareGPU = 0.65
-	genShareCPU = 0.55
-	// With few cores the CPU computes slower than it reads: on four, Spark
-	// wrote 89 tokens a second, 7 per multiply-add of the bench over its
-	// parameters, Qwen 29 to 65 as its cores were slow or fast ones.
-	cpuGenPerOp = 6
+	// of the bandwidth over the file's size. With Metal the Spark models
+	// wrote 161 and 77 tokens a second (178 and 200 GB/s of 224), Qwen 128
+	// (164 of 244); in Linux Spark 89 and 40 (99 and 104 of 152 GB/s),
+	// Qwen 65 (83 of 138).
+	genShareGPU = 0.75
+	genShareCPU = 0.65
+	// With few cores the CPU computes slower than it reads: on four, the
+	// Spark models wrote 9 and 8 tokens a second per multiply-add of the
+	// bench over their parameters, Qwen 3 to 6 as its cores were slow or
+	// fast ones.
+	cpuGenPerOp = 7.5
 	// Reading a prompt is arithmetic: tokens a second ≈ parameters·tokens
-	// a second over the parameters. With Metal Spark read 2086 tokens a
-	// second and Qwen 1971, about 180 billion parameter·tokens per GPU
-	// core; in Linux Spark 201 and Qwen 176, 16 per multiply-add.
-	appleCorePrompt = 185e9
+	// a second over the parameters. With Metal the Spark models read 2086
+	// and 815 tokens a second and Qwen 1971, 168 to 185 billion
+	// parameter·tokens per GPU core; in Linux the Spark models 201 and 83,
+	// Qwen 176, 16 per multiply-add.
+	appleCorePrompt = 175e9
 	cpuPromptPerOp  = 16
 	// An NVIDIA card fogway can't measure: a modest one's figures (an RTX
 	// 3060 does three times them).
@@ -496,81 +499,148 @@ The function above retries an operation with exponential backoff. 请解释它�
 `, 5)
 
 // Measure has the model llama-server serves at url (its OpenAI address,
-// …/v1) read a prompt and write, twice, once it is idle, and is the faster
-// of the two at each: the first warms it up, and a request of an agent's
-// that comes in meanwhile slows one, not both.
+// …/v1) read a prompt and write, once it is idle, until two runs went by
+// with no other request beside them (four at most), and is the faster of
+// those at each: the first warms it up. A run another request shared is
+// thrown away, as it ran slower than the model does; none clean is
+// errBusy.
 func Measure(ctx context.Context, url string) (Speed, error) {
 	base := strings.TrimSuffix(strings.TrimSuffix(url, "/"), "/v1")
 	body, _ := json.Marshal(map[string]any{
 		"prompt": measurePrompt, "n_predict": 48, "cache_prompt": false, "ignore_eos": true, "temperature": 0,
 	})
 	client := &http.Client{Transport: &http.Transport{Proxy: nil}}
-	waitIdle(ctx, client, base)
 	var s Speed
-	for range 2 {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/completion", bytes.NewReader(body))
+	clean := 0
+	for range 4 {
+		if clean == 2 {
+			break
+		}
+		waitIdle(ctx, client, base)
+		before, known := slotTasks(ctx, client, base)
+		p, g, err := measureOnceAt(ctx, client, base, body)
 		if err != nil {
 			return s, err
 		}
-		req.Header.Set("Content-Type", "application/json")
-		res, err := client.Do(req)
-		if err != nil {
-			return s, err
+		if after, ok := slotTasks(ctx, client, base); known && ok && shared(before, after) {
+			continue
 		}
-		var out struct {
-			Timings struct {
-				PromptN   int     `json:"prompt_n"`
-				PromptTPS float64 `json:"prompt_per_second"`
-				GenN      int     `json:"predicted_n"`
-				GenTPS    float64 `json:"predicted_per_second"`
-			} `json:"timings"`
-		}
-		err = json.NewDecoder(res.Body).Decode(&out)
-		res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			return s, fmt.Errorf("llama-server answered %s", res.Status)
-		}
-		if err != nil {
-			return s, fmt.Errorf("llama-server's answer: %w", err)
-		}
-		if out.Timings.PromptN == 0 || out.Timings.GenN == 0 {
-			return s, errNoTimings
-		}
-		s.Prompt, s.Gen = max(s.Prompt, round(out.Timings.PromptTPS, 0)), max(s.Gen, round(out.Timings.GenTPS, 0))
+		clean++
+		s.Prompt, s.Gen = max(s.Prompt, p), max(s.Gen, g)
+	}
+	if clean == 0 {
+		return s, errBusy
 	}
 	s.At = time.Now()
 	return s, nil
 }
 
+// measureOnceAt runs the prompt once, and is how fast it was read and
+// written, as llama-server timed them.
+func measureOnceAt(ctx context.Context, client *http.Client, base string, body []byte) (float64, float64, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/completion", bytes.NewReader(body))
+	if err != nil {
+		return 0, 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer res.Body.Close()
+	var out struct {
+		Timings struct {
+			PromptN   int     `json:"prompt_n"`
+			PromptTPS float64 `json:"prompt_per_second"`
+			GenN      int     `json:"predicted_n"`
+			GenTPS    float64 `json:"predicted_per_second"`
+		} `json:"timings"`
+	}
+	err = json.NewDecoder(res.Body).Decode(&out)
+	if res.StatusCode != http.StatusOK {
+		return 0, 0, fmt.Errorf("llama-server answered %s", res.Status)
+	}
+	if err != nil {
+		return 0, 0, fmt.Errorf("llama-server's answer: %w", err)
+	}
+	if out.Timings.PromptN == 0 || out.Timings.GenN == 0 {
+		return 0, 0, errNoTimings
+	}
+	return round(out.Timings.PromptTPS, 0), round(out.Timings.GenTPS, 0), nil
+}
+
+var (
+	errNoTimings = errors.New("llama-server said nothing of how fast it went")
+	errBusy      = errors.New("llama-server was busy with other requests the whole time")
+)
+
 // idleWait is how long Measure waits for llama-server to be idle, and how
 // often it looks.
 var idleWait, idleEvery = 2 * time.Minute, 3 * time.Second
 
-// slot is one of llama-server's /slots.
+// slot is one of llama-server's /slots: whether it is busy, and the last
+// request it took (none before its first).
 type slot struct {
+	ID         int  `json:"id"`
 	Processing bool `json:"is_processing"`
+	Task       *int `json:"id_task"`
 }
 
 func (s slot) busy() bool { return s.Processing }
 
+// slots is llama-server's /slots; false when it doesn't say.
+func slots(ctx context.Context, client *http.Client, base string) ([]slot, bool) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/slots", nil)
+	if err != nil {
+		return nil, false
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, false
+	}
+	defer res.Body.Close()
+	var out []slot
+	if res.StatusCode != http.StatusOK || json.NewDecoder(res.Body).Decode(&out) != nil {
+		return nil, false
+	}
+	return out, true
+}
+
+// slotTasks is each slot's last request, -1 for none yet.
+func slotTasks(ctx context.Context, client *http.Client, base string) (map[int]int, bool) {
+	ss, ok := slots(ctx, client, base)
+	if !ok {
+		return nil, false
+	}
+	out := map[int]int{}
+	for _, s := range ss {
+		out[s.ID] = -1
+		if s.Task != nil {
+			out[s.ID] = *s.Task
+		}
+	}
+	return out, true
+}
+
+// shared: more slots took a request between before and after than the
+// one run that went between them.
+func shared(before, after map[int]int) bool {
+	n := 0
+	for id, t := range after {
+		if before[id] != t {
+			n++
+		}
+	}
+	return n > 1
+}
+
 // waitIdle waits until none of llama-server's slots is busy with a
-// request, as its /slots says, or idleWait has gone by; at once when it
-// doesn't say.
+// request, or idleWait has gone by; at once when it doesn't say.
 func waitIdle(ctx context.Context, client *http.Client, base string) {
 	deadline := time.Now().Add(idleWait)
 	for time.Now().Before(deadline) {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/slots", nil)
-		if err != nil {
-			return
-		}
-		res, err := client.Do(req)
-		if err != nil {
-			return
-		}
-		var slots []slot
-		err = json.NewDecoder(res.Body).Decode(&slots)
-		res.Body.Close()
-		if err != nil || res.StatusCode != http.StatusOK || !slices.ContainsFunc(slots, slot.busy) {
+		ss, ok := slots(ctx, client, base)
+		if !ok || !slices.ContainsFunc(ss, slot.busy) {
 			return
 		}
 		select {
@@ -580,8 +650,6 @@ func waitIdle(ctx context.Context, client *http.Client, base string) {
 		}
 	}
 }
-
-var errNoTimings = errors.New("llama-server said nothing of how fast it went")
 
 // MeasureServing measures the model running now and keeps the speed.
 func MeasureServing(ctx context.Context) (Assessment, error) {

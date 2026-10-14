@@ -46,7 +46,7 @@ func (m Model) ID() string {
 var (
 	Spark17 = Model{Repo: "XHToken/Spark-X2.5-1.7B-GGUF", File: "Spark-X2.5-1.7B-Q4_K_M.gguf", Name: "spark-x2.5-1.7b", Title: "Spark X2.5 1.7B",
 		Size: 1_107_457_856, Need: 2_400_000_000, Params: 1_707_657_216,
-		Note: "for 8 GB of memory: routes and masks well, does small tasks"}
+		Note: "for 8 GB of memory: routes well and does small tasks; the 4B catches more of what is sensitive"}
 	Spark4 = Model{Repo: "XHToken/Spark-X2.5-4B-GGUF", File: "Spark-X2.5-4B-Q4_K_M.gguf", Name: "spark-x2.5-4b", Title: "Spark X2.5 4B",
 		Size: 2_600_224_352, Need: 4_600_000_000, Params: 4_112_079_360,
 		Note: "for 16 GB: steadier judgements, a fair coder for its size"}

@@ -96,7 +96,7 @@
     "Use {model}": "安装并使用{model}",
     "Measuring…": "正在实测…",
     "Measure the running model": "实测当前模型",
-    "for 8 GB of memory: routes and masks well, does small tasks": "适合 8 GB 内存：路由判断、脱敏都够用，能做小任务",
+    "for 8 GB of memory: routes well and does small tasks; the 4B catches more of what is sensitive": "适合 8 GB 内存：路由判断够用，能做小任务；识别敏感内容不如 4B 稳",
     "for 16 GB: steadier judgements, a fair coder for its size": "适合 16 GB 内存：判断更稳，写代码在同尺寸里不错",
     "Qwen's, for 8 GB": "通义千问，适合 8 GB 内存",
     "Qwen's, for 16 GB": "通义千问，适合 16 GB 内存",

@@ -87,6 +87,8 @@ func TestEstimatesMatchTheirCalibration(t *testing.T) {
 	}{
 		{"Spark 1.7B, Metal", m4, Bench{Bandwidth: 224, Compute: 50}, Spark17, 2086, 161, 161},
 		{"Spark 1.7B, four cores", linux4, Bench{Bandwidth: 152, Compute: 21}, Spark17, 201, 89, 89},
+		{"Spark 4B, Metal", m4, Bench{Bandwidth: 224, Compute: 50}, Spark4, 815, 77, 77},
+		{"Spark 4B, four cores", linux4, Bench{Bandwidth: 152, Compute: 21}, Spark4, 83, 40, 40},
 		{"Qwen 2B, Metal", m4, Bench{Bandwidth: 244, Compute: 52}, qwen, 1971, 128, 128},
 		{"Qwen 2B, four cores", linux4, Bench{Bandwidth: 138, Compute: 20.4}, qwen, 176, 65, 29},
 	} {
@@ -227,33 +229,71 @@ func TestMeasure(t *testing.T) {
 	}
 }
 
-// Measure waits while llama-server is busy with a request, and keeps the
-// faster of its two runs: a request that comes in meanwhile slows one.
+// Measure waits while llama-server is busy with a request, throws away a
+// run another request shared, and keeps the faster of the clean runs at
+// each; when no run is clean it says so rather than keep a slow figure.
 func TestMeasureWaitsForIdle(t *testing.T) {
 	oldWait, oldEvery := idleWait, idleEvery
 	idleWait, idleEvery = 5*time.Second, 20*time.Millisecond
 	t.Cleanup(func() { idleWait, idleEvery = oldWait, oldEvery })
-	busy, asked := 3, 0
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/slots" {
-			busy--
-			json.NewEncoder(w).Encode([]map[string]any{{"id": 0, "is_processing": false}, {"id": 1, "is_processing": busy > 0}})
-			return
-		}
-		if busy > 0 {
-			t.Error("measured while a slot was busy")
-		}
-		asked++
-		p, g := 900.0, 20.0 // the first run is slow to read, the second to write
-		if asked == 2 {
-			p, g = 400, 60
-		}
-		json.NewEncoder(w).Encode(map[string]any{"timings": map[string]any{"prompt_n": 700, "prompt_per_second": p, "predicted_n": 48, "predicted_per_second": g}})
-	}))
-	defer srv.Close()
+	type state struct {
+		busy, runs, task int
+		agentRuns        map[int]bool // the runs an agent's request ran beside
+		mine, other      int          // the slots' last tasks
+	}
+	serve := func(st *state) *httptest.Server {
+		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/slots" {
+				st.busy--
+				json.NewEncoder(w).Encode([]map[string]any{
+					{"id": 0, "is_processing": false, "id_task": st.mine},
+					{"id": 1, "is_processing": st.busy > 0, "id_task": st.other},
+				})
+				return
+			}
+			if st.busy > 0 {
+				t.Error("measured while a slot was busy")
+			}
+			st.runs++
+			st.task++
+			st.mine = st.task
+			p, g := 900.0, 20.0 // the first clean run is slow to write, the next slow to read
+			if st.runs%2 == 0 {
+				p, g = 400, 60
+			}
+			if st.agentRuns[st.runs] {
+				st.task++
+				st.other = st.task
+				p, g = 100, 5
+			}
+			json.NewEncoder(w).Encode(map[string]any{"timings": map[string]any{"prompt_n": 700, "prompt_per_second": p, "predicted_n": 48, "predicted_per_second": g}})
+		}))
+	}
+
+	st := &state{busy: 3, agentRuns: map[int]bool{}}
+	srv := serve(st)
 	s, err := Measure(context.Background(), srv.URL+"/v1")
-	if err != nil || s.Prompt != 900 || s.Gen != 60 || busy != 0 {
-		t.Fatalf("%+v %v (busy %d)", s, err, busy)
+	srv.Close()
+	if err != nil || s.Prompt != 900 || s.Gen != 60 || st.runs != 2 {
+		t.Fatalf("idle: %+v %v (%d runs)", s, err, st.runs)
+	}
+
+	// an agent's request beside the first run: it doesn't count
+	st = &state{agentRuns: map[int]bool{1: true}}
+	srv = serve(st)
+	s, err = Measure(context.Background(), srv.URL+"/v1")
+	srv.Close()
+	if err != nil || s.Prompt != 900 || s.Gen != 60 || st.runs != 3 {
+		t.Fatalf("one run shared: %+v %v (%d runs)", s, err, st.runs)
+	}
+
+	// beside every run: nothing is kept
+	st = &state{agentRuns: map[int]bool{1: true, 2: true, 3: true, 4: true}}
+	srv = serve(st)
+	_, err = Measure(context.Background(), srv.URL+"/v1")
+	srv.Close()
+	if err != errBusy || st.runs != 4 {
+		t.Fatalf("every run shared: %v (%d runs)", err, st.runs)
 	}
 }
 

@@ -1895,10 +1895,10 @@ What the estimates make of some computers:
 | computer | 1.7B judges a turn | 4B judges a turn | recommended |
 |---|---|---|---|
 | M4 Pro, 24 GB | 0.8 s | 1.6 s | 4B |
-| M1, 16 GB | 2.3 s | 5.2 s | 1.7B |
-| M1, 8 GB | 2.3 s | (too much memory) | 1.7B |
-| 8-core desktop, CPU only, 32 GB | 4.0 s | 9.3 s | 1.7B |
-| 4-core laptop, CPU only, 16 GB | 8.2 s | 19 s | none |
+| M1, 16 GB | 2.2 s | 5.0 s | 1.7B |
+| M1, 8 GB | 2.2 s | (too much memory) | 1.7B |
+| 8-core desktop, CPU only, 32 GB | 3.7 s | 8.7 s | 1.7B |
+| 4-core laptop, CPU only, 16 GB | 7.8 s | 18 s | none |
 | 4 GB of memory | (doesn't fit) | (doesn't fit) | none |
 
 The first time a model serves with a llama.cpp build, it is measured: once
