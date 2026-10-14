@@ -1,11 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // #1844: a tab picked in the sidebar opens at its top (app.js navSubs). A page's
 // tabs share its one scroll: scrolled to the foot of Settings › General and
-// Allowances picked, or of Library › MCP servers and Skills picked, the new
-// tab was shown from where the old one had been left, at its foot. The tab
-// already open, picked again, leaves the page where it is, and another page
-// and back finds each where it was left. The page's own strip is unchanged.
-// Chromium and WebKit, every language; no backend, the API is faked here.
+// Models picked, the new tab was shown from where the old one had been left,
+// at its foot (Library's tabs, cut since, did the same). The tab already
+// open, picked again, leaves the page where it is, and another page and back
+// finds it where it was left. The page's own strip is unchanged. Chromium
+// and WebKit, every language; no backend, the API is faked here.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -13,15 +13,6 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const HOME = "/Users/aimer";
-const agent = (id, name) => ({ id, name, icon: "", skills: `${HOME}/.${id}/skills`, mcp: `${HOME}/.${id}/mcp.json` });
-const lib = {
-  dir: `${HOME}/.fogway/library`, backups: `${HOME}/.fogway/backups`, home: HOME,
-  agents: [agent("codex", "Codex"), agent("pi", "Pi")],
-  instructions: { agents: [], sets: [] }, foundServers: [], projects: [], foundSkills: [],
-  skills: Array.from({ length: 30 }, (_, i) => ({ name: `skill-${i + 1}`, description: "Grill a plan", kind: "folder", agents: ["codex"], source: `${HOME}/skills/skill-${i + 1}` })),
-  servers: Array.from({ length: 30 }, (_, i) => ({ name: `server-${i + 1}`, transport: "stdio", command: "npx", args: ["fs-mcp"], agents: ["codex"] })),
-};
 
 function server(lang) {
   return async (route) => {
@@ -30,8 +21,6 @@ function server(lang) {
     if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:false};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang, theme: "light" } });
-    if (url.pathname === "/api/library") return json(lib);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3725", running: true, window: true } });
@@ -62,13 +51,16 @@ async function toFoot(page, v) {
 const settle = (page) => page.waitForTimeout(500);
 const room = (page, v) => page.locator(v).evaluate((e) => e.scrollHeight - e.clientHeight);
 
+// Settings' tabs taller than a 480-high window: General, Models, Observability
 const words = {
-  en: { allowances: "Allowances", mcp: "MCP servers", skills: "Skills" },
-  zh: { allowances: "额度", mcp: "MCP 服务器", skills: "技能" },
-  "zh-TW": { allowances: "額度", mcp: "MCP 伺服器", skills: "技能" },
-  ja: { allowances: "利用枠", mcp: "MCP サーバー", skills: "スキル" },
-  de: { allowances: "Kontingente", mcp: "MCP-Server", skills: "Skills" },
+  en: { models: "Models", otel: "Observability" },
+  zh: { models: "模型", otel: "可观测性" },
+  "zh-TW": { models: "模型", otel: "可觀測性" },
+  ja: { models: "モデル", otel: "オブザーバビリティ" },
+  de: { models: "Modelle", otel: "Observability" },
 };
+const set = "#view-settings";
+const picked = (page, id) => page.waitForFunction((id) => document.querySelector("#setTab-" + id).classList.contains("on"), id);
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   test(`${engine}: a tab picked in the sidebar opens at its top`, async (t) => {
@@ -78,7 +70,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
     for (const [lang, w] of Object.entries(words)) await t.test(lang, async () => {
       const context = await browser.newContext({ viewport: { width: 1100, height: 480 }, reducedMotion: "reduce" });
-      await context.addInitScript(() => { try { localStorage.setItem("fogway.settingsTab", "general"); localStorage.setItem("fogway.libTab", "mcp"); } catch {} });
+      await context.addInitScript(() => { try { localStorage.setItem("fogway.settingsTab", "general"); } catch {} });
       const page = await context.newPage();
       page.setDefaultTimeout(5000);
       const errors = [];
@@ -88,51 +80,41 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.waitForSelector("#nav button.on");
       assert.ok(await page.evaluate(() => document.body.classList.contains("side-nav")), "the sidebar is shown");
 
-      // Settings › General at its foot, then Allowances
-      const set = "#view-settings";
+      // Settings › General at its foot, then Models
       await page.locator("#prefs").click();
-      await sub(page, w.allowances).waitFor();
+      await sub(page, w.models).waitFor();
       await toFoot(page, set);
-      await sub(page, w.allowances).click();
-      await page.waitForFunction(() => document.querySelector("#setTab-usage").classList.contains("on"));
+      await sub(page, w.models).click();
+      await picked(page, "models");
       await settle(page);
-      assert.ok(await room(page, set) > 100, "Allowances is taller than the window");
-      assert.equal(await top(page, set), 0, "Allowances opens at its top");
+      assert.ok(await room(page, set) > 100, "Models is taller than the window");
+      assert.equal(await top(page, set), 0, "Models opens at its top");
 
-      // Allowances at its foot, picked again: the page stays there
+      // Models at its foot, picked again: the page stays there
       const at = await toFoot(page, set);
-      await sub(page, w.allowances).click();
+      await sub(page, w.models).click();
       await settle(page);
       assert.equal(await top(page, set), at, "the tab already open leaves the page where it is");
 
-      // Library › MCP servers at its foot, then Skills
-      const libv = "#view-library";
-      await page.locator('#nav button[data-view="library"]').click();
-      await sub(page, w.skills).waitFor();
-      await page.locator(`${libv} .lib-row, ${libv} .row`).first().waitFor();
-      await toFoot(page, libv);
-      await sub(page, w.skills).click();
-      await page.waitForFunction((name) => document.querySelector("#view-library .lib-tabs .on")?.textContent.startsWith(name), w.skills);
+      // from the foot of Models, Observability; and back from its foot
+      await sub(page, w.otel).click();
+      await picked(page, "otel");
       await settle(page);
-      assert.ok(await room(page, libv) > 100, "Skills is taller than the window");
-      assert.equal(await top(page, libv), 0, "Skills opens at its top");
-
-      // and back to MCP servers from the foot of Skills
-      await toFoot(page, libv);
-      await sub(page, w.mcp).click();
-      await page.waitForFunction((name) => document.querySelector("#view-library .lib-tabs .on")?.textContent.startsWith(name), w.mcp);
+      assert.ok(await room(page, set) > 100, "Observability is taller than the window");
+      assert.equal(await top(page, set), 0, "Observability opens at its top");
+      await toFoot(page, set);
+      await sub(page, w.models).click();
+      await picked(page, "models");
       await settle(page);
-      assert.equal(await top(page, libv), 0, "MCP servers opens at its top");
+      assert.equal(await top(page, set), 0, "Models opens at its top");
 
-      // another page and back: each page is where it was left, as before
-      const libAt = await toFoot(page, libv);
+      // another page and back: Settings is where it was left, as before
+      const setAt = await toFoot(page, set);
+      await page.locator('#nav button[data-view="usage"]').click();
+      await settle(page);
       await page.locator("#prefs").click();
       await settle(page);
-      const setAt = await top(page, set);
-      assert.ok(setAt > 100, `Settings is where it was left: ${setAt}`);
-      await page.locator('#nav button[data-view="library"]').click();
-      await settle(page);
-      assert.equal(await top(page, libv), libAt, "the Library is where it was left");
+      assert.equal(await top(page, set), setAt, "Settings is where it was left");
 
       assert.deepEqual(errors, []);
       await context.close();
@@ -149,7 +131,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     t.after(() => browser.close());
     for (const [name, width, layout] of [["sidebar off", 1100, "top"], ["narrow", 900, ""]]) for (const lang of Object.keys(words)) await t.test(`${name}, ${lang}`, async () => {
       const context = await browser.newContext({ viewport: { width, height: 480 }, reducedMotion: "reduce" });
-      await context.addInitScript((layout) => { try { localStorage.setItem("fogway.settingsTab", "general"); localStorage.setItem("fogway.libTab", "mcp"); if (layout) localStorage.setItem("fogway.navLayout", layout); } catch {} }, layout);
+      await context.addInitScript((layout) => { try { localStorage.setItem("fogway.settingsTab", "general"); if (layout) localStorage.setItem("fogway.navLayout", layout); } catch {} }, layout);
       const page = await context.newPage();
       page.setDefaultTimeout(5000);
       const errors = [];
@@ -159,15 +141,16 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.waitForSelector("#nav button.on");
       assert.ok(!(await page.evaluate(() => document.body.classList.contains("side-nav"))), "no sidebar");
 
-      const libv = "#view-library";
-      await page.locator('#nav button[data-view="library"]').click();
-      await page.locator(`${libv} .lib-row, ${libv} .row`).first().waitFor();
-      const at = await toFoot(page, libv);
-      await page.locator(`${libv} .lib-tabs > button`).nth(1).click();
-      await page.waitForFunction(() => document.querySelectorAll("#view-library .lib-tabs > button")[1]?.classList.contains("on"));
+      await page.locator("#prefs").click();
+      await page.locator("#setTab-models").waitFor();
+      const at = await toFoot(page, set);
+      // Settings' strip scrolls away with its page: clicked where it is, not
+      // brought into sight first as Playwright's click would
+      await page.locator("#setTab-models").evaluate((b) => b.click());
+      await picked(page, "models");
       await settle(page);
-      const after = await top(page, libv);
-      assert.ok(after > 100, `the strip's click left the Library where it was, not at its top: ${at} then ${after}`);
+      const after = await top(page, set);
+      assert.ok(after > 100, `the strip's click left Settings where it was, not at its top: ${at} then ${after}`);
       assert.deepEqual(errors, []);
       await context.close();
     });

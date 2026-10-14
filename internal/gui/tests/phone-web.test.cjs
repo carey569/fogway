@@ -12,6 +12,8 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { test } = require("node:test");
 const { chromium, webkit, devices } = require("playwright");
+// GET /api/local from a fresh fogway, local model off
+const local = require("./fixtures/local-off.json");
 
 const assets = path.resolve(__dirname, "../assets");
 
@@ -27,8 +29,7 @@ function serve(web) {
     if (url.pathname === "/api/providers") return json(providers);
     if (url.pathname === "/api/groups") return json({ groups: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
-    if (url.pathname === "/api/plugins/market") return json({ listings: [], state: { bun: true, bunVersion: "1.3.0", plugins: [], picker: false } });
+    if (url.pathname === "/api/local" || url.pathname.startsWith("/api/local/")) return json(local); // the page measures this computer as it opens
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
@@ -89,14 +90,14 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     t.after(() => browser.close());
 
     // the header: two rows, the tabs at their size, the one open in sight
-    let page = await open(browser, phone, true, "plugins");
+    let page = await open(browser, phone, true, "local");
     const [top, nav, actions, brand] = [await box(page, ".top"), await box(page, "#nav"), await box(page, ".top .actions"), await box(page, ".top .brand")];
     assert.ok(nav.y >= actions.y + actions.height - 1 && nav.y >= brand.y + brand.height - 1, "the tabs are under the fogway and the icons");
     assert.ok(nav.width >= top.width - 30, `the tabs take the row: ${nav.width} of ${top.width}`);
     const tab = await page.locator("#nav button").first().evaluate((b) => [parseFloat(getComputedStyle(b).fontSize), b.getBoundingClientRect().height]);
     assert.ok(tab[0] >= 13 && tab[1] >= 30, `a tab is readable and tappable: ${tab}`);
     const on = await box(page, "#nav button.on");
-    assert.ok(on.x >= nav.x - 1 && on.x + on.width <= nav.x + nav.width + 1, "Plugins, open, is in sight");
+    assert.ok(on.x >= nav.x - 1 && on.x + on.width <= nav.x + nav.width + 1, "Local model, the last tab, open, is in sight");
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390, "nothing runs off the side");
     assert.equal(await page.locator(".top").getAttribute("class"), "top", "none of the narrow window's squeezing");
     assert.match(await page.locator('meta[name="viewport"]').getAttribute("content"), /maximum-scale=1/, "iOS doesn't zoom into a field");

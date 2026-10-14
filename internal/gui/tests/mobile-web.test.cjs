@@ -14,6 +14,8 @@ const { execFileSync } = require("node:child_process");
 const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 const { PNG } = require("playwright-core/lib/utilsBundle");
+// GET /api/local from a fresh fogway, local model off
+const local = require("./fixtures/local-off.json");
 
 const assets = path.resolve(__dirname, "../assets");
 const base = process.env.BASE_REF || "origin/main";
@@ -48,7 +50,7 @@ const agentRows = [
 ];
 // the labels app.js groups into omp's roles square (OMP_ROLES)
 const OMP_ROLES = ["subagents", "smol", "slow", "plan", "vision", "advisor"];
-const views = ["agents", "providers", "gateway", "routing", "usage", "library", "plugins", "settings"];
+const views = ["agents", "providers", "gateway", "routing", "usage", "local", "settings"];
 
 // BASE_REF's assets, all read in one git call the first time one is asked
 // for. A git show per file blocked the fake server for each of the ~100
@@ -76,7 +78,7 @@ function baselineFile(file) {
 // fetched by the page itself, apart from any preload) isn't drawn yet
 let serving = 0;
 
-function server(lang, original = false, opened = []) {
+function server(lang, original = false) {
   return async route => {
     const url = new URL(route.request().url());
     const json = data => route.fulfill({ json: data });
@@ -95,12 +97,7 @@ function server(lang, original = false, opened = []) {
     if (url.pathname === "/api/usage") return json(usage);
     if (url.pathname === "/api/gateway/trace") return json({ mine: true, now: at, seq: 0, routes: [], totals: { requests: 0, rerouted: 0, errors: 0 } });
     if (url.pathname === "/api/gateway/history") return json({ cut: false, days: [], routes: [] });
-    if (url.pathname === "/api/library") return json({ dir: "/test/library", home: "/test", agents: [], instructions: { agents: [], sets: [] }, servers: [], skills: [], projects: [], foundServers: [], foundSkills: [] });
-    if (url.pathname === "/api/plugins") return json({ bun: true, plugins: [], movable: [] });
-    if (url.pathname === "/api/plugins/listings") return json({ listings: [] });
-    if (url.pathname === "/api/plugins/npm") return json({ npm: {} });
-    if (url.pathname === "/api/plugins/market") return json({ listings: [], state: { bun: true, plugins: [] } });
-    if (url.pathname === "/api/library/reveal") { opened.push(route.request().postDataJSON()); return json({}); }
+    if (url.pathname === "/api/local" || url.pathname.startsWith("/api/local/")) return json(local); // the page measures this computer as it opens
     if (url.pathname.startsWith("/api/")) return json({});
     const file = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
@@ -114,7 +111,7 @@ function server(lang, original = false, opened = []) {
   };
 }
 
-async function open(browser, lang, width, { original = false, touch = true, opened = [] } = {}) {
+async function open(browser, lang, width, { original = false, touch = true } = {}) {
   const page = await browser.newPage({ viewport: { width, height: 900 }, hasTouch: touch, reducedMotion: "reduce", colorScheme: "light" });
   page.setDefaultTimeout(5000);
   await page.addInitScript(at => {
@@ -124,7 +121,7 @@ async function open(browser, lang, width, { original = false, touch = true, open
       static now() { return new RealDate(at).getTime(); }
     };
   }, at);
-  await page.route("http://fogway.test/**", server(lang, original, opened));
+  await page.route("http://fogway.test/**", server(lang, original));
   await page.goto("http://fogway.test/");
   await page.locator("#nav button").first().waitFor();
   return page;
@@ -135,8 +132,7 @@ async function go(page, view) {
   // this exercises the phone's horizontal navigation strip too.
   await page.locator(view === "settings" ? "#prefs" : `#nav [data-view="${view}"]`).click();
   await page.locator(`#view-${view}`).waitFor();
-  if (view === "library") await page.locator("#view-library .lib-more:not(:disabled)").waitFor();
-  if (view === "plugins") await page.locator("#view-plugins .pm-find").waitFor();
+  if (view === "local") await page.locator("#view-local .lm-card").first().waitFor();
   if (view === "usage") {
     await page.locator("#usageAgents .row.stat").waitFor();
     await page.locator("#quotaHead").waitFor({ state: "hidden" });
@@ -248,7 +244,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     for (const lang of ["en", "zh"]) {
       for (const width of [360, 390, 430, 820]) {
         await t.test(`${lang} ${width}: every tab and page fits`, async () => {
-          const opened = [], errors = [], failures = [], page = await open(browser, lang, width, { opened });
+          const errors = [], failures = [], page = await open(browser, lang, width);
           page.on("pageerror", e => errors.push(e.message));
           try {
             for (const view of views) {
@@ -259,13 +255,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
               assert.equal(await page.locator(`#view-${view}`).isVisible(), true);
               if (view === "agents") await agentsFit(page);
               if (view === "usage") await usageFits(page);
-              if (view === "library") {
-                await Promise.all([
-                  page.waitForResponse(r => new URL(r.url()).pathname === "/api/library/reveal"),
-                  page.getByRole("button", { name: lang === "en" ? "Library folder" : "资源库文件夹", exact: true }).click(),
-                ]);
-                assert.deepEqual(opened, [{ path: "/test/library" }], "Library folder must be reachable");
-              }
               } catch (e) { failures.push(view + ": " + e.message); }
             }
             assert.deepEqual(errors, []);
@@ -330,14 +319,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
                   bar.style.height = Math.ceil(height) + "px";
                 }, addedFooter.height);
                 addedFooter = await current.locator("#agentsManage").boundingBox();
-              }
-              // Plugins' Built-in tab is new: until BASE_REF has it, the
-              // page is compared with that tab taken out of its strip (the
-              // sidebar's list follows the strip); builtins.test.cjs covers
-              // the tab and its list.
-              if (view === "plugins" && !baselineFile("plugins.js").includes("function drawBuiltin")) {
-                await current.locator("#view-plugins .lib-tabs .opt").first().evaluate((b) => b.remove());
-                await current.waitForTimeout(350);
               }
               const before = PNG.sync.read(await still(original));
               const after = PNG.sync.read(await still(current));

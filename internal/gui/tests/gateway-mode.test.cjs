@@ -1,8 +1,8 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Gateway mode (Player on Discord): fogway web on a server that is only
 // the gateway for other computers' agents. boot.js says so and the page
-// opens on Providers with no Agents or Library tab, an address
-// kept for one of them opening Providers; Settings leaves out what is
+// opens on Providers with no Agents tab, an address kept for it
+// opening Providers; Settings leaves out what is
 // written into this computer's agents' files (provider in model names,
 // Codex subagents, long conversations, Codex thread titles) and the
 // desktop's alerts, and General has the switch — Automatic, On, Off —
@@ -65,7 +65,6 @@ function server(lang, posts, { web = true, gateway = true, agents = false, notic
       return json(cur);
     }
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true, window: true } });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/window/fit") return route.fulfill({ status: 204 });
@@ -80,9 +79,9 @@ const L = {
   en: { mode: "Gateway mode", noAgents: "Now on: no agents on this computer", off: "Now off: agents found on this computer" },
   zh: { mode: "网关模式", noAgents: "当前开启：本机没有 Agent", off: "当前关闭：本机找到了 Agent" },
 };
-const HIDDEN = ["agents", "library"];
-// in the order the pages are grouped in (work, models, insights, extend)
-const KEPT = ["sessions", "providers", "routing", "gateway", "usage", "plugins"];
+const HIDDEN = ["agents"];
+// in the order the pages are grouped in (work, models, insights, edge)
+const KEPT = ["sessions", "providers", "routing", "gateway", "usage", "local"];
 
 // the tabs shown, the page shown
 const tabs = (page) => page.evaluate(() => [...document.querySelectorAll("#nav button[data-view]")].filter((b) => !b.hidden && b.offsetParent).map((b) => b.dataset.view));
@@ -152,7 +151,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await clickStill(page, "#gatewayModeSegs .opt:nth-child(4)", `${where}: Off`);
       await page.waitForFunction(() => !document.querySelector('#nav button[data-view="agents"]').hidden);
       assert.deepEqual(posts.filter((p) => p[0] === "gateway-mode"), [["gateway-mode", "off"]], where);
-      assert.deepEqual(await tabs(page), ["agents", "sessions", "library", "providers", "routing", "gateway", "usage", "plugins"], `${where}: off`);
+      assert.deepEqual(await tabs(page), ["agents", "sessions", "providers", "routing", "gateway", "usage", "local"], `${where}: off`);
       assert.deepEqual(await viewShown(page), ["view-settings"], `${where}: Settings stays`);
       assert.deepEqual(await agentRows(page), [true, true, true, true, true, true, true, true, true], `${where}: rows back`);
       assert.doesNotMatch(await page.locator("#gatewayModeSub").textContent(), new RegExp(L[lang].noAgents), where);
@@ -185,7 +184,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.route("**/*", server(lang, [], { web, gateway: false, agents: true }));
         await page.goto("http://fogway.test/");
         await page.waitForSelector("#nav button.on");
-        assert.deepEqual(await tabs(page), ["agents", "sessions", "library", "providers", "routing", "gateway", "usage", "plugins"], where);
+        assert.deepEqual(await tabs(page), ["agents", "sessions", "providers", "routing", "gateway", "usage", "local"], where);
         assert.deepEqual(await viewShown(page), ["view-agents"], where);
         await page.locator("#prefs").click();
         await page.waitForSelector("#langPick span");
@@ -259,7 +258,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
     t.after(() => browser.close());
     const warning = "Codex's own multi_agent_v2 is on in the config fogway routes, which takes over the multi-agent V1 fogway's models ask for; turn it off in Codex's config to run subagents on fogway's models.";
-    const restart = "Codex builds its model list at start-up — restart the Codex app, open codex sessions and the app-server they share (codex app-server daemon restart) to see this.";
+    // codexRestartAll, as internal/agent/codex.go words it
+    const restart = "Codex builds its model list at start-up — restart the Codex app and open codex sessions to see this.";
     for (const lang of ["en", "zh", "zh-TW", "ja", "de"]) {
       const context = await browser.newContext({ viewport: { width: 420, height: 720 }, reducedMotion: "reduce" });
       const page = await context.newPage();
@@ -277,7 +277,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       if (lang === "en") assert.equal(text, warning + " " + restart, `${engine} ${lang}: the text`);
       else {
         assert.ok(!text.includes("turn it off") && !text.includes("builds its model list"), `${engine} ${lang}: left in English: ${text}`);
-        assert.ok(text.includes("multi_agent_v2") && text.includes("codex app-server daemon restart"), `${engine} ${lang}: lost a name: ${text}`);
+        assert.ok(text.includes("multi_agent_v2") && /\bcodex\b/.test(text), `${engine} ${lang}: lost a name: ${text}`);
       }
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${engine} ${lang}: the page scrolls sideways`);
       const box = await warn.boundingBox();

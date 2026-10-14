@@ -3,11 +3,11 @@
 // Session…) are picked in its editor and made with its Save, as the rest of
 // the editor is; Cancel drops them. A click used to post provider/route and
 // redraw the editor at once, so looking through what each option says
-// lagged, and saved a pick only looked at (01huadalang on Discord, on a
-// WorkBuddy AI subscription with several accounts). Stays, which a
-// provider's Routing page row had alone, is beside Routing in the editor
-// too. Accounts and keys alike; nothing is sent, redrawn or scrolled before
-// the Save. In English and Chinese, Chromium and WebKit.
+// lagged, and saved a pick only looked at (01huadalang on Discord, then on
+// a subscription with several accounts; Fogway has keys alone). Stays,
+// which a provider's Routing page row had alone, is beside Routing in the
+// editor too. A provider with several keys; nothing is sent, redrawn or
+// scrolled before the Save. In English and Chinese, Chromium and WebKit.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -16,13 +16,6 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 const base = { icon: "generic", catalog: "", models: [{ id: "glm-5", name: "GLM-5", on: true }], agents: [], fallback: [], headers: {}, routing: "", affinity: "", ready: true };
-const sub = {
-  ...base, id: "workbuddy-ai", name: "WorkBuddy AI", chat: "", responses: "", anthropic: "", keyList: [],
-  account: {
-    agent: "workbuddy-ai", agentName: "WorkBuddy AI", user: "one@example.test", plan: "Pro",
-    logins: ["one", "two", "three"].map((n, i) => ({ user: `${n}@example.test`, plan: "Pro", active: i === 0, on: true })),
-  },
-};
 const relay = {
   ...base, id: "relay", name: "Relay", chat: "https://relay.example.invalid/v1", responses: "", anthropic: "", key: { set: true, masked: "sk-…1234" },
   keyList: [1, 2].map((i) => ({ id: `key-${i}`, name: `Key ${i}`, masked: `sk-…000${i}`, active: i === 1, on: true })),
@@ -30,7 +23,7 @@ const relay = {
 
 function serve(lang, posts) {
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
-  const providers = { providers: [sub, relay], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [relay], presets: [], excluded: [], gateway: { running: true, window: true } };
   return async (route) => {
     const url = new URL(route.request().url());
     const json = (data) => route.fulfill({ json: data });
@@ -39,7 +32,6 @@ function serve(lang, posts) {
     if (url.pathname === "/api/state") return json(state);
     if (url.pathname === "/api/providers") return json(providers);
     if (url.pathname === "/api/groups") return json({ groups: [] });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
     if (route.request().method() === "POST" && url.pathname.startsWith("/api/provider")) {
       posts.push({ path: url.pathname, body: route.request().postDataJSON() });
       return json(providers);
@@ -60,7 +52,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
   for (const lang of ["en", "zh"]) {
     const zh = lang === "zh";
     const L = { routing: zh ? "路由" : "Routing", stays: zh ? "会话保持" : "Stays", unsaved: zh ? "未保存" : "unsaved", save: zh ? "保存" : "Save", cancel: zh ? "取消" : "Cancel" };
-    for (const p of [sub, relay]) {
+    for (const p of [relay]) {
       test(`${engine} ${lang}: ${p.name}'s Routing and Stays are made with its Save, not at each click`, async (t) => {
         const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "chromium" }));
         t.after(() => browser.close());

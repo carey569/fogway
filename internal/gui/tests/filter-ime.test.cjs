@@ -3,8 +3,7 @@
 // (1, 2 → 1122). The filter's own input event drew its row again with
 // replaceChildren, which took the focused field out of the page and put it
 // back; an IME committing its text while the field was out wrote it twice.
-// The provider editor's keys filter and the plugins search were made the
-// same way. Each is typed into here, through an IME in Chromium (CDP's
+// The provider editor's keys filter was made the same way. Each is typed into here, through an IME in Chromium (CDP's
 // imeSetComposition, then insertText) and by key in both engines, and the
 // field must keep one character a key, its focus and its caret, and never
 // leave the page. The row around it still follows the filter and the
@@ -35,16 +34,8 @@ const relay = () => ({
   key: { set: true, masked: "sk-…0000" }, balanceToken: { takes: false, set: false }, proxy: "",
   keyList: Array.from({ length: N }, (_, i) => ({ id: idOf(i), name: "", masked: "sk-…" + String(i).padStart(4, "0"), on: true, active: i === 0 })),
 });
-const listings = [
-  { package: "@magpie-community/opencode-zed-auth", name: "Zed", icon: "zed", providers: ["zed"], community: true,
-    summary: { en: "Your Zed plan.", zh: "Zed 订阅。" }, npm: { version: "0.1.0", weekly: 120 } },
-  { package: "opencode-gemini-auth", name: "Gemini", icon: "gemini-color", providers: ["google"],
-    summary: { en: "Gemini with a Google account.", zh: "用 Google 账号使用 Gemini。" }, npm: { version: "1.4.0", weekly: 9100 } },
-];
-
-// serve answers the page from fixtures; held, when given, keeps the plugin
-// listings back until it is resolved, as a slow npm mirror would
-function serve(lang, held) {
+// serve answers the page from fixtures
+function serve(lang) {
   return async (route) => {
     const url = new URL(route.request().url());
     const json = (data) => route.fulfill({ json: data });
@@ -57,13 +48,7 @@ function serve(lang, held) {
     }
     if (url.pathname === "/api/gateway/history") return json({ cut: false, days: [], routes: [] });
     if (url.pathname.startsWith("/api/groups")) return json({ models, pools: [], groups });
-    if (url.pathname === "/api/providers") return json({ providers: [relay()], presets: [], excluded: [], gateway: { running: true, window: true }, plugins: [] });
-    if (url.pathname === "/api/plugins") return json({ bun: true, bunVersion: "1.3.0", plugins: [{ spec: "opencode-gemini-auth@1.4.0", providers: ["Gemini"], version: "1.4.0" }] });
-    if (url.pathname === "/api/plugins/listings") {
-      if (held) await held;
-      return json({ listings });
-    }
-    if (url.pathname === "/api/plugins/search") return json({ hits: [] });
+    if (url.pathname === "/api/providers") return json({ providers: [relay()], presets: [], excluded: [], gateway: { running: true, window: true } });
     if (url.pathname.startsWith("/api/")) return json({});
     const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
     const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
@@ -100,24 +85,24 @@ async function ime(page, text) {
 
 // other: the language the routing header is switched to, and its words
 const words = {
-  en: { label: "Routing groups", installed: "Installed", of: "1 of 300 keys", other: ["zh", "路由组", "筛选路由组和模型"] },
-  zh: { label: "路由组", installed: "已安装", of: "300 个密钥中的 1 个", other: ["en", "Routing groups", "Filter groups and models"] },
-  ja: { label: "ルーティンググループ", installed: "インストール済み", of: "300 個中 1 個のキー", other: ["en", "Routing groups", "Filter groups and models"] },
-  de: { label: "Weiterleitungsgruppen", installed: "Installiert", of: "1 von 300 Schlüsseln", other: ["en", "Routing groups", "Filter groups and models"] },
+  en: { label: "Routing groups", of: "1 of 300 keys", other: ["zh", "路由组", "筛选路由组和模型"] },
+  zh: { label: "路由组", of: "300 个密钥中的 1 个", other: ["en", "Routing groups", "Filter groups and models"] },
+  ja: { label: "ルーティンググループ", of: "300 個中 1 個のキー", other: ["en", "Routing groups", "Filter groups and models"] },
+  de: { label: "Weiterleitungsgruppen", of: "1 von 300 Schlüsseln", other: ["en", "Routing groups", "Filter groups and models"] },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh", "ja", "de"]) {
     for (const width of [1100, 440]) {
       const w = words[lang];
-      const open = async (t, view, held) => {
+      const open = async (t, view) => {
         const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
         t.after(() => browser.close());
         const page = await (await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce" })).newPage();
         page.setDefaultTimeout(5000);
         const errors = [];
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.route("**/*", serve(lang, held));
+        await page.route("**/*", serve(lang));
         await page.goto("http://fogway.test/?view=" + view);
         return { page, errors };
       };
@@ -179,29 +164,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await page.keyboard.press("Escape");
         assert.deepEqual(await field(page), { out: 0, same: true, value: "", caret: [0, 0], connected: true }, "Escape empties the filter");
         await page.waitForFunction(() => document.querySelectorAll(".editor .accts .acc[data-account-id]").length === 50);
-        assert.deepEqual(errors, []);
-      });
-
-      test(`${engine} ${lang} ${width}px: the plugins search takes one character a key`, async (t) => {
-        let release;
-        const held = new Promise((r) => { release = r; });
-        const { page, errors } = await open(t, "plugins", held);
-        const q = page.locator(".pm-find input");
-        await q.waitFor();
-        // from Installed, the first key goes to Discover
-        await page.locator(":is(.lib-tabs .opt, .nav-s):visible", { hasText: w.installed }).click();
-        await watch(page, ".pm-find input");
-        await q.focus();
-        await typeIn(page, "1");
-        assert.deepEqual(await field(page), { out: 0, same: true, value: "1", caret: [1, 1], connected: true }, "the search after 1 from Installed");
-        // the listings come while the reader types
-        release();
-        await page.locator(".pm-sec").first().waitFor();
-        await typeIn(page, "2");
-        assert.deepEqual(await field(page), { out: 0, same: true, value: "12", caret: [2, 2], connected: true }, "the search after the listings came, and 2");
-        await page.keyboard.press("Escape");
-        assert.equal(await q.inputValue(), "");
-        assert.equal((await field(page)).out, 0);
         assert.deepEqual(errors, []);
       });
     }

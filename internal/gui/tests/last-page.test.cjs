@@ -4,8 +4,9 @@
 // the sidebar's order to be the reader's): left on Routing, the window opened
 // again (no ?view=) and reloaded is on Routing, its tab picked, nothing
 // scrolled. A page asked for (?view=, the tray's links) wins over the one
-// kept, Agents too. A page kept that isn't one, or one gateway mode leaves
-// out (Agents, Library), gives way to the first page (Providers there).
+// kept, Agents too. A page kept that isn't one (Library, cut), or one
+// gateway mode leaves out (Agents), gives way to the first page (Providers
+// there).
 // Chromium and WebKit, 1100 (sidebar) and 420 (header's tabs) wide. No
 // backend: the API is faked.
 const assert = require("node:assert/strict");
@@ -16,6 +17,8 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 const BASE = "http://fogway.test/";
+// GET /api/local from a fresh fogway, local model off
+const local = require("./fixtures/local-off.json");
 
 function server({ web = false, gateway = false } = {}) {
   return async (route) => {
@@ -26,7 +29,7 @@ function server({ web = false, gateway = false } = {}) {
     if (url.pathname === "/api/state") return json({ agents: [], profiles: [], settings: { lang: "en", theme: "light" } });
     if (url.pathname === "/api/settings") return json({ theme: "light", lang: "en", version: "0.1.400", gateway: "http://127.0.0.1:3725", web, gatewayOn: web && gateway, visionModels: [], lanURLs: [] });
     if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true, window: true } });
-    if (url.pathname === "/api/plugins") return json({ plugins: [] });
+    if (url.pathname === "/api/local" || url.pathname.startsWith("/api/local/")) return json(local); // the page measures this computer as it opens
     if (url.pathname === "/api/usage/quotas") return json([]);
     if (url.pathname === "/api/groups") return json({ groups: [], models: [] });
     if (url.pathname === "/api/window/fit") return route.fulfill({ status: 204 });
@@ -91,15 +94,15 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // a page there is no longer: the first page
       await keep(page, "nonesuch");
       await open(page, BASE, "agents", `${where}: a page gone`);
-      // left on Agents: Agents
-      await keep(page, "plugins");
-      await open(page, BASE, "plugins", `${where}: Plugins kept`);
+      // left on Local model: Local model, then on Agents: Agents
+      await keep(page, "local");
+      await open(page, BASE, "local", `${where}: Local model kept`);
       await page.locator('#nav button[data-view="agents"]').click();
       await open(page, BASE, "agents", `${where}: Agents kept`);
       assert.deepEqual(errors, [], where);
       await context.close();
 
-      // fogway web in gateway mode: Agents and Library aren't there
+      // fogway web in gateway mode: Agents isn't there, nor Library, cut
       const gw = await browser.newContext({ viewport: { width, height: 640 }, reducedMotion: "reduce" });
       const gp = await gw.newPage();
       gp.setDefaultTimeout(5000);
