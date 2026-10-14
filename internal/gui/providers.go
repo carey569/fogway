@@ -196,15 +196,14 @@ type providerJSON struct {
 	// Groups are the routing groups ("group/<id>") each of its models is
 	// in, by model id: what an unlisted one is still used through, and the
 	// editor names those in none
-	Groups    map[string][]string `json:"groups,omitempty"`
-	Off       bool                `json:"off"`                // switched off: kept, but agents get none of its models
-	Contexts  map[string]int      `json:"contexts,omitempty"` // the windows the user set, "*" for all its models
-	Outputs   map[string]int      `json:"outputs,omitempty"`  // the reply limits the user set (provider.OutputsOf)
-	Compacts  map[string]int      `json:"compacts,omitempty"` // where Codex and Claude Code compact on its models (provider.CompactsOf)
-	Fetched   *time.Time          `json:"fetched,omitempty"`  // when the list came from the vendor; the page says how long ago in its language
-	Agents    []providerAgent     `json:"agents"`             // detected agents, current ones flagged
-	Sponsored bool                `json:"sponsored"`
-	KeyList   []provider.KeyInfo  `json:"keyList"` // its keys, in the order requests try them
+	Groups   map[string][]string `json:"groups,omitempty"`
+	Off      bool                `json:"off"`                // switched off: kept, but agents get none of its models
+	Contexts map[string]int      `json:"contexts,omitempty"` // the windows the user set, "*" for all its models
+	Outputs  map[string]int      `json:"outputs,omitempty"`  // the reply limits the user set (provider.OutputsOf)
+	Compacts map[string]int      `json:"compacts,omitempty"` // where Codex and Claude Code compact on its models (provider.CompactsOf)
+	Fetched  *time.Time          `json:"fetched,omitempty"`  // when the list came from the vendor; the page says how long ago in its language
+	Agents   []providerAgent     `json:"agents"`             // detected agents, current ones flagged
+	KeyList  []provider.KeyInfo  `json:"keyList"`            // its keys, in the order requests try them
 }
 
 // stepPlanJSON: whether a StepFun provider's platform sign-in is kept, and
@@ -410,7 +409,6 @@ func providerInfo(p provider.Provider, agents []agentUse) providerJSON {
 		out.Chosen = []string{}
 	}
 	if pr := provider.Preset(p.Preset); pr != nil {
-		out.Sponsored = pr.Sponsored
 		out.Key.Optional = pr.NoKey
 	}
 	out.BalanceToken.Takes, out.BalanceToken.Set = provider.TakesBalanceToken(p), p.BalanceToken != ""

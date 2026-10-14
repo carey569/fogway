@@ -14,9 +14,6 @@ const (
 	KindVendor Kind = "vendor" // the model's own maker
 	KindRelay  Kind = "relay"  // an aggregator / API relay reselling many vendors
 	KindLocal  Kind = "local"  // something running on this machine
-	// KindRemote is another computer's fogway: not a relay, so the add
-	// lists give it a heading of its own, after this machine's
-	KindRemote Kind = "remote"
 )
 
 // PresetDef describes one preset.
@@ -31,12 +28,11 @@ type PresetDef struct {
 	Catalog   string   `json:"catalog,omitempty"`
 	Website   string   `json:"website,omitempty"`
 	KeysURL   string   `json:"keysUrl,omitempty"`
-	NoKey     bool     `json:"noKey,omitempty"`     // local servers: a key is optional
-	KeyHint   string   `json:"keyHint,omitempty"`   // the key field's placeholder, when it says more than NoKey's
-	Sponsored bool     `json:"sponsored,omitempty"` // shown first, with a tag
-	Note      string   `json:"note,omitempty"`      // one line under the name
-	Short     string   `json:"short,omitempty"`     // the add sheet's name for it, when Name is long
-	Regions   []Region `json:"regions,omitempty"`   // base-URL choices (a relay's regional endpoints, a vendor's plans)
+	NoKey     bool     `json:"noKey,omitempty"`   // local servers: a key is optional
+	KeyHint   string   `json:"keyHint,omitempty"` // the key field's placeholder, when it says more than NoKey's
+	Note      string   `json:"note,omitempty"`    // one line under the name
+	Short     string   `json:"short,omitempty"`   // the add sheet's name for it, when Name is long
+	Regions   []Region `json:"regions,omitempty"` // base-URL choices (a relay's regional endpoints, a vendor's plans)
 	// RegionLabel names what the Regions choose between, "Region" if unset.
 	RegionLabel string `json:"regionLabel,omitempty"`
 	// HeaderHints name optional request headers the vendor documents, which
@@ -562,20 +558,9 @@ func bedrockRegions(ids ...string) []Region {
 	return out
 }
 
-// Presets lists every preset, sponsored ones first within their kind.
+// Presets lists every preset.
 func Presets() []PresetDef {
-	out := make([]PresetDef, 0, len(presets))
-	for _, p := range presets {
-		if p.Sponsored {
-			out = append(out, p)
-		}
-	}
-	for _, p := range presets {
-		if !p.Sponsored {
-			out = append(out, p)
-		}
-	}
-	return out
+	return slices.Clone(presets)
 }
 
 // presetAliases are ids presets carried before, each the preset since and
@@ -590,7 +575,7 @@ var presetAliases = map[string]struct{ preset, region string }{
 }
 
 // Preset finds a preset by id, or by an id it carried before
-// (presetAliases), or a partner listed now or before (partners.go).
+// (presetAliases).
 func Preset(id string) *PresetDef {
 	if pr := builtinPreset(id); pr != nil {
 		return pr
@@ -598,8 +583,7 @@ func Preset(id string) *PresetDef {
 	return nil
 }
 
-// builtinPreset is the preset of that id built into fogway, partners'
-// aside.
+// builtinPreset is the preset of that id built into fogway.
 func builtinPreset(id string) *PresetDef {
 	if a, ok := presetAliases[id]; ok {
 		id = a.preset

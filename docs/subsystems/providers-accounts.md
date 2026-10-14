@@ -79,7 +79,6 @@ go test -tags nogui ./internal/gui -run TestProviderListTellsTencentAccessKey
 node --test internal/gui/tests/volc-access-key.test.cjs internal/gui/tests/tencent-access-key.test.cjs
 go test -tags nogui ./internal/provider -run '^TestProviderProbesUseProtocolHeaders$'
 go test -tags nogui ./internal/provider -run 'TestGeminiBase|TestCustomGeminiProvider'
-node --test internal/gui/tests/partners.test.cjs site/worker.test.mjs
 go test -tags nogui ./internal/provider
 go test -tags nogui ./internal/provider ./internal/agent -run 'TestAccountDiscovery'
 go test -tags nogui ./internal/provider ./internal/gateway ./internal/gui -run ExtraBody

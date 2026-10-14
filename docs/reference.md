@@ -1970,8 +1970,6 @@ FOGWAY_GITHUB_MIRROR=https://gh.example fogway serve
 - `~/.cache/fogway/local/` — llama.cpp, the models (`models/<owner>--<repo>/`),
   `llama-server.log`, and `assessment.json`, this computer's assessment and
   the speeds measured on it
-- `~/.cache/fogway/partner-counts.json` — partner counts not yet sent (at most
-  14 days)
 
 `XDG_CONFIG_HOME` and `XDG_CACHE_HOME` are respected.
 

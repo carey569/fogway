@@ -64,9 +64,6 @@ let editing = null; // provider id being edited; { preset } or { custom: true } 
 let draft = null; // the editor's working copy
 let naming = null; // the provider whose models' names and levels are open in its editor
 let adding = false; // the preset sheet is open
-// the partners counted as shown since the sheet opened: once an opening,
-// however often it is drawn (countPartner)
-let partnersCounted = null;
 let importing = null; // a fogway://import link waiting for a yes: { provider, error, replaces }
 let importingApps = null; // the Import from other apps dialog: { sources, picks }
 let providerDiscovery = []; // only opaque fingerprints and app names, never credentials
@@ -5443,7 +5440,6 @@ function renderProviders() {
   // scroll to the top; put it back so closing the editor leaves the reader
   // where they were.
   const view = $("#view-providers"), top = view.scrollTop;
-  markNewPartners();
   keepIcons($("#providers"), $("#offProviders"), $("#addSheet"));
   view.classList.remove("loading");
   view.removeAttribute("aria-busy");
@@ -5468,7 +5464,6 @@ function renderProviders() {
     row.dataset.id = p.id;
     const who = el("div", "who");
     const name = el("div", "name", p.name);
-    if (p.sponsored) name.append(el("span", "badge", t("sponsored")));
     if (p.off) name.append(el("span", "badge off", t("Switched off")));
     const n = p.models.filter((m) => m.on).length;
     // a provider that only draws images (Settings → Image generation) says so
@@ -7142,7 +7137,6 @@ function renderAdd() {
     setRoom(view, 0);
   }
   sheet.hidden = !adding;
-  if (!adding) partnersCounted = null;
   // Duplicate and Add another open a new provider's editor with no sheet
   if (!adding) return editing && typeof editing === "object" ? renderEditor(null, editing.preset) : null;
   const head = el("div", "row-head");
@@ -7187,25 +7181,7 @@ function renderAdd() {
     // Fogway reaches the cloud through vendors' API keys alone: no
     // subscription is signed in to here, so the sheet offers none
     let any = false;
-    // partners pay to be listed first, under a heading that says so; who
-    // they are comes from usemagpie.ai (internal/provider/partners.go), and
-    // each may name the languages it is shown in
-    const partners = providers.presets.filter((p) => p.kind === "partner" && partnerShown(p) && (hit(p) || partnerNote(p).toLowerCase().includes(f)));
-    if (partners.length) {
-      any = true;
-      const grid = section("Partners", "fogway's sponsors");
-      for (const pr of partners) grid.append(partnerTile(pr));
-      partnersCounted ??= new Set();
-      const fresh = partners.filter((p) => !partnersCounted.has(p.id));
-      for (const p of fresh) partnersCounted.add(p.id);
-      countPartner("shown", fresh.map((p) => p.id));
-      // shown, they are new no more (provider.NoticePartners)
-      for (const p of partners) p.new = false;
-      markNewPartners();
-    }
-    // another computer's fogway is no relay: a heading of its own, after
-    // this machine's (Avalon on Discord didn't find it among the relays)
-    for (const [kind, title, hint] of [["vendor", "Vendors", "the makers' own APIs"], ["relay", "Relays", "one key, many vendors"], ["local", "On this machine", ""], ["remote", "Another computer's fogway", "shared on its network"]]) {
+    for (const [kind, title, hint] of [["vendor", "Vendors", "the makers' own APIs"], ["relay", "Relays", "one key, many vendors"], ["local", "On this machine", ""]]) {
       // a vendor's China endpoint is a preset of its own: one row with the global one
       const rows = providers.presets.filter((p) => p.kind === kind && !globalOf(p))
         .map((p) => [p, chinaOf(p)]).filter(([p, cn]) => hit(p) || (cn && hit(cn)));
@@ -7307,7 +7283,6 @@ const presetProvider = (pr) => providers.providers.find((p) => p.preset === pr.i
 
 function tile(pr) {
   const b = pickRow(pr.icon || "generic", pr.short || pr.name, editing?.preset === pr.id ? " on" : "");
-  if (pr.sponsored) b.querySelector(".nm").append(el("span", "badge", t("sponsored")));
   b.title = (pr.short ? pr.name + " · " : "") + (pr.note ? t(pr.note) : hostOf(pr.chat || pr.responses || pr.anthropic));
   if (pr.added) {
     markAdded(b);
@@ -7317,54 +7292,6 @@ function tile(pr) {
   } else {
     b.onclick = () => { editing = { preset: pr.id }; draft = null; renderProviders(); };
   }
-  return b;
-}
-
-// the page's language and its base ("zh-TW", "zh")
-function pageLangs() {
-  const l = document.documentElement.lang || "en";
-  return [l, l.split("-")[0]];
-}
-
-// a partner listed in no language of its own is listed in every one
-function partnerShown(pr) {
-  return !pr.langs?.length || pageLangs().some((l) => pr.langs.includes(l));
-}
-
-// the partner's tagline in the page's language, else its English one; the
-// partner writes it, so it isn't translated here
-function partnerNote(pr) {
-  const n = pr.notes || {};
-  for (const l of pageLangs()) if (n[l]) return n[l];
-  return n.en || "";
-}
-
-// countPartner counts what for partners (provider.CountPartner): fogway
-// counts them only when the stats are on, and nothing waits on it
-function countPartner(what, ids) {
-  if (ids.length) api("partner", { what, ids }).catch(() => {});
-}
-
-// a partner listed since the add sheet last showed the partners puts a
-// small dot on the add button, its name in the button's title, until the
-// sheet shows it (yetone: 有了新的合作伙伴的时候…提醒吸引用户点击查看)
-function markNewPartners() {
-  const b = $("#addProvider");
-  if (!b) return;
-  const fresh = adding ? [] : (providers?.presets || []).filter((p) => p.kind === "partner" && p.new && !p.added && partnerShown(p));
-  b.classList.toggle("has-new", fresh.length > 0);
-  if (fresh.length) b.title = t("New in Partners: {names}", { names: fresh.map((p) => p.name).join(", ") });
-  else b.removeAttribute("title");
-}
-
-// a partner's row: its own section says it is sponsored, so no badge
-function partnerTile(pr) {
-  const b = tile({ ...pr, sponsored: false, note: "" });
-  if (!pr.added) {
-    const open = b.onclick;
-    b.onclick = (e) => { countPartner("opened", [pr.id]); open(e); };
-  }
-  if (!pr.added) b.title = pr.name + (partnerNote(pr) ? " · " + partnerNote(pr) : "") + "\n" + hostOf(pr.chat || pr.responses || pr.anthropic);
   return b;
 }
 
@@ -8468,7 +8395,7 @@ function drawEditor(p, presetID) {
     const h = el("div", "ehead");
     const copyOf = draft.copyOf && providers.providers.find((x) => x.id === draft.copyOf);
     h.append(icon(p?.icon || (copyOf && draft.icon) || pr?.icon || "generic"), el("b", "", p ? p.name : copyOf ? t("Copy of {name}", { name: copyOf.name }) : pr ? pr.name : t("Custom provider")));
-    if (pr?.kind === "partner") { if (partnerNote(pr)) h.append(el("span", "note", partnerNote(pr))); } else if (pr?.note) h.append(el("span", "note", t(pr.note)));
+    if (pr?.note) h.append(el("span", "note", t(pr.note)));
     h.append(el("span", "grow"));
     // a plugin's provider has plugin://<id> for its base, and its id is no
     // address to open: only a host with a dot or a port makes a link
@@ -8748,10 +8675,7 @@ function drawEditor(p, presetID) {
   // endpoints, and one without falls back to the preset's own page
   if (keysUrl) {
     const b = el("button", "link", t("Get a key ↗"));
-    b.onclick = () => {
-      if (pr?.kind === "partner") countPartner("keys", [pr.id]);
-      api("open", { url: draft?.keysUrl || pr?.keysUrl || p?.keysUrl });
-    };
+    b.onclick = () => api("open", { url: draft?.keysUrl || pr?.keysUrl || p?.keysUrl });
     side.append(b);
   }
   const keyWrap = el("div", "pair");

@@ -421,22 +421,12 @@ func (m *model) openProviderModels(id string) {
 	m.mode = modePick
 }
 
-// kindNote is what a preset is, beside its name in the add list: another
-// computer's fogway is said to be one, not filed under the relays (Avalon
-// on Discord didn't find it there).
-func kindNote(k provider.Kind) string {
-	if k == provider.KindRemote {
-		return "another computer's fogway, shared on its network"
-	}
-	return string(k)
-}
-
 // openPresets picks a vendor fogway knows, then asks for its key, or for
 // Google Vertex AI the project it takes in place of one.
 func (m *model) openPresets() {
 	var items []agent.Option
 	for _, d := range provider.Presets() {
-		items = append(items, agent.Option{Value: d.ID, Note: d.Name + " · " + kindNote(d.Kind)})
+		items = append(items, agent.Option{Value: d.ID, Note: d.Name + " · " + string(d.Kind)})
 	}
 	for _, c := range customAPIs {
 		items = append(items, agent.Option{Value: c.id, Note: "your own · " + c.name + " API, at its address"})

@@ -19,7 +19,7 @@ const local = (id, name, preset, icon) => ({
   website: preset ? "https://ollama.com" : "", keysUrl: "", proxy: "", balanceToken: { takes: false, set: false },
   key: { set: false, masked: "", optional: true }, ready: true, chosen: [], fallback: [], routing: "", affinity: "",
   models: [{ id: "qwen3:8b", name: "qwen3:8b", efforts: ["none", "low", "medium", "high"], given: true, images: false, on: true }],
-  exposed: 1, unlisted: false, off: false, fetched: "just now", agents: [], sponsored: false, keyList: [],
+  exposed: 1, unlisted: false, off: false, fetched: "just now", agents: [], keyList: [],
 });
 const providers = {
   providers: [local("ollama", "Ollama", "ollama", "ollama"), local("home-ollama", "Home Ollama", "", ""),
