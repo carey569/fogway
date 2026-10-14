@@ -5,10 +5,7 @@ one a package under `plugins/` that the user can switch off. The runtime in
 `internal/pluginrt` keeps their registry, applies the ones that are on in the
 order their services make, and disposes of what each registered when it is
 turned off. `plugins.yml` says which are on. This page describes P0: the
-runtime, the file and the window's switch. OpenCode plugins (npm packages in
-the plugin host) are a different thing; see
-[provider and plugin ownership](provider-plugins.md) and
-[gateway middleware](gateway-middleware.md).
+runtime, the file and the switch.
 
 ## Responsibilities and boundaries
 
@@ -19,7 +16,7 @@ the plugin host) are a different thing; see
 | Lifecycle | `Runtime.Reconcile(on, config)`. Off first: every plugin no longer wanted, and every one requiring a service one of those provided, is disposed newest first. Then on: each wanted plugin whose requirements are provided (by `Core`, `settings`, `providers`, `gateway`, `window`, or an active plugin) is applied, again and again until no more can be. States: `off`, `pending` (waiting for a service, logged), `active`, `failed` (Apply returned an error or panicked, or the API range doesn't match; what it registered before is undone), `disposed`. A failed plugin never stops the others. | [`pluginrt.go`](../../internal/pluginrt/pluginrt.go) |
 | Ctx | What `Apply` gets: `OnDispose(f)`, `Contribute(slot, key)`, `Provide(name, v)` (withdrawn when it goes), `Service(name)`, and its composed `Config`. Disposers run in reverse, each one's panic logged and the rest still run. | [`pluginrt.go`](../../internal/pluginrt/pluginrt.go) |
 | plugins.yml | `appdir.Config()/plugins.yml`: `preset` (`essentials` or `all`) and `plugins`, rows of `{id, enabled, config}` holding only what the user set. | [`config.go`](../../internal/pluginrt/config.go) |
-| Built-in plugins in P0 | `groups`, `library`, `otel`, `sessions`, `warmups`. None is Essential. Each one's `InUse` counts what the user made with it: routing groups not Auto and not hidden, library items given to agents, a collector sent to, gateway conversations recorded, warm-ups and check-ins on. | [`plugins/`](../../plugins) |
+| Built-in plugins in P0 | `groups` and `sessions`. None is Essential. Each one's `InUse` counts what the user made with it: routing groups not Auto and not hidden, gateway conversations recorded. | [`plugins/`](../../plugins) |
 
 The boundary is checked by `TestPluginsImportOnlyCore`: no package outside
 `plugins/` imports one (but `main.go`, through `plugins/all`), a plugin never

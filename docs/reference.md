@@ -49,10 +49,6 @@ line; agents connected to fogway lose it when it quits.
   OpenCode and the rest all point at `http://127.0.0.1:3725/v1` and pick
   from one catalog; the translation between APIs happens in fogway, streaming
   and tool calls included.
-- **Your subscriptions, shared.** Sign in to Claude Code, Codex (ChatGPT)
-  or Copilot and that login shows up as a provider: every other agent can
-  use its models through the gateway, with nothing copied and no key to
-  paste.
 - **Providers with one field.** Pick a preset (Anthropic, OpenAI, Gemini,
   DeepSeek, Kimi, GLM, MiniMax, StepFun, Qwen, iFlytek Spark, Baidu Qianfan, Tencent Cloud Token Plan,
   Huawei Cloud MaaS, Volcengine Ark, Mistral, Groq, xAI, OpenRouter, Together,
@@ -385,16 +381,14 @@ replies it is of. The tooltip says what each is of. A ranking by speed
 orders and bars a group by the figure it shows first (`usage.Totals`
 `decode_n`, `floor_out`, `floor_ms`, `floor_n`; `usage.Row.Floor`).
 
-It lists **accounts** too: each Codex, Claude or other subscription account's
-tokens and cost, by the account that actually answered — the one that took
-over after a failover, the one `X-Fogway-Account` pinned. The account is named
-as the Routing view names it (its email or login, never a token); the CSV
-adds `provider_account` (JSON `providerAccount`), `fogway usage --csv
---account <name>` keeps one account's calls, and the app's Usage page has an
-Accounts list and an Account filter on Requests. An older record names the
-account its call went out as when its host says so (`chatgpt.com as
-dee@example.com`); otherwise it appears as **account not recorded**, never
-inferred from today's sign-in. OTLP export never carries the account.
+It lists **accounts** too: each of a provider's keys, its tokens and cost,
+by the key that actually answered — the one that took over after a
+failover, the one `X-Fogway-Account` pinned. A key is named as the Routing
+view names it (its name or fingerprint, never the key itself); the CSV adds
+`provider_account` (JSON `providerAccount`), `fogway usage --csv --account
+<name>` keeps one key's calls, and the app's Usage page has an Accounts list
+and an Account filter on Requests. A record that names none appears as
+**account not recorded**. OTLP export never carries the account.
 
 One fogway can serve several computers (an office one, a personal one):
 share it on the network (Settings → Share on local network), and on each
@@ -428,13 +422,14 @@ key to use them. Responses uses HTTP, including SSE, rather than WebSocket.
 An older remote without decision-model discovery still serves its existing
 APIs; update it and refresh the list to expose System One models here.
 Its quotas show too: the Usage page, the menu bar and `fogway quota` list the
-shared fogway's cards named with it (`Codex · office`, id `office/codex`), as
-that fogway last read them — only the computer holding the sign-ins asks the
-vendors, and it answers from what it has kept (`GET /v1/fogway/quotas/cards`).
+shared fogway's cards named with it (`Kimi Code · office`, id
+`office/kimi-code`), as that fogway last read them — only the computer
+holding the keys asks the vendors, and it answers from what it has kept
+(`GET /v1/fogway/quotas/cards`).
 A card's refresh here has it read that card once more
 (`POST /v1/fogway/quotas/refresh`, at most once in 30 seconds a card); until it
 has read anything, the remote's one card says so. Their history is shown with
-its own. A Codex reset or a check-in is pressed on that computer, not here.
+its own.
 
 Codex's native image tool first asks the provider that served its conversation
 turn for the requested image model. If that provider does not list the model,
@@ -442,27 +437,6 @@ or the turn cannot be identified, it uses Settings → Images → Image generati
 (including Automatic). Off disables this fallback, not a matching model on the
 turn's provider. An explicit `provider/model` keeps its destination; an upstream
 image error does not retry through the setting. Fogway Image MCP is not required.
-
-WorkBuddy (China)'s daily check-in (签到) is pressed from the app's Usage card
-(*Check in now*), `fogway accounts checkin`, or `c` on the TUI's Usage page,
-which checks in every account signed in on this computer at once; its
-WorkBuddy lines say how today's went. A shared fogway's accounts are checked
-in on that fogway, from its own app, TUI or CLI.
-
-A vendor with two or more accounts lists each under its Daily check-in in
-**Settings → Usage**, with its own Off/On (#1902). An account turned off is
-left out of the daily check-in and of *Check in now*, the CLI's and the
-TUI's too, while the vendor's other accounts are checked in; its Usage card
-says its auto check-in is off. The choice is kept in `checkinOff` in
-`settings.json`, by the account's entry in the vendor's check-in file
-(`workbuddy|<uid>`), and set with `POST /api/settings/checkin-account
-{key, on}`.
-
-A plugin whose `auth` hook has `checkin` checks its own accounts in the same
-way: once a day while its switch under **Settings → Usage → Plugins** is on,
-with the result on each account's Usage card. A check-in the vendor wants a
-captcha for is shown as such (check in in the vendor's app); fogway never
-solves captchas. See [provider-plugins.md](subsystems/provider-plugins.md#a-plugins-daily-check-in).
 
 The gateway issues **gateway keys** for clients, separate from a provider's
 upstream API keys. Turn on **Settings → Share on local network**, then open
@@ -583,9 +557,7 @@ including a stale or disabled gateway key. Only a valid, enabled key is
 attributed to its named identity. Neither shared nor on the network, a
 remote request is refused (403). A `FOGWAY_ADDR` pinned to one interface's
 address asks a key even of this computer's agents calling that address;
-`0.0.0.0` with agents on `127.0.0.1` doesn't. The Claude subscription's
-own tool calls back to fogway are let in there by their run's one-time
-token, without a key (#1546).
+`0.0.0.0` with agents on `127.0.0.1` doesn't.
 Sharing listens on every interface, unless `FOGWAY_ADDR` names a host of its
 own: `FOGWAY_ADDR=127.0.0.1:3725` behind Tailscale Serve, or one interface's
 address, stays where it is while shared, and what reaches it from elsewhere
@@ -805,171 +777,19 @@ When a request fails:
   needs Service Account Token Creator (`roles/iam.serviceAccountTokenCreator`)
   on that service account.
 
-### Plugins
+### Built-in plugins
 
-A subscription fogway doesn't sign in to itself can come from an
-[OpenCode](https://opencode.ai) provider plugin or a
-[pi](https://github.com/earendil-works/pi) package: the npm packages OpenCode
-users install to sign in to a plan (their `auth` hook), and the pi packages
-that register a provider (`pi.registerProvider`), work in fogway as they do
-there. fogway runs them on [Bun](https://bun.sh), downloaded the first
-time a plugin needs it, and the plugin signs in, lists the models and makes
-each request; fogway serves them to agents like any provider's.
+Parts of fogway not everyone needs are built-in plugins, each switched on
+or off by itself: routing groups (`groups`) and sessions (`sessions`). They
+are kept in `~/.config/fogway/plugins.yml`.
 
 ```sh
-fogway plugin add opencode-gemini-auth   # an npm package, or a path to a plugin of your own
-fogway plugin add pi-antigravity         # a pi package, the same way
-fogway plugin                           # the plugins, what each signs in to, and whether you are
-fogway plugin login google-plugin       # its sign-in: the method, its questions, the browser or a key
-fogway plugin logout google-plugin
-fogway plugin off opencode-gemini-auth  # on brings it back; rm removes it; update updates them all
+fogway plugin                 # the built-in plugins and whether each is on
+fogway plugin on groups       # off turns one off
 ```
 
-A provider id fogway already has (google, openai, anthropic) is
-`<id>-plugin`. In the app, Settings → Plugins adds and removes them, and
-the providers they sign in to are in Add provider → From plugins.
-
-Sometimes two installed plugins sign in to the same provider id, for
-example a third-party plugin and your own copy of it. One of them serves
-that id: the one you picked, or else the one added last. Both plugins stay
-listed, and each row in Plugins › Installed says which one serves the
-provider. The other row has **Use for <provider>**, which switches the
-provider to it. `fogway plugin` prints the same thing, and
-
-```sh
-fogway plugin use ~/dev/my-acme-auth acme   # this plugin serves acme from now on
-```
-
-makes the pick. Each plugin can still be switched off or removed on its
-own.
-
-A package is pi's when its `package.json` has a `pi` manifest, the
-`pi-package` keyword, or depends on `@earendil-works/pi-coding-agent`.
-fogway installs pi beside it and loads it with pi's own loader; the
-providers it registers are what fogway uses, and its commands, tools and
-renderers are left alone. Its sign-in runs as in pi: an OAuth login's
-questions and pages, and the dialogs and pickers it shows (`ctx.ui`, its
-terminal components too), are asked in fogway's sign-in; an API key works
-as well. pi's own files (its `auth.json` and what a package keeps) are in
-`pi/` under fogway's config directory, not your `~/.pi`, unless
-`PI_CODING_AGENT_DIR` says otherwise. Requests reach the package as pi
-sends them, and its replies keep their thinking and tool calls.
-
-#### For plugin authors
-
-A plugin is an OpenCode plugin or a pi package; nothing fogway-specific is
-needed. For an OpenCode plugin fogway reads a few more fields, which
-OpenCode ignores:
-
-- **The provider's icon**: `icon` on the `auth` hook, or `"fogway": {
-  "icon": "…" }` in the plugin's `package.json` (for every provider it
-  signs in to that names none). An `https://` URL of a picture on a public
-  host, which fogway fetches once and keeps, or a `data:image/…` URI;
-  PNG, JPEG, GIF, WebP, ICO or SVG, at most 1 MB. Anything else is ignored,
-  and the icon the plugin market lists for the plugin is shown instead.
-  The `package.json` icon is also the card's picture under Discover →
-  Unofficial, on GitHub for a repository tagged `fogway-plugin`.
-- **An API key's field**: a `type: "api"` method's `label` titles the key's
-  field, as OpenCode's dialog does (one that only says "API key" reads
-  "<provider> API key"), and its `placeholder` is the hint inside the field
-  (and after the question in `fogway plugin login`). The method's `prompts`
-  are asked first, as in OpenCode, and reach `authorize(inputs)`. A prompt of
-  `type: "password"` (fogway's own; OpenCode has `text` and `select`) is typed unseen:
-  a masked field in the app, no echo in `fogway plugin login` (#1982).
-
-```js
-export const LemonPlugin = async () => ({
-  auth: {
-    provider: "lemon",
-    icon: "https://lemon.example/icon.png", // or "data:image/svg+xml;base64,…"
-    methods: [
-      { type: "api", label: "Lemon API key (lemon.example/keys)", placeholder: "sk-lemon-…" },
-    ],
-  },
-})
-```
-
-In TypeScript, `icon` and `placeholder` aren't in OpenCode's types: build
-the hook as a variable (or cast it), or put the icon in `package.json`.
-
-#### Gateway middleware
-
-A plugin can also be gateway middleware: `onRequest(body, ctx)` sees each
-request an agent sends before it is routed, `onEvent(event, ctx)` each
-event of a streamed reply and `onResponse(body, ctx)` a whole one, all in
-the agent's own API. A hook returns the changed object, or nothing to
-leave it; `onEvent` returns `null` to drop an event, and
-`ctx.reject(status, message)` turns a request away. Declare it with
-`"fogway": { "middleware": "./mw.js" }` in `package.json`, or add a single
-`*.middleware.js` file:
-
-```js
-// alias.middleware.js — fogway plugin add ./alias.middleware.js
-export const events = ["message_start"]
-export function onRequest(body, ctx) {
-  ctx.state.asked = body.model
-  if (body.model === "fast") body.model = "deepseek/deepseek-chat"
-  return body
-}
-export function onEvent(ev, ctx) {
-  ev.message.model = ctx.state.asked // the agent sees the name it asked for
-  return ev
-}
-```
-
-Middleware runs inside the gateway in [moejs](https://github.com/Calcium-Ion/moejs),
-a JavaScript engine written in Go (about a microsecond a streamed event),
-not on Bun: no timers, `fetch` or Node APIs, and imports only of files
-beside it. A hook that throws or takes too long (250 ms a request, 50 ms an
-event) leaves what it was given as it was. Settings → Plugins shows each
-middleware's calls, time and failures. The [plugin guide](https://usemagpie.ai/docs/plugins#middleware)
-has the rest.
-
-`ctx.options` is the middleware's entry's `options` in `plugins.json`: set
-them with its **Options** button in Plugins › Installed, or
-
-```sh
-fogway plugin options model-map '{"mapping": {"fast": "deepseek/deepseek-chat"}}'
-fogway plugin options model-map off   # clears them
-```
-
-The name can be a package's short name (`model-map` for
-`@magpie-community/middleware-model-map`). A package's
-`"fogway": { "options": {…} }` is the example the editor starts from.
-
-Ready-made middleware, under Plugins › Discover › Gateway middleware
-(`@magpie-community/middleware-<name>`), mostly New API's channel settings
-with the same JSON: `param-override` (`param_override`), `model-map`
-(`model_mapping`), `system-prompt`, `word-guard` (sensitive words) and
-`think-tags` (strip `<think>…</think>`, or `thinking_to_content`). A
-middleware's entry in the community `registry.json` has
-`"kind": "middleware"` and no `providers`.
-
-#### Agent plugins
-
-A plugin can add an agent fogway has no setup of its own for. Its
-`package.json` names the module (`"fogway": { "agent": "./agent.js" }`), or
-it is a single `*.agent.js` file:
-
-```js
-export const agent = {
-  id: "aider", name: "Aider", bin: "aider",
-  config: "~/.aider.conf.yml",   // json, yaml or env
-  model: "model",                // the key of the model
-  prefix: "openai/",             // written before fogway's model id
-  ua: ["aider", "litellm"],
-}
-export function connect({ gateway, model, models }) {
-  return { "openai-api-base": gateway.v1, "openai-api-key": gateway.key }
-}
-```
-
-It is then on the Agents page like fogway's own: picking one of fogway's
-models writes the model and what `connect` returns, and its own model or
-Disconnect puts every key back as it was. It runs in moejs like middleware.
-An id fogway's own agents use is refused. In the market an agent's entry has
-`"kind": "agent"` (`@magpie-community/agent-<name>`). The full reference is
-on the site's Plugins page, under Agent plugins.
+How they are applied and disposed of is in the
+[plugin runtime](subsystems/plugin-runtime.md).
 
 ### What a model costs
 
@@ -1192,7 +1012,7 @@ fogway group rm opus-anywhere           # one fogway found is hidden; fogway gro
 fogway claude group/opus-anywhere       # use it
 ```
 
-`routing=` is `smart` (the default: of the subscriptions with quota to
+`routing=` is `smart` (the default: of the keys on plans with quota to
 spare, the one whose allowance renews soonest first), `order` (the first
 model until it can't answer, then the next), `rotate` (each turn to the next
 member), `usage` (least used first) or `pace` (weekly pace: the account with
@@ -1205,7 +1025,7 @@ group counts as one member, `weight=group/fast=2`). A key has no allowance to we
 order or by what fogway sent it lately — except a sub2api key its owner gave
 a 5-hour, day or 7-day limit: with the provider's Balance URL set to the
 relay's `/v1/usage`, its card shows those windows and routing weighs it by
-them as it does a subscription, resting it till the window renews once the
+them as it does a plan, resting it till the window renews once the
 relay says `api key 7天限额已用完` — or till its windows are next read short
 of full, its limit raised or its usage reset. A key bought as a plan — Kimi Code, GLM Coding Plan
 or Z.ai, MiniMax Coding Plan, OpenCode Go, Command Code, Ollama Cloud — is weighed by its
@@ -1289,19 +1109,15 @@ Entries that point back to fogway or only name an `env_key` are skipped.
 
 ### How fogway picks an account
 
-When a subscription has several accounts on (Claude Code's or Codex's
-saved accounts, say), or a routing group has several members, the gateway
-orders them for each request in these steps. The Routing page shows the
+When a provider has several keys on, or a routing group has several
+members, the gateway orders them for each request in these steps. The Routing page shows the
 result for every request: who went first, and why.
 
-1. **Who can answer.** The account the agent is signed in to, unless it
-   is paused, and the other accounts that are ticked. An account set not
-   to serve the model, or held at its usage cap, is never tried. An account whose plan doesn't list the model (a Free one behind a
-   Plus) is tried only when no other lists it. A Claude account that has to
-   be signed in again stays in the list, but is passed over when its turn
-   comes, without resting.
+1. **Who can answer.** The keys that are ticked, unless paused. One set
+   not to serve the model is never tried, and one whose plan doesn't list
+   the model is tried only when no other lists it.
 2. **The routing.** What is left is put in order by the routing the
-   subscription or group uses (below).
+   provider or group uses (below).
 3. **Rate limited ones last**, only with *Sink* on: an account a 429 rate
    limited while it still had quota goes behind every one not rate limited
    since.
@@ -1334,20 +1150,12 @@ each of these groups ordered by the share used.
   the reset. The biggest window decides: the week, then the 5 hours only
   when the weeks renew in the same hour. Reset times are compared to the
   hour, by the clock: 13:55 and 14:05 are different hours, 14:05 and
-  14:55 the same. An account
-  with no week (Claude Enterprise) goes by its 5 hours. Credits that
-  run out before their window renews, or that have no reset at all
-  (WorkBuddy's packages, each ending on its own day), count as renewing
-  when they run out: of several WorkBuddy accounts, the one whose credits
-  left end first goes first. The daily Free Plan credits aren't counted,
-  since they end at the same midnight on every account. A Claude account
-  fogway knows nothing of yet goes first once, to learn what it has left
-  from the answer; any other unknown account goes after those known.
-  An account with a month beside its week (Factory) goes by its month:
-  when the month holds less than its weeks add up to (Factory's, by
-  one user's readings, about two weeks' worth), what a week leaves isn't
-  lost at the week's reset, as the
-  month still has it to spend later. Its row
+  14:55 the same. One with no week goes by its 5 hours. Credits that run
+  out before their window renews, or that have no reset at all, count as
+  renewing when they run out. One not known yet goes after those known.
+  One with a month beside its week goes by its month: when the month
+  holds less than its weeks add up to, what a week leaves isn't lost at
+  the week's reset, as the month still has it to spend later. Its row
   on the Routing page says the fullest window's share with when that
   window renews: "32% used · renews in 3 days" is the week's.
 - **In order**: the accounts in their order. The first takes every request
@@ -1361,12 +1169,10 @@ each of these groups ordered by the share used.
 - **Weekly pace**: the account with the highest pace first. Pace is the
   share of the week left divided by the hours until the week renews (at
   least 1): 60% left with 20 hours to go is 3 per hour. With two weekly
-  windows that count the model (Opus's own and the general one), the lower
-  pace counts. An account with no week goes by its 5 hours. Accounts whose
+  windows that count the model, the lower pace counts. An account with no week goes by its 5 hours. Accounts whose
   pace is within a tenth of the highest in their band count as alike, and
-  among them the one fogway sent the fewest tokens lately goes first. A
-  Claude account not known goes first once, as in Smart; another unknown
-  account counts as a fresh week.
+  among them the one fogway sent the fewest tokens lately goes first. One
+  not known counts as a fresh week.
 
 **Make first** sets the accounts' order. How much that order counts
 depends on the routing:
@@ -1379,28 +1185,21 @@ depends on the routing:
 | Least used first | Only between accounts with the same share used and the same tokens sent lately. |
 | Weekly pace | Only between accounts in the same pace band that fogway sent the same tokens lately, in practice none since fogway started. |
 
-For Claude Code and Codex, *Make first* also signs the agent in to that
-account, because the account the agent is signed in to is first. With
-*Keep … signed in to* on, *Make first* changes only the gateway's order,
-and the agent stays signed in where it is kept.
-
 **When an account runs out.** A 429 that says the allowance is used up
 rests the account until it is back, and the same request goes to the next
 candidate at once, as long as none of the reply has been sent. How long it
 rests comes from the first of these that is known: the reset time in the
-refusal (Claude Code's `usage limit reached|<time>`, ChatGPT's
-`resets_at`), the reset of a window fogway last read as used up (98%, 100%
+refusal, the reset of a window fogway last read as used up (98%, 100%
 In order), the vendor's `Retry-After` or rate-limit reset header (an hour
 at most), else 15 minutes. It is never longer than 8 days. The account's
 windows are read again right away, and once a reading finds the window it
-filled started again (for Claude, a new `/usage`; for any subscription,
-its reset gone by), it is back at once, not at the time the refusal
+filled started again (its reset gone by), it is back at once, not at the time the refusal
 named. A five hours started again while its week is still used up doesn't
 bring it back. A 429 that is a short rate limit rests
 the account for as long as the vendor asks (an hour at most), or a
 minute, doubled each time it comes back right after its rest, up to 30
 minutes. Out of credit rests half an hour. Any other failure rests a minute, longer each time it fails
-again, up to 10 minutes; a subscription that fails with a window used up
+again, up to 10 minutes; a plan's key that fails with a window used up
 rests until that window renews.
 
 **When the safety filter refuses.** A reply the vendor's safety filter
@@ -1415,31 +1214,6 @@ answers by switching to its own fallback model, as it does on Anthropic's
 API. Codex and Chat clients get a 400 saying the model refused the request,
 which they don't ask again for. Any other 400 is never asked again.
 
-**Through the gateway, or on its own.** Everything above is the gateway's,
-for requests sent through fogway. Claude Code or Codex used on its own
-talks to the vendor with the account it is signed in to, and routing
-never sees it. For that, fogway looks at the account the agent is signed
-in to a minute after it starts and every 5 minutes after: once it has used
-98% of a window (100% In order), or reached its usage cap, fogway signs
-the agent in to the next ticked account, in their order, whose allowance
-is known and under that share. A saved Claude account fogway knows
-nothing of yet (see below) is not moved to. Once the account it moved the
-agent off has every window under 90% again, it signs the agent back in to
-it. *Keep … signed in to* turns this off: the agent stays on the first
-account, or on the account you picked, whatever it has left. It changes nothing in the gateway's routing.
-
-With more than one Codex account on, fogway also sets `openai_base_url`
-in Codex's config.toml, so a request the signed-in account has no
-allowance for goes on to the others through the gateway. *Only switch
-Codex's sign-in* under Providers › Codex (or `fogway accounts switch-only
-codex on`) leaves that out: fogway only moves Codex's own sign-in
-(`auth.json`) as above, and Codex's requests go straight to OpenAI, never
-through fogway (#1907). An `openai_base_url` you wrote yourself stays. The
-Codex app and a running `codex app-server` read the sign-in when they
-start, so one already open stays on its account until it is opened again;
-a new `codex` session takes the new one. Connected to fogway, Codex's
-requests go through it as before.
-
 **How often an allowance is read.** Routing uses what was read last and
 never waits for a reading, except the first one after fogway starts (3
 seconds at most). A reading over a minute old is read again in the
@@ -1447,93 +1221,7 @@ background as a request is routed, and an account that fails for its
 quota is read again at once; if a reading was already under way as it
 failed, the account is read again as soon as that reading is back. A
 reading the Usage page made counts as one, its age from when it was made.
-Codex and most other subscriptions read every
-account from the vendor this way. A Codex account is also known from each
-reply ChatGPT sends fogway for it, which says what the account has used:
-an account near its usage cap is held from the next turn on (#1295). A
-usage cap is set on the account's row for each of its windows, and a
-window can have one of its own, set from its meter: a five-hour window at
-50% and a weekly one at 40%, or no cap on one window. The account is held
-while any window is past its own. A
-usage cap is still a stop on what fogway has read, not a guarantee: a turn
-already under way can take an account past it, so a 99% cap doesn't
-promise 1% is left. Claude is different: fogway never asks
-Anthropic itself. It reads only the account Claude Code is signed in to,
-by running Claude Code's `/usage`:
-
-- once after fogway starts;
-- when you open or refresh the Usage page (in the app or the TUI), or run
-  `fogway quota` or `fogway accounts`, at most every 30 seconds;
-- otherwise again after 5 to 15 minutes (drawn at random each time), and
-  only if Claude Code was used since.
-
-A saved Claude account that isn't signed in is never read. What it has
-left is known only from what Claude Code says as that account answers a
-request through the gateway, and its Usage card says so until then. So
-the windows routing goes by for such an account can be hours old; a window
-whose reset has passed counts as empty again.
-
-### Signed-in agents as providers
-
-An agent you have signed in to is a subscription with models behind it, so
-fogway offers it as a provider too. Claude Code (an OAuth login in the macOS
-Keychain or `~/.claude/.credentials.json`), Codex (a ChatGPT login in
-`~/.codex/auth.json`), Copilot (a GitHub login in
-`~/.config/github-copilot/apps.json`), Devin (`devin auth login`, kept in
-`~/.local/share/devin/credentials.toml`) and Qoder (signed in from fogway with
-its OAuth device flow, kept in fogway's own config; Qoder CN is its own
-subscription beside it, for accounts on qoder.cn made with an Alibaba Cloud
-account or a phone number, which can't sign in on qoder.com) appear in `fogway providers` and in
-the Providers tab as *signed in as …*, with their models spelled
-`claude/claude-sonnet-5`, `codex/gpt-5.5`, `copilot/claude-sonnet-4.5` or
-`devin/swe-2-max` in every other agent's picker. fogway reads the agent's own credentials each
-time, refreshes tokens the way the agent does — writing a rotated token
-back where the agent will find it — and stores nothing but your model
-picks; sign out of the agent and the provider is gone. The model list is
-the vendor's own too: fogway asks Anthropic's, Copilot's or Codex's API with
-that same sign-in, so a model added upstream appears on the next refresh.
-The ChatGPT backend only streams and rejects a few parameters, so fogway
-translates non-streaming requests and drops what it would refuse.
-Claude subscriptions are different: Anthropic classifies another agent's
-system prompt as third-party traffic even when the OAuth request otherwise
-looks like Claude Code. fogway therefore drives the genuine local `claude`
-binary for every Claude subscription generation. The caller's tools are
-bridged into that live turn over MCP, and tool results resume the same Claude
-Code process; Pi, OpenCode and every other agent use this path automatically.
-The generated harness stays out of Anthropic's system-prompt classifier while
-its instructions remain part of the user context. This requires Claude Code
-to be installed and signed in.
-A Grok subscription (SuperGrok, signed in with Grok Build) talks straight
-to the Responses API the grok CLI uses, a Devin subscription to the API the
-devin CLI uses, and a Cursor subscription to the agent API cursor-agent
-uses, each with the CLI's sign-in and the caller's tools passed through
-(Cursor's model calls them as MCP tools; none of Cursor's own tools run).
-Google sign-ins — Gemini CLI's and Antigravity's — talk to Google's Code
-Assist API directly: fogway reads Gemini CLI's own login from `~/.gemini` or
-signs one in itself, and refreshes the token in memory. Google no longer
-serves Gemini CLI's sign-in to individual accounts, only to Gemini Code
-Assist Standard and Enterprise, which need a Google Cloud project named
-(`fogway accounts project gemini <email> <project-id>`, or
-`GOOGLE_CLOUD_PROJECT` in `~/.gemini/.env`). Google may suspend an
-Antigravity account it sees used outside Antigravity, so fogway asks before
-adding one; use an account you can afford to lose.
-
-Accounts signed in elsewhere can be imported from their files instead of
-signed in again: *Import accounts from a file…* under a subscription's
-accounts, or `fogway accounts import <codex|claude|antigravity|factory>
-<file>... [--yes]`. For ChatGPT that takes Codex's `auth.json`, codexbar's
-`~/.codexbar/config.json` (every ChatGPT account it switches between) and
-the exports of Cockpit Tools, CLIProxyAPI and Sub2API, as many files as
-you like. Each ChatGPT sign-in is refreshed before it is added, which
-checks it and makes fogway its only holder: the tool the file came from
-(Codex on another computer, codexbar, Cockpit Tools, CLIProxyAPI) is
-signed out of that account and has to sign in again. A backup carries no
-sign-in, so this is also how accounts move to a new computer: import the
-file from the old one there. The files are only read. An account
-fogway has already is left as it is, two Team seats of one email stay two
-accounts, and an entry with only an access token (a ChatGPT web session)
-is refused, since it would stop working within days with nothing to renew
-it.
+A plan's windows are read from the vendor this way.
 
 ### Connecting anything else
 
@@ -1609,11 +1297,10 @@ Anything with a base-URL setting can use it:
 | Anthropic   | `http://127.0.0.1:3725`    | `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY=fogway` |
 | Gemini      | `http://127.0.0.1:3725`    | `GOOGLE_GEMINI_BASE_URL`, `GEMINI_API_KEY=fogway` |
 
-An optional `X-Fogway-Account: <account>` header (the account's email
-or login, or its id on the Routing page) pins a request to one account of a
-subscription with several: only it is tried, and an unknown account, one
-whose plan lacks the model, or one resting is an error rather than another
-account's reply. The header is not sent on to the vendor.
+An optional `X-Fogway-Account: <key>` header (a key's name as the Routing
+page shows it, or its id there) pins a request to one key of a provider
+with several: only it is tried, and an unknown key, one whose plan lacks
+the model, or one resting is an error rather than another key's reply. The header is not sent on to the vendor.
 
 A status bar can show where a turn went before its first token arrives:
 send `X-Fogway-Session: <id>` with the requests (an agent's own session
@@ -1636,7 +1323,7 @@ its own requests alone: another key's session answers `route: null`.
 
 To show the one in use without a session, `GET /v1/fogway/quotas` (and
 `fogway quota --json`, the same list) has `lastServedAt` on each
-subscription account, plan and key that answered a request through the
+plan and key that answered a request through the
 gateway in the last 30 days, and `last: true` on the latest. It is kept
 in `served.json` beside `providers.json`, so a restart keeps it.
 
@@ -1693,7 +1380,7 @@ curl -s http://127.0.0.1:3725/v1/fogway/usage/requests \
   total, and can be listed alone with `via=reported` (`reported` in the
   GET's reply has their totals).
 - **Nothing live:** they never count against a gateway key's limit or a
-  budget, a subscription window, an alert, a rate limit or routing.
+  budget, a plan's window, an alert, a rate limit or routing.
 - **Who may post:** the same as the GETs: this machine, or another with a
   gateway key. A web page needs a key even on this machine.
 
@@ -1707,8 +1394,8 @@ conversation did.
 Records written before these fields came have neither. Codex's sub-agents are told
 apart by `kind` only.
 
-`fogway quota wait <provider|account>` blocks until that subscription (any
-of its accounts fogway has on) or that one account has allowance again — no
+`fogway quota wait <provider|key>` blocks until that provider (any of its
+keys fogway has on) or that one key has allowance again — no
 window that stops it used up — then exits 0, so a long task stopped by its
 limit can go on unattended:
 
@@ -1719,45 +1406,17 @@ until codex exec "…"; do fogway quota wait codex || break; done
 It reads the vendors itself, whether or not the gateway runs, and again
 shortly after the soonest reset it knows (every 1 to 10 minutes; an
 allowance it can't read is asked again less often each time), saying on
-stderr what it waits for and until when. Name an account by its email or
-login, or as `<provider>/<account>` when two subscriptions share it.
+stderr what it waits for and until when. Name a key as its card names it,
+or as `<provider>/<name>` when two providers share the name.
 `--timeout 6h` exits 1 if it passes first, `--quiet` says nothing; an
 unknown name exits 2 and Ctrl+C 130.
-
-A ChatGPT account that holds credits keeps answering once a usage window is
-used up: the vendor spends the credits, so a task goes on. That is the
-default. `fogway quota credits <account> off` (or *Use credits* on the
-account's Usage card) turns it off for that account: once fogway's latest
-reading of its windows, refreshed about every minute, shows one used up,
-the gateway holds it as used up till the window renews, and requests go to
-the other accounts, groups and fallbacks; with none left, the request gets a
-429 saying why, unless the account spends its resets by itself and its week
-is used up, when a reset is spent first. `fogway quota credits` lists the
-accounts set not to spend them, `fogway quota credits <account>` says one's.
-It changes the gateway's routing only, never the account Codex is signed in
-to. The credits an account holds show beside its windows in `fogway quota`,
-`fogway accounts`, the Usage page and the menu bar panel.
-
-An account can have a name of your own, for telling apart seats the vendor
-names alike (a team's GLM seats under masked emails): click the account's
-name in its provider's editor, or `fogway accounts alias <agent> <email>
-<name>` (`--clear` takes it off). The name is fogway's, kept in
-providers.json; the vendor's or plugin's sign-in is never written to. It
-shows on the account's Usage card, in the menu bar, in `fogway accounts`,
-`fogway quota` and `GET /v1/fogway/quotas` (`alias`). A GLM Coding Plan
-seat added both as a key and as a signed-in ZCode account is shown once, on
-the account's card (two cards would count its allowance twice); that card
-is then named for the key's provider until you name it yourself, and says
-so (`seat`). Once the two are found to be one seat, a failed read of either
-doesn't bring the key's card back: only the account signed out, or windows
-that no longer agree, do.
 
 The Usage page's cards and the menu bar panel's *Allowances* tab are in one
 order: drag a card's logo on the Usage page (or Alt+arrow keys on it), or
 press *Arrange* at the foot of the panel's tab and move the rows there. The
-same *Arrange* hides a subscription from the panel's tab (*Hide*, *Show*
+same *Arrange* hides a card from the panel's tab (*Hide*, *Show*
 puts it back), and the tab's foot says how many are hidden. Hiding is the
-panel's only: routing, caps, the Usage page and the menu bar's own cells
+panel's only: routing, the Usage page and the menu bar's own cells
 still have it, and a menu bar cell for it still opens its card. Both are
 kept in fogway's settings (`usageOrder`, `panelUsageHidden`). Which
 allowances the menu bar itself shows beside its icon is picked in Settings.
@@ -2099,15 +1758,9 @@ especially when the proxy reaches fogway over loopback.
 For the browser UI run the image with `fogway web --addr 0.0.0.0:3730 --no-open`
 in place of the default `serve`, and open
 `http://localhost:3730/?k=<key from docker logs fogway>` (set `FOGWAY_WEB_KEY`
-to keep one key across restarts). There you add providers, sign in to
-subscriptions and import sign-ins from a file. The vendor sends a sign-in's
-browser back to `localhost` (ChatGPT to `http://localhost:1455/auth/callback?code=…`),
-which is your own machine, not the container, so that page won't load: copy
-its whole address from the address bar and paste it into the sign-in's
-*Callback URL* field. `docker exec -it fogway /fogway accounts add codex`
-does the same in a terminal: open the link it prints, then paste the address
-the browser ended on. Keys, sign-ins and plugins live in the volume, so a
-restart, or a new container on the same volume, keeps them.
+to keep one key across restarts). There you add providers. Keys and
+settings live in the volume, so a restart, or a new container on the same
+volume, keeps them.
 
 The image has a `HEALTHCHECK`: `fogway healthcheck` exits 0 while the gateway
 answers on `FOGWAY_ADDR`, under `serve` and `web` alike, so `docker ps` shows
@@ -2223,9 +1876,8 @@ fogway rm work
 
 fogway sync                     # refresh the models.dev catalog and every live model list
 
-fogway quota                    # what is left of every subscription, plan and key balance
-fogway quota wait codex         # block until a Codex account has allowance again
-fogway quota credits me@example.com off   # hold a ChatGPT account at its limit instead of spending credits
+fogway quota                    # what is left of every plan and key balance
+fogway quota wait kimi-code     # block until the plan has allowance again
 ```
 
 In the app, click any value to open a filtered list; type to search or to
@@ -2291,15 +1943,8 @@ It is encrypted on your machine (AES-256-GCM, the key derived from the
 passphrase with PBKDF2-SHA256); nothing in it can be read without the
 passphrase. Restoring replaces providers with the same id and adds the rest;
 one that came without a key keeps the key already there. Agent models are set
-only for agents installed on that machine. Subscriptions are not in it: sign
-in to them on each machine. Their model picks and settings come along, and
-show once signed in; the restore, and a sync's status on the other machine,
-name the ones still to sign in to. The plugins added from npm or git come
-along too and are installed where it is put back (one added from a folder
-stays on its machine; without keys, an option whose name looks like a key
-is left out); a plugin's sign-in is not carried, a plugin already there is
-left as it is, and one removed on one machine stays on the others. Piped
-in, the passphrase is the first line of stdin.
+only for agents installed on that machine. Piped in, the passphrase is the
+first line of stdin.
 
 ### Keeping machines in sync
 
@@ -2422,8 +2067,8 @@ prices as Fogway's usage ledger (custom prices first, then catalog prices).
 Input cost includes cache reads and writes; reasoning tokens are already
 included in output cost. Explicit zero prices are exported too. Unknown
 prices are omitted so Langfuse can use its own model pricing. Parent and tool
-spans carry no costs, avoiding duplicate counting. Subscription costs at
-catalog prices are API-equivalent estimates, not subscription charges.
+spans carry no costs, avoiding duplicate counting. A plan's costs at
+catalog prices are API-equivalent estimates, not what the plan charges.
 
 Enable **Trace agent conversations** to instead export one trace per
 user interaction, grouping model calls and tool executions under an agent
@@ -2625,9 +2270,8 @@ and models to look after first, by fogway's own ids only:
 
 - the agents connected to fogway (`claude`, `codex`); an omp profile is
   only `omp`;
-- the providers that are on: a preset's id (`deepseek`), a subscription's
-  (`codex`, `copilot`), a community plugin's (`plugin:kiro`); a provider you
-  added yourself is only `custom`, another plugin only `plugin`;
+- the providers that are on: a preset's id (`deepseek`); a provider you
+  added yourself is only `custom`;
 - the models the connected agents are set to, as the provider's id and the
   vendor's model id (`deepseek/deepseek-v4`); on a key's provider, a model
   id that [models.dev](https://models.dev) doesn't list (a local model, a

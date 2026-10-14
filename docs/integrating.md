@@ -1,20 +1,18 @@
 # Integrating your app or agent with fogway
 
 For developers of an AI app, agent or client who want it to work well with
-fogway. There are three levels, from no work on fogway's side to a row of
-your own on the Agents page. The web version is
-<https://usemagpie.ai/docs/integrate>.
+fogway. There are two levels, from no work on fogway's side to a row of
+your own on the Agents page.
 
 | You want                                              | Route                          | Change to fogway |
 | ----------------------------------------------------- | ------------------------------ | ---------------- |
 | Your app's requests served by fogway, counted under its own name in Usage | [Talk to the gateway](#1-talk-to-the-gateway) | none |
 | A row on the Agents page: detected, its model picked there, put back on disconnect | [An agent adapter](#2-a-row-on-the-agents-page) | a pull request |
-| A new model source (a subscription, a vendor), or rewriting requests | [A plugin](#3-plugins) | none |
 
 ## 1. Talk to the gateway
 
 fogway runs a local LLM gateway. Every model the user has in fogway
-(subscriptions, API keys, local models, routing groups) is served there
+(API keys, local models, routing groups) is served there
 under one id each, so your app needs one provider entry, not one per
 vendor.
 
@@ -66,7 +64,7 @@ line.
 and `GET /v1/fogway/route?session=<id>` says which model a routing group
 picked for the turn and the fallbacks it tried, before the first token
 (long-poll with `after=<seq>&wait=<s>`). `GET /v1/fogway/quotas` lists the
-user's subscription allowances, and `GET /v1/fogway/usage` and
+user's plan allowances, and `GET /v1/fogway/usage` and
 `/v1/fogway/usage/requests` the Usage page's numbers and its requests
 (with `session`, and `subagent`/`parent_agent` for a Claude Code
 subagent's call). They answer only this machine, or another with a gateway
@@ -127,26 +125,10 @@ the [Agents table](reference.md#agents). What helps us most is a stable,
 documented config format or import link, and where your app keeps it on
 each system.
 
-## 3. Plugins
-
-A plugin is an npm package fogway runs; the user installs it from
-Settings → Plugins or with `fogway plugin add <package>`. There are two
-kinds ([plugin guide](https://usemagpie.ai/docs/plugins)):
-
-- **Provider plugins**, OpenCode's `auth` hook or a pi package: a new
-  source of models, such as a subscription fogway doesn't sign in to
-  itself. They sign in, list models and make requests.
-- **Gateway middleware**: rewrites requests and replies as they pass
-  (`onRequest`, `onEvent`, `onResponse`).
-
-A plugin can't add a row to the Agents page or write another app's
-config, so it is not how an app registers itself.
-
 ## What isn't there
 
-- No API or link lets another app register itself as an agent, or install
-  a plugin, without the user: plugins are installed in fogway by the user,
-  and agent rows come from adapters in fogway's source.
+- No API or link lets another app register itself as an agent without the
+  user: agent rows come from adapters in fogway's source.
 - `fogway://import` links add a *provider* (a source of models, with its
   key), not an agent or an app; see [Import links](reference.md#import-links).
 

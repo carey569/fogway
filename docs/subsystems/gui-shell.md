@@ -145,34 +145,6 @@ keys and `provider/model@` for accounts on the stage, `provider/*` and
 gateway's order and choice of seat don't change. Two stay two rows. See
 `routing-keys-fold.test.cjs` and `routing-group-fold.test.cjs`.
 
-### Routing account windows
-
-A subscription account's row in Accounts and keys shows each of its
-windows under the one figure routing went by, with when each resets
-("5 hours 40% used · resets in 2h"), as the Usage page reads them (#1833).
-`cardOf` in [`routing.js`](../../internal/gui/assets/routing.js) matches
-the route's account to app.js's `quotas`: a `subscription` card of this
-computer (no `from`) whose provider is the account's `agent` (a plugin's
-provider id) or its provider, and whose user is the account's, ignoring
-case. `winsOf` names them with `familyWindows`, `quotaText` and
-`resetInText`. Nothing new is read: opening Routing asks
-`/api/usage/quotas` in the ordinary way (`show`, when the readings are
-missing or over a minute old), never `?asked=1`. A kept day's list shows
-none, since those requests were weighed by readings long gone. See
-`routing-account-windows.test.cjs`.
-
-The refresh beside the Accounts and keys heading (`#rtReadAllowances`,
-#1834) reads them again by hand: `loadQuotas(true)`, the asked read the
-Usage page's Refresh now makes. It turns while the read is on its way,
-and a click then asks nothing more. Nothing on the page reads again by
-itself. It shows only live, with a subscription account listed. See
-`routing-read-allowances.test.cjs`.
-
-On the stage, an account's seat tells the same windows in its tooltip,
-under its id (`render`, #1835). The row itself keeps one line: the
-fullest window while idle, what it is doing while it answers. See
-`routing-seat-windows.test.cjs`.
-
 ### Stored agent sessions in WSL
 
 The Sessions page uses `sessions.ListAgent`; Usage → Sessions uses
@@ -249,21 +221,6 @@ that id (`callRow`), keeps fetched bodies in memory while their calls
 remain in the list, preserves them across summary refreshes, and offers a
 retry after a failed read. See `TestRecentCallBodiesOnDemand` and
 `recent-call-bodies.test.cjs`.
-
-### Plugin check-in switches
-
-A plugin's Usage-card Auto check-in button reads the persisted
-`settings.pluginCheckins[provider]` first (`pluginCheckinOn` in
-[`app.js`](../../internal/gui/assets/app.js)). `/api/state` returns that map
-without the derived `checkinPlugins` list included by `/api/settings`.
-An explicit saved false wins over the list; when no saved choice exists,
-the list's resolved vendor default remains the fallback, and without the
-list (a state refresh) the switch of the built-in check-in the plugin took
-over is (`PLUGIN_CHECKIN_INHERITS`, the ids `provider.PluginCheckinOn` names;
-a test reads both). This keeps a saved
-switch on through a focus refresh and lets the next click turn it off.
-[`plugin-checkin.test.cjs`](../../internal/gui/tests/plugin-checkin.test.cjs)
-covers both response shapes, refreshes and the subsequent toggle.
 
 ### Shared UI rules
 
