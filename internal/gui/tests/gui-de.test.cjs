@@ -61,7 +61,7 @@ for (const [name, engine] of [["webkit", webkit], ["chromium", chromium]]) {
         assert.ok(got.offered.includes("de:Deutsch"));
         if (want === "de") {
           assert.equal(got.lang, "de-DE");
-          assert.deepEqual(got.nav, ["Agenten", "Sitzungen", "Bibliothek", "Anbieter", "Weiterleitung"]);
+          assert.deepEqual(got.nav, ["Agenten", "Sitzungen", "Anbieter", "Weiterleitung", "Zugangspunkt"]);
         }
         await page.close();
       }
