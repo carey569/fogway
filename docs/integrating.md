@@ -96,8 +96,8 @@ this repository, and ships in the next release.
 An adapter is an [`Agent`](../internal/agent/agent.go) value. What your
 app offers decides its shape:
 
-- **fogway edits your config file** (most adapters; [`fx.go`](../internal/agent/fx.go),
-  [`empryo.go`](../internal/agent/empryo.go)). `Dir`, `Path` and `Bin` find
+- **fogway edits your config file** (most adapters; [`pi.go`](../internal/agent/pi.go),
+  [`goose.go`](../internal/agent/goose.go)). `Dir`, `Path` and `Bin` find
   the app; each `Field` (`model`, `effort`, …) has `Get`, `Set` and
   `Options`. Connecting adds a `fogway` provider at the gateway, keyed
   `fogway-<id>`, and sets your model to one of fogway's; `Set("")` (the
@@ -107,7 +107,8 @@ app offers decides its shape:
   be restarted to see a change; `Sync` rewrites a model list your app keeps
   in a file rather than asking `/v1/models`.
 - **Your app takes a provider only through its own import link, which the
-  user confirms in your app** ([`cindy.go`](../internal/agent/cindy.go)).
+  user confirms in your app** (`Import` and `Added` in
+  [`agent.go`](../internal/agent/agent.go)).
   `Import` returns the link (`yourapp://provider/import?…` carrying the
   gateway's URL, the key `fogway-<id>` and the endpoints), the row's button
   opens it, and the user says yes once, in your app. `Added` reads,
@@ -133,5 +134,4 @@ each system.
   key), not an agent or an app; see [Import links](reference.md#import-links).
 
 Questions, or an adapter you'd like to discuss first: open an issue at
-<https://github.com/carey569/fogway/issues> or ask on
-[Discord](https://discord.gg/vGSnD3ZKQF).
+<https://github.com/carey569/fogway/issues>.

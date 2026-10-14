@@ -1503,11 +1503,6 @@ Pi's chip or on All never sends them; Remove says a linked skill's folder
 stays and the library's own is moved to the backups. No click scrolls the
 page, and nothing has a left-border accent. In English and Chinese.
 
-`routing-auto-reset.test.cjs` checks the Routing page's story for a Codex
-reset used by itself: a try out of its week says whose reset was used and
-that the request was asked again, and Codex's own sign-in answering after
-one says so before it answered; English and Chinese, Chromium and WebKit.
-
 `panel-effort.test.cjs` opens a row in the tray panel whose effort is not one
 of the levels offered (omp at auto, an agent with none set): the slider shows
 it as it is ("auto", "default"; 自动 in Chinese) at a stop of its own, a touch

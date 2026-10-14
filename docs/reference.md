@@ -1,13 +1,11 @@
 # fogway reference
 
-The full manual: every agent fogway wires, every provider option, the gateway, routing, plugins, the CLI, Docker, sync and the files fogway keeps. For the overview, see the [README](../README.md).
+The full manual: every agent fogway wires, every provider option, the gateway, routing, built-in plugins, the CLI, Docker and the files fogway keeps. For the overview, see the [README](../README.md).
 
 Renamed a project folder? See [relocating Claude Code sessions](session-relocation.md).
 
 One place to pick every agent's model: Codex on DeepSeek, Claude Code
-on Kimi, Gemini CLI on GLM, from the menu bar. [usemagpie.ai](https://usemagpie.ai)
-
-[![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/vGSnD3ZKQF)
+on Kimi, Gemini CLI on GLM, from the menu bar.
 
 `fogway` is a single screen that lists each AI agent on your machine and
 the model it is set to. Click a value, pick a model. That is the whole app.
@@ -27,7 +25,6 @@ line; agents connected to fogway lose it when it quits.
     Codex         gpt-6-astra   effort medium
     Gemini CLI    gemini-3.1-pro
     OpenCode      anthropic/claude-sonnet-5   small anthropic/claude-haiku-4-5
-    MiMo Code     anthropic/claude-sonnet-5
     Pi            openrouter/z-ai/glm-5.2:batch
     Goose         anthropic/claude-sonnet-5
     Cursor        auto
@@ -60,7 +57,7 @@ line; agents connected to fogway lose it when it quits.
   [models.dev](https://models.dev) catalog fills in names, reasoning efforts
   and the list for vendors that have none (a model the vendor's own entry
   doesn't list is named as the other providers serving it name it, so
-  glm-5-turbo reads GLM-5-Turbo under Zhipu as under ZCode; an Azure
+  glm-5-turbo reads GLM-5-Turbo under every provider that serves it; an Azure
   deployment keeps its own name), and refreshes itself in the
   background once it goes stale. Choose which models each provider exposes,
   or expose them all — a model released this morning is in the picker on
@@ -86,108 +83,28 @@ line; agents connected to fogway lose it when it quits.
 | Agent        | File                              | Fields          |
 | ------------ | --------------------------------- | --------------- |
 | Claude Code  | `~/.claude/settings.json`         | provider, model, opus/sonnet/haiku/fable, sign-in (through fogway) |
-| Claude Desktop | `Claude/` + `Claude-3p/configLibrary/` in `~/Library/Application Support` (`%LOCALAPPDATA%` on Windows, `~/.config` on Linux). A Desktop installed as an MSIX package on Windows keeps them in its package instead (`%LOCALAPPDATA%\Packages\Claude_<publisher>\LocalCache\Local`, or `AnthropicPBC.Claude_<publisher>` for the Store's package, its own data in `LocalCache\Roaming\Claude`). Desktop 2.31226 and later, packaged, reads the real `%LOCALAPPDATA%\Claude-3p` instead, so for a packaged Desktop fogway writes both ([`desktopdir`](../internal/desktopdir/desktopdir.go)) | provider (its third-party gateway mode: Code and Cowork on fogway, no Anthropic sign-in; restart Desktop) |
 | Codex        | `~/.codex/config.toml`            | provider, model, effort |
 | Gemini CLI   | `~/.gemini/settings.json`, `~/.gemini/.env` | auth, model |
 | OpenCode     | `~/.config/opencode/opencode.json(c)` (`$OPENCODE_CONFIG_DIR`) | model, small |
-| OpenChamber  | `~/.config/openchamber/preferences.json` (`$OPENCHAMBER_DATA_DIR`; fogway's provider in OpenCode's config) | model, small (its own defaults, over OpenCode's) |
-| MiMo Code    | `~/.config/mimocode/mimocode.json(c)` | model, small |
-| DevEco Code  | `~/.config/deveco/deveco.json(c)` (`$DEVECO_CONFIG_DIR`; its key is `fogway-deveco`, as parts of it send OpenCode's User-Agent) | model, small |
 | Pi           | `~/.pi/agent/settings.json`       | model           |
-| StepCode     | `~/.stepcode/config.toml` (+ `models.json`; `$STEP_CODING_AGENT_DIR`, `$STEPCODE_CONFIG_DIR`) | model |
-| Aside        | `~/.aside/u/0/settings.json` (+ `models.json`; the first account, the only one fogway wires) | model, effort, fast, standard, deep, visual, image |
-| OmO (omo-ai) | `~/.omo/agent/settings.json` (+ `models.json`; `$OMO_CODING_AGENT_DIR`, `$SENPI_CODING_AGENT_DIR`) | model |
-| Prime Agent  | `~/.prime/agent/settings.json` (+ `models.json`; `$PRIME_AGENT_CODING_AGENT_DIR`) | model, thinking (Pi's fields; its key `fogway-prime-agent` names it, since its requests carry no User-Agent; the global settings alone, `allowedModels` and `subagentDefaultModel` left as they are) |
 | Goose        | `~/.config/goose/config.yaml`     | model           |
 | Cursor CLI   | `~/.cursor/cli-config.json`       | model           |
 | Zed          | `~/.config/zed/settings.json` (`$XDG_CONFIG_HOME` on Linux, `%APPDATA%\Zed` on Windows) | model (a `fogway` OpenAI-compatible provider; its catalog in Zed's picker) |
 | VS Code (Chat) | `~/Library/Application Support/Code/User/settings.json` + `chatLanguageModels.json` (`~/.config/Code/User` on Linux, `%APPDATA%\Code\User` on Windows) | model (`chat.defaultModel`; a `fogway` Custom Endpoint group, its catalog in Chat's model picker; VS Code 1.122+, no Copilot sign-in or key needed). Each profile's own pair under `User/profiles/<id>/` (listed in `globalStorage/storage.json`) gets the same, unless the profile uses the default's |
 | VS Code Insiders (Chat) | the same files under `Code - Insiders/User` in place of `Code/User` | as VS Code, a row of its own; its models send the token `fogway-vscode-insiders`, since its chat's User-Agent is VS Code's |
-| VSCodium (Chat) | the same files under `VSCodium/User` in place of `Code/User` | as VS Code, a row of its own; its models send the token `fogway-vscodium`, so Usage counts them as VSCodium; its Chat features must be turned on (`chat.disableAIFeatures=false`, and `defaultChatAgent` plus `trustedExtensionAuthAccess` for GitHub.copilot-chat in its product.json). With the Marketplace's GitHub Copilot Chat 0.48.1, which has no Custom Endpoint provider, the group is written for its OpenAI Compatible provider (`customoai`, the token sent as `x-api-key`), which lists models only while Copilot Chat is signed in to GitHub with a personal Copilot plan |
-| Copilot (JetBrains) | `byok.json` in `~/.config/github-copilot` (`$XDG_CONFIG_HOME/github-copilot` when set, `%USERPROFILE%\AppData\Local\github-copilot` on Windows), the Copilot language server's own file, which Xcode's and Eclipse's Copilot read too | provider (a `fogway` custom endpoint provider beside the user's: every fogway model at the gateway's `/v1/chat/completions`, sent with `fogway-copilot-jetbrains`; a model hidden in Manage Models stays hidden through a sync; off removes fogway's three keys alone). Found by the `github-copilot-intellij` plugin in a JetBrains IDE or Android Studio. Listed after the IDE restarts, and only while Copilot is signed in to GitHub on a plan with Bring Your Own Key (Free, Pro, Pro+; Business and Enterprise when the organisation allows it); the model is picked in Copilot Chat |
-| JetBrains Air | `acp.json` in `~/Library/Application Support/JetBrains/Air` (`~/.config/JetBrains/Air` on Linux, `%APPDATA%\JetBrains\Air` on Windows) + `fogway-opencode.json` beside it | model (a `Fogway` ACP agent: OpenCode's `opencode acp` on fogway's provider alone, its models and routing groups in Air's model menu; needs OpenCode installed) |
 | Copilot CLI  | `~/.copilot/settings.json`        | model           |
 | Crush        | `~/.config/crush/crush.json`      | large, small    |
 | DeepSeek Harness (dsh) | `~/.dsh/profiles/*/cordis.patch.yml` (`$DSH_HOME`; a custom provider, Fogway, its key `FOGWAY_GATEWAY_KEY` in `~/.dsh/.env` and dsh's own key store `~/.dsh/.credentials.yaml`, which the desktop app reads; on one of fogway's models its `web-search-deepseek` row also goes to the gateway, which searches with the model or Settings › Web search, unless dsh has a `DEEPSEEK_API_KEY` or a row of your own), or `~/.dsh/config.yaml` before dsh 0.1.5 | model, effort |
-| Reasonix Studio (2.x, or a native Go `reasonix` 2.x / 1.39.x CLI) | `~/.reasonix/config.toml` + `.env` (`%APPDATA%/reasonix` on Windows; `$REASONIX_HOME`) | model (Executor), planner (Plan), effort (a dedicated `fogway` provider, shared by Studio and the native CLI) |
-| Command Code | `~/.commandcode/settings.json` (+ `providers.json`) | model |
-| fx           | `~/.fx/settings.json`             | model (a keyless `fogway` provider) |
 | omp (oh-my-pi) | `~/.omp/agent/config.yml` (+ `models.yml`) | model |
-| Devin        | `~/.config/devin/config.json` (`%APPDATA%\devin\config.json` on Windows) | model |
-| Hermes Agent | `~/.hermes/config.yaml` (`%LOCALAPPDATA%\hermes` on Windows; `$HERMES_HOME`), and each profile's under `profiles/` | model |
-| Mister Morph | `~/.morph/config.yaml` (`$MISTER_MORPH_CONFIG`) | model, effort (`llm` on the gateway as `openai_response_compatible`, the Responses API; what it had comes back when you switch away) |
 | Kimi Code    | `~/.kimi/config.toml` (`$KIMI_SHARE_DIR`) | model (a `fogway` provider; fogway's models in Kimi's /model) |
 | Qwen Code    | `~/.qwen/settings.json` (`$QWEN_HOME`) | model (fogway's models as `modelProviders.openai` entries on a `FOGWAY_QWEN_API_KEY` env var; settings.model; `security.auth.selectedType` openai while wired) |
-| Muse Code    | `~/.config/muse/settings.json` (`$XDG_CONFIG_HOME`) | model (endpoint_transport to the gateway, auth none; fogway's models in Muse's list) |
-| Empryo       | `~/.empryo/config.json` | defaultModel (a `fogway` provider at the gateway in `providers`) |
-| Ante         | `~/.ante/catalog.json` and `settings.json` (`$ANTE_HOME`) | provider, model (a `fogway` provider on OpenAiCompatible, with no auth of fogway's: the gateway lets this machine in with any token and Ante counts a provider with none as authenticated; fogway's models in Ante's model picker, and Ante started on fogway, which is what its settings' `provider` decides) |
-| AstrBot      | `data/cmd_config.json` under `$ASTRBOT_ROOT`, else `~/.astrbot` (the desktop app's) | model (a `fogway` entry in `provider_sources` and fogway's models in `provider`, the user's own entries kept; the default chat model in `agent_runner.config.model.provider_id`, or `provider_settings.default_provider_id` on AstrBot before 4.28's agent runner; restart AstrBot after connecting; Docker installs aren't reached) |
-| jcode        | `config.toml` in `$JCODE_HOME`, else `~/.jcode` | model (a `[providers.fogway]` profile, `openai-compatible`, with fogway's models in it; `[provider] default_provider`/`default_model` set to it, what was there put back on Disconnect; the user's own keys in the profile, such as `headers` and a model's `reasoning_effort`, kept; restart open jcode sessions after connecting) |
-| MiniMax Code (mcode) | `~/.minimax/config.yaml` (`$MINIMAX_DATA_DIR`) | model (a `fogway` custom provider; fogway's models in its /model) |
 | Droid (Factory) | `~/.factory/settings.json` (`$FACTORY_HOME_OVERRIDE`) | model (fogway's models as BYOK `customModels`, in Droid's /model) |
 | Cline (CLI)  | `~/.cline/data/settings/providers.json` (`$CLINE_DIR`) | model, effort (fogway takes its openai-compatible provider) |
-| Qoder (CLI)  | `~/.qoder/settings.json` (`$QODER_CONFIG_DIR`) | model, effort (a `fogway` custom provider; needs a Qoder plan with BYOK) |
-| Qoder CN (CLI) | `~/.qoder-cn/settings.json` (`$QODERCN_CONFIG_DIR`) | model, effort (as Qoder; its own accounts, a Qoder CN plan with BYOK) |
-| Grok Build   | `~/.grok/config.toml` (`$GROK_HOME`) | model, effort |
-| Grok App     | `agent-home/config.toml` in its data folder (`$GROK_APP_HOME`, else `~/Library/Application Support/com.grokapp.grok-app`, `%APPDATA%\grokapp\grok-app\data`, `$XDG_DATA_HOME/grok-app`, or `~/.grok-app`) | model (a `[model.fogway]` custom provider under Accounts, with fogway's models and their effort levels in `app_models`; the route, `[models] default`, stays until the user presses Use on fogway there (one of the App's own routes picked in fogway is written as the route, and fogway's channel goes); a route an older fogway set to `fogway` is put back once; Disconnect drops the channel and puts the route back only if it is still `fogway`, else the one it was on before Connect if none is left; a model or default effort picked in the App kept; instructions, MCP and skills are the Library's Grok App row on agent-home; RTK has no hook for it or for Grok Build) |
-| ZCode        | `~/.zcode/v2/config.json`         | provider (fogway's models in ZCode's picker) |
-| WorkBuddy    | `~/.workbuddy/models.json` (`$WORKBUDDY_CONFIG_DIR`) | provider (fogway's models in WorkBuddy's picker) |
-| WorkBuddy AI | `~/.workbuddy-ai/models.json` (the international build) | provider (fogway's models in WorkBuddy AI's picker) |
-| CodeBuddy Code | `~/.codebuddy/models.json` (`$CODEBUDDY_CONFIG_DIR`), `settings.json` | model (fogway's models in its list; the session model) |
-| T3 Code      | `~/.t3/userdata/settings.json` (`$T3CODE_HOME/userdata`) | provider (a `fogway` provider instance on Claude Code, fogway's models as its custom models) |
-| OpenHanako   | `~/.hanako/provider-catalog.json` + `agents/<id>/config.yaml` (`$HANA_HOME`; its local API while it runs) | model (the primary agent's; fogway's models as a provider) |
-| AtomCode     | `~/.atomcode/config.toml` (`$ATOMCODE_HOME`) | model, effort (a `fogway` provider account, one model table per catalog model as its own sign-in writes) |
-| Snow CLI     | `~/.snow/profiles/fogway.json` (`$SNOW_CONFIG_DIR`), made the active profile and copied to `config.json` | model (the user's other profiles' models too; Snow App takes the profile in with "Sync Snow CLI API config") |
-| Alma         | Alma's local API (`localhost:23001`, while Alma runs; alma-server's data in `$ALMA_DATA_DIR`, `$XDG_DATA_HOME/alma` or `~/.local/share/alma` on Linux) | model (Alma's default; fogway's models as a provider), and Image Generation's model when it is Auto: the one fogway draws with |
 
-Provider-scoped agents (OpenCode, MiMo Code, DevEco Code, Pi, OmO, StepCode, Aside, Goose, Crush, omp, Hermes Agent) take `provider/model`.
+Provider-scoped agents (OpenCode, Pi, Goose, Crush, omp) take `provider/model`.
 Only agents that are installed or configured are shown.
 
 ### Notes on some agents
-
-#### StepCode
-
-StepCode is configured via [`stepcode.go`](../internal/agent/stepcode.go). Fogway manages global `defaultProvider` and `defaultModel` in `~/.stepcode/config.toml` (or the parent of an absolute `STEP_CODING_AGENT_DIR`) and writes its catalog into `~/.stepcode/models.json` using Pi's provider format. Fogway only manages model selection; StepCode controls thinking levels itself. Project-local `.stepcode/config.toml` overlays take precedence over global settings. Restart StepCode or begin a new session after changing models. Detection is strictly directory-based (`~/.stepcode`), so having Smallstep's unrelated `step` certificate CLI on `PATH` is never mistaken for StepCode.
-
-The optional real CLI verification test is run with `FOGWAY_TEST_STEPCODE_BIN=/path/to/step go test ./internal/agent -run '^TestStepCodeRealCLISandbox$' -count=1`. It runs StepCode in an isolated temporary sandbox with telemetry disabled and without live credentials.
-
-#### Reasonix Studio
-
-Reasonix Studio is detected from its desktop installation or a native Go
-`reasonix` 2.x or 1.39.x CLI; historical npm wrappers and a shared config alone
-do not count. Tested with
-[Studio 2.24.0](https://github.com/esengine/DeepSeek-Reasonix/releases/tag/studio-v2.24.0).
-
-Pick the Executor model in the app, or use
-`fogway reasonix fogway/deepseek/deepseek-chat` (`fogway reasonix
-fogway/group/code` for a routing group). Select Plan independently with
-`fogway reasonix planner fogway/deepseek/deepseek-chat`, or use `fogway reasonix
-planner off` to disable the separate planner. `fogway reasonix effort high` sets
-an advertised Executor reasoning level. `fogway reasonix default` restores the
-previous Executor selection; `fogway reasonix planner default` restores Plan.
-Fogway's provider and private `.env` key are removed when neither role needs
-them. Restart Studio for new sessions; project/session overrides still take
-precedence. Other providers and credentials are preserved. A non-managed
-provider named `fogway` is a conflict, reported without overwriting it. Studio
-and the native CLI share these files, so updating only Studio does not isolate
-their settings.
-
-The released-client stream/tool contract test is run with
-`FOGWAY_TEST_REASONIX_CLI=/path/to/reasonix go test ./internal/agent -run
-'^TestReasonixStudioCLIIntegration$' -count=1`. It uses isolated settings and
-a local test upstream, with no vendor credentials.
-
-#### VSCodium Chat
-
-VSCodium's Chat features are disabled by default. To use the Chat model
-picker with fogway, set `"chat.disableAIFeatures": false` in VSCodium's
-settings and add the `defaultChatAgent` and `trustedExtensionAuthAccess`
-entries required by [VSCodium's Copilot guide](https://github.com/VSCodium/vscodium/blob/master/docs/ext-github-copilot.md)
-to VSCodium's `product.json`. The guide also explains how to install a
-compatible GitHub Copilot Chat extension, since the Open VSX registry does
-not normally provide Microsoft's extension. Restart VSCodium, or run
-**Developer: Reload Window**, after changing these files. Fogway's models
-then appear under the `fogway` custom endpoint group.
 
 #### Zed-compatible Agent paths
 
@@ -271,10 +188,9 @@ sent fogway, as it sent it, on every API (chat, Anthropic, Responses,
 Gemini, count_tokens, embeddings, images, videos). A request the agent
 sent without one, and fogway's own (its classifier's, the image tool's),
 still go as fogway. A `header.User-Agent` you set wins over both.
-`user-agent=fogway` turns it off again; off is the default. A signed-in
-account, a plugin's and a vendor whose own client fogway goes as
-(OpenCode, Cline, Kilo, another fogway) keep the User-Agent their sign-in
-sends, and don't take it.
+`user-agent=fogway` turns it off again; off is the default. A vendor whose
+own client fogway goes as (OpenCode, Cline, Kilo) keeps the User-Agent that
+client sends, and doesn't take it.
 
 `fogway usage` also lists **upstream provider keys** to help check upstream bills.
 Each request records the fingerprint and saved name of the key that actually
@@ -390,54 +306,6 @@ view names it (its name or fingerprint, never the key itself); the CSV adds
 and an Account filter on Requests. A record that names none appears as
 **account not recorded**. OTLP export never carries the account.
 
-One fogway can serve several computers (an office one, a personal one):
-share it on the network (Settings → Share on local network), and on each
-other computer add it as a **Remote fogway** — in the app's Add sheet, under
-its own heading, Another computer's fogway, after On this machine; on the
-TUI's Providers page (`a`, then its address and key; `w` changes the address,
-`m` fetches its list again), or
-`fogway provider add remote-fogway sk-fogway-… url=http://192.168.1.20:3725 id=office`.
-Each computer's own fogway still wires its agents, while the providers,
-routing groups (`office/group/…`) and usage are the shared one's. A request
-goes on in the API the agent spoke — Anthropic Messages, Responses, Chat
-Completions, token counting — and a model the shared fogway's provider serves
-on another API only is turned into that API once, never on both computers.
-Its list is the models the shared fogway's agents are shown, each named with
-its provider there (`Claude Sonnet 5 · Relay A · office`) — the ids stay ids
-(`office/relay-a/claude-sonnet-5`), only these labels carry the names.
-Its image and video models are discovered automatically and served through
-its image generation/edit and video creation/status/content APIs. System One
-is also configured automatically at its `/v1/systemone`: refresh the remote
-provider's model list to discover its decision models, including Jev, Clef
-and models with custom names. These appear as decision models rather than
-chat models. A bare provider id such as `office` asks the first listed
-decision model; it does not pick another model to satisfy a key's limits.
-If the key permits only another model, use its full `office/provider/model`
-id to avoid a 403. Embeddings and rerank requests use the remote's corresponding
-APIs, and its exposed retrieval models are kept when fetching its list.
-These remain in agent model lists as on the remote; being listed does not
-mean an embedding or rerank model can hold a conversation.
-The remote must serve the requested API and model, and allow the supplied
-key to use them. Responses uses HTTP, including SSE, rather than WebSocket.
-An older remote without decision-model discovery still serves its existing
-APIs; update it and refresh the list to expose System One models here.
-Its quotas show too: the Usage page, the menu bar and `fogway quota` list the
-shared fogway's cards named with it (`Kimi Code · office`, id
-`office/kimi-code`), as that fogway last read them — only the computer
-holding the keys asks the vendors, and it answers from what it has kept
-(`GET /v1/fogway/quotas/cards`).
-A card's refresh here has it read that card once more
-(`POST /v1/fogway/quotas/refresh`, at most once in 30 seconds a card); until it
-has read anything, the remote's one card says so. Their history is shown with
-its own.
-
-Codex's native image tool first asks the provider that served its conversation
-turn for the requested image model. If that provider does not list the model,
-or the turn cannot be identified, it uses Settings → Images → Image generation
-(including Automatic). Off disables this fallback, not a matching model on the
-turn's provider. An explicit `provider/model` keeps its destination; an upstream
-image error does not retry through the setting. Fogway Image MCP is not required.
-
 The gateway issues **gateway keys** for clients, separate from a provider's
 upstream API keys. Turn on **Settings → Share on local network**, then open
 **Gateway → Gateway keys → Add gateway key**. This block appears only while
@@ -503,9 +371,7 @@ stored with the key (`since` in caller-keys.json, fogway's own: a value a
 client sends is ignored), so it survives a restart; the usage log itself is
 untouched. Keys saved before keep their JSON as it was.
 A key can read its own status with `GET /v1/fogway/limit`; it is told its
-own and no other key's, whatever the request names. A fogway that has this
-one as a Remote fogway provider shows each of its keys' limits on its
-Usage page this way (#1547). Requests from
+own and no other key's, whatever the request names. Requests from
 this computer that send no gateway key are not limited; a gateway key used
 from this computer is.
 
@@ -931,7 +797,7 @@ reads as `incomplete_details.reason: "max_output_tokens"` (#1792).
 
 Saving a window or a reply limit writes that number into the model lists fogway
 keeps in the agents' own files — Pi's `contextWindow` and `maxTokens`, OpenCode's
-`limit`, and Crush's, droid's, Cline's, Qoder's and Zcode's — which an agent reads
+`limit`, and Crush's, droid's and Cline's — which an agent reads
 at start-up. A session already running therefore keeps the window it began with,
 while the gateway's own `/models` and every request from then on are right at
 once.
@@ -967,13 +833,6 @@ removal that took nothing away.
 Only the request that goes out carries that name, in the model field of a
 chat, Responses or Anthropic Messages request and of an Anthropic token
 count; image requests are left with the name fogway knows the model by.
-Gemini CLI and Antigravity sign-ins go on Code Assist, and there the model
-an effort picks is a variant of the model fogway knows — `gemini-3.7-flash`
-at `high` is sent as `gemini-3.7-flash-high` — so a `*` in the name is that
-variant: `'antigravity/*' 'vendor-c/*'` asks for `vendor-c/gemini-3.7-flash-high`
-and `vendor-c/gemini-3.7-flash-low` each by its own, as it does everywhere
-else. A name with no `*` in it, or one given for `antigravity/gemini-3.7-flash`
-itself, is that one name at every level.
 
 Everything else keeps the name fogway knows the model by: the catalog agents
 pick from, the routing groups' membership, `GET /models`, and what a call is
@@ -1056,22 +915,6 @@ as `provider/model` is answered. A group in it keeps its own setting, and a
 group switched off keeps nothing out. `listed=yes` lists them again. To keep
 a whole provider for groups, use its **Only through routing groups** switch
 instead.
-
-A group can also be of decision models alone (Jev and the like: TypeSafe's,
-Bailian's `decision-model-preview`, a plugin's marked models) — never mixed
-with models that hold a conversation. It is not offered to agents; it is asked
-at `POST /v1/systemone` with `"model":"group/<id>"` (or its id or name), and a
-chat group can take it as its classifier. Each of its models' keys and
-accounts is asked in the group's routing order: one that fails as a chat
-request would fail over (a 429, a 5xx, an unreachable host, an exhausted
-key) rests and the next is asked, and the Routing page's Requests list shows
-every try. It takes no patterns, rules, classifier, effort or fast mode.
-
-```sh
-fogway group add Jevs models=typesafe/jev-latest,bailian-token-plan/decision-model-preview routing=order
-curl -s localhost:3725/v1/systemone -H 'Authorization: Bearer fogway' \
-  -d '{"model":"group/jevs","state":{"message":"fix the login bug"},"questions":{"intent":{"type":"choice","choices":["bug","feature"]}}}'
-```
 
 The Routing page's Requests list defaults to the time-ordered By request view.
 Choose By session to group calls by the agent's session ID; the page remembers
@@ -1509,11 +1352,7 @@ you press *Add*. `fogway import <link>` does the same in a terminal.
 | `icon`      | an https picture of the vendor's own (PNG, JPEG, GIF, WebP, ICO, SVG, at most 1 MB). fogway downloads it once, after you confirm the import, into its icons folder; without one it falls back to the catalog's logo or a plain mark |
 
 Base URLs must be https (plain http only to this machine or the local
-network). Web pages and GitHub don't link custom schemes reliably, so link
-to `https://usemagpie.ai/import#<same parameters>` instead: it opens
-fogway, and offers the download when it is not installed. The parameters
-stay in the fragment, which browsers never send to a server. The full guide,
-with a link builder: <https://usemagpie.ai/docs/import>.
+network).
 
 ## The local model
 
@@ -1710,13 +1549,13 @@ fogway daemon uninstall  # stop it and remove the file
   on Linux.
 
 The service gets the environment `fogway daemon install` ran in: `PATH`
-(where it finds the agents' CLIs and bun), the proxy variables, `FOGWAY_*`
+(where it finds the agents' CLIs), the proxy variables, `FOGWAY_*`
 settings such as `FOGWAY_ADDR`, the XDG folders and the agents' own folder
 variables (`CODEX_HOME`, `CLAUDE_CONFIG_DIR`…). To that `PATH` it adds
 what a terminal of yours has and the shell may not: nvm's default Node
 (not its newest), the other version managers' and npm's folders, and your
-login shell's own `PATH`, so plugins and the MCP servers they start find
-`node` with nvm loaded lazily or over SSH. When no `node` is found even
+login shell's own `PATH`, so what it starts finds `node` with nvm loaded
+lazily or over SSH. When no `node` is found even
 then, the install says so. The file is readable by you
 alone, since a proxy's address can hold a password. Run the install again
 after changing any of them. It runs fogway by the name it has on `PATH`
@@ -1729,16 +1568,14 @@ uses the service's gateway.
 ### Docker
 
 `docker build` makes a server image: the terminal-only binary on
-distroless (`cc`, for the glibc the plugins' Bun needs) with bash and
+distroless (`cc`, with glibc) with bash and
 busybox for a terminal in the container (`docker exec -it fogway bash`, or a
 NAS panel's terminal; `fogway` is on its PATH), run as nonroot,
 with everything it keeps in a volume at `/config`: fogway's own files
-(`/config/fogway`), the sign-ins kept where their agent keeps them (HOME is
-`/config/home`, so `~/.codex`, `~/.claude`… are in it) and the cache with the
-Bun plugins run on (`/config/cache`, downloaded once). A volume made by an
-older image keeps working: fogway adds these folders to it on start, and only
-sign-ins made with that older image, which lived outside the volume, have to
-be made again.
+(`/config/fogway`), the agents' own files (HOME is `/config/home`, so
+`~/.codex`, `~/.claude`… are in it) and the cache (`/config/cache`). A volume
+made by an older image keeps working: fogway adds these folders to it on
+start.
 
 ```sh
 docker build -t fogway .
@@ -1789,7 +1626,7 @@ protocol-specific base URLs. Keep `3725` behind a firewall or VPN and do not
 expose it publicly without gateway-key authentication.
 
 Such a page is in **gateway mode**: it shows Providers, Gateway, Routing,
-Usage, Plugins and Settings, with no Agents, Sessions or Library tab, and
+Usage and Settings, with no Agents or Sessions tab, and
 Settings leaves out what is written into this machine's agents (provider in
 model names, Codex subagents, long conversations, Codex thread titles,
 Codex thread descriptions, Codex composer predictions) and
@@ -1924,109 +1761,6 @@ Keys in the terminal version:
 
 Agents read their config at startup, so a running session keeps its model
 until you start a new one.
-
-### Moving to another machine
-
-```sh
-fogway backup                   # writes fogway.fogway-backup, asks for a passphrase twice
-fogway backup --no-keys ~/b.fogway-backup   # the same with no API keys in it
-fogway restore fogway.fogway-backup         # on the other machine
-fogway restore --no-agents b.fogway-backup  # providers, settings, profiles; agents left as they are
-fogway restore --no-library b.fogway-backup # the library here left as it is
-```
-
-A backup holds your providers (with their keys, unless `--no-keys`), the
-pictures picked for them, the settings, the profiles, every agent's model and
-the library (unless `--no-library`): the instruction sets, the MCP servers and
-the skills with their files, templates and other binaries included (a file
-over 16 MB is left out, and so are the biggest once the skills' files come to
-32 MB; restoring keeps the copy of such a file the other machine already
-has). Without keys, a
-server's environment variables and headers that look like a key go empty.
-Gateway credentials, their names, ids and disabled state travel encrypted
-with Settings too. Restoring Settings replaces the gateway-key store with
-the backed-up one. `--no-keys` leaves gateway credentials and their legacy
-mirror out; restoring it preserves the destination's existing keys instead.
-Restoring the library replaces the one there — what it replaces is kept with
-the library's backups — and writes it into the agents on that machine.
-It is encrypted on your machine (AES-256-GCM, the key derived from the
-passphrase with PBKDF2-SHA256); nothing in it can be read without the
-passphrase. Restoring replaces providers with the same id and adds the rest;
-one that came without a key keeps the key already there. Agent models are set
-only for agents installed on that machine. Piped in, the passphrase is the
-first line of stdin.
-
-### Keeping machines in sync
-
-*Settings → Sync and backup → WebDAV, S3 or GitHub sync* keeps the same backup
-on a server and brings every machine up to date with it, every 3 minutes while
-the gateway runs. Choose one of these:
-
-- **WebDAV**: a folder on a WebDAV server such as 坚果云, Nextcloud or a
-  Synology.
-- **S3**: a bucket on AWS S3, Cloudflare R2, Backblaze B2, MinIO, Garage, a
-  NAS or any other S3-compatible server.
-- **GitHub**: an existing repository, using a fine-grained token
-  with Contents read and write permission. The repository must be private:
-  sync refuses a public one, whose history would give anyone every sealed version.
-  The address can include a folder, such as `github://owner/repo/fogway-sync`.
-  Each update is a commit to that branch, so the repository also provides a
-  history of the encrypted backup.
-
-The file is sealed on your machine with the passphrase, so the server only
-ever stores ciphertext. Each machine writes only over the version it read (a
-conditional write), so an update that another machine made in between is
-merged rather than lost.
-
-```sh
-fogway webdav on https://dav.jianguoyun.com/dav/ user=me@example.com
-fogway s3 on s3://my-bucket/fogway endpoint=https://<account>.r2.cloudflarestorage.com access-key-id=…
-fogway s3 on s3://backups endpoint=http://nas.local:9000 path-style=yes access-key-id=…
-fogway s3                       # where it syncs to and how the last sync went; fogway s3 now, off
-fogway github on github://owner/private-backups/settings branch=main
-fogway github                   # where it syncs to and how the last sync went; fogway github now, off
-```
-
-For S3:
-
-- `endpoint` is empty for AWS.
-- `region` defaults to `us-east-1`, or to `auto` on R2.
-- `path-style=yes` puts the bucket in the path, which MinIO and most servers
-  you run yourself need.
-- The secret is asked for and saved like the WebDAV password. It is used only
-  with the endpoint and access key it was given for.
-- The bucket must already exist.
-- The access key needs to read and write `<prefix>/fogway/`. On AWS it also
-  needs to list the bucket.
-- A server without conditional writes is supported. There fogway checks the
-  object's ETag just before each write. Two computers that write in the
-  same moment can both pass that check (Aliyun OSS, #1776), and the later
-  write is the one kept. The other computer notices at its next sync, a
-  few minutes later. It finds a file other than the one it wrote, so it
-  merges again from before its own write: what it changed goes back up
-  beside the other computer's change. It never takes the other's file as
-  having seen its own.
-- Shared usage is reconciled only after a complete S3 listing. A missing or
-  repeated continuation token, or a listing still truncated after 100 pages,
-  reports a sync error and keeps previously downloaded usage days in place.
-
-For GitHub:
-
-- Create the repository before enabling sync. Leaving Branch empty uses its
-  default branch. For an empty repository, the first encrypted backup creates
-  the initial commit on that default branch. A selected branch other than the
-  default must already exist.
-- Give a fine-grained token access to this repository with Contents read and
-  write permission. It is asked for by the CLI, never accepted in a command
-  line, and is saved separately from the library's GitHub token.
-- Folder is optional. Files go in `<folder>/fogway/`; every changed backup
-  creates a commit. Unchanged setup creates no backup commit.
-- Use the same encryption passphrase on every computer. It must differ from
-  the GitHub token. The token and sync connection settings stay on each computer.
-- The file limit is 64 MiB. Repository history retains encrypted old versions,
-  including usage files if sharing is enabled.
-- Switching between WebDAV, S3 and GitHub keeps the other services' settings
-  and credentials for switching back; one service syncs at a time.
 
 ## OTLP export
 
@@ -2195,39 +1929,21 @@ available if it fails.
 Requests follow fogway's proxy setting, with loopback collectors going direct.
 Queued records are discarded if export is disabled or the destination or
 credentials change before sending. Redirects are not followed.
-Backups without keys omit OTLP headers; restoring one preserves this machine's
-headers only when the collector endpoint is unchanged.
 
 ## Mirrors
 
-The Plugins page's **Mirrors in China** (国内镜像) switch has what that page
-downloads asked of a mirror in China first and of its official address
-after: npm's registry (plugin packages, their versions and search) at
-`registry.npmmirror.com`, Bun's releases at npmmirror's binary mirror, and
-the plugin list at jsDelivr (`cdn.jsdelivr.net/gh/magpie-community/plugins`).
-Each is a copy of the very file — Bun's zip is still checked against Bun's
-SHA-256s, and a package against the integrity npm gave — and what the
-mirror hasn't copied yet is asked of the official address. npm's weekly
-download counts stay npmjs's own. `bun add` is pointed at npmmirror too,
-unless `BUN_CONFIG_REGISTRY` or `NPM_CONFIG_REGISTRY` names a registry
-already. The switch never sends anything through a proxy such as
-gh-proxy.
+With `FOGWAY_MIRRORS=on` (or `true`, `1`, `cn`), what fogway downloads by
+itself is asked of a mirror when its official address can't be reached:
+npm's registry (the agents' CLI versions) at `registry.npmmirror.com`, or
+`FOGWAY_NPM_REGISTRY`, and GitHub (fogway's update downloads) through
+`gh-proxy.com`, or `FOGWAY_GITHUB_MIRROR`. The official address stays
+first. `chinaMirror: true` in settings.json asks npmmirror before npm's
+registry instead; the window has no switch for it.
 
-Mirror fallback is off by default. Set `FOGWAY_MIRRORS=on` to use it. When
-it is on, the official source is tried first; a mirror is only tried after
-a network error, HTTP 429, HTTP 5xx, or GitHub's rate-limit 403. The
-defaults are `registry.npmmirror.com` for npm and `gh-proxy.com` for
-GitHub. `FOGWAY_NPM_REGISTRY` and `FOGWAY_GITHUB_MIRROR` replace them.
-
-Only two downloads are checked against a checksum that does not come from
-the mirror: Fogway's own update assets (their SHA-256 comes from the
-unmirrored update feed) and Bun's zip. Bun's default version carries its
-SHA-256s in the code, so it can be downloaded through a mirror even when
-Bun's official `SHASUMS256.txt` is unreachable; a newer Bun still needs
-that official file. Skill tarballs always use the official source, and the plugin-market
-registry does unless the Mirrors in China switch is on (jsDelivr, above). npm metadata, plugin README/search results and
-version checks are not checksummed; a mirror can report a different
-version.
+Only fogway's own update assets are checked against a checksum that doesn't
+come from the mirror (their SHA-256 comes from the unmirrored update feed).
+npm metadata and version checks are not checksummed; a mirror can report a
+different version.
 
 The official source and a mirror share one request budget, so a hanging
 official source doesn't make the whole wait twice as long.
@@ -2247,13 +1963,6 @@ FOGWAY_GITHUB_MIRROR=https://gh.example fogway serve
 - `~/.config/fogway/profiles.json` — saved profiles
 - `~/.config/fogway/providers.json` — your providers, keys included (0600)
 - `~/.config/fogway/stash.json` — values fogway replaced, restored on switch-back
-- `~/.config/fogway/plugins.json`, `plugins/` — the plugins added, and their packages
-- `~/.config/fogway/plugin-auth.json` — the plugins' sign-ins (0600)
-- `~/.config/fogway/install-id`, `stats-sent` — the [user count](#counting-users)'s
-  random id and the last day it went
-- `~/.cache/fogway/bun/<version>/fogway-bun` — the Bun plugins run on, named
-  so that a proxy app's PROCESS-NAME rule can match it (`fogway-bun.exe` on
-  Windows)
 - `~/.cache/fogway/models.json` — models.dev catalog (OpenCode's cache at
   `~/.cache/opencode/models.json` is used when present)
 - `~/.cache/fogway/models/<provider>.json` — model lists fetched from vendors
@@ -2266,68 +1975,9 @@ FOGWAY_GITHUB_MIRROR=https://gh.example fogway serve
 
 `XDG_CONFIG_HOME` and `XDG_CACHE_HOME` are respected.
 
-## Counting users
-
-Once a day, a running fogway (the app, or `fogway serve`) sends one event to
-PostHog so we know how many people use it: a random id made up on your
-computer (`~/.config/fogway/install-id`, made the first time the event is
-sent), fogway's version, and your system and architecture. The day it last
-went is in `~/.config/fogway/stats-sent`, so a day is sent once; the
-event is tried at start and then every hour.
-
-With it goes what fogway is used with, so we know which agents, providers
-and models to look after first, by fogway's own ids only:
-
-- the agents connected to fogway (`claude`, `codex`); an omp profile is
-  only `omp`;
-- the providers that are on: a preset's id (`deepseek`); a provider you
-  added yourself is only `custom`;
-- the models the connected agents are set to, as the provider's id and the
-  vendor's model id (`deepseek/deepseek-v4`); on a key's provider, a model
-  id that [models.dev](https://models.dev) doesn't list (a local model, a
-  fine-tune) is only `<provider>/other`; one on a provider of your own is
-  only `custom`, a routing group only `group`;
-- how many of each, and how many routing groups you have.
-- for each partner (a sponsor listed first in the add sheet), by its id, how
-  many times a day the add sheet showed it, its row was opened, its key
-  page was opened and a provider was added from it (at most 20 of each,
-  5 adds), kept in `~/.cache/fogway/partner-counts.json` for at most 14
-  days and sent the day after as `fogway partner` events.
-
-No names, base URLs, accounts, keys, prompts or usage go. Turn that part off
-in Settings → Privacy → Share the agents, providers and models I use; the
-day's event then has the id, version and system only. Turn it all off in
-Settings → Privacy → Count me as a user, or with `DO_NOT_TRACK=1` or
-`FOGWAY_NO_STATS=1`. Builds from source never send it. The code is
-[internal/stats](../internal/stats/stats.go). Deleting `install-id` makes a
-new one at the next send. The [Privacy page](https://usemagpie.ai/docs/privacy)
-shows a whole batch and everything else fogway sends by itself.
-
-Partners are also counted where usemagpie.ai sees them, whatever these
-settings say, as any website sees its visits. The partner list
-(`/api/partners`) gives each partner's website and key page as a
-`https://usemagpie.ai/go/<id>/site|keys[/<region>]` link, which sends a
-`fogway partner go` event (the partner, which link, the region, and the
-country Cloudflare gives) before sending the browser on; and one in ten
-fetches of the list sends a `fogway partners fetch` event with weight 10
-and the country, while a partner is listed. Each event has an id of its
-own: no install id, address or account goes with it. The code is
-[site/worker.js](../site/worker.js).
-
-A plugin's, an import link's and the library's icons sit on hosts their
-authors picked. fogway fetches each through
-`https://usemagpie.ai/api/icon?url=<https URL>`, so the host sees
-Cloudflare's address and never the user's. The worker sends only
-`Accept: image/*` and its own User-Agent, passes on a PNG, JPEG, GIF, WebP,
-ICO or SVG of at most 1 MB and refuses anything else, and counts and keeps
-nothing. The code is [internal/iconproxy](../internal/iconproxy/iconproxy.go)
-and `icon` in [site/worker.js](../site/worker.js).
-
 ## Community
 
-Questions, setups worth sharing, ideas, bugs: come talk to us and other
-fogway users on [Discord](https://discord.gg/vGSnD3ZKQF). Issues and pull
-requests are welcome here too.
+Questions, ideas and bugs: issues and pull requests are welcome here.
 
 ## License
 

@@ -9,9 +9,7 @@ These pages describe current responsibilities, runtime paths, state, and contrac
 | Gateway Session Aggregation | [Gateway Session Aggregation](gateway-sessions.md) |
 | Connecting an agent's config to the gateway, drift, disconnect, WSL twins | [Agent wiring](agent-wiring.md) |
 | Providers, keys, refresh and allowance | [Providers and keys](providers-accounts.md) |
-| Instructions, MCP servers, skills and RTK written into agents | [Library](library.md) |
 | Tray, panel, window, `fogway web` and the page's JSON API | [GUI app shell](gui-shell.md) |
-| Encrypted backups and setup synchronization over WebDAV, S3 or GitHub | [Sync and backup](sync-backup.md) |
 
 A subsystem can span several packages or repositories. Its reference describes the behavior those parts provide together; it does not need to list every function.
 
