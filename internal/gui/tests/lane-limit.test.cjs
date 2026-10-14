@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Each key or account can have its own limit on requests at once (#892,
+// Each key can have its own limit on requests at once (#892,
 // margbug01), over the provider's Concurrency, counted across every model,
 // routing group and agent. Its row has a pill: what runs and waits under
 // it while requests are out (the gateway's lanes, read again every two
@@ -27,19 +27,21 @@ const fresh = () => ({
   balanceToken: { takes: false, set: false }, proxy: "",
   maxConcurrency: 2, accountConcurrency: { k1: 1 }, queueLimit: 3, queueWait: 30,
 });
-const codex = () => ({
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [
-    { user: "me@example.com", plan: "PLUS", active: true, on: true },
-    { user: "Spare@Example.com", plan: "PLUS", on: true },
-  ] },
-  proxy: "", maxConcurrency: null, accountConcurrency: { "spare@example.com": 4 },
+// a provider with no limit of its own: a key with none says so on hover only
+const pool = () => ({
+  id: "pool", name: "Pool", icon: "generic", chat: "https://pool.example.com/v1", responses: "", anthropic: "", catalog: "",
+  models: [{ id: "model-b", name: "Model B", on: true }], agents: [], fallback: [], headers: {},
+  key: { set: true, masked: "sk-…p1" },
+  keyList: [
+    { id: "p1", name: "First", masked: "sk-…p1", on: true },
+    { id: "p2", name: "Second", masked: "sk-…p2", on: true },
+  ],
+  balanceToken: { takes: false, set: false }, proxy: "", maxConcurrency: null, accountConcurrency: { p1: 4 },
 });
 
 function serve(lang, posts, lanes) {
   const relay = fresh();
-  const providers = { providers: [relay, codex()], presets: [], excluded: [], gateway: { running: true, window: true, lanes: lanes.now } };
+  const providers = { providers: [relay, pool()], presets: [], excluded: [], gateway: { running: true, window: true, lanes: lanes.now } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -189,23 +191,23 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, []);
     });
 
-    test(`${engine} ${lang}: an account's own limit is shown, and one with none only on hover`, async (t) => {
+    test(`${engine} ${lang}: a key's own limit is shown, and one with none only on hover`, async (t) => {
       const lanes = { now: {}, reads: 0 };
-      const { page, errors, posts } = await open(t, "Codex", lanes);
-      assert.equal(await pill(page, "Spare@Example.com").textContent(), w.four);
-      assert.equal(await pill(page, "me@example.com").textContent(), w.none);
+      const { page, errors, posts } = await open(t, "Pool", lanes);
+      assert.equal(await pill(page, "p1").textContent(), w.four);
+      assert.equal(await pill(page, "p2").textContent(), w.none);
       await page.mouse.move(0, 0);
       await page.waitForTimeout(250);
-      assert.equal(await opacity(pill(page, "Spare@Example.com")), "1");
-      assert.equal(await opacity(pill(page, "me@example.com")), "0", "none set: on hover only");
-      await row(page, "me@example.com").hover();
+      assert.equal(await opacity(pill(page, "p1")), "1");
+      assert.equal(await opacity(pill(page, "p2")), "0", "none set: on hover only");
+      await row(page, "p2").hover();
       await page.waitForTimeout(250);
-      assert.equal(await opacity(pill(page, "me@example.com")), "1");
-      await still(page, "me@example.com", pill(page, "me@example.com"));
+      assert.equal(await opacity(pill(page, "p2")), "1");
+      await still(page, "p2", pill(page, "p2"));
       const n = posts.length;
       await item(page, "2").click();
       const p = await posted(posts, n);
-      assert.deepEqual(p.body, { id: "codex", account: "me@example.com", limit: 2 });
+      assert.deepEqual(p.body, { id: "pool", account: "p2", limit: 2 });
       assert.deepEqual(errors, []);
     });
 

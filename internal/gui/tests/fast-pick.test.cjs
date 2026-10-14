@@ -25,10 +25,10 @@ function fixtures() {
   ];
   const agents = [{ id: "codex", name: "Codex", path: "/test/codex", wired: true, fields: [{ key: "model", label: "model", value: "fogway/codex/gpt-5.5", options }] }];
   const providers = { providers: [{
-    id: "codex", name: "ChatGPT", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
+    id: "codex", name: "ChatGPT", icon: "codex-color", chat: "https://api.openai.com/v1", responses: "https://api.openai.com/v1", anthropic: "", catalog: "",
     models: [{ id: "gpt-5.5", name: "", on: true }], fallback: [], headers: {}, keyList: [], proxy: "",
     agents: [{ id: "codex", name: "Codex", current: true, model: "gpt-5.5" }],
-    account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
+    key: { set: true, masked: "sk-…1234" },
   }], presets: [], excluded: [], gateway: { running: true, window: true } };
   return { agents, providers };
 }

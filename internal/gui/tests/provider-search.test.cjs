@@ -4,8 +4,8 @@
 // from its host. The editor has a Web search row with it, opening as it was
 // saved; Save posts it, ticked or not. A relay with only a Chat address has
 // no API to search on: the row comes once an Anthropic one is typed. A
-// signed-in account (Codex here) has no such row: fogway knows how it
-// searches. In English and Chinese.
+// vendor's own API (a preset's, Anthropic here) has no such row: fogway
+// knows how it searches. In English and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -20,15 +20,11 @@ const relay = {
 };
 const searching = { ...relay, id: "searching", name: "Searching", searches: true };
 const chatOnly = { ...relay, id: "chatonly", name: "Chat Only", chat: "https://chat.example.com/v1", anthropic: "" };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "",
-};
+const official = { ...relay, id: "anthropic", name: "Anthropic", preset: "anthropic", icon: "", anthropic: "https://api.anthropic.com" };
+const presets = [{ id: "anthropic", name: "Anthropic", anthropic: "https://api.anthropic.com", added: true }];
 
 function serve(lang, posts) {
-  const providers = { providers: [relay, searching, chatOnly, codex], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [relay, searching, chatOnly, official], presets, excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -130,8 +126,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, []);
     });
 
-    test(`${engine} ${lang}: a signed-in account has no such row`, async (t) => {
-      const { page, errors } = await open(t, "Codex");
+    test(`${engine} ${lang}: a vendor's own API has no such row`, async (t) => {
+      const { page, errors } = await open(t, "Anthropic");
       assert.equal(await page.locator(".editor label.tick", { hasText: w.tick }).count(), 0);
       assert.deepEqual(errors, []);
     });

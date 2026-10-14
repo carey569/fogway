@@ -1,7 +1,7 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// #1797 (miniers): a conversation that never moves to another account.
+// #1797 (miniers): a conversation that never moves to another key.
 // "Strict" beside Stays in a provider's editor (made with its Save) and on
-// the Routing page's row of providers with several accounts (at once),
+// the Routing page's row of providers with several keys (at once),
 // with a hint that says the error then goes to the agent. Every option
 // fits the editor at a narrow width, in every language; no native select,
 // and a click never scrolls the page.
@@ -14,15 +14,12 @@ const { chromium, webkit } = require("playwright");
 const assets = path.resolve(__dirname, "../assets");
 const sub = {
   icon: "generic", catalog: "", models: [{ id: "gpt-5.5", name: "GPT-5.5", on: true }], agents: [], fallback: [], headers: {}, routing: "order", affinity: "", ready: true,
-  id: "codex", name: "Codex", chat: "", responses: "", anthropic: "", keyList: [],
-  account: {
-    agent: "codex", agentName: "Codex", user: "one@example.test", plan: "Plus",
-    logins: ["one", "two"].map((n, i) => ({ user: `${n}@example.test`, plan: "Plus", active: i === 0, on: true })),
-  },
+  id: "relay", name: "Relay", chat: "https://relay.example.test/v1", responses: "", anthropic: "", key: { set: true, masked: "sk-…one" },
+  keyList: ["one", "two"].map((n, i) => ({ id: n, name: `key-${n}`, masked: `sk-…${n}`, active: i === 0, on: true })),
 };
 const groups = () => ({
-  models: [{ id: "codex/gpt-5.5", name: "gpt-5.5", providerName: "Codex", icon: "generic" }],
-  pools: [{ provider: "codex", name: "Codex", icon: "generic", kind: "account", who: ["one@example.test", "two@example.test"], routing: "order", affinity: "" }],
+  models: [{ id: "relay/gpt-5.5", name: "gpt-5.5", providerName: "Relay", icon: "generic" }],
+  pools: [{ provider: "relay", name: "Relay", icon: "generic", kind: "key", who: ["key-one", "key-two"], routing: "order", affinity: "" }],
   groups: [],
 });
 
@@ -113,7 +110,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
       await page.goto("http://fogway.test/?view=routing");
-      const pool = page.locator(".rt-pool", { hasText: "Codex" });
+      const pool = page.locator(".rt-pool", { hasText: "Relay" });
       await pool.waitFor();
       const strict = pool.locator(".segs .opt", { hasText: new RegExp(`^${await tr(page, "Strict")}$`) });
       await page.mouse.move(550, 500);
@@ -124,7 +121,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       const y = await page.evaluate(() => document.scrollingElement.scrollTop);
       await strict.click();
       await page.waitForTimeout(200);
-      assert.deepEqual(posts.find((p) => p.path === "/api/provider/affinity")?.body, { id: "codex", affinity: "strict" });
+      assert.deepEqual(posts.find((p) => p.path === "/api/provider/affinity")?.body, { id: "relay", affinity: "strict" });
       assert.equal(await page.evaluate(() => document.scrollingElement.scrollTop), y, "a click never scrolls the page");
       assert.equal(await page.locator("select").count(), 0, "no native select");
       assert.deepEqual(errors, []);

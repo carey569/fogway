@@ -551,9 +551,6 @@ body.panel #agents > .row .ag-handle::before { left: -8px; }
 .ag-fix:focus-visible { outline: 1.5px solid var(--drift); outline-offset: 1px; }
 .ag-fix.busy { pointer-events: none; opacity: .7; }
 /* the accounts that keep an agent going through fogway for failover (#1385) */
-.ag-acc { display: inline-flex; align-items: center; flex: none; height: 20px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--fg-2); font: inherit; font-size: 11.5px; line-height: 1; cursor: pointer; transition: background-color .15s, color .15s; }
-.ag-acc:hover { background: var(--pill); color: var(--fg); }
-.ag-acc:focus-visible { outline: 1.5px solid var(--fg-2); outline-offset: 1px; }
 .ag-fix.busy svg > * { transform-box: view-box; transform-origin: 50% 50%; animation: spin .8s linear infinite; }
 /* what has to listen at an address no agent reaches fogway by (#1013): long addresses wrap, and it can be copied */
 .drift-why { overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
@@ -754,12 +751,7 @@ body.window .field.solo { grid-column: auto; }
 .subscription-head .ic { width: 17px; height: 17px; }
 .subscription-head b { font-size: 12.5px; font-weight: 600; }
 .subscription-account { display: flex; align-items: baseline; gap: 7px; margin: 0 0 6px; font-size: 11px; color: var(--fg-2); }
-.subscription-card.several .quota-windows:not([hidden]) + .subscription-account,
-.subscription-card.several .subscription-error:not([hidden]) + .subscription-account,
-.subscription-card.several .quota-balance:not([hidden]) + .subscription-account,
-.subscription-card.several .quota-read:not([hidden]) + .subscription-account,
-.subscription-card.several .credit-days:not([hidden]) + .subscription-account,
-.subscription-card.several .quota-curve:not([hidden]) + .subscription-account { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
+.subscription-card.several .quota-windows:not([hidden]) + .subscription-account,.subscription-card.several .subscription-error:not([hidden]) + .subscription-account,.subscription-card.several .quota-balance:not([hidden]) + .subscription-account,.subscription-card.several .quota-read:not([hidden]) + .subscription-account,.subscription-card.several .quota-curve:not([hidden]) + .subscription-account { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
 .subscription-account .user { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* an account the user named (#1515): the name, then the account and the
    key plan it stands in for, muted, giving their room up first */
@@ -815,14 +807,6 @@ body.window .field.solo { grid-column: auto; }
 .subscription-error .quota-fix { font: inherit; color: var(--accent); padding: 0; background: none; border: 0; cursor: pointer; }
 /* WorkBuddy's credits a day (#568): the period's sum over a bar a day; a
    day before counting began is an empty slot, not a zero */
-.credit-days { margin-top: 10px; }
-.credit-days .cd-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 10.5px; color: var(--muted); }
-.credit-days .cd-head b { color: var(--fg-2); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.credit-days .cd-bars { display: flex; align-items: flex-end; gap: 2px; height: 28px; margin-top: 5px; }
-.credit-days .cd-day { flex: 1; height: 100%; display: flex; align-items: flex-end; border-radius: 2px; background: var(--pill); }
-.credit-days .cd-day.unknown { background: none; outline: 1px dashed var(--line); outline-offset: -1px; }
-.credit-days .cd-day i { display: block; width: 100%; border-radius: 2px; background: var(--accent); }
-.credit-days .cd-note { margin-top: 4px; font-size: 10px; color: var(--faint); }
 /* what was left over time (#651): a line a window, an even burn dashed, now
    upright; the range (or Off) is picked once, in the allowances' head */
 .quota-head .quota-trend { margin-right: 8px; }
@@ -851,9 +835,6 @@ body.window .field.solo { grid-column: auto; }
 .qc-key > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .qc-key i { flex: none; width: 7px; height: 7px; border-radius: 50%; }
 .qc-key b { color: var(--fg-2); font-weight: 600; font-variant-numeric: tabular-nums; }
-.quota-resets { display: flex; align-items: center; gap: 8px; margin-top: 9px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
-.quota-resets .text { margin-left: auto; flex: none; font-size: 11px; padding: 2px 7px; }
-.subscription-card.several .quota-resets:not([hidden]) + .subscription-account { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
 /* a remote fogway's gateway key (#1547): its cycle, calls, used up */
 .quota-keyline { margin-top: 7px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .quota-keyline.spent { color: var(--red); }
@@ -863,31 +844,11 @@ body.window .field.solo { grid-column: auto; }
 .quota-own { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 7px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .quota-own .own-badge { margin-left: 0; }
 .subscription-card.several .quota-keyline + .subscription-account { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
-.reset-ask .reset-idle { color: var(--amber); }
 /* a WorkBuddy account's daily check-in on its Usage card (#694) */
-.wb-checkin { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.wb-checkin .ci-say { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.wb-checkin .ci-say > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* a failed check-in's reason wraps under it rather than ending in "…" (#821) */
-.wb-checkin[data-state="bad"] { flex-wrap: wrap; align-items: flex-start; }
-.wb-checkin[data-state="bad"] .ci-say { flex: 1 1 180px; align-items: flex-start; }
-.wb-checkin[data-state="bad"] .ci-say > span { white-space: normal; overflow-wrap: anywhere; }
-.wb-checkin[data-state="bad"] .ci-dot { margin-top: 4px; }
-.wb-checkin .ci-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
-.wb-checkin .ci-dot.ok { background: var(--green); }
-.wb-checkin .ci-dot.bad { background: var(--red); }
-.wb-checkin .ci-dot.wait { background: var(--amber); }
-.wb-checkin[data-state="ok"] .ci-say { color: var(--fg-2); }
-.wb-checkin .text { flex: none; font-size: 11px; padding: 2px 7px; }
-.wb-checkin .ci-auto { margin-left: auto; }
-.subscription-card.several .wb-checkin { margin-bottom: 6px; }
-.wb-checkin .ci-auto.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .quota-balance { display: flex; align-items: baseline; gap: 6px; font-size: 10.5px; color: var(--muted); }
 .quota-windows + .quota-balance { margin-top: 9px; }
 /* "Every model" at the end of the account's line, above its families */
-.text.quota-every { flex: none; margin: -2px -7px -2px 0; padding: 1px 7px; font-size: 10.5px; }
-.subscription-account .plan + .quota-every, .subscription-head .plan + .quota-every { margin-left: 4px; }
-.subscription-account .user + .quota-every, .subscription-head .quota-every { margin-left: auto; }
 .quota-balance b { margin-left: auto; font-size: 15px; color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
 /* a balance field's several amounts (#420): a line each, the label quiet
    at the left and the figure at the right, the first the larger; a
@@ -1231,7 +1192,7 @@ body.window .field.solo { grid-column: auto; }
 .led.tighter .price-reference { display: none; }
 /* the account's name is cut at 110px, but its column keeps room for the
    source badges under it, which don't wrap: capped at 110px the cell cut
-   off the second English one ("Subscription") */
+   off the second English one */
 .led.tighter .model, .led.tighter .where-name { max-width: 110px; }
 .led.tighter th, .led.tighter td { padding-left: 4px; padding-right: 4px; }
 .led.tighter th { white-space: normal; }
@@ -1260,7 +1221,6 @@ body.window .field.solo { grid-column: auto; }
 .led .src.official { --badge-ink: var(--tk-s); --badge-bg: color-mix(in srgb, var(--badge-ink) 7%, var(--card)); font-size: 9px; font-weight: 650; letter-spacing: .035em; }
 .led .src.official::before { content: ""; width: 6px; height: 3.5px; border-left: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-1px) rotate(-45deg); }
 .led .src.access-api { --badge-ink: var(--tk-f); }
-.led .src.access-subscription { --badge-ink: var(--tk-k); }
 .led .src.proto { --badge-ink: var(--muted); font-weight: 500; }
 .led .src.reported { --badge-ink: var(--tk-o); }
 .led .duration { font-weight: 550; }
@@ -1673,47 +1633,20 @@ body.panel .profiles #save { height: 25px; } /* the field's: the line keeps its 
 .pq-ring.full .pq-dial { background: conic-gradient(var(--amber) calc(var(--p) * 1%), color-mix(in srgb, var(--amber) 18%, transparent) 0); }
 .pq-ring.full b { color: var(--fg); }
 .pq-rn { max-width: 44px; font-size: 9.5px; line-height: 1.2; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pq-rn2 { display: flex; flex-direction: column; align-items: center; }
-.pq-rn2 > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 /* the first window's current cycle, a thin line across the card (#651) */
 .pq-spark-box { grid-column: 1 / -1; display: block; height: 16px; }
 .pq-spark { display: block; width: 100%; height: 16px; overflow: hidden; }
 .pq-spark .qc-line { stroke-width: 1.2; }
 /* a Codex account's rate-limit resets, under a hairline across the card */
-.pq-resets { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-top: 5px; padding-top: 7px; border-top: 1px solid var(--line-2); font-size: 11px; font-variant-numeric: tabular-nums; }
-.resets-words { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.resets-n { color: var(--fg-2); }
-.resets-until { color: var(--faint); }
-.pq-use { margin-left: auto; flex: none; height: 20px; padding: 0 9px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 7%, transparent); color: var(--fg-2); font-size: 11px; white-space: nowrap; transition: background .12s, color .12s; }
-.pq-use:hover { background: color-mix(in srgb, var(--fg) 12%, transparent); color: var(--fg); }
 /* a Codex account spending its resets by itself (#719): a standing say of
    the account's, held or not, its two times in words beside a switch */
-.quota-autoreset, .pq-autoreset, .quota-credits, .pq-credits { display: flex; align-items: center; gap: 8px; color: var(--muted); }
 /* the switch keeps by the first line, so one whose words rewrap when it
    turns stays under the pointer */
-.quota-autoreset, .pq-autoreset, .quota-credits, .pq-credits { align-items: flex-start; }
-.quota-autoreset .ar-say, .pq-autoreset .ar-say, .quota-credits .ar-say, .pq-credits .ar-say { line-height: 16px; }
-.quota-autoreset, .quota-credits { margin-top: 8px; font-size: 10.5px; }
-.quota-resets + .quota-autoreset, .quota-autoreset + .quota-credits { margin-top: 6px; }
-.subscription-card.several .quota-autoreset + .subscription-account,
-.subscription-card.several .quota-credits + .subscription-account { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
-.pq-autoreset, .pq-credits { grid-column: 1 / -1; margin-top: 5px; padding-top: 7px; border-top: 1px solid var(--line-2); font-size: 11px; }
-.pq-resets + .pq-autoreset, .pq-autoreset + .pq-credits { margin-top: 5px; padding-top: 0; border-top: 0; }
-.ar-say { flex: 1; min-width: 0; line-height: 1.35; }
-.ar-say b { font-weight: 500; color: var(--fg-2); }
-.ar-used { display: block; margin-top: 2px; color: var(--faint); }
-.lib-switch.auto-reset, .lib-switch.use-credits { width: 28px; height: 16px; padding: 0; border: 0; cursor: pointer; }
-.lib-switch.auto-reset i, .lib-switch.use-credits i { width: 12px; height: 12px; }
-.lib-switch.auto-reset.on i, .lib-switch.use-credits.on i { transform: translateX(12px); }
-.lib-switch.auto-reset:disabled, .lib-switch.use-credits:disabled { opacity: .6; cursor: default; }
-.resets-kept { color: var(--faint); }
-.resets-kept.on { color: var(--accent); }
+.lib-switch.use-credits { width: 28px; height: 16px; padding: 0; border: 0; cursor: pointer; }
+.lib-switch.use-credits i { width: 12px; height: 12px; }
+.lib-switch.use-credits.on i { transform: translateX(12px); }
+.lib-switch.use-credits:disabled { opacity: .6; cursor: default; }
 /* in brief: the resets held and the say, beside the account's name */
-.subscription-account .acct-auto { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.subscription-account .acct-auto.on { color: var(--accent); }
-.subscription-account .acct-auto-n { color: var(--muted); }
-.subscription-account .acct-auto + .plan { margin-left: 0; }
-.subscription-account .acct-auto + .quota-every { margin-left: 4px; }
 .pq-bals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .pq-card.bal { grid-template-columns: minmax(0, 1fr); }
 .pq-bn { display: flex; align-items: center; gap: 6px; }
@@ -2248,8 +2181,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .accts { display: grid; grid-template-columns: minmax(0, 1fr); border: 1px solid var(--line); border-radius: 10px; background: var(--card); overflow: hidden; }
 .acc { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 5px 8px 5px 11px; font-size: 12.5px; text-align: left; }
 .acc + .acc, .accts .signing { border-top: 1px solid var(--line-2); }
-.editor .accts .keep-login, .editor .accts .switch-only { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 34px; padding: 6px 11px; font-size: 12px; border-top: 1px solid var(--line-2); }
-.editor .accts .keep-login .keep-as { max-width: 240px; }
 .acc .n { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acc .plan { color: var(--muted); font-size: 11px; padding: 1px 6px; border-radius: 5px; background: var(--pill); white-space: nowrap; }
 .acc .grow { flex: 1; }
@@ -2261,7 +2192,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .acc .text.quiet:focus-visible { opacity: 1; }
 /* an account signed out (#1363) shows its Remove without a hover: it is
    one of the two ways out of that state, beside Sign in again */
-.acc.signed-out .text.quiet { opacity: 1; }
 .acc.new { animation: sub-in .5s cubic-bezier(.2, .8, .2, 1); }
 .acc.new .dot { animation: copy-pop .45s cubic-bezier(.2, .8, .2, 1); }
 @keyframes sub-in { from { opacity: 0; transform: translateY(-4px); background: var(--pill-hover); } }
@@ -2335,13 +2265,7 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .acc .amodels.set { color: var(--accent); background: var(--accent-soft); font-weight: 500; }
 .acc .amodels:hover, .acc .amodels.open { color: var(--fg); background: var(--pill-hover); }
 /* an account's usage cap: as the models pill, shown on hover till one is set */
-.acc .acap { flex: none; display: inline-flex; align-items: center; height: 20px; padding: 0 7px; font: inherit; font-size: 11px; color: var(--muted); border: 0; border-radius: 5px; background: none; box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; cursor: default; opacity: 0; transition: opacity .15s, background .12s, color .12s; }
-.acc:hover .acap, .acc .acap.open, .acc .acap.set { opacity: 1; }
 /* apart: Safari before 15.4 drops a whole selector list with :focus-visible in it */
-.acc .acap:focus-visible { opacity: 1; }
-.acc .acap.set { color: var(--accent); background: var(--accent-soft); box-shadow: none; font-weight: 500; }
-.acc .acap:hover, .acc .acap.open { color: var(--fg); background: var(--pill-hover); }
-.acc .acap-in { width: 64px; }
 /* an account's or key's limit on requests at once (#892), and how many
    run and wait under it: shown on hover unless a limit applies */
 .acc .alane { flex: none; display: inline-flex; align-items: center; height: 20px; padding: 0 7px; font: inherit; font-size: 11px; color: var(--muted); border: 0; border-radius: 5px; background: none; box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; cursor: default; opacity: 0; transition: opacity .15s, background .12s, color .12s; font-variant-numeric: tabular-nums; }
@@ -2353,9 +2277,7 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .acc .alane.queued { color: var(--amber); }
 .acc .alane:hover, .acc .alane.open { color: var(--fg); background: var(--pill-hover); }
 .acc .alane-in { width: 64px; }
-.acc .acap-held { color: var(--fg); }
 /* held for fogway's requests, not the agent signed in to it: a warning */
-.acc .acap-held.acap-direct { color: var(--amber); }
 .accts .acc.with-am { flex-wrap: wrap; row-gap: 3px; }
 .acc .acct-models { flex-basis: 100%; display: grid; gap: 7px; padding: 6px 0 2px 25px; cursor: auto; }
 .acc .acct-models .acm-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -2363,9 +2285,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .acc .acct-models .acm-foot .grow { flex: 0 0 0; }
 .acc .n, .acc .rename { flex: 0 1 auto; }
 /* an account's name of the user's own, the account beside it (#1515) */
-.acc .acct-who { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex: 0 1 auto; overflow: hidden; }
-.acc .acct-user, .acc .acct-seat { color: var(--muted); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acc .acct-who .n { flex: 0 1 auto; }
 .acc .plan { flex: none; }
 /* a key's row (#841): what shows only on hover takes no room till then,
    so a key's weight never squeezes its name away; the room it takes on
@@ -2457,29 +2376,10 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .range-menu .rm-day:disabled { color: var(--faint); opacity: .5; }
 @media (max-width: 640px) { .range-opt:not(.on) > span { display: none; } }
 /* a subscription's allowance, under its name */
-.accts .acc.with-aq { flex-wrap: wrap; row-gap: 3px; padding-top: 7px; padding-bottom: 8px; }
 .acc .aq { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding-left: 25px; font-size: 10.5px; color: var(--muted); min-height: 14px; }
-.acc .aq-w { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.acc .aq-track { width: 54px; height: 4px; border-radius: 2px; background: var(--pill); overflow: hidden; }
-.acc .aq-track i { display: block; height: 100%; border-radius: inherit; background: var(--fg-2); }
 /* the account's usage cap: a tick across the meter where it stands */
-.acc .aq-track.capped { position: relative; overflow: visible; }
-.acc .aq-track.capped i { overflow: hidden; }
-.acc .aq-cap { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); }
 /* a window's meter sets its own cap (willz on Discord): a button that
    looks as the meter does, and the window's own cap beside its figure */
-.acc .aq-win { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.acc .aq-set { padding: 1px 4px; margin: -1px -4px; border-radius: 4px; cursor: default; }
-.acc .aq-set:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.acc .aq-set:hover, .acc .aq-set.open { background: var(--pill-hover); }
-.acc .aq-own { color: var(--accent); font-weight: 500; }
-.acc .aq-w b { color: var(--fg-2); font-weight: 600; font-variant-numeric: tabular-nums; }
-.acc .aq-w.full b, .acc .aq-w.full .aq-r { color: var(--fg); }
-.acc .aq-w.full .aq-track i { background: var(--fg); }
-.acc .aq-r { color: var(--muted); }
-.acc .aq-k { color: var(--muted); font-variant-numeric: tabular-nums; }
-.acc .aq-none { color: var(--faint); }
-.acc .aq-asof { flex-basis: 100%; order: 1; color: var(--amber); overflow-wrap: anywhere; }
 .acc .skeleton.sk-aq { width: 110px; height: 8px; border-radius: 4px; }
 .acc .dot.tick.fixed { cursor: default; }
 .acc .dot.tick.fixed:hover { box-shadow: none; }
@@ -2497,26 +2397,12 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 /* the proxy the sign-in goes through (#1663): a long address ends in an
    ellipsis inside the sheet */
 .signing .acts .via { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.signing .devcode { display: flex; align-items: center; gap: 6px; margin: 6px 0 2px; }
-.signing .devcode code { font: var(--code-style, normal) 600 17px/1.2 var(--code-font, var(--code)); font-stretch: var(--code-stretch, 100%); letter-spacing: .12em; padding: 4px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); user-select: all; }
 /* the sign-in link, one line, selected whole with a click */
-.signing .signlink { display: flex; align-items: center; gap: 4px; margin: 5px 0 1px; min-width: 0; }
-.signing .signlink code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--code-style, normal) var(--code-weight, 400) 11px/1.3 var(--code-font, var(--code)); font-stretch: var(--code-stretch, 100%); color: var(--fg-2); padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); user-select: all; -webkit-user-select: all; cursor: text; }
-.signing .callback-form { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; }
-.signing .callback-form input { flex: 1; min-width: 120px; width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--fg); font-size: 12px; }
 .signing .why { color: var(--red); }
 /* a plugin's ways to sign in: the question keeps the row, the choices
    wrap beneath it at whatever length the plugin names them */
-.signing.plugin-ask { flex-wrap: wrap; }
 /* ZCode's site step: the question keeps the row, the sites one group
    beneath it and the plugin's other ways a line of links under them */
-.signing.site-pick { flex-wrap: wrap; row-gap: 8px; }
-.signing.site-pick .sites, .signing.site-pick .ways { flex-basis: 100%; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.signing.site-pick .ways { gap: 2px 10px; margin: -3px 0 0 -4px; }
-.signing.site-pick .sites button, .signing.site-pick .ways button { height: auto; min-height: 26px; max-width: 100%; white-space: normal; text-align: left; line-height: 1.3; overflow-wrap: anywhere; }
-.signing.site-pick .ways .link { color: var(--fg-2); }
-.signing.plugin-ask .choices { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
-.signing.plugin-ask .choices button { height: auto; min-height: 26px; max-width: 100%; padding: 4px 10px; white-space: normal; text-align: left; line-height: 1.3; overflow-wrap: anywhere; }
 /* an import: what is pasted is sign-ins, so it is masked */
 .signing.import textarea { margin-top: 6px; width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font: var(--code-style, normal) var(--code-weight, 400) 12px/1.45 var(--code-font, var(--code)); font-stretch: var(--code-stretch, 100%); resize: vertical; outline: none; -webkit-text-security: disc; }
 .signing.import textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
@@ -2548,10 +2434,8 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 /* stepping aside it fades, then goes; back, it is there at once, so the
    focus can go to it as the sheet closes */
 #view-providers .after-list.away { opacity: 0; visibility: hidden; transition: opacity .18s ease, visibility 0s .18s; }
-#movable { margin: 0 0 10px; }
 /* a built-in subscription a community plugin can run: an outlined amber
    word, apart from the filled "sponsored" */
-.badge.deprecated { background: transparent; color: var(--amber); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amber) 45%, transparent); }
 /* a vendor's status page says its API is affected (#971): a button, its
    page a click away; red for an outage, amber when degraded */
 .badge.upstream { border: 0; font-family: inherit; cursor: pointer; white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 4px; letter-spacing: .02em; text-transform: none; }
@@ -2561,19 +2445,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .badge.upstream:hover { filter: brightness(.95); }
 .badge.upstream:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* over the list: what is deprecated, why, and the way on */
-.deprecation { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); animation: fade-in .2s; }
-.deprecation .dep-dot { flex: none; align-self: flex-start; width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; background: var(--amber); }
-.deprecation .dep-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.deprecation .dep-head { font-size: 12.5px; font-weight: 500; line-height: 1.45; color: var(--fg); overflow-wrap: anywhere; }
-.deprecation .dep-why { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
-.deprecation .dep-acts { flex: none; display: flex; align-items: center; gap: 4px; }
-.deprecation .dep-acts .text:not(.action) { color: var(--muted); }
-@media (max-width: 560px) {
-  .deprecation { flex-wrap: wrap; }
-  .deprecation .dep-acts { flex-basis: 100%; justify-content: flex-end; }
-}
-.move .dep-note { display: flex; align-items: flex-start; gap: 7px; padding: 7px 10px; border-radius: 8px; background: color-mix(in srgb, var(--amber-soft) 55%, transparent); font-size: 11.5px; line-height: 1.5; color: var(--fg-2); }
-.move .dep-note .badge { flex: none; margin-top: 2px; }
 /* and in the add sheet, under the subscriptions */
 /* a deprecated subscription not signed in to: its plugin offered first */
 #fileError { margin: 0 0 10px; }
@@ -2682,8 +2553,6 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .editor .stack { display: flex; flex-direction: column; gap: 6px; }
 .editor .move { align-items: flex-start; font-size: 12px; line-height: 1.5; padding-top: 4px; }
 .editor .move .hint { margin-top: 0; }
-.editor .move .move-why { font-size: 11.5px; line-height: 1.45; color: var(--red); overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
-.editor .move .move-why[hidden] { display: none; }
 .editor .move > button { max-width: 100%; white-space: normal; text-align: left; height: auto; min-height: 27px; }
 .editor .headers { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .editor .headers .pair { width: 100%; }
@@ -3044,10 +2913,6 @@ input.words.search-key, input.words.search-url { flex: 1 1 120px; width: auto; m
 .warm-at .unit { color: var(--muted); font-size: 12.5px; margin-left: -4px; }
 /* a daily warm-up's times (#1260): each with its ×, then +, wrapping under one another on a narrow window rather than past it */
 .warm-at.times { flex: 0 0 auto; max-width: 65%; align-items: flex-start; }
-.warm-at.times > :not(.warm-times) { flex: none; }
-.warm-at .warm-times { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 8px; min-width: 0; }
-.warm-at .warm-time { display: inline-flex; align-items: center; gap: 2px; }
-.warm-at .warm-rm, .warm-at .warm-add { min-width: 24px; height: 27px; padding: 0 6px; font-size: 14px; line-height: 1; }
 .row.pref .sub .warn { color: var(--amber); }
 .row.pref .sub.wraps { white-space: normal; }
 /* the field's clock and picker in the page's own palette */
@@ -3110,7 +2975,6 @@ input.words.search-key, input.words.search-url { flex: 1 1 120px; width: auto; m
 }
 .prefs .val .github:hover { background: var(--fg); color: var(--bg); }
 .prefs .val .github:active { transform: scale(.96); }
-
 
 /* ---------- motion ----------
    One easing everywhere (iOS-ish: quick start, soft landing), short

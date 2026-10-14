@@ -374,9 +374,6 @@ type settingsJSON struct {
 	TerminalApps    []terminalChoice `json:"terminalApps,omitempty"`
 	TerminalDefault string           `json:"terminalDefault,omitempty"`
 	OTelEnv         bool             `json:"otelEnv,omitempty"`
-	// NoAccountsEnv is FOGWAY_NO_ACCOUNTS set, which keeps account
-	// discovery off for this run whatever Settings has (#1535)
-	NoAccountsEnv bool `json:"noAccountsEnv,omitempty"`
 	// whether the page is in gateway mode and why (gatewayMode); Web says
 	// it is served by fogway web, where the mode can be set
 	GatewayOn  bool   `json:"gatewayOn,omitempty"`
@@ -446,13 +443,6 @@ type settingsJSON struct {
 	// LANURLs are a container's own addresses, not the host's: the page
 	// offers the one it was opened at instead, or says how to set it
 	LANContainer bool `json:"lanContainer,omitempty"`
-	// when the Codex warm-up last started an account's window
-	CodexWarmed *time.Time `json:"codexWarmed,omitempty"`
-	// and the Claude warm-up
-	ClaudeWarmed *time.Time `json:"claudeWarmed,omitempty"`
-	// the ChatGPT accounts signed in, each of which can have a daily
-	// warm-up time of its own (#957)
-	CodexUsers []string `json:"codexUsers,omitempty"`
 	// FX is the dollar-to-yuan rate the cny currency choice shows costs at
 	FX fxJSON `json:"fx"`
 	// NotifyProblem is why a usage alert set wouldn't be seen: "denied"
@@ -574,7 +564,6 @@ func settingsState() settingsJSON {
 		s.NotifyProblem = notifyProblem()
 	}
 	s.ProxyNow, s.ProxySource = netproxy.Describe()
-	s.NoAccountsEnv = settings.AccountDiscoveryOff() && !s.NoAccountDiscovery
 	for _, name := range []string{"FOGWAY_OTEL_ENABLED", "FOGWAY_OTEL_ENDPOINT", "FOGWAY_OTEL_HEADERS", "FOGWAY_OTEL_METRICS", "FOGWAY_OTEL_BODIES", "FOGWAY_OTEL_BODIES_WHOLE", "FOGWAY_OTEL_SESSIONS"} {
 		if _, ok := os.LookupEnv(name); ok {
 			s.OTelEnv = true
@@ -1088,8 +1077,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		in.OwnModelsHidden = cur.OwnModelsHidden // an agent's own models left out (#1642)
 		in.FastPicks = cur.FastPicks             // switched in the agents' pickers (#954)
 		in.AgentEfforts = cur.AgentEfforts       // picked in an agent's row (#1003)
-		in.PluginCheckins = cur.PluginCheckins   // set on its own (plugin-checkin below)
-		in.CheckinOff = cur.CheckinOff           // set on its own (checkin-account below)
 		settings.CarryPerModel(&in, &cur)
 		in.LAN, in.LANKey = cur.LAN, cur.LANKey
 		in.LANKeyID = cur.LANKeyID
@@ -1131,12 +1118,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		// and the model Codex's subagents are put on, set in Codex's row
 		in.CodexSubagentModel = cur.CodexSubagentModel
 		in.ChinaMirror = cur.ChinaMirror // the Plugins page's, set on its own
-		// which Codex accounts spend a reset by themselves, set on the Usage card
-		in.CodexAutoReset = cur.CodexAutoReset
-		// and which of them spend their credits, set there too
-		in.CodexNoCredits = cur.CodexNoCredits
-		// and each Codex account's own daily warm-up (codex-warm-at below)
-		in.CodexWarmAtOf = cur.CodexWarmAtOf
 		// and the text size, which the keyboard changes too (text-size below)
 		in.TextSize = cur.TextSize
 		// the version the Update pill was hidden for, set from the pill
@@ -1145,7 +1126,7 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 		in.UpdateMirror = cur.UpdateMirror
 		// gateway mode, set on its own (gateway-mode)
 		in.GatewayMode = cur.GatewayMode
-		in.NoAccountDiscovery = cur.NoAccountDiscovery // set on its own (account-discovery below, or the CLI)
+		in.NoAccountDiscovery = cur.NoAccountDiscovery // set by hand in settings.json, never by the page
 		if v := strings.TrimSpace(in.Vision); v != "" && v != "off" && v != cur.Vision {
 			if _, _, ok := provider.Resolve(v); !ok {
 				fail(rw, fmt.Errorf("no model %s to describe images", v))
@@ -1474,123 +1455,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 			}
 		}
 		if err := provider.SetCodexAutoReview(v); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// whether WorkBuddy's daily check-in is pressed each day, the Usage
-	// card's toggle (#694), set on its own as Settings' is
-	mux.HandleFunc("POST /api/settings/workbuddy-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct{ On bool }
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		s := settings.Load()
-		s.WorkBuddyCheckin = in.On
-		if err := settings.Save(s); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// and Trae CN's (#694)
-	mux.HandleFunc("POST /api/settings/trae-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct{ On bool }
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		s := settings.Load()
-		s.TraeCheckin = in.On
-		if err := settings.Save(s); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// and MiniMax Code's (#811)
-	mux.HandleFunc("POST /api/settings/minimax-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct{ On bool }
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		s := settings.Load()
-		s.MiniMaxCheckin = in.On
-		if err := settings.Save(s); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// and Qoder's daily credits
-	mux.HandleFunc("POST /api/settings/qoder-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct{ On bool }
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		s := settings.Load()
-		s.QoderCheckin = in.On
-		if err := settings.Save(s); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// and a plugin's own daily check-in, by its provider
-	mux.HandleFunc("POST /api/settings/plugin-checkin", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct {
-			Provider string
-			On       bool
-		}
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		if in.Provider == "" {
-			fail(rw, errors.New("no provider"))
-			return
-		}
-		s := settings.Load()
-		s.PluginCheckins = maps.Clone(s.PluginCheckins)
-		if s.PluginCheckins == nil {
-			s.PluginCheckins = map[string]bool{}
-		}
-		s.PluginCheckins[in.Provider] = in.On
-		if err := settings.Save(s); err != nil {
-			fail(rw, err)
-			return
-		}
-		writeJSON(rw, settingsState())
-	})
-	// and one account's daily check-in, whichever vendor's (#1902): off
-	// leaves it out while its vendor's is on
-	mux.HandleFunc("POST /api/settings/checkin-account", func(rw http.ResponseWriter, r *http.Request) {
-		var in struct {
-			Key string
-			On  bool
-		}
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-			fail(rw, err)
-			return
-		}
-		if in.Key == "" {
-			fail(rw, errors.New("no account"))
-			return
-		}
-		s := settings.Load()
-		off := slices.DeleteFunc(slices.Clone(s.CheckinOff), func(k string) bool { return k == in.Key })
-		if !in.On {
-			off = append(off, in.Key)
-		}
-		if len(off) == 0 {
-			off = nil
-		}
-		s.CheckinOff = off
-		if err := settings.Save(s); err != nil {
 			fail(rw, err)
 			return
 		}

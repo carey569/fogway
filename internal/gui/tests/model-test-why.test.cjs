@@ -1,12 +1,11 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Which models can be tested on their own, and why not where they can't (ARNO
-// on Discord: 有些provider里的模型可以右击检测，有些却不可以，为什么？). A
-// signed-in account sent requests at an endpoint (Codex) has the chip's
-// right-click and Test models as a key does. One reached through its agent's
-// own API (Kiro: modelTest "own-api") and a classifier ("decide") still open
-// the menu on a right-click, its Test this model off with the reason under it
-// and as its title, and Test models is off with the reason as its title;
-// nothing is posted and the page doesn't move. A System One provider's
+// on Discord: 有些provider里的模型可以右击检测，有些却不可以，为什么？). One
+// reached through its agent's own API (Kiro: modelTest "own-api") and a
+// classifier ("decide") still open the menu on a right-click, its Test this
+// model off with the reason under it and as its title, and Test models is
+// off with the reason as its title; nothing is posted and the page doesn't
+// move. A System One provider's
 // model, one typed in by hand too, is tested (decideTest); Workers AI's
 // isn't. In English and Chinese.
 const assert = require("node:assert/strict");
@@ -19,14 +18,9 @@ const assets = path.resolve(__dirname, "../assets");
 const base = { icon: "generic", chat: "", responses: "", anthropic: "", catalog: "", agents: [], fallback: [], headers: {}, keyList: [], proxy: "" };
 const providers = [
   {
-    ...base, id: "codex", name: "Codex", icon: "codex-color", responses: "https://chatgpt.com/backend-api/codex",
-    models: [{ id: "gpt-6", name: "", on: true }, { id: "gpt-6-mini", name: "", on: true }],
-    account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  },
-  {
     ...base, id: "kiro", name: "Kiro", icon: "kiro-color", modelTest: "own-api",
     models: [{ id: "claude-sonnet-5", name: "", on: true }, { id: "claude-haiku-5", name: "", on: true }],
-    account: { agent: "kiro", agentName: "Kiro", user: "k@example.com", plan: "PRO", logins: [{ user: "k@example.com", plan: "PRO", active: true, on: true }] },
+    key: { set: true, masked: "sk-…kir" },
   },
   // a System One provider (OpenRouter's) with a model typed in by hand
   // (ARNO on Discord), and Workers AI, whose models can't each be asked
@@ -66,11 +60,11 @@ function serve(lang, tests) {
 
 const words = {
   en: {
-    item: "Test this model", all: "Test models", ok: "gpt-6-mini answered in 321 ms",
+    item: "Test this model", all: "Test models",
     own: "Kiro is reached through its own API, which fogway translates each agent request for, so a test request can't be sent to it on its own. Ask the model from an agent to try it.",
   },
   zh: {
-    item: "测试此模型", all: "测试模型", ok: "gpt-6-mini 在 321 毫秒内响应",
+    item: "测试此模型", all: "测试模型",
     own: "Kiro 使用自有接口，由 fogway 转换 Agent 的请求，无法单独发测试请求。请在 Agent 中使用该模型测试。",
   },
 };
@@ -110,29 +104,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     };
     const chip = (page, id) => page.locator(".editor .mchips .mchip", { hasText: new RegExp(`^${id}`) });
     const scrolled = (page) => page.evaluate(() => [window.scrollY, ...[...document.querySelectorAll("*")].filter((e) => e.scrollTop > 0).map((e) => `${e.className}:${e.scrollTop}`)].join(" "));
-
-    test(`${engine} ${lang}: a signed-in account's model is tested from its chip`, async (t) => {
-      const tests = [];
-      const { page, errors } = await open(t, "Codex", tests);
-      const c = chip(page, "gpt-6-mini");
-      await c.scrollIntoViewIfNeeded();
-      const before = await c.evaluate((e) => e.getBoundingClientRect().top), sc = await scrolled(page);
-      await rclick(c);
-      const menu = page.locator(".pop.row-menu");
-      await menu.waitFor();
-      const item = menu.getByRole("menuitem", { name: w.item });
-      assert(await item.isEnabled(), "the account's model can be tested");
-      await item.click();
-      for (let i = 0; i < 60 && !tests.length; i++) await page.waitForTimeout(50);
-      assert.deepEqual({ id: tests[0]?.id, test: tests[0]?.test }, { id: "codex", test: ["gpt-6-mini"] });
-      await c.locator(".tdot.ok").waitFor();
-      assert.equal(await page.locator("#status").textContent(), w.ok);
-      assert.equal(await c.evaluate((e) => e.getBoundingClientRect().top), before, "the chip moved");
-      assert.equal(await scrolled(page), sc, "the page scrolled");
-      const all = page.locator(".editor .mfoot").getByRole("button", { name: w.all, exact: true });
-      assert(await all.isEnabled(), "Test models is offered");
-      assert.deepEqual(errors, []);
-    });
 
     test(`${engine} ${lang}: a model reached through its agent's own API says why it can't be tested`, async (t) => {
       const tests = [];

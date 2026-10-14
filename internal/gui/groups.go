@@ -134,10 +134,6 @@ type modelRef struct {
 	// sent only when true
 	Images        bool `json:"images,omitempty"`
 	ImagesUnknown bool `json:"imagesUnknown,omitempty"`
-	// Sub: a subscription account serves it (Provider.Account), so a
-	// group's classifier set to it asks that subscription at every turn,
-	// which the Routing page says (#1839)
-	Sub bool `json:"sub,omitempty"`
 	// VendorPicks: an image model whose vendor picks the model itself,
 	// whichever is named (a ChatGPT account's, #1865), which Settings ›
 	// Images says
@@ -146,7 +142,7 @@ type modelRef struct {
 
 // servedRef is a served model as the Routing page lists it
 func servedRef(e provider.Entry) modelRef {
-	return modelRef{ID: e.ID, Name: e.Name, Provider: e.Provider.ID, PName: e.Provider.Name, Icon: e.Provider.Icon, Context: e.Context, Efforts: e.Efforts, CanFast: provider.CanFast(e.Provider, e.Model), OwnFast: provider.OwnFast(e.Provider, e.Model), Images: seesImages(e), ImagesUnknown: imagesUnknown(e), Sub: false}
+	return modelRef{ID: e.ID, Name: e.Name, Provider: e.Provider.ID, PName: e.Provider.Name, Icon: e.Provider.Icon, Context: e.Context, Efforts: e.Efforts, CanFast: provider.CanFast(e.Provider, e.Model), OwnFast: provider.OwnFast(e.Provider, e.Model), Images: seesImages(e), ImagesUnknown: imagesUnknown(e)}
 }
 
 type poolJSON struct {

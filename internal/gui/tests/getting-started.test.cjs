@@ -86,7 +86,7 @@ const LAYOUTS = [
 ];
 const LANGS = ["en", "zh", "zh-TW", "ja", "de"];
 const STRINGS = ["Get started", "Add a model source", "Connect an agent", "Set up routing (optional)", "Hide Get started",
-  "A subscription you already pay for, a provider, or an API key", "fogway found these on this computer. Click one to connect it:",
+  "A vendor's API key, a relay, or a model on this computer", "fogway found these on this computer. Click one to connect it:",
   "A routing group sends each request to the right model, and to the next one when a model fails", "+{n} more below", "{n} of {m} done", "{n} models ready to use", "Add “{name}”"];
 
 async function open(browser, layout, lang, w, posts) {

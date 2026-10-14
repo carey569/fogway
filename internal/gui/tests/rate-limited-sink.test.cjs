@@ -1,10 +1,10 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// 01huadalang (WorkBuddy, several accounts): an account rate limited while
-// it still has quota goes back to the front once its rest ends, so one
-// account takes everything until it is limited again — what a vendor's
-// risk control notices. "Rate limited" beside a provider's Routing (its
-// editor, made with its Save; the Routing page's row of providers with
-// several accounts, at once) and a group's: "Keeps its place", the
+// 01huadalang (WorkBuddy, several accounts): a key rate limited while it
+// still has quota goes back to the front once its rest ends, so one key
+// takes everything until it is limited again — what a vendor's risk
+// control notices. "Rate limited" beside a provider's Routing (its editor,
+// made with its Save; the Routing page's row of providers with several
+// keys, at once) and a group's: "Keeps its place", the
 // default, or "Goes to the back", which sends it behind every one not rate
 // limited since. Hidden for In turn, which goes round already. The Routing
 // page says which one is at the back and since when. No native select, and
@@ -19,32 +19,29 @@ const assets = path.resolve(__dirname, "../assets");
 const now = Date.now();
 const iso = (ms) => new Date(ms).toISOString();
 const base = { icon: "generic", catalog: "", models: [{ id: "glm-5", name: "GLM-5", on: true }], agents: [], fallback: [], headers: {}, routing: "order", affinity: "", ready: true };
-const sub = {
-  ...base, id: "workbuddy-ai", name: "WorkBuddy AI", chat: "", responses: "", anthropic: "", keyList: [],
-  account: {
-    agent: "workbuddy-ai", agentName: "WorkBuddy AI", user: "one@example.test", plan: "Pro",
-    logins: ["one", "two", "three"].map((n, i) => ({ user: `${n}@example.test`, plan: "Pro", active: i === 0, on: true })),
-  },
+const pool = {
+  ...base, id: "glm-pool", name: "GLM Pool", chat: "https://glm.example.test/v1", responses: "", anthropic: "", key: { set: true, masked: "sk-…one" },
+  keyList: ["one", "two", "three"].map((n, i) => ({ id: n, name: `key-${n}`, masked: `sk-…${n}`, active: i === 0, on: true })),
 };
-const members = ["workbuddy-ai/glm-5", "rl/glm-5"];
+const members = ["glm-pool/glm-5", "rl/glm-5"];
 const groups = () => ({
-  models: [{ id: "workbuddy-ai/glm-5", name: "glm-5", providerName: "WorkBuddy AI", icon: "generic" }, { id: "rl/glm-5", name: "glm-5", providerName: "Relay", icon: "generic" }],
-  pools: [{ provider: "workbuddy-ai", name: "WorkBuddy AI", icon: "generic", kind: "account", who: ["one@example.test", "two@example.test", "three@example.test"], routing: "order", affinity: "" }],
+  models: [{ id: "glm-pool/glm-5", name: "glm-5", providerName: "GLM Pool", icon: "generic" }, { id: "rl/glm-5", name: "glm-5", providerName: "Relay", icon: "generic" }],
+  pools: [{ provider: "glm-pool", name: "GLM Pool", icon: "generic", kind: "key", who: ["key-one", "key-two", "key-three"], routing: "order", affinity: "" }],
   groups: [{ id: "glm", name: "GLM", members, fast: [], off: [], routing: "order", sink: true, ready: true, memberInfo: members.map((id) => ({ id, ready: true })) }],
 });
 const sunkAt = now - 60e3;
 const order = ["two", "three", "one"].map((n, i) => ({
-  id: `workbuddy-ai@${n}@example.test`, provider: "workbuddy-ai", name: "WorkBuddy AI", who: `${n}@example.test`, kind: "account", model: "glm-5", routing: "order", shared: true, rank: i,
+  id: `glm-pool#${n}`, provider: "glm-pool", name: "GLM Pool", who: `key-${n}`, kind: "key", model: "glm-5", routing: "order", shared: true, rank: i,
   ...(n === "one" ? { sunk: iso(sunkAt) } : {}),
 }));
 const route = {
-  id: 7, seq: 7, time: iso(now - 2000), agent: "pi", model: "glm-5", provider: "workbuddy-ai", done: true, status: 200, ms: 900, tokens: 1500,
+  id: 7, seq: 7, time: iso(now - 2000), agent: "pi", model: "glm-5", provider: "glm-pool", done: true, status: 200, ms: 900, tokens: 1500,
   order, tries: [{ id: order[0].id, model: "glm-5", start: iso(now - 2000), done: true, ms: 800, status: 200 }],
 };
 
 function serve(lang, posts) {
   const state = { agents: [{ id: "pi", name: "Pi", path: "/test/pi", fields: [] }], profiles: [], settings: { lang, theme: "light" } };
-  const providers = { providers: [sub], presets: [], excluded: [], gateway: { running: true, window: true, url: "http://127.0.0.1:3999" } };
+  const providers = { providers: [pool], presets: [], excluded: [], gateway: { running: true, window: true, url: "http://127.0.0.1:3999" } };
   return async (r) => {
     const url = new URL(r.request().url());
     const json = (data) => r.fulfill({ json: data });
@@ -87,7 +84,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
     const launch = () => engine === "webkit" ? webkit.launch() : chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "chromium" });
     const said = (page, s) => page.evaluate(([k, zh]) => zh ? I18N.zh[k] : k, [s, zh]);
 
-    test(`${engine} ${lang}: a provider's rate limited accounts go to the back, made with its Save`, async (t) => {
+    test(`${engine} ${lang}: a provider's rate limited keys go to the back, made with its Save`, async (t) => {
       const browser = await launch();
       t.after(() => browser.close());
       const page = await (await browser.newContext({ viewport: { width: 900, height: 720 }, reducedMotion: "reduce" })).newPage();
@@ -96,7 +93,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", serve(lang, posts));
       await page.goto("http://fogway.test/?view=providers");
-      await page.locator(".row.provider", { hasText: sub.name }).first().click();
+      await page.locator(".row.provider", { hasText: pool.name }).first().click();
       await page.locator(".editor .accts").first().waitFor();
       assert.deepEqual(await page.evaluate((keys) => keys.filter((k) => !I18N.zh[k]), KEYS), [], "every string has its Chinese");
       const label = page.locator(".editor label", { hasText: new RegExp(`^${w.label}$`) });
@@ -135,21 +132,23 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.route("**/*", serve(lang, posts));
       await page.goto("http://fogway.test/?view=routing");
 
-      // the one at the back says so, and since when
-      const stage = page.locator("li", { has: page.locator(".who", { hasText: "one@example.test" }) }).first();
+      // the one at the back says so, and since when (the keys fold into
+      // one row first, #1319)
+      await page.locator(".rt-accts > li.rt-fold:not(.open)").first().click();
+      const stage = page.locator("li", { has: page.locator(".who", { hasText: "key-one" }) }).first();
       await stage.waitFor();
       await page.waitForFunction((s) => document.body.innerText.includes(s), w.row);
       assert.match(await stage.textContent(), new RegExp(w.row));
       await page.waitForFunction((s) => document.body.innerText.includes(s), zh ? "已排到最后" : "so it went to the back");
 
-      // the providers with several accounts: set at once
-      const pool = page.locator(".rt-pool", { hasText: "WorkBuddy AI" });
-      await pool.waitFor();
+      // the providers with several keys: set at once
+      const row = page.locator(".rt-pool", { hasText: "GLM Pool" });
+      await row.waitFor();
       // the pool sits under the window's foot: wheeled to, as the reader
       // would (WebKit's own scroll into view is put back by the page, which
       // undoes a scroll the reader didn't make, and the click timed out
       // with the option outside the viewport, #1376)
-      const back = pool.locator(".sink-pick .opt", { hasText: new RegExp(`^${w.back}$`) });
+      const back = row.locator(".sink-pick .opt", { hasText: new RegExp(`^${w.back}$`) });
       await page.mouse.move(550, 600);
       for (let i = 0; i < 10 && (await back.boundingBox()).y > 1400 - 260; i++) {
         await page.mouse.wheel(0, 300);
@@ -159,7 +158,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await back.click();
       await page.waitForTimeout(200);
       const sent = posts.find((p) => p.path === "/api/provider/sink");
-      assert.deepEqual(sent?.body, { id: "workbuddy-ai", sink: true });
+      assert.deepEqual(sent?.body, { id: "glm-pool", sink: true });
 
       // the group's card says it; its editor has it, kept by the Save
       const card = page.locator(".rt-group", { hasText: "GLM" });

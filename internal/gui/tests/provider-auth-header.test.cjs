@@ -4,8 +4,8 @@
 // Key header row, Both, x-api-key or Authorization: Bearer, opening as it
 // was saved or learned; Save posts the pick. A relay with only a Chat
 // address has no row until an Anthropic one is typed. Anthropic's own API
-// (bothAuth false) and a signed-in account have none. In English and
-// Chinese, and at a phone's width.
+// (bothAuth false) has none. In English and Chinese, and at a phone's
+// width.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -21,16 +21,10 @@ const relay = {
 const learned = { ...relay, id: "learned", name: "Learned", authHeader: "x-api-key" };
 const chatOnly = { ...relay, id: "chatonly", name: "Chat Only", chat: "https://chat.example.com/v1", anthropic: "", bothAuth: false };
 const official = { ...relay, id: "anthropic", name: "Anthropic", preset: "anthropic", icon: "", anthropic: "https://api.anthropic.com", bothAuth: false };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "",
-};
 const presets = [{ id: "anthropic", name: "Anthropic", anthropic: "https://api.anthropic.com", added: true }];
 
 function serve(lang, posts) {
-  const providers = { providers: [relay, learned, chatOnly, official, codex], presets, excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [relay, learned, chatOnly, official], presets, excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -136,15 +130,11 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, []);
     });
 
-    test(`${engine} ${lang}: Anthropic's own API and a signed-in account have no row`, async (t) => {
+    test(`${engine} ${lang}: Anthropic's own API has no row`, async (t) => {
       const { page, errors, posts } = await open(t, "Anthropic");
       assert.equal(await seg(page).isVisible(), false);
       const saved = await save(page, posts);
       assert.equal("authHeader" in saved.body, false);
-      await page.locator(".editor .bar").getByRole("button", { name: lang === "zh" ? "取消" : "Cancel", exact: true }).click().catch(() => {});
-      await page.locator(".row.provider", { hasText: "Codex" }).first().click();
-      await page.locator(".editor .bar").waitFor();
-      assert.equal(await seg(page).count(), 0);
       assert.deepEqual(errors, []);
     });
 

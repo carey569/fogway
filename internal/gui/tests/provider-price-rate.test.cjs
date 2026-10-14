@@ -2,8 +2,8 @@
 // A provider's price rate (ITea312, #819): its editor has the field, empty
 // for the official price; Save posts the number typed, null when it is
 // empty, and refuses one out of range or with more than three decimals
-// before anything is posted. A signed-in account opens on what it has. In
-// English and Chinese.
+// before anything is posted. One with a rate saved opens on it. In English
+// and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -16,15 +16,13 @@ const relay = {
   models: [{ id: "model-a", name: "Model A", on: true }], agents: [], fallback: [], headers: {},
   key: { set: true, masked: "sk-…one" }, keyList: [], balanceToken: { takes: false, set: false }, proxy: "", maxConcurrency: null,
 };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "", maxConcurrency: null, priceRate: 0.8,
+const rated = {
+  ...relay, id: "rated", name: "Rated", chat: "https://rated.example.com/v1",
+  models: [{ id: "gpt-6", name: "GPT-6", on: true }], key: { set: true, masked: "sk-…two" }, priceRate: 0.8,
 };
 
 function serve(lang, posts) {
-  const providers = { providers: [relay, codex], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [relay, rated], presets: [], excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -111,13 +109,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, []);
     });
 
-    test(`${engine} ${lang}: a signed-in account's rate opens as it is and is saved`, async (t) => {
-      const { page, errors, posts } = await open(t, "Codex");
+    test(`${engine} ${lang}: a saved rate opens as it is and is saved`, async (t) => {
+      const { page, errors, posts } = await open(t, "Rated");
       assert.equal(await box(page).inputValue(), "0.8");
       // a comma for the decimal point, as some keyboards type it
       await box(page).fill("1,5");
       const saved = await save(page, posts);
-      assert.equal(saved.body.id, "codex");
+      assert.equal(saved.body.id, "rated");
       assert.equal(saved.body.priceRate, 1.5);
       assert.deepEqual(saved.body.models, ["gpt-6"], "its picks go with it");
       assert.deepEqual(errors, []);

@@ -149,27 +149,7 @@
   const actHead = el("div", "row-head"), actNote = el("span", "note");
   const acts = el("div", "list rt-acts");
   const actLabel = el("span", "label");
-  // the accounts' allowances read again, by hand only (#1834): an asked
-  // read, as the Usage page's Refresh now is, never on a timer; it turns
-  // while the read is on its way, and the windows each account shows
-  // (winsOf) are drawn again from what comes back
-  const actRead = el("button", "rt-read");
-  actRead.type = "button";
-  actRead.id = "rtReadAllowances";
-  actRead.hidden = true;
-  actRead.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></svg>';
-  actRead.onclick = async () => {
-    if (actRead.classList.contains("busy")) return;
-    actRead.classList.add("busy");
-    actRead.setAttribute("aria-busy", "true");
-    try { await loadQuotas(true); } finally {
-      actRead.classList.remove("busy");
-      actRead.removeAttribute("aria-busy");
-      steady(() => renderActs(listed()));
-      render();
-    }
-  };
-  actHead.append(actLabel, actRead, el("span", "grow"), actNote);
+  actHead.append(actLabel, el("span", "grow"), actNote);
   const hist = el("div", "rt-cols");
   const colA = el("div", "rt-col"), colB = el("div", "rt-col");
   const filters = el("div", "rt-filters");
@@ -1093,16 +1073,13 @@
     holdAll();
   }
 
-  // rankOf is an account's or key's place in its provider's own list, the
-  // order its page shows and a drag sets (#217): the list as it is now, so
-  // a drag moves it at once; else as the request found it
+  // rankOf is a key's place in its provider's own list, the order its page
+  // shows and a drag sets (#217): the list as it is now, so a drag moves it
+  // at once; else as the request found it
   function rankOf(w) {
     const p = providers?.providers?.find((x) => x.id === w.provider);
     let i = -1;
-    if (p?.account && w.kind === "account") {
-      const user = (w.who || "").toLowerCase();
-      i = loginsInOrder(p.account, p).findIndex((l) => (l.user || "").toLowerCase() === user);
-    } else if (p && w.kind === "key") i = (p.keyList || []).findIndex((k) => w.id === p.id + "#" + k.id);
+    if (p && w.kind === "key") i = (p.keyList || []).findIndex((k) => w.id === p.id + "#" + k.id);
     return i >= 0 ? i : (p ? 1000 : 0) + (w.rank || 0);
   }
 
@@ -1576,11 +1553,9 @@
       else if (w.speaks) s = t("{api} only", { api: API[w.speaks] || w.speaks });
       else s = w.kind === "key" ? t("API key") : t("one key");
       if (row.st.textContent !== s) row.st.textContent = s;
-      // an account's windows each, with when they reset, in its tooltip
-      // (#1835): the row says the fullest one while idle and what it is
-      // doing while it answers, and a second line on every seat would
-      // crowd the stage. Live only, as the list's are (winsOf).
-      const tip = [w.id, ...(day ? [] : winsOf(w))].join("\n");
+      // its id in its tooltip: the row says the fullest window while idle
+      // and what it is doing while it answers
+      const tip = w.id;
       if (row.li.title !== tip) row.li.title = tip;
       const bar = w.known;
       row.li.classList.toggle("nobar", !bar);
@@ -2177,7 +2152,7 @@
   }
   setInterval(refreshSessionNames, 15000);
   window.addEventListener("focus", refreshSessionNames);
-  const costNote = () => t("Estimated at effective model prices, including cache reads and writes; subscription billing may differ. Totals cover only the requests listed here.");
+  const costNote = () => t("Estimated at effective model prices, including cache reads and writes; a plan's billing may differ. Totals cover only the requests listed here.");
   function routeCost(r) {
     if (!r.priced) return "—";
     return "≈" + fmtCost({ cost: r.cost || 0, unpriced: 0 }) + (r.unpriced ? "+" : "");
@@ -2409,26 +2384,6 @@
     return b;
   }
 
-  // cardOf: the Usage page's reading of a subscription account the stage
-  // or the list shows (#1833): its card by the agent it is signed in to
-  // (a plugin's by its provider) and its user, this computer's own; null
-  // when there is none, or it holds no windows. Nothing is read for it:
-  // the readings are app.js's quotas, as the Usage page has them.
-  function cardOf(w) {
-    if (w.kind !== "account" || !Array.isArray(quotas)) return null;
-    const user = (w.who || "").trim().toLowerCase();
-    const mine = quotas.filter((q) => !q.from && q.kind === "subscription" && (q.provider === w.agent || q.provider === w.provider));
-    const q = mine.find((q) => (q.user || "").trim().toLowerCase() === user) || (mine.length === 1 && !mine[0].user ? mine[0] : null);
-    return q && !q.error && q.windows?.length ? q : null;
-  }
-  // winsOf: each of an account's windows, as the Usage page's card names
-  // it: "5 hours 40% used · resets in 2h"
-  function winsOf(w) {
-    const q = cardOf(w);
-    return q ? (familyWindows(q.windows) || []).map((x) => t(x.name) + " " + quotaText(x)
-      + (x.resetsAt ? " · " + resetInText(new Date(x.resetsAt)) : "")) : [];
-  }
-
   // when each rest was lifted by hand, by the key it rests by (#1869)
   const liftedAt = new Map();
   // modelRest keeps the latest word of one of an account's models resting
@@ -2482,13 +2437,6 @@
     const list = [...by.values()].sort((x, y) => (x.w.name || "").localeCompare(y.w.name || "") || x.w.provider.localeCompare(y.w.provider) || rankOf(x.w) - rankOf(y.w) || x.pos - y.pos);
     setText(actLabel, t("Accounts and keys"));
     setText(actNote, t("over those requests"));
-    // live, with a subscription account listed: a kept day's were weighed
-    // by readings long gone, and a key has no allowance to read
-    actRead.hidden = !!day || !list.some((a) => a.w.kind === "account");
-    if (actRead.title !== t("Read the accounts' allowances again")) {
-      actRead.title = t("Read the accounts' allowances again");
-      actRead.setAttribute("aria-label", t("Refresh now"));
-    }
     const n = now();
     let prov = "";
     const out = [];
@@ -2550,16 +2498,6 @@
       if (parts.length) {
         const r0 = parts[0][1].rest;
         row.append(el("div", "st rest part", `${parts.map(([m]) => m).join(", ")} · ${failWord(r0.why)} · ${restWhen(r0)}`));
-      }
-      // a subscription account's windows each, with when they reset, as
-      // the Usage page read them (#1833): the figure above is the one
-      // window routing went by. Live only: a kept day's requests were
-      // weighed by readings long gone.
-      const ws = day ? [] : winsOf(w);
-      if (ws.length) {
-        const line = el("div", "wins");
-        line.append(...ws.map((s) => el("span", "", s)));
-        row.append(line);
       }
       row.append(tally);
       // the models it answered, on a line of their own, not wrapped in
@@ -3289,7 +3227,7 @@
     strict: "A conversation stays with the account or key that answered it and never moves to another, even past its usage cap: when that one is rate limited or out of quota, the error goes to the agent. New conversations are routed as usual.",
   };
   const GROUP_HINT = {
-    "": "Smart, over the members' accounts and keys together: of the subscriptions with quota to spare, the one whose allowance renews soonest goes first — the week decides, and an account with five hours and no week (Claude Enterprise) goes by its five hours, so ahead of every week renewing later; one resting after a failure goes last.",
+    "": "Smart, over the members' keys together: of the keys on plans with quota to spare, the one whose allowance renews soonest goes first — the week decides, and a plan with five hours and no week goes by its five hours, so ahead of every week renewing later; one resting after a failure goes last.",
     order: "In order: the first model until it can't answer, then the next — each over its own accounts or keys as its provider routes them.",
     rotate: "In turn: each conversation's next turn goes to the next member's account or key, spreading the load.",
     usage: "Least used first: the account or key with the most of its allowance left goes first.",
@@ -4707,16 +4645,6 @@
     cw.append(cls);
     const deciders = groups.deciders || [];
     const isJev = (id) => deciders.some((x) => x.id === id);
-    // the subscription a classifier asks as every turn begins, by its
-    // model's name and provider: the model's own, or a group's first
-    // member's (the one asked first); "" when it is none
-    const classifierSub = (m, sg) => {
-      if (sg) {
-        const first = sg.members?.[0] || "";
-        m = groups.models.find((x) => x.id === first || first.startsWith(x.id + ":"));
-      }
-      return m?.sub ? `${m.name || m.id} · ${m.providerName}` : "";
-    };
     const drawClassifier = () => {
       const auto = d.effort === "auto";
       const intents = d.rules.some((r) => r.intent?.trim() || (r === asking && d.rules.includes(r)));
@@ -4748,16 +4676,6 @@
           : auto
           ? "As a turn begins, this model is asked which of the intents the message is and how hard the turn is, each once; a small, fast one without reasoning is best. If it can't say, no intent matches and the turn reasons as the agent asked. Its calls show in the usage as fogway’s own."
           : "As a turn begins, this model is asked which of the intents the message is — once; a small, fast one without reasoning is best. If it fails or can't say, no intent matches. Its calls show in the usage as fogway’s own.")));
-      // a subscription asked as every turn begins spends its allowance
-      // on it, beside the agent's own requests (#1839): said beside the
-      // pick, once for a model, for a group when the one it asks first is
-      const subWarn = classifierSub(m, sg);
-      if (subWarn) {
-        const two = auto && intents && !isJev(d.classifier);
-        cls.append(el("div", "hint rt-cls-sub", t(two
-          ? "Every turn starts with two requests to {name}, a subscription: they count against its allowance as the agent's own do. A free model or one on an API key leaves the subscription to the agents."
-          : "Every turn starts with a request to {name}, a subscription: it counts against its allowance as the agent's own do. A free model or one on an API key leaves the subscription to the agents.", { name: subWarn })));
-      }
       // picking the effort alone, the classifier can pick the model too
       if (!intents && d.members.length > 1) {
         const more = el("button", "text rt-cls-more", t("It can pick the model too: add a rule with an intent"));

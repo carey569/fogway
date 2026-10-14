@@ -3,9 +3,8 @@
 // 再点回用量界面就能复现): the allowances' head (Allowances, the trend, the
 // masking, Used/Left) stays over the cards it heads while the period's
 // usage loads again, rather than being hidden until it comes in, and a
-// period with no calls doesn't hide it. #808 (Hu9956: TraeCN自动签到失效):
-// a failed check-in says why in its row, not only in its tooltip. English
-// and Chinese; the API is faked here.
+// period with no calls doesn't hide it. English and Chinese; the API is
+// faked here.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -13,15 +12,13 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
 const quotas = [
-  { provider: "codex", name: "Codex", icon: "openai", plan: "Plus", windows: [{ name: "5 hours", used: 20 }] },
-  { provider: "trae-cn", name: "Trae CN", plan: "Free", user: "hu", windows: [{ name: "Credits", used: 3 }],
-    checkins: true, checkinBy: "trae", checkin: { user: "hu", day: today, outcome: "failed", msg: "code 9074: 当前参与用户太多，请稍后再试（今日签到人数较多，活动火爆，请耐心等待）" } },
+  { provider: "zhipu", name: "Zhipu GLM", kind: "plan", plan: "Coding Plan", windows: [{ name: "5 hours", used: 20 }] },
+  { provider: "kimi", name: "Kimi Code", kind: "plan", plan: "Allegretto", windows: [{ name: "Weekly", used: 3 }] },
 ];
 
 function serve(lang, gate) {
-  const settings = { theme: "light", lang, quotaLeft: false, currency: "usd", traeCheckin: true };
+  const settings = { theme: "light", lang, quotaLeft: false, currency: "usd" };
   return async (route) => {
     const url = new URL(route.request().url());
     const json = (data) => route.fulfill({ json: data });
@@ -54,14 +51,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.route("**/*", serve(lang, gate));
       await page.goto("http://fogway.test/?view=usage");
       const head = page.locator("#quotaHead");
-      await page.locator(".subscription-card", { hasText: "Trae CN" }).waitFor();
+      await page.locator(".subscription-card", { hasText: "Kimi Code" }).waitFor();
       await head.waitFor();
-      // the failed check-in's reason is in the row
-      const say = (await page.locator(".wb-checkin .ci-say").innerText()).trim();
-      assert.equal(say, (lang === "en" ? "Check-in failed; fogway tries again later" : "签到失败，fogway 稍后重试") + " · code 9074: 当前参与用户太多，请稍后再试（今日签到人数较多，活动火爆，请耐心等待）");
-      // and all of it is seen, not cut off with "…" (#821)
-      const clipped = await page.locator(".wb-checkin .ci-say > span").evaluate((s) => s.scrollWidth > s.clientWidth + 1 || s.getBoundingClientRect().right > s.closest(".subscription-card").getBoundingClientRect().right);
-      assert.equal(clipped, false, "the check-in's reason is cut off");
 
       // away and back, with the vendors and the log both slow to answer
       let free;
@@ -71,7 +62,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.click('button[data-view="usage"]');
       await page.waitForFunction(() => document.querySelector("#view-usage").classList.contains("loading"));
       assert.equal(await head.isVisible(), true, "the head went while the page loaded");
-      assert.equal(await page.locator(".subscription-card", { hasText: "Codex" }).isVisible(), true);
+      assert.equal(await page.locator(".subscription-card", { hasText: "Zhipu GLM" }).isVisible(), true);
       free();
       await page.waitForFunction(() => !document.querySelector("#view-usage").classList.contains("loading"));
       assert.equal(await head.isVisible(), true);

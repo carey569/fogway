@@ -1,5 +1,5 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// The tray panel's Allowances tab hides subscriptions and moves them (H20 on
+// The tray panel's Allowances tab hides plans and moves them (H20 on
 // Discord): Arrange lists them, a pill hides or shows one, the logo moves it
 // (Alt+arrows, drag) in the order the Usage page shares; what's hidden stays
 // on the Usage page, and a menu bar cell still opens its card. APIs are mocked.
@@ -11,9 +11,10 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 const quotas = [
-  { provider: "claude", name: "Claude Code", icon: "claude-color", user: "a@b.c", windows: [{ name: "Weekly", used: 17.6 }, { name: "5-hour", used: 42.2 }] },
-  { provider: "codex", name: "Codex", icon: "codex-color", user: "x@y.z", windows: [{ name: "5-hour", used: 8 }, { name: "Weekly", used: 100 }] },
-  { provider: "codex", name: "Codex", icon: "codex-color", user: "other@例子.test", windows: [{ name: "Weekly", used: 25 }] },
+  { provider: "minimax", name: "MiniMax", icon: "minimax", kind: "plan", windows: [{ name: "Weekly", used: 17.6 }, { name: "5-hour", used: 42.2 }] },
+  // two keys, each with money left besides its windows
+  { provider: "zhipu", name: "Zhipu GLM", icon: "zhipu", kind: "plan", user: "work key", balance: "¥40.00", windows: [{ name: "5-hour", used: 8 }, { name: "Weekly", used: 100 }] },
+  { provider: "zhipu", name: "Zhipu GLM", icon: "zhipu", kind: "plan", user: "备用 key", balance: "¥3.00", windows: [{ name: "Weekly", used: 25 }] },
   { provider: "deepseek", name: "DeepSeek", icon: "deepseek-color", windows: [], balance: "¥12.30" },
   { provider: "kimi", name: "Kimi Code 的一个名字很长很长的订阅 with a long name", icon: "kimi-color", windows: [{ name: "Weekly", used: 30 }] },
 ];
@@ -49,7 +50,7 @@ function serve(lang, posts, fail, saved = {}) {
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
   for (const lang of ["en", "zh", "ja", "de"]) {
-    test(`${engine} ${lang}: the panel's Allowances tab hides and moves subscriptions`, async (t) => {
+    test(`${engine} ${lang}: the panel's Allowances tab hides and moves plans`, async (t) => {
       const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
       t.after(async () => { await browser.close(); });
       const errors = [], posts = [], fail = { next: false };
@@ -77,7 +78,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       }), "nothing runs off sideways at 440px");
 
       // what the settings hide is left out, and the foot says how many
-      assert(!(await cards()).includes("kimi"), "the hidden subscription has no card");
+      assert(!(await cards()).includes("kimi"), "the hidden plan has no card");
       assert.equal(await page.locator("#panelQuota .pq-foot .pq-hidden").textContent(), await tr("{n} hidden", { n: 1 }));
       assert.equal(await page.locator("#panelQuota .pq-arrange").textContent(), await tr("Arrange"));
       await noSideways();
@@ -92,21 +93,21 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.waitForSelector("#panelQuota .pq-arow");
       const after = await view.evaluate((v) => [v.scrollTop, v.scrollHeight - v.clientHeight]);
       assert.equal(after[0], Math.min(keep, after[1]), "Arrange keeps the reader where they were");
-      assert.deepEqual(await rows(), ["claude", "codex", "deepseek", "kimi"]);
+      assert.deepEqual(await rows(), ["minimax", "zhipu", "deepseek", "kimi"]);
       assert.equal(await page.locator("#panelQuota .pq-anote").textContent(), await tr("Hiding is for this panel only: routing, the Usage page and the menu bar still use what's hidden. The order is the Usage page's too."));
       assert(await page.locator('#panelQuota .pq-arow[data-key="kimi"]').evaluate((r) => r.classList.contains("put-away")));
       assert.equal(await page.locator('#panelQuota .pq-arow[data-key="kimi"] .pq-show').textContent(), await tr("Show"));
-      assert.equal(await page.locator('#panelQuota .pq-arow[data-key="claude"] .pq-show').textContent(), await tr("Hide"));
+      assert.equal(await page.locator('#panelQuota .pq-arow[data-key="minimax"] .pq-show').textContent(), await tr("Hide"));
       for (const w of await page.evaluate(() => [...document.querySelectorAll("#panelQuota .pq-arow")].map((r) => getComputedStyle(r).borderLeftWidth))) assert.equal(w, "0px", "no stripe down a row's left");
       await noSideways();
 
       // the grip by the logo is there on hover only
       await page.mouse.move(5, 5);
       const grip = (key) => page.locator(`#panelQuota .pq-arow[data-key="${key}"] .pq-ahandle`).evaluate((h) => getComputedStyle(h, "::before").opacity);
-      await page.waitForFunction(() => getComputedStyle(document.querySelector('#panelQuota .pq-arow[data-key="codex"] .pq-ahandle'), "::before").opacity === "0");
-      await page.locator('#panelQuota .pq-arow[data-key="codex"] .pq-aname').hover();
-      await page.waitForFunction(() => getComputedStyle(document.querySelector('#panelQuota .pq-arow[data-key="codex"] .pq-ahandle'), "::before").opacity === "1");
-      assert.equal(await grip("claude"), "0");
+      await page.waitForFunction(() => getComputedStyle(document.querySelector('#panelQuota .pq-arow[data-key="zhipu"] .pq-ahandle'), "::before").opacity === "0");
+      await page.locator('#panelQuota .pq-arow[data-key="zhipu"] .pq-aname').hover();
+      await page.waitForFunction(() => getComputedStyle(document.querySelector('#panelQuota .pq-arow[data-key="zhipu"] .pq-ahandle'), "::before").opacity === "1");
+      assert.equal(await grip("minimax"), "0");
 
       // hide and show: the pill posts what's hidden, and doesn't scroll
       const top = await view.evaluate((v) => v.scrollTop);
@@ -120,28 +121,28 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
 
       // a save that fails is put back
       fail.next = true;
-      await page.locator('#panelQuota .pq-arow[data-key="claude"] .pq-show').click();
+      await page.locator('#panelQuota .pq-arow[data-key="minimax"] .pq-show').click();
       await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("disk full") || document.body.textContent.includes("disk full"));
-      assert(!(await page.locator('#panelQuota .pq-arow[data-key="claude"]').evaluate((r) => r.classList.contains("put-away"))), "the failed hide is undone");
+      assert(!(await page.locator('#panelQuota .pq-arow[data-key="minimax"]').evaluate((r) => r.classList.contains("put-away"))), "the failed hide is undone");
       posts.splice(0);
 
       // Alt+arrow moves a row, the keyboard staying on its logo
-      await page.locator('#panelQuota .pq-arow[data-key="claude"] .pq-ahandle').focus();
+      await page.locator('#panelQuota .pq-arow[data-key="minimax"] .pq-ahandle').focus();
       await page.keyboard.press("Alt+ArrowDown");
-      await page.waitForFunction(() => document.querySelector("#panelQuota .pq-arow")?.dataset.key === "codex");
-      assert.deepEqual(await rows(), ["codex", "claude", "deepseek", "kimi"]);
-      assert.deepEqual(posts.splice(0), [{ order: ["codex", "claude", "deepseek", "kimi"] }]);
-      assert(await page.evaluate(() => document.activeElement?.matches('.pq-arow[data-key="claude"] .pq-ahandle')));
+      await page.waitForFunction(() => document.querySelector("#panelQuota .pq-arow")?.dataset.key === "zhipu");
+      assert.deepEqual(await rows(), ["zhipu", "minimax", "deepseek", "kimi"]);
+      assert.deepEqual(posts.splice(0), [{ order: ["zhipu", "minimax", "deepseek", "kimi"] }]);
+      assert(await page.evaluate(() => document.activeElement?.matches('.pq-arow[data-key="minimax"] .pq-ahandle')));
 
       // a drag by the logo: DeepSeek to the top
       const from = await page.locator('#panelQuota .pq-arow[data-key="deepseek"] .pq-ahandle').boundingBox();
-      const to = await page.locator('#panelQuota .pq-arow[data-key="codex"]').boundingBox();
+      const to = await page.locator('#panelQuota .pq-arow[data-key="zhipu"]').boundingBox();
       await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
       await page.mouse.down();
       for (let i = 1; i <= 8; i++) await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + (to.y - from.y - 4) * i / 8);
       await page.mouse.up();
       await page.waitForFunction(() => document.querySelector("#panelQuota .pq-arow")?.dataset.key === "deepseek");
-      assert.deepEqual(posts.splice(0), [{ order: ["deepseek", "codex", "claude", "kimi"] }]);
+      assert.deepEqual(posts.splice(0), [{ order: ["deepseek", "zhipu", "minimax", "kimi"] }]);
 
       // Done: the cards in the new order, DeepSeek left out. The reader brings
       // Done out from under the sticky tabs with the wheel: Playwright's own
@@ -160,7 +161,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       }
       await page.locator("#panelQuota .pq-done").click();
       await page.waitForFunction(() => !document.querySelector("#panelQuota .pq-arow"));
-      assert.deepEqual(await cards(), ["codex|x@y.z", "claude|a@b.c", "kimi"]);
+      assert.deepEqual(await cards(), ["zhipu|work key", "minimax", "kimi"]);
       assert.equal(await page.locator("#panelQuota .pq-foot .pq-hidden").textContent(), await tr("{n} hidden", { n: 1 }));
       await noSideways();
       assert.equal(await page.evaluate(() => window.__scrolled), 0, "nothing scrolled itself");
@@ -189,10 +190,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // its own load could answer after and put the first order back
       const win = await context.newPage();
       win.on("pageerror", (e) => errors.push(e.message));
-      await win.route("**/*", serve(lang, [], {}, { usageOrder: ["deepseek", "codex", "claude", "kimi"], panelUsageHidden: ["deepseek"] }));
+      await win.route("**/*", serve(lang, [], {}, { usageOrder: ["deepseek", "zhipu", "minimax", "kimi"], panelUsageHidden: ["deepseek"] }));
       await win.goto("http://fogway.test/?view=usage&tab=usage");
       await win.waitForFunction(() => document.querySelectorAll("#subscriptionUsage > [data-key]").length >= 4);
-      assert.deepEqual(await win.evaluate(() => [...new Set([...document.querySelectorAll("#subscriptionUsage > [data-key]")].map((c) => c.dataset.key))]), ["deepseek", "codex", "claude", "kimi"]);
+      assert.deepEqual(await win.evaluate(() => [...new Set([...document.querySelectorAll("#subscriptionUsage > [data-key]")].map((c) => c.dataset.key))]), ["deepseek", "zhipu", "minimax", "kimi"]);
 
       assert.deepEqual(errors, []);
     });

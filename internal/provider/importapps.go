@@ -50,9 +50,8 @@ type AppImport struct {
 	// this one can join it as one more key instead of being a provider
 	// of its own.
 	KeyOf string `json:"keyOf,omitempty"`
-	// Reserved: its id is a subscription's (claude, workbuddy…), whose
-	// name it happens to have. It can't replace that subscription, only
-	// come in as a provider of its own beside it.
+	// Reserved: its id is one fogway keeps for itself ("fogway"). It
+	// can't take that id, only come in as a provider of its own.
 	Reserved bool   `json:"reserved,omitempty"`
 	Off      string `json:"off,omitempty"`  // why it isn't picked by default
 	Skip     string `json:"skip,omitempty"` // why it can't be imported at all
@@ -189,15 +188,8 @@ func ImportFromApps(picks []AppPick) ([]string, error) {
 	return added, nil
 }
 
-// reservedID is an id no imported provider can have: the gateway's own, a
-// subscription's or a plugin's, signed in or not.
-func reservedID(id string) bool {
-	if id == "fogway" {
-		return true
-	}
-	_, ok := find(Accounts(), id)
-	return ok
-}
+// reservedID is an id no imported provider can have: the gateway's own.
+func reservedID(id string) bool { return id == "fogway" }
 
 // holds says a provider of fogway's has p's account: its key at its
 // address, as the import list's "same" says (settle).
@@ -280,7 +272,7 @@ func settle(items []AppImport, have []Provider, used map[string]bool) []AppImpor
 			}
 		}
 		if reservedID(p.ID) && it.Status != "same" {
-			// named as a subscription: only ever added beside it (#1487)
+			// named as the gateway: only ever added as one of its own (#1487)
 			it.Status, it.Reserved = "taken", true
 			if it.Existing == "" {
 				it.Existing = p.ID

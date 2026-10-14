@@ -260,16 +260,6 @@ node --test internal/gui/tests/agent-unreachable.test.cjs
 rows. At 601, the default 660 and 960 pixels, controls remain aligned beside
 the names. English and Chinese, Chromium and WebKit.
 
-`signin-callback.test.cjs` checks a sign-in's pasted callback (the field a
-sign-in with pasteCallback shows) in a narrow Chinese
-dark window: invalid input remains editable, retry reaches the callback route,
-and a pending or accepted submission cannot be submitted twice.
-
-`signin-paste-plugin.test.cjs` checks a plugin's browser sign-in that comes
-back to a port on fogway's machine: the plugin's words, the pasted-address
-field posted to the sign-in, and the plugin's API key way, in a 360px window.
-English and Chinese, Chromium and WebKit.
-
 `plugin-updates.test.cjs` checks the dot on Plugins while a plugin's update
 waits for the reader, gone once it's updated, and the "Auto-updated" chip on a
 plugin fogway updated by itself.
@@ -280,14 +270,6 @@ built-in's accounts: the button is one word beside the name, as Install is
 stays inside the card and the plugin's name and "fogway community" aren't
 cut, in a three-, two- and one-column window. English and Chinese, Chromium and WebKit, with the API
 faked.
-
-`deprecation-notice.test.cjs` checks the deprecation notice over the
-Providers list is as calm as the list's rows: the list's own background and
-border, an amber dot and no badge, icon tile or filled button, the line naming
-Devin and WorkBuddy AI with why under it (no space after a Chinese full stop),
-and Not now and Review in Plugins side by side on its right, each on one line;
-on a 390px phone they go under the text at its end with no sideways scroll.
-English and Chinese, light and dark, Chromium and WebKit.
 
 `plugin-movable-review.test.cjs` checks the line over the Providers list
 naming several built-in subscriptions a community plugin can run: its Take a
@@ -645,11 +627,6 @@ scrolled, asks for the window's Routing page on that request and moves
 nothing; the window opened so has that request picked. In English and
 Chinese.
 
-`login-import.test.cjs` brings ChatGPT accounts in from CLIProxyAPI's auth
-files: offered from the accounts list and from a browser sign-in under way,
-the box says the refresh spends the file's sign-in, what is pasted is posted
-as it is, and each account's outcome is listed, in English and Chinese.
-
 `agy-launch.test.cjs` gives Antigravity CLI's row the square that copies the
 command starting agy on fogway: the command in its tooltip, a click copying
 it with the page left where it was, none on other agents, in the tray
@@ -703,14 +680,14 @@ It runs in English and Chinese on Chromium and WebKit, with a mocked API. Run wi
 `node --test internal/gui/tests/tray-cell-click.test.cjs`.
 
 `panel-arrange.test.cjs` opens the tray panel's Allowances tab at 440px with a
-subscription hidden in the settings: it has no card and the foot says one is
-hidden. *Arrange* keeps the page where the reader scrolled it and lists a row
-a subscription in the shared order, with the note that hiding is the panel's
+plan hidden in the settings: it has no card and the foot says one is hidden.
+*Arrange* keeps the page where the reader scrolled it and lists a row a plan
+in the shared order, with the note that hiding is the panel's
 only; the grip by a logo shows on hover only, and no row has a left stripe or
 runs off sideways. *Show* and *Hide* post `panelHidden` without moving the
 page, a failed save is put back, Alt+arrow and a drag by the logo post the
-`order`, and *Done* draws the cards in it. A menu bar cell for a hidden
-subscription still opens its card until the panel is put away, and the Usage
+`order`, and *Done* draws the cards in it. A menu bar cell for a hidden plan
+still opens its card until the panel is put away, and the Usage
 page keeps the hidden card in the same order. It runs in English, Chinese,
 Japanese and German on Chromium and WebKit, with a mocked API.
 
@@ -737,19 +714,6 @@ leaves no `.view-room` and no blank under the page, nor scrolls it beyond
 the browser's own fit (#911). English and Chinese, light and dark;
 ARTIFACT_DIR gets screenshots at 100% and 150%.
 
-`settings-groups.test.cjs` puts the Settings page's warm-ups and check-in
-under a tab per service (#124): Codex, Claude Code and WorkBuddy tabs where a
-heading would be, in the Usage part after its list, Codex's picked to
-begin with and each showing its rows alone, named without the service; the
-last warm-up and today's check-in still on the short lines, no left-border
-stripe; a daily warm-up's time field only while it is on; each control
-posting the setting it did and a tab posting nothing, with the page scrolled
-and left where it was; the arrows, Home and End along the tabs; a tab picked
-at the page's very end (a shorter card, then a taller one) leaving the tabs
-where they were; the tab remembered across a reload, Codex's shown when the
-remembered WorkBuddy one is gone; the WorkBuddy tab only with an account
-signed in; in English and Chinese.
-
 `settings-sections.test.cjs` checks the Settings page in parts (#471): a tab
 list at its top — General, Usage, Network and sharing, Models, Privacy,
 Observability, Sync and backup, About — each tab showing its part's rows
@@ -764,7 +728,7 @@ the side. Chromium and WebKit, English and Chinese; ARTIFACT_DIR gets a
 screenshot of each size:
 
 ```sh
-node --test --test-concurrency=1 internal/gui/tests/settings-sections.test.cjs internal/gui/tests/settings-groups.test.cjs
+node --test internal/gui/tests/settings-sections.test.cjs
 ```
 
 `segs-press-redraw.test.cjs` presses a Settings option, redraws the page
@@ -859,26 +823,6 @@ gone while searching; the dialog growing out of the row clicked on a spring
 and folding back into it on close, the focus back on the row it came from;
 Duplicate and Add another opening a new editor with no sheet, cancelled back
 to the list; the search's Escape emptying it and never hiding the tray; in
-English and Chinese.
-
-`own-signin-remove.test.cjs` opens the Kiro subscription's accounts with
-kiro-cli's own sign-in behind one of fogway's, then alone and first: its
-Remove is there both times, its title saying fogway only hides it and it
-shows again when Kiro signs in anew, and it posts login/forget; fogway's
-own account in use first has no Remove; in English and Chinese.
-
-`saved-signedout-remove.test.cjs` shows Claude Code signed out with two
-accounts saved in fogway: the Providers line naming them has Remove, whose
-dialog lists them; Cancel and Escape post nothing, Remove posts
-login/forget once per account and the line goes; in English and Chinese.
-
-`codex-signout.test.cjs` opens Codex with one account (mamba on Discord: it
-couldn't be removed while Codex was signed in to it): its row has Sign out,
-asked in the app's own dialog; Cancel and Escape post nothing and go back to
-the editor, Sign out posts login/forget and says so. With another account
-saved the one in use has no Sign out but Remove, which posts login/forget
-(vincentzhang1_55530 on Discord: fogway signs Codex in to another account
-first), and a signed_in refusal is said in the reader's language. No select, no left border, the page doesn't move; in
 English and Chinese.
 
 `nokey-editor.test.cjs` opens two local Ollama providers saved with no key,
@@ -1029,11 +973,10 @@ carry nothing, and nothing does once the page is well again; at 440px the
 badge is whole (the name gives way) and nothing spills; in Chromium and
 WebKit, English and Chinese.
 
-`usage-accounts-fold.test.cjs` checks the Usage page's card of a subscription
-with many accounts (Linx on X: twenty-odd on one plugin made a very long
-card): of 22 WorkBuddy AI accounts the first five are in sight, the rest
-behind "Show 17 more accounts" at its foot; of nine Trae accounts the one in
-full and the one with the check-in switch stay in sight too; eight aren't
+`usage-accounts-fold.test.cjs` checks the Usage page's card of a plan with
+many keys (Linx on X: twenty-odd on one provider made a very long card): of
+22 keys the first five are in sight, the rest behind "Show 17 more accounts"
+at its foot; of nine the one in full stays in sight too; eight aren't
 folded. The button opens them in place without moving the page, is
 remembered across a reload and folds them again from the foot (the page
 resting at its end, the button in sight); at 440px nothing is cut, folded or
@@ -1068,10 +1011,7 @@ fogway's row among the agents and its ledger row carry the "fogway's own" mark,
 the agent's don't; the account's and the model's rows say how many calls fogway
 made itself, the other account's nothing; and the account's card says how many
 of the period's requests were fogway's own, also when the summary comes after
-the allowances. On the Routing page a classifier on a subscription's model says
-every turn starts with a request to it, a group asking a subscription first
-while picking the effort too says two, and one on a key says nothing. No click
-moves the page and nothing is wider than the window; in Chromium and WebKit at
+the allowances. No click moves the page and nothing is wider than the window; in Chromium and WebKit at
 1100 and 390 wide, in every language.
 
 `usage-ledger-chart.test.cjs` opens the Requests tab on what its requests add
@@ -1538,30 +1478,11 @@ copies the Gateway page's Base URL, the status line says it was copied, the text
 it used is gone, and nothing scrolls. English and Chinese, in Chromium and
 WebKit.
 
-`signin-close.test.cjs` puts away a sign-in for another account left
-unfinished (#526). In Qoder's editor at the issue's window size, Add another
-→ Sign in anyway waits with Qoder's long device link: the box and every
-button in it stay inside the account list (the link is cut short, Cancel in
-sight), and Cancel is the one button that puts it away: Open again stands
-alone, with no Close beside it doing the same. Cancel posts
-signin/<id>/cancel, stops the polling and brings Add another back without
-moving the page, and so do the editor's Cancel and Save, so the editor
-opened again has no box. English and Chinese, Chromium and WebKit;
-the API is faked.
-
 `tray-inuse.test.cjs` checks Settings, Allowances in the menu bar. A
 subscription with two accounts lists "Account in use" before each account;
 one with a single account does not. Ticking it saves `claude|*`, the pill
 names the subscription, and reopening the menu shows it ticked. No click
 moves the page. The checks run in English and Chinese, in Chromium and
-WebKit.
-
-`codex-auto-reset.test.cjs` checks the Auto-use toggle beside a Codex
-account's resets, on the Usage page's card and on the menu bar panel's. It is
-off until turned on; a click posts `settings/codex-auto-reset` for that
-account, shows it pressed and says so, and a second click turns it off. A GLM
-team's resets get no toggle. No click moves the page, and nothing has a
-left-border accent. The checks run in English and Chinese, in Chromium and
 WebKit.
 
 `library-all.test.cjs` opens the Library with an All chip ahead of each
@@ -1587,18 +1508,6 @@ reset used by itself: a try out of its week says whose reset was used and
 that the request was asked again, and Codex's own sign-in answering after
 one says so before it answered; English and Chinese, Chromium and WebKit.
 
-`claude-usage-asked.test.cjs` checks a Claude account's usage is only asked
-for when the reader opens Usage or presses Refresh (the header's, the only
-one since #486): opening the page and Refresh load `usage/quotas?asked=1`, the timed reload and the window coming
-back don't; an asked load isn't swallowed by one already on its way.
-Chromium and WebKit.
-The same test covers cached Claude snapshots on Usage, the tray's Allowances
-tab and the provider's account editor: historical percentages stay dated
-and visibly say when an expired window's current allowance is unknown;
-past reset times say they have passed. A fresh reading clears those markers.
-The tray's cached subscription date is as short as a balance card's, while
-expired-window warnings remain visible and the tooltip keeps the explanation.
-English and Chinese, Chromium and WebKit.
 `panel-effort.test.cjs` opens a row in the tray panel whose effort is not one
 of the levels offered (omp at auto, an agent with none set): the slider shows
 it as it is ("auto", "default"; 自动 in Chinese) at a stop of its own, a touch
@@ -1657,24 +1566,14 @@ alerts. With fogway's notifications turned off in the system, both rows say
 so. No click moves the page and no row has a coloured left border; English
 and Chinese, Chromium and WebKit, with `/api/plugins` faked.
 
-`quota-families.test.cjs` checks Antigravity's allowance one figure a model
-family (01huadalang on Discord: several accounts, every level of every
-model, read as bloat): windows that name a `family` show as one a family,
-Gemini and Claude first, each the most used of its models, on the Usage
-page's card, the menu bar panel's rings and the provider's account rows;
-each family's tooltip lists its models level by level, and "Every model"
-turns an account's card to each window and back without moving the page.
-Claude Code's windows, naming no family, are as they were. No left-border
-accent; English and Chinese, Chromium and WebKit, with `/api/plugins` faked.
-
 `provider-search.test.cjs` checks a custom provider's "Searches the web by
 itself" (#359): the editor's Web search row opens as saved, ticked for one
 saved as searching, and Save posts `searches` ticked or not. A relay with
 only a Chat address has no such row; it comes once an Anthropic URL is
 typed under More endpoints and goes with it, and Save then posts
 `searches: false`. The row says the relay can be named as the searcher but
-is not picked automatically. A signed-in account (Codex) has no such row.
-Every string has its Chinese; English and Chinese, Chromium and WebKit.
+is not picked automatically. A vendor's own API (a preset's) has no such
+row. Every string has its Chinese; English and Chinese, Chromium and WebKit.
 
 `lan-docker.test.cjs` checks Share on local network in a container (Discord:
 fogway in Docker on a NAS showed the container's own 172.17.x address).
@@ -1734,32 +1633,6 @@ first. Opening it with the page scrolled leaves the head and the page where
 they are, the fold is remembered across a reload, and a provider switched
 off moves under it. English and Chinese, Chromium and WebKit, with
 `/api/plugins` faked.
-
-`account-return.test.cjs` checks the accounts of Codex after fogway signed
-it in to another because the first was all but used up (#408: 智能路由会自动把
-所使用账号设为首选). The account it stands in on says "First for now" (暂为首选),
-its title naming the one it goes back to, and that one "First again once it
-has room" (额度恢复后切回首选); with nothing to go back to, the account Codex
-is on is just "First". The Routing note says fogway moves back. The page
-doesn't move; English and Chinese, Chromium and WebKit.
-
-`keep-login.test.cjs` checks the tick under Codex's accounts that keeps
-Codex signed in (#524: 始终登录首选账号), and the pick beside it that keeps
-it signed in to an account of the user's choosing rather than the first
-(Koohoko on #524: 首选只是为了按顺序先消耗它的额度). Picking one posts
-provider/keeplogin with keepLoginAs; the order holds, the first saying First
-and the chosen one Signed in (已登录), Make first on it posting
-provider/arrange rather than a sign-in; picking "the first account" goes
-back. The Routing note follows each, In order says fogway moves Codex on
-once used up (#530), and one account has no tick. The page doesn't move;
-English and Chinese, Chromium and WebKit.
-
-`signin-again.test.cjs` checks a sign-in to an account fogway lists
-already (#413: WorkBuddy's page offers the account WorkBuddy is signed in
-to). Adding another WorkBuddy account comes back done with `again`: the
-status says it is already listed and its sign-in renewed (该账号已在列表中，
-已更新登录), not "added"; a new account still says added. The page doesn't
-move; English and Chinese, Chromium and WebKit.
 
 `web-page.test.cjs` checks the page `fogway web` serves to a browser (Jorben
 on Discord: no request archive switch and no usage chart icons in the remote
@@ -1912,26 +1785,24 @@ with the real assets and an isolated API fixture:
 node --test internal/gui/tests/otel.test.cjs
 ```
 
-`account-arrange.test.cjs` drags a subscription's accounts and a provider's
-keys by their rows (no handle) in every routing mode, and by Alt+↑/↓: the
-first row, its First mark and the order saved for routing agree, one save
-goes out per drop, Escape and a failed save put the rows back, a disabled
-account is not made first, and account text stays selectable. It runs in
-Chromium and WebKit with an isolated API fixture:
+`account-arrange.test.cjs` drags a provider's keys by their rows (no
+handle) in every routing mode, and by Alt+↑/↓: the first row, its First
+mark and the order saved for routing agree, one save goes out per drop,
+Escape and a failed save put the rows back, and a disabled key is not made
+first. It runs in Chromium and WebKit with an isolated API fixture:
 
 ```sh
 node --test internal/gui/tests/account-arrange.test.cjs
 ```
 
 `routing-account-order.test.cjs` checks that Routing's live stage seats each
-provider's accounts and keys in the order its page lists them and a drag sets
-— the order the gateway tries them — not by name nor as one request weighed
-them (#217): one request through a group of a subscription, a provider's keys
-and a plugin's accounts, weighed least used first, reads in each list's order;
-after the subscription's accounts are moved with Alt+↓ in its editor and the
-plugin's rearranged, the stage, shown again without a reload or a new request,
-reads in the new orders. It runs in Chromium and WebKit, in English and
-Chinese:
+provider's keys in the order its page lists them and a drag sets — the order
+the gateway tries them — not by name nor as one request weighed them (#217):
+one request through a group of two providers' keys, weighed least used
+first, reads in each list's order; after one's keys are moved with Alt+↓ in
+its editor and the other's rearranged, the stage, shown again without a
+reload or a new request, reads in the new orders. It runs in Chromium and
+WebKit, in English and Chinese:
 
 ```sh
 node --test internal/gui/tests/routing-account-order.test.cjs internal/gui/tests/update-auto.test.cjs
@@ -1964,15 +1835,15 @@ Chinese:
 ```sh
 node --test internal/gui/tests/agent-grip.test.cjs
 
-`account-models.test.cjs` keeps an account of a subscription, and a key of a
-provider, for some of the provider's models only (#474): an account with a
-list of its own has a badge saying how many, always shown, and one without
-says All models on hover; a click opens the provider's models under the row
-as chips, Save waits for one picked and posts `provider/accountmodels` with
-the account (or the key's id) and the models picked, All models posts none,
-and the badge then says what it has. A click moves no row and scrolls
-nothing; a subscription with one account has no badge; no border stripes,
+`account-models.test.cjs` keeps a key of a provider for some of the
+provider's models only (#474): a key with a list of its own has a badge
+saying how many, always shown, and one without says All models on hover; a
+click opens the provider's models under the row as chips, Save waits for
+one picked and posts `provider/accountmodels` with the key's id and the
+models picked, All models posts none, and the badge then says what it has.
+A click moves no row and scrolls nothing; no border stripes,
 every string has its Chinese. It runs in Chromium and WebKit, in English and
+Chinese:
 node --test internal/gui/tests/account-models.test.cjs
 
 `favorite-star.test.cjs` checks a model's favourite star in the model
@@ -1981,18 +1852,6 @@ filled star shown always, with its title and aria-pressed to match. In the
 window and the tray panel, light and dark, English and Chinese, Chromium and
 WebKit:
 node --test internal/gui/tests/favorite-star.test.cjs
-
-`claude-picker-fold.test.cjs` checks Claude Code's model picker (#496): the
-models fogway serves on the very account Claude Code is signed in to fold
-into one row after Claude Code's own, though the account comes after the
-providers the user added (Claude Code headed once); a click or Enter opens
-and closes it in place, the page not moving and the keys left to the
-filter (the arrows, Esc); the value set is a row of its own; a query shows
-every row it finds, so an id typed in full is picked with Enter; an alias
-and its dated id are one row, the dated one's while it is the value set or
-starred where the alias isn't. Chromium and WebKit, English and Chinese,
-the API faked:
-node --test internal/gui/tests/claude-picker-fold.test.cjs
 
 `list-sort.test.cjs` checks the installed lists' order, the reader's pick
 (#481): the Library's MCP servers and the installed plugins by name A→Z (the
@@ -2016,19 +1875,6 @@ is nowrap with no ellipsis, so one wider than its `.quota` is cut off
 mid-word in silence. 440 is the narrowest the card is seen at and 560 the
 window minimum; 1000 alone could never catch a name that is too wide:
 node --test internal/gui/tests/quota-name-translated.test.cjs
-
-`quota-pools.test.cjs` checks Antigravity's allowance a row a pool of
-models, each with its 5-hour and its weekly window (a user on Discord: the
-three models read the same, show the 5 hours and the week left): windows
-that name a `pool` show as the pool's 5 hours then its 7 days, Gemini
-first, on the Usage page's card (the pool's models in the tooltip), the
-menu bar panel's four rings (Gemini 5h, Gemini 7d, Claude 5h, Claude 7d,
-each label whole) and the provider's account rows (a pool's name, then its
-5h and 7d meters); "Every model" lists the models' own windows, not the
-pools' again, and back, without moving the page. Claude Code's windows are
-as they were. No left-border accent; English and Chinese, Chromium and
-WebKit, with `/api/plugins` faked:
-node --test internal/gui/tests/quota-pools.test.cjs
 
 `plugin-progressive.test.cjs` checks the Plugins page is drawn in parts
 (#488) while `/api/plugins/market` never answers: Installed from
@@ -2201,8 +2047,8 @@ is faked.
 node --test internal/gui/tests/update-mirror.test.cjs
 ```
 
-`lane-limit.test.cjs` checks each key's and account's own limit on requests
-at once (#892): its row's pill says what runs and waits under it while
+`lane-limit.test.cjs` checks each key's own limit on requests at once
+(#892): its row's pill says what runs and waits under it while
 requests are out ("1/1 running · 2 queued"), read again from `/api/lanes`
 every two seconds and written into the same pill, else its limit (its own or
 the provider's); a row with none shows it on hover only. A click opens the

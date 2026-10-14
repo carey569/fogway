@@ -131,7 +131,7 @@ async function api(path, body, heads, signal) {
     }
     // fogway has no models to connect an agent to yet: said in the
     // reader's language
-    if (data?.code === "no_models") err.message = t("Add a provider or subscription in fogway first, then connect {agent}", { agent: data.agent });
+    if (data?.code === "no_models") err.message = t("Add a provider in fogway first, then connect {agent}", { agent: data.agent });
     if (data?.why) err.why = data.why; // a failed move's reason, said in the reader's language
     // an account the agent is signed in to, refused removal while it has
     // another: said in the reader's language
@@ -211,7 +211,6 @@ const PLUS = "M8 3.5v9M3.5 8h9";
 const OUT = "M6.5 3.5h-3v9h9v-3M9 3.5h3.5V7M12.5 3.5 7.5 8.5";
 const COPY_ICON = "M5.5 5.5V3.5h7v7h-2M3.5 5.5h7v7h-7z";
 const PENCIL = "M3.5 12.5l.5-2.5 6.8-6.8a1.2 1.2 0 0 1 1.7 0l.3.3a1.2 1.2 0 0 1 0 1.7L6 12z M9.8 4.2l2 2";
-const PUZZLE = "M6.2 2.8h2.3a1.3 1.3 0 1 1 2.5 0h2.2V5a1.3 1.3 0 1 0 0 2.6v5.6H3V7.6a1.3 1.3 0 1 1 0-2.6V2.8z";
 
 // A brand icon: colour logos are images, mono logos take the text colour.
 // Nothing is ever invented: a model with no known vendor keeps the slot
@@ -1229,7 +1228,7 @@ function connectLine(a, kind) {
     else say(t("Not added · {agent} asks to add fogway when its link opens", { agent: a.name }));
     return line;
   }
-  if (kind === "empty") { say(t("Add a key or a subscription first; then there are models to connect")); return line; }
+  if (kind === "empty") { say(t("Add a provider first; then there are models to connect")); return line; }
   if (!a.wired && a.native && a.native.provider !== "disconnected") {
     say(t(a.native.detail), "bad");
     if (a.native.provider === "invalid") line.append(driftFix(a, "Reconnect"));
@@ -1238,18 +1237,6 @@ function connectLine(a, kind) {
   if (!a.wired) {
     const src = a.source || "";
     if (a.id === "agy") say(t("Not connected · once connected, start it with fogway's command"));
-    // not connected, yet through fogway for account failover (#1385): it
-    // read as Codex on its own while fogway served every request, so the
-    // line says why, and the accounts that turn it off are a click away
-    else if (a.failover) {
-      say(t("Not connected · goes through fogway only to fail over to your other ChatGPT accounts"));
-      words.title = t("fogway set openai_base_url in {agent}'s config.toml, so a request the ChatGPT account {agent} is signed in to has no allowance for goes on to your other ChatGPT accounts on in fogway. {agent} keeps to its own models. To stop it, tick Only switch {agent}'s sign-in under Providers › Codex, or switch those accounts off; connecting {agent} adds fogway's models.", { agent: a.name });
-      const go = el("button", "ag-acc", t("ChatGPT accounts"));
-      go.type = "button";
-      go.title = words.title;
-      go.onclick = (e) => { e.stopPropagation(); openProvider("codex"); };
-      line.append(go);
-    }
     else if (src === "sub") say(t("Not connected · now on its Claude subscription"));
     else if (src === "chatgpt") say(t("Not connected · now signed in with ChatGPT · OpenAI's models stay available once connected"));
     else if (src === "key") say(t("Not connected · now on an API key of its own"));
@@ -1408,7 +1395,7 @@ function connectRow(a, row, who, { fields, extras, fieldBtn, sw, kind }) {
     off.setAttribute("role", "switch");
     off.setAttribute("aria-checked", "false");
     off.setAttribute("aria-label", t("Connect {agent} to fogway", { agent: a.name }));
-    off.title = t("Add a key or a subscription first; then there are models to connect");
+    off.title = t("Add a provider first; then there are models to connect");
     off.append(el("i"));
     row.append(add, off);
   } else if (kind === "link") {
@@ -1536,7 +1523,7 @@ function guideCard(g) {
 
   // 1: a model source
   const one = guideStep(1, g.source, t("Add a model source"),
-    g.source ? t("{n} models ready to use", { n: state.served || 0 }) : t("A subscription you already pay for, a provider, or an API key"));
+    g.source ? t("{n} models ready to use", { n: state.served || 0 }) : t("A vendor's API key, a relay, or a model on this computer"));
   one.li.dataset.step = "source";
   if (!g.source) {
     const add = el("button", "text primary guide-go", t("Add a provider"));
@@ -1565,7 +1552,7 @@ function guideCard(g) {
       const ready = connectKind(a) === "ok";
       b.disabled = !ready || !!guideBusy;
       b.classList.toggle("busy", guideBusy === a.id);
-      b.title = ready ? t("Switch on and {agent}'s model list gets fogway's models", { agent: a.name }) : t("Add a key or a subscription first; then there are models to connect");
+      b.title = ready ? t("Switch on and {agent}'s model list gets fogway's models", { agent: a.name }) : t("Add a provider first; then there are models to connect");
       b.onclick = (e) => { e.stopPropagation(); guideConnect(a); };
       chips.append(b);
     }
@@ -1829,15 +1816,6 @@ function connectPanel(a, { fields, fieldBtn }) {
     const sub = a.fields.find((f) => f.label === "subagents" && (f.options.length || f.value));
     if (sub) rows.push(line(el("span", "ag-tier", t("Subagents")), fieldBtn(sub, "ag-pick")));
     if (rows.length) kv(t("Tiers"), ...rows);
-    const main = a.fields.find((f) => f.key === "model");
-    const hasSub = main?.options.some((o) => (o.ref || "").startsWith("claude/"));
-    if (hasSub) kv(t("Claude models"), line(t("Your Claude subscription is in fogway; picking a claude-* model goes through it as before")));
-    else {
-      const add = el("button", "ag-quiet accent", t("Add a Claude subscription"));
-      add.type = "button";
-      add.onclick = () => addProviderFromAgents();
-      kv(t("Claude models"), line(t("claude-* models need a Claude subscription in fogway"), add));
-    }
   }
   // which of fogway's models it lists, by whose they are
   if (a.models) {
@@ -4377,34 +4355,6 @@ function oneRowPerModel(options, cur) {
   return options.filter((o) => !gone.has(o));
 }
 
-// foldSame: fogway's rows for the very account the agent is signed in to
-// itself (Claude Code's Claude subscription, added in fogway too) are the
-// agent's own models a second time; they fold into one row that a click
-// opens, for the few who want them (failover to more accounts, a fix that
-// only fogway's way has). The value set stays a row of its own (#496). The
-// row comes after the agent's own rows of its group: the account is listed
-// after the providers the user added, and in its place the group was
-// headed twice. A query shows every row it finds, for Enter to pick.
-function foldSame(items) {
-  if (!pick.modelPicker || pick.groupFilter === "favorites" || $("#q").value.trim()) return items;
-  const same = items.filter((o) => o.same && o.value !== pick.field.value);
-  if (!same.length) return items;
-  const first = same[0];
-  const row = { fold: true, open: !!pick.unfold, n: same.length, group: first.group, icon: first.icon,
-    account: (first.note || "").replace(/ · via fogway$/, "") };
-  const out = items.filter((o) => !same.includes(o));
-  const own = out.findLastIndex((o) => o.group === first.group);
-  out.splice(own >= 0 ? own + 1 : items.indexOf(first), 0, row, ...(pick.unfold ? same : []));
-  return out;
-}
-
-// toggleFold opens or closes the folded rows, the fold's row staying under
-// the pointer (or the keys' cursor) where it was
-function toggleFold() {
-  pick.unfold = !pick.unfold;
-  filter((o) => o.fold);
-}
-
 // openPicker drops the option list under a field button. `only` narrows the
 // options (the providers page offers one vendor's models at a time).
 function openPicker(agent, field, anchor, ev, only) {
@@ -4714,7 +4664,6 @@ function filter(keep) {
   if (typed && pick.free && ["model", "small", "large", "executor", "planner", ...ROLE_MODELS].includes(pick.field.label) && !pick.items.some((o) => o.value === typed)) {
     pick.items.push({ value: typed, note: t("use as typed"), custom: true });
   }
-  pick.items = foldSame(pick.items);
   // a model the filter finds among those kept for routing groups, which
   // aren't offered: said why, rather than missing without a word
   pick.kept = pick.modelPicker && q ? (state?.unlisted || []).filter((m) => [m.id, m.name].some((s) => s?.toLowerCase().includes(q))).slice(0, 3) : [];
@@ -4905,7 +4854,6 @@ function renderList() {
   pick.items.forEach((o, idx) => {
     if (!q && o.group && o.group !== group) list.append(el("li", "group", o.group === ROUTING_GROUPS ? t(o.group) : o.group));
     if (!q) group = o.group ?? group;
-    if (o.fold) { list.append(foldRow(o, idx, hasIcons)); return; }
     const li = el("li", (idx === pick.cursor ? "sel" : "") + (o.value === pick.field.value || pick.field.picked?.(o.value) ? " cur" : "") + (o.custom ? " custom" : "") + (o.reset ? " reset" : ""));
     li.dataset.i = idx;
     if (hasIcons) li.append(optionIcon(o));
@@ -5013,30 +4961,6 @@ function fastTag() {
   s.title = t("Fast");
   s.append(svg(BOLT, 11, 1.4));
   return s;
-}
-
-// foldRow: the one row the models on the agent's own account through
-// fogway fold into (foldSame), opened or closed at a click
-function foldRow(o, idx, hasIcons) {
-  const li = el("li", "fold" + (o.open ? " open" : "") + (idx === pick.cursor ? " sel" : ""));
-  li.dataset.i = idx;
-  li.setAttribute("role", "button");
-  li.setAttribute("aria-expanded", String(o.open));
-  if (hasIcons) li.append(optionIcon(o));
-  const words = el("span", "option-words");
-  words.append(el("span", "v", t(o.n === 1 ? "{n} model via fogway" : "{n} models via fogway", { n: o.n })));
-  words.append(el("span", "n", o.account ? t("{account} · the account {agent} is signed in to", { account: o.account, agent: pick.agent.name }) : t("the account {agent} is signed in to", { agent: pick.agent.name })));
-  li.append(words);
-  const chev = el("span", "chev");
-  chev.append(svg("m6 4 4 4-4 4", 12, 1.6));
-  li.append(chev);
-  li.title = t(o.open ? "Fold them away again" : "The same models as {agent}'s own, through fogway: click to show them", { agent: pick.agent.name });
-  li.onmousemove = () => { if (pick.cursor !== idx) { pick.cursor = idx; renderList(); } };
-  // the filter keeps the keys: the picker stays open, and the arrows,
-  // Enter and Esc go on working
-  li.onmousedown = (ev) => ev.preventDefault();
-  li.onclick = (ev) => { ev.stopPropagation(); toggleFold(); };
-  return li;
 }
 
 // keptNote: a model of a provider set to "Only through routing groups",
@@ -5269,7 +5193,7 @@ $("#q").addEventListener("input", filter);
 $("#q").addEventListener("keydown", (e) => {
   if (e.key === "ArrowDown" || (e.ctrlKey && e.key === "n")) { e.preventDefault(); move(1); }
   else if (e.key === "ArrowUp" || (e.ctrlKey && e.key === "p")) { e.preventDefault(); move(-1); }
-  else if (e.key === "Enter") { e.preventDefault(); if (pick?.items[pick.cursor]?.fold) toggleFold(); else commit(pick?.items[pick.cursor]?.value); }
+  else if (e.key === "Enter") { e.preventDefault(); commit(pick?.items[pick.cursor]?.value); }
   else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closePicker(); }
 });
 document.addEventListener("mousedown", (e) => {
@@ -5521,7 +5445,6 @@ function renderProvidersLoading() {
     list.append(row);
   }
   $("#offHead").hidden = $("#offProviders").hidden = true;
-  $("#excluded").replaceChildren();
 }
 
 // Providers switched off are kept apart, below the ones on, under a
@@ -5546,7 +5469,7 @@ function renderProviders() {
   // where they were.
   const view = $("#view-providers"), top = view.scrollTop;
   markNewPartners();
-  keepIcons($("#providers"), $("#offProviders"), $("#addSheet"), $("#excluded"));
+  keepIcons($("#providers"), $("#offProviders"), $("#addSheet"));
   view.classList.remove("loading");
   view.removeAttribute("aria-busy");
   closeProtoMenu();
@@ -5572,16 +5495,11 @@ function renderProviders() {
     const name = el("div", "name", p.name);
     if (p.sponsored) name.append(el("span", "badge", t("sponsored")));
     if (p.off) name.append(el("span", "badge off", t("Switched off")));
-    if (p.move && p.move.state !== "plugin") name.append(deprecatedBadge());
     const n = p.models.filter((m) => m.on).length;
     // a provider that only draws images (Settings → Image generation) says so
     const models = n ? t(n === 1 ? "{n} model" : "{n} models", { n })
       : p.draws ? t(p.draws === 1 ? "{n} image model" : "{n} image models", { n: p.draws }) : t("no models exposed");
-    // every account in use refused by its vendor: signed out, as the
-    // accounts list says of each, not a green "signed in"
-    const inUse = (p.account?.logins || []).filter((l) => l.on || l.active);
-    const lapsed = inUse.length > 0 && inUse.every((l) => l.lapsed);
-    who.append(name, el("div", "sub", (p.account ? t(lapsed ? "{user} is signed out" : "signed in as {user}", { user: p.account.user }) : p.host) + " · " + models));
+    who.append(name, el("div", "sub", p.host + " · " + models));
     const using = p.agents.filter((a) => a.current);
     const uses = el("div", "uses");
     for (const a of using) {
@@ -5593,15 +5511,7 @@ function renderProviders() {
       uses.append(b);
     }
     let key;
-    if (p.account && lapsed) {
-      key = el("span", "key acct none", t("Signed out"));
-      key.title = t("Signed out — add this account again to use it");
-    } else if (p.account) {
-      // the row names the vendor: a plan too long for the pill goes without it
-      const plan = accountPlan(p.account), bare = plan.startsWith(p.name + " ") ? plan.slice(p.name.length + 1) : "";
-      key = el("span", "key acct", bare && plan.length > 15 ? bare : plan);
-      key.title = t("{agent} is signed in; its models are here for every other agent", { agent: p.account.agentName });
-    } else if (p.vertex) {
+    if (p.vertex) {
       // Vertex AI signs with the user's Google credentials, never a key;
       // the pill says which: the service account it acts as, else the
       // credentials file, else Application Default Credentials (ADC)
@@ -5617,7 +5527,7 @@ function renderProviders() {
     const label = key.textContent;
     key.textContent = "";
     key.append(el("span", "", label));
-    if (!key.title.includes(label)) key.title = (p.account && !lapsed ? accountPlan(p.account) : label) + " · " + key.title;
+    if (!key.title.includes(label)) key.title = label + " · " + key.title;
     const chev = el("span", "chev");
     chev.append(svg(CHEV_R, 11, 1.7));
     // a provider on is listed, and tried, in the order the user puts it in
@@ -5633,9 +5543,7 @@ function renderProviders() {
     if (open) dialog = renderEditor(p);
   }
   findProviders();
-  renderExcluded();
   renderFileError();
-  renderMovable();
   renderProviderDiscovery();
   dialog = renderAdd() || dialog;
   if (importing) dialog = renderImport(importing);
@@ -5721,15 +5629,13 @@ function openProviderMenu(anchor, p) {
 // Providers' search (#1614, ququdu: "供应商很多，然后经常需要翻找"): the
 // words typed keep the rows that say them all, on and off alike, matched on
 // the row's own text and on what it doesn't show: its id, preset, addresses,
-// every model's id and name, each account's user and plan, and the keys'
-// names. The ones turned off show unfolded while searching. Escape or
-// clearing the box brings back every row, the fold as it was.
+// every model's id and name, and the keys' names. The ones turned off show
+// unfolded while searching. Escape or clearing the box brings back every
+// row, the fold as it was.
 let pvQuery = "";
 function providerText(p, row) {
-  const a = p.account;
   return [row.textContent, p.id, p.name, p.preset, p.host, p.chat, p.responses, p.anthropic, p.gemini,
     ...(p.models || []).flatMap((m) => [m.id, m.name]),
-    a?.user, a?.agentName, a?.plan, ...(a?.logins || []).flatMap((l) => [l.user, l.plan]),
     ...Object.values(p.accountNames || {}), ...(p.keyList || []).map((k) => k.name),
   ].filter(Boolean).join(" ").toLowerCase();
 }
@@ -5865,227 +5771,6 @@ function renderFileError() {
     el("span", "s", providers.fileError));
   r.append(tt);
   box.append(r);
-}
-
-// DEPRECATED_WHY: why a built-in subscription a community plugin can run
-// is deprecated, said wherever it is marked so.
-const DEPRECATED_WHY = "Some subscriptions are reached in ways their vendors' terms may not allow. So that fogway itself isn't banned over them, subscription providers are being decoupled from fogway and run by community plugins instead.";
-// deprecatedSub: a built-in subscription with a plugin, not moved onto it
-const deprecatedSub = (agent) => (providers?.movable || []).includes(agent) && !movedSub(agent);
-// unusedSub: a deprecated built-in with no account in fogway, which the
-// add sheet leaves to the Plugins page
-const unusedSub = (agent) => deprecatedSub(agent) && !(providers?.providers || []).some((p) => p.account?.agent === agent);
-// replacedSub: a deprecated built-in whose plugin is installed and serves
-// it, under the plugin's own id (the built-in's with "-plugin") until moved;
-// its accounts, if any, still work, and its plugin's Move brings them over
-const replacedSub = (agent) => deprecatedSub(agent) && (providers?.plugins || []).some((x) => x.pid === agent);
-function deprecatedBadge() {
-  const b = el("span", "badge deprecated", t("Deprecated"));
-  b.title = t(DEPRECATED_WHY);
-  return b;
-}
-
-// renderMovable: over the list, the signed-in built-in subscriptions that
-// are deprecated, why, and the way to their plugins: for one, its editor
-// at its Runs on; for several, the Plugins tab, where each has its own Move
-// (opening the first one's editor read as if the notice were about it
-// alone). Hidden, it stays hidden until another one is signed in.
-function renderMovable() {
-  const box = $("#movable");
-  if (!box) return;
-  box.replaceChildren();
-  const ps = providers.providers.filter((p) => p.move && p.move.state !== "plugin" && p.account);
-  let hid = "";
-  try { hid = localStorage.getItem("fogway.deprecatedHidden") || ""; } catch {}
-  const ids = ps.map((p) => p.id).join(",");
-  box.hidden = !ps.length || hid === ids;
-  if (box.hidden) return;
-  const names = ps.map((p) => p.name).join(t(", "));
-  // one quiet line over the list, as calm as its rows: an amber dot, what
-  // happened and why, and the two answers on the right (the owner: 这个太丑了 —
-  // it was a tinted box with a tile, a badge, three lines and a purple button)
-  const card = el("div", "deprecation");
-  card.setAttribute("role", "note");
-  const body = el("div", "dep-body");
-  body.append(el("div", "dep-head", ps.length > 1 ? t("These built-in subscriptions are deprecated: {names}", { names }) : t("{name}'s built-in subscription is deprecated", { name: names })),
-    el("p", "dep-why", [t(DEPRECATED_WHY), t("Moving keeps your accounts, models and agents as they are.")].join(locale === "zh" || locale === "zh-TW" || locale === "ja" ? "" : " ")));
-  const acts = el("div", "dep-acts");
-  const hide = el("button", "text", t("Not now"));
-  hide.title = t("Hide this until another deprecated subscription is signed in");
-  hide.onclick = () => { try { localStorage.setItem("fogway.deprecatedHidden", ids); } catch {} renderMovable(); };
-  const review = el("button", "text action", ps.length > 1 ? t("Review in Plugins") : t("Review the move"));
-  // the editor opens over the list: the page itself doesn't move
-  review.onclick = () => {
-    if (ps.length > 1) { openPlugins(); return; }
-    editing = ps[0].id; draft = null; renderProviders();
-  };
-  acts.append(hide, review);
-  card.append(el("span", "dep-dot"), body, acts);
-  box.append(card);
-}
-
-// Sign-ins fogway found but leaves alone, so nobody wonders why an agent that
-// is clearly logged in is not in the list: the ones the user removed.
-function renderExcluded() {
-  const box = $("#excluded");
-  box.replaceChildren();
-  for (const x of providers.excluded) {
-    if (x.quiet) continue; // dismissed: the Add sheet offers it back (#116)
-    const r = el("div", "excluded");
-    r.append(icon(x.agentIcon), el("span", "", ""));
-    r.lastChild.append(el("b", "", t(x.signedOut ? "{agent}'s saved accounts aren't offered. " : "{agent} is signed in, but stays out of this list. ", { agent: x.agentName })), x.signedOut ? x.why : t(x.why));
-    if (x.provider) {
-      const back = el("button", "link", t("Add it back"));
-      back.onclick = () => providerAction("show", { id: x.provider }, t("{name} added back", { name: x.agentName }));
-      const quiet = el("button", "link", t("Don't remind me"));
-      quiet.title = t("Hide this line; Add a provider still offers it back");
-      quiet.onclick = () => providerAction("quiet", { id: x.provider });
-      const out = el("button", "link", t("Sign out"));
-      out.title = t("fogway signs out the accounts it keeps for {name}; adding it again signs in afresh", { name: x.agentName });
-      out.onclick = () => askForgetAccount(x);
-      r.lastChild.append(" ", back, " · ", quiet, " · ", out);
-    }
-    // an agent signed out here (a banned account logged out, say) lists
-    // its saved accounts nowhere else, so this is where they are removed
-    if (x.signedOut && x.users?.length) {
-      const rm = el("button", "link", t("Remove"));
-      rm.title = t("fogway forgets the accounts it saved; {agent}'s own files are left as they are", { agent: x.agentName });
-      rm.onclick = () => askForgetSaved(x);
-      r.lastChild.append(" ", rm);
-    }
-    box.append(r);
-  }
-}
-
-// askForgetSaved asks before fogway drops the accounts it saved of an agent
-// signed out here, as a reset asks; it forgets only fogway's copies, never
-// the agent's own files or keychain. It is the reset's dialog, so the
-// backdrop and Escape close it the same way.
-function askForgetSaved(x) {
-  const ed = el("div", "editor forget-ask");
-  const head = el("div", "ehead");
-  head.append(icon(x.agentIcon), el("b", "", t(x.users.length === 1 ? "Remove {agent}'s saved account?" : "Remove {agent}'s {n} saved accounts?", { agent: x.agentName, n: x.users.length })));
-  ed.append(head);
-  ed.append(el("p", "lib-confirm", t("fogway forgets its copy of {users}. {agent}'s own files and sign-in, and the account itself, are left as they are.", { users: x.users.join(", "), agent: x.agentName })));
-  const bar = el("div", "bar");
-  const go = el("button", "text primary danger-fill", t("Remove"));
-  go.onclick = async (e) => {
-    e.stopPropagation();
-    go.disabled = true;
-    go.classList.add("busy");
-    for (const [i, user] of x.users.entries()) {
-      const last = i === x.users.length - 1;
-      if (!await accountAction("login/forget", { agent: x.agent, user }, last ? t("{user} removed", { user: x.users.join(", ") }) : "", true)) {
-        go.disabled = false;
-        go.classList.remove("busy");
-        return;
-      }
-    }
-    closeConfirmAsk();
-  };
-  const cancel = el("button", "text", t("Cancel"));
-  cancel.onclick = (e) => { e.stopPropagation(); closeConfirmAsk(); };
-  bar.append(el("span", "grow"), cancel, go);
-  ed.append(bar);
-  confirmAsk = ed;
-  openModal(ed);
-  $("#modal").classList.add("lib");
-  cancel.focus();
-}
-
-// askForgetAccount asks before fogway signs a removed account out for
-// good: what fogway keeps of its sign-ins goes, so adding it again signs in
-// afresh rather than bringing the old account back (#694). The vendor's
-// account itself is left as it is.
-function askForgetAccount(x) {
-  const ed = el("div", "editor forget-ask");
-  const head = el("div", "ehead");
-  head.append(icon(x.agentIcon), el("b", "", t("Sign {name} out of fogway?", { name: x.agentName })));
-  ed.append(head);
-  ed.append(el("p", "lib-confirm", t("fogway signs out the accounts it keeps for {name} and forgets them; adding {name} again signs in afresh. The account itself is left as it is.", { name: x.agentName })));
-  // the one Codex is signed in to goes last, and Codex with it (ForgetLogin)
-  if (x.agent === "codex") ed.append(el("p", "lib-confirm", t("Codex itself is signed out too, as codex logout does.")));
-  const bar = el("div", "bar");
-  const go = el("button", "text primary danger-fill", t("Sign out"));
-  go.onclick = async (e) => {
-    e.stopPropagation();
-    go.disabled = true;
-    go.classList.add("busy");
-    // failed, the ask stays with the error in it rather than close over it
-    // (#874: the error showed for a blink as the ask closed)
-    if (await providerAction("forget", { id: x.provider }, t("{name} signed out", { name: x.agentName }))) closeConfirmAsk();
-    else go.disabled = false;
-  };
-  const cancel = el("button", "text", t("Cancel"));
-  cancel.onclick = (e) => { e.stopPropagation(); closeConfirmAsk(); };
-  bar.append(el("span", "grow"), cancel, go);
-  ed.append(bar);
-  confirmAsk = ed;
-  openModal(ed);
-  $("#modal").classList.add("lib");
-  cancel.focus({ preventScroll: true });
-}
-
-// askSignOutLogin asks before Codex is signed out of its only account, as
-// codex logout does: its sign-in file goes and fogway forgets the account.
-// It is the reset's dialog, so the backdrop and Escape close it the same way,
-// back to the provider's editor it was asked from.
-function askSignOutLogin(a, l) {
-  const ed = el("div", "editor forget-ask");
-  const head = el("div", "ehead");
-  head.append(icon(a.agentIcon), el("b", "", t("Sign {agent} out of {user}?", { agent: a.agentName, user: l.user })));
-  ed.append(head);
-  ed.append(el("p", "lib-confirm", t("{agent} is signed out, as codex logout does, and fogway forgets the account. Sign in again to use it; an open {agent} may need quitting and opening again. The account itself is left as it is.", { agent: a.agentName })));
-  const bar = el("div", "bar");
-  const go = el("button", "text primary danger-fill", t("Sign out"));
-  go.onclick = async (e) => {
-    e.stopPropagation();
-    go.disabled = true;
-    go.classList.add("busy");
-    if (await accountAction("login/forget", { agent: a.agent, user: l.user }, t("{agent} signed out of {user}", { agent: a.agentName, user: l.user }), true)) closeConfirmAsk();
-    else go.disabled = false;
-  };
-  const cancel = el("button", "text", t("Cancel"));
-  cancel.onclick = (e) => { e.stopPropagation(); closeConfirmAsk(); };
-  bar.append(el("span", "grow"), cancel, go);
-  ed.append(bar);
-  ed.back = renderProviders; // the provider's editor it was asked from
-  confirmAsk = ed;
-  openModal(ed);
-  $("#modal").classList.add("lib");
-  cancel.focus({ preventScroll: true });
-}
-
-// accountPlan is the account's chip: its vendor and plan, the plan alone
-// when it already names the vendor (a plugin's own "Zed Pro").
-function accountPlan(a) {
-  // a plugin beside a built-in (cursor-plugin) by the built-in's
-  const agent = a.builtin || a.agent;
-  const cap = (s) => s[0].toUpperCase() + s.slice(1);
-  // "Xiaomi MiMo" and "MiMo 高阶" overlap in "MiMo": said once
-  const named = (name, plan) => {
-    if (!plan) return name;
-    const w = name.split(" ");
-    for (let i = 0; i < w.length; i++) {
-      if ((plan.toLowerCase() + " ").startsWith(w.slice(i).join(" ").toLowerCase() + " ")) return [...w.slice(0, i), plan].join(" ");
-    }
-    return name + " " + plan;
-  };
-  if (agent === "codex" || agent === "chatgpt-api") return named("ChatGPT", a.plan && cap(a.plan));
-  if (agent === "copilot") return named("GitHub", a.plan && cap(a.plan));
-  if (agent === "claude") return named("Claude", a.plan && cap(a.plan));
-  if (agent === "cursor") return named("Cursor", a.plan && cap(a.plan));
-  if (agent === "grok") return a.plan || "SuperGrok";
-  if (agent === "gemini" || agent === "antigravity") return a.plan || "Google";
-  if (agent === "zcode") return a.plan || "GLM Coding Plan";
-  if (agent === "workbuddy") return a.plan || "WorkBuddy";
-  if (agent === "workbuddy-ai") return a.plan || "WorkBuddy AI";
-  if (agent === "commandcode-plan") return named("Command Code", a.plan && t(a.plan));
-  if (agent === "qoder") return named("Qoder", a.plan && t(a.plan));
-  if (agent === "qoder-cn") return named("Qoder CN", a.plan && t(a.plan));
-  if (agent === "zed") return named("Zed", a.plan && t(a.plan));
-  if (agent === "mimo-app") return named("Xiaomi MiMo", a.plan && t(a.plan));
-  return a.plan || t("signed in");
 }
 
 // ---------- gateway view ----------
@@ -7616,23 +7301,6 @@ function pickRow(ic, name, cls = "") {
   return b;
 }
 
-// openPlugins: the Plugins tab, looking for q when there is one
-async function openPlugins(q) {
-  if (mode !== "window") { api("window/main?view=plugins", {}).catch(() => {}); return; }
-  if (!await show("plugins")) return;
-  window.pluginQuery?.(q || "");
-}
-
-// pluginSignIn: a plugin's provider signed in to as every subscription is,
-// in the Providers add sheet
-async function pluginSignIn(id) {
-  if (!await show("providers")) return;
-  closeModal();
-  adding = true; editing = null; draft = null; presetQuery = "";
-  renderProviders();
-  startSignIn(id);
-}
-
 // openProvider: a provider opened in the Providers tab
 async function openProvider(id) {
   if (view === "providers" && providerDirty() && !(await confirmDiscard())) return;
@@ -7686,26 +7354,6 @@ const regionAt = (pr, d) => pr?.regions?.find((r) => r.chat && r.chat === (d?.ch
 
 // the first provider made from a preset, which may not have the preset's id
 const presetProvider = (pr) => providers.providers.find((p) => p.preset === pr.id) || providers.providers.find((p) => p.id === pr.id);
-
-// subTile adds a subscription: one more account when the agent has some.
-function subTile(x) {
-  const have = providers.providers.find((p) => p.account?.agent === x.agent);
-  const n = have ? (have.account.logins?.length || 1) : 0;
-  const b = pickRow(x.icon, shortName(x.name), signing?.agent === x.agent ? " on" : "");
-  b.title = t("{name} subscription", { name: x.name }) + " · " + x.plans;
-  if (x.hint) b.title += "\n" + t(x.hint);
-  // deprecated: badged (one with no account isn't offered here)
-  if (!x.plugin && deprecatedSub(x.agent) && n) {
-    b.querySelector(".nm").append(deprecatedBadge());
-    b.title += "\n" + t("Deprecated") + " · " + t(DEPRECATED_WHY);
-  }
-  if (n) {
-    markAdded(b, x.single ? 1 : n);
-    b.title += "\n" + (x.single ? t("Signed in") : t(n === 1 ? "1 account" : "{n} accounts", { n })) + " · " + t(x.single ? "signed in · click to switch account" : "click to add another account");
-  }
-  b.onclick = () => startSignIn(x.agent);
-  return b;
-}
 
 function tile(pr) {
   const b = pickRow(pr.icon || "generic", pr.short || pr.name, editing?.preset === pr.id ? " on" : "");
@@ -7913,9 +7561,8 @@ function confirmRemoval(name, consequence = "This removes the selected item. Con
 function confirmDiscard() {
   return confirmAction(t("Discard"), t("Discard unsaved changes? Your changes will be lost."), t("Discard"));
 }
-async function cancelEdit(keep) {
+async function cancelEdit() {
   if ((providerDirty() || ((importing || importingApps) && modalFormDirty())) && !(await confirmDiscard())) return false;
-  if (keep !== true) dropSigningIn(editing);
   editing = null; draft = null; importing = null; importingApps = null; renderProviders();
   return true;
 }
@@ -7977,15 +7624,12 @@ function proxyPicker() {
   return box;
 }
 
-// concurrencyField: how many requests each of the provider's keys or
-// accounts may have out at the vendor at once (Discord, Lemon: a Codex
-// account is risk-controlled past five or six); more wait their turn and
-// go in order. The draft keeps what is typed as concurrency, "" for none
-// set — a plugin's provider then takes what its plugin says, shown as the
-// placeholder — and concurrencyOfDraft is what is saved.
+// concurrencyField: how many requests each of the provider's keys may have
+// out at the vendor at once; more wait their turn and go in order. The
+// draft keeps what is typed as concurrency, "" for none set, and
+// concurrencyOfDraft is what is saved.
 function concurrencyField(p) {
-  const plugin = p?.pluginConcurrency || 0;
-  const box = input(draft.concurrency ?? "", plugin ? t("{n}, as its plugin says", { n: plugin }) : t("No limit"), "number");
+  const box = input(draft.concurrency ?? "", t("No limit"), "number");
   box.classList.add("concurrency");
   box.min = "0";
   box.max = "1000";
@@ -8011,7 +7655,7 @@ function concurrencyField(p) {
     b.oninput = () => { draft[k] = b.value; };
   }
   return [
-    ...field(t("Concurrency"), box, (plugin ? t("Over it, requests queue and go out in order; empty takes the plugin's {n}, 0 is no limit", { n: plugin }) : t("Over it, requests queue and go out in order; 0 or empty is no limit"))),
+    ...field(t("Concurrency"), box, t("Over it, requests queue and go out in order; 0 or empty is no limit")),
     ...field(t("Requests per minute"), rpm, t("How many requests each key or account sends in any minute, retries included; one more waits for room, up to 2 minutes. 0 or empty is no limit")),
     ...field(t("Queue size"), queue, t("How many requests may wait for each key or account; one more is turned away at once. 0 or empty is no bound")),
     ...field(t("Queue wait"), wait, t("Seconds a request waits for a free slot before it is turned away. 0 or empty waits as long as it takes")),
@@ -8117,21 +7761,9 @@ function proxyOfDraft() {
   return (draft.proxyURL || "").trim() || null;
 }
 
-// accountProxyPicker: one proxy per account of a subscription holding
-// several (gakki: one Codex account through one proxy, another through
-// another) — the provider's own (the row above), none, or its own address.
-// Each account is a line of its name over the same row as the provider's,
-// the address's room kept while it isn't asked for, so a pick moves
-// nothing. null for a subscription with one account: the row above is its.
-const ACCOUNT_PROXY_HINT = "Each account can go through a proxy of its own; Provider's proxy is the one above";
-function accountProxyPicker(a) {
-  const ls = [...(a?.logins || [])];
-  ls.sort((x, y) => (y.active ? 1 : 0) - (x.active ? 1 : 0));
-  return proxyLines(ls.map((l) => ({ k: l.user.toLowerCase(), name: l.user, user: l.user })), ACCOUNT_PROXY_HINT);
-}
-// keyProxyPicker is accountProxyPicker for a provider's keys (Beyfish_Wang
-// on X: 不同 key 走不同的代理), each by its fingerprint, named as the
-// Accounts list names it. null for a provider with one key.
+// keyProxyPicker: a proxy of its own for each of a provider's keys
+// (Beyfish_Wang on X: 不同 key 走不同的代理), each by its fingerprint, named as
+// the keys' list names it. null for a provider with one key.
 const KEY_PROXY_HINT = "Each key can go through a proxy of its own; Provider's proxy is the one above";
 function keyProxyPicker(p) {
   return proxyLines((p?.keyList || []).map((k) => ({ k: k.id, name: k.name || k.masked, key: k.id })), KEY_PROXY_HINT);
@@ -8144,7 +7776,6 @@ function proxyLines(items, hint) {
     const k = it.k;
     const cur = draft.accountProxies[k] || { mode: "", url: "" };
     const line = el("div", "acct-proxy");
-    if (it.user) line.dataset.user = it.user;
     if (it.key) line.dataset.key = it.key;
     const who = el("span", "who", it.name);
     who.title = it.name;
@@ -8165,9 +7796,9 @@ function proxyLines(items, hint) {
   box.append(el("div", "hint", t(hint)));
   return box;
 }
-// accountProxiesOfDraft is each account's own proxy as it is saved — the
-// accounts that follow the provider's left out — or { missing: user } when
-// one's Custom has no address yet.
+// accountProxiesOfDraft is each key's own proxy as it is saved — the keys
+// that follow the provider's left out — or { missing: key } when one's
+// Custom has no address yet.
 function accountProxiesOfDraft() {
   const out = {};
   for (const [u, x] of Object.entries(draft.accountProxies || {})) {
@@ -8868,7 +8499,7 @@ function renderEditor(p, presetID) {
 }
 function drawEditor(p, presetID) {
   const pr = presetID ? providers.presets.find((x) => x.id === presetID) : p?.preset ? providers.presets.find((x) => x.id === p.preset) : null;
-  const isNew = !p, custom = !pr && !p?.account, decides = !!(p?.decide || pr?.decide);
+  const isNew = !p, custom = !pr, decides = !!(p?.decide || pr?.decide);
   // a preset already added is added again only through "Add another": one
   // more provider of it, under a name and id of its own
   const another = isNew && !!pr?.added;
@@ -8972,7 +8603,7 @@ function drawEditor(p, presetID) {
     w.append(idIn, hint);
     ed.append(el("label", "", t("ID")), w);
   };
-  if (p && !p.account && !custom) idField();
+  if (p && !custom) idField();
   let fillEndpoints = () => {};
   // a URL typed and not saved that a protocol switch carried to another
   // protocol: the protocol it was typed for, and the URL as typed
@@ -9071,78 +8702,6 @@ function drawEditor(p, presetID) {
     pcb.onchange = () => { draft.pinUpstream = pcb.checked; };
     return field(t("Upstream"), ptk, t("Cline serves a model from any host its gateway picks; pinned, a request for a DeepSeek model goes only to DeepSeek, which keeps its prompt cache, and fails when DeepSeek can't take it"));
   };
-
-  if (p?.account) {
-    // the sign-in belongs to the agent; fogway only borrows it
-    const a = p.account;
-    if (subOf(a.agent)) {
-      // no Claude Code on Windows: the gateway runs the one in WSL
-      const via = a.wsl ? t("Runs through WSL · {distro}: Claude Code there signs in and answers; Windows has none of its own.", { distro: a.wsl }) + " " : "";
-      ed.append(...field(t("Accounts"), renderAccounts(a, p), via + (p.routing ? t("Tick every account to use; Routing says how requests spread over them.") : subOf(a.agent).single ? t("{agent} keeps one account; the gateway runs it for every request. Signing in to another replaces it.", { agent: a.agentName }) : subOf(a.agent).own && (a.logins || []).some((l) => l.own) ? t("The gateway uses the first. Tick more and it moves on to the next when the one before it is out of quota. {agent} itself stays signed in as it is.", { agent: a.agentName && a.agentName !== a.agent ? a.agentName : p.name }) : subOf(a.agent).own || subOf(a.agent).plugin ? t("The gateway uses the first. Tick more and it moves on to the next when the one before it is out of quota.") : t("{agent} signs in to the first. Tick more and the gateway moves on to the next when the one before it is out of quota. Sessions already running keep theirs until restarted.", { agent: a.agentName }))));
-      if ((a.logins || []).filter((l) => l.active || l.on).length > 1) ed.append(...renderRouting(p));
-      if (p.move) ed.append(...renderMove(p));
-    } else {
-      const acct = el("div", "acct");
-      acct.append(icon(a.agentIcon), el("span", "n", a.user), el("span", "plan", accountPlan(a)));
-      ed.append(...field(t("Account"), acct, t("{agent}'s sign-in, read from its own files. Sign out there and this provider goes away.", { agent: a.agentName })));
-    }
-    ed.append(...field(t("Models"), renderModels(p), ""));
-    if (p.drawIds?.length) ed.append(...renderDrawers(p));
-    // a subscription's window too: Codex's backend says 272K for models
-    // that take 872K (#120)
-    const cx = input(draft.contexts || "", t("e.g. 128k · or gpt-6=1m, comma separated"));
-    ed.append(...field(t("Context window"), contextPicks(p, cx), t("How long a request the models take, told to the agents; empty leaves it to the vendor and models.dev")));
-    ed.append(...outputField());
-    ed.append(...compactField());
-    ed.append(...field(t("Fallback"), renderFallback(p), fallbackHint(p)));
-    const proxies = el("div", "stack");
-    proxies.append(proxyPicker());
-    const perAccount = subOf(a.agent) ? accountProxyPicker(a) : null;
-    if (perAccount) proxies.append(perAccount);
-    ed.append(...field(t("Proxy"), proxies));
-    ed.append(...concurrencyField(p));
-    ed.append(...priceRateField());
-    if (p.cline) ed.append(...upstreamField());
-    // a plugin's provider is reached inside fogway: its plugin:// URLs go
-    // nowhere to show or test
-    const urls = [p.chat, p.responses, p.anthropic].filter(Boolean);
-    if (urls.length && !urls.some((u) => u.startsWith("plugin://"))) ed.append(...field(t("Endpoints"), renderEndpoints(p, p)));
-    const bar = el("div", "bar");
-    // removing only hides it from fogway; the agent stays signed in
-    const del = el("button", "text danger", t("Remove"));
-    del.title = t("{agent} stays signed in; fogway just stops offering it", { agent: a.agentName });
-    del.onclick = () => providerAction("delete", { id: p.id }, t("{name} removed", { name: p.name }));
-    bar.append(del, el("span", "grow"));
-    const cancel = el("button", "text", t("Cancel"));
-    cancel.onclick = cancelEdit;
-    const saveBtn = el("button", "text primary", t("Save"));
-    saveBtn.onclick = () => {
-      const cx = parseContexts(draft.contexts || "");
-      if (cx.error) return editorError(t("Context window: {v} is not a length like 128k or 1m", { v: cx.error }), "warn");
-      const ox = parseContexts(draft.outputs || "");
-      if (ox.error) return outputError(ed, ox.error);
-      const cpx = parseContexts(draft.compacts || "");
-      if (cpx.error) return compactError(ed, cpx.error);
-      const proxy = proxyOfDraft();
-      if (proxy === null) { ed.querySelector(".proxy-url")?.focus(); return editorError(t("Proxy: type its address, like http://127.0.0.1:7890"), "warn"); }
-      const own = accountProxiesOfDraft();
-      if (own.missing) {
-        const line = [...ed.querySelectorAll(".acct-proxy")].find((x) => x.dataset.user.toLowerCase() === own.missing);
-        line?.querySelector(".proxy-url")?.focus({ preventScroll: true });
-        return editorError(t("Proxy of {user}: type its address, like http://127.0.0.1:7890", { user: line?.dataset.user || own.missing }), "warn");
-      }
-      const maxConcurrency = concurrencyOfDraft();
-      if (maxConcurrency === undefined) return concurrencyError(ed);
-      const queue = queueOfDraft();
-      if (queue.bad) return queueError(ed, queue.bad);
-      const priceRate = priceRateOfDraft();
-      if (priceRate === undefined) return priceRateError(ed);
-      if (priceTypedError(ed)) return;
-      saving(saveBtn, t("Saving…")); providerAction("save", { id: p.id, models: chosenIds(), noModels: noneChosen(), unlisted: draft.unlisted, fallback: draft.fallback, contexts: cx.map, outputs: ox.map, compacts: cpx.map, proxy, accountProxies: own.map, maxConcurrency, ...queue, priceRate, modelPrefs: modelPrefsOfDraft(), pinUpstream: !!draft.pinUpstream, ...routingOfDraft(p) }, t("{name} saved", { name: p.name })); };
-    bar.append(cancel, saveBtn);
-    ed.append(bar);
-    return ed;
-  }
 
   // a vendor reached at the user's own resource (Azure OpenAI): no URL of
   // the preset's, the one the resource is at is typed or pasted here, and
@@ -9319,7 +8878,7 @@ function drawEditor(p, presetID) {
   // also learns from that refusal. Anthropic's, Bedrock's and Azure's own
   // APIs take x-api-key alone already
   const twoKeyHeaders = () => {
-    if (p?.account || vertex) return false;
+    if (vertex) return false;
     if (p && !custom) return !!p.bothAuth;
     const a = ((draft.anthropic ?? (isNew && pr ? pr.anthropic : "")) || "").trim();
     if (!a) return false;
@@ -9327,7 +8886,7 @@ function drawEditor(p, presetID) {
     try { host = new URL(/^[a-z]+:\/\//i.test(a) ? a : "https://" + a).hostname.toLowerCase(); } catch { return true; }
     return !host.endsWith("anthropic.com") && !/^bedrock-runtime\..*\.amazonaws\.com$/.test(host) && !host.endsWith(".azure.com");
   };
-  if (!p?.account && !vertex) {
+  if (!vertex) {
     const seg = segs([["", t("Both")], ["x-api-key", "x-api-key"], ["bearer", "Authorization: Bearer"]], draft.authHeader || "", (v) => { draft.authHeader = v; });
     seg.classList.add("auth-header");
     const row = field(t("Key header"), seg, t("Which header the API key goes in on the Anthropic API. Most services take both; pick one for a service that refuses the two together. fogway also switches to one by itself when a service says so."));
@@ -9338,10 +8897,9 @@ function drawEditor(p, presetID) {
 
   // a coding plan that serves only agents it names knows them by their
   // User-Agent (#1851): a provider with a key may be sent the one the agent
-  // gave in place of fogway's. A signed-in account, and a vendor whose own
-  // client fogway goes as (OpenCode, Cline, Kilo, another fogway), keep
-  // the identity they sign with
-  const uaPassable = () => !p?.account && !(p ? p.ownClient : pr?.ownClient);
+  // gave in place of fogway's. A vendor whose own client fogway goes as
+  // (OpenCode, Cline, Kilo, another fogway) keeps the identity it signs with
+  const uaPassable = () => !(p ? p.ownClient : pr?.ownClient);
   if (uaPassable()) {
     const [utk, ucb] = tick(t("Send the agent's own User-Agent"), !!draft.passUserAgent);
     ucb.onchange = () => { draft.passUserAgent = ucb.checked; };
@@ -9353,8 +8911,8 @@ function drawEditor(p, presetID) {
   // Discord). Only the user can say it is local all the way: a relay run
   // locally, or Ollama's cloud models, pass a request on to a vendor
   const addressOf = (k) => (draft[k] ?? (isNew && pr ? pr[k] : "")) || "";
-  const onLAN = () => !p?.account && (p?.preset || pr?.id) !== "remote-fogway" && localAddresses(["chat", "responses", "anthropic", "gemini", "decide"].map(addressOf));
-  if (!p?.account) {
+  const onLAN = () => (p?.preset || pr?.id) !== "remote-fogway" && localAddresses(["chat", "responses", "anthropic", "gemini", "decide"].map(addressOf));
+  {
     const [ltk, lcb] = tick(t("Send requests unmasked"), !!draft.unredacted);
     lcb.onchange = () => { draft.unredacted = lcb.checked; };
     const row = field(t("Redaction"), ltk, t("For a model running on this computer or your local network: secrets, personal data and your masked words go to it as written. Leave it off for a local relay or proxy that passes requests on to a vendor."));
@@ -10158,7 +9716,7 @@ function importAppRow(ia, s, it, recount, boxes) {
       sg.onclick = (e) => e.preventDefault(); // a click on a choice is not a click on the checkbox
       return sg;
     };
-    who.append(el("div", "sub", t(it.reserved ? "{name} is a subscription in fogway; this one comes in beside it as a provider of its own" : "fogway has {name} already", { name: it.existing })));
+    who.append(el("div", "sub", t(it.reserved ? "{name} is a name fogway keeps for itself; this one comes in as a provider of its own" : "fogway has {name} already", { name: it.existing })));
     let sg = choices();
     if (it.status === "taken") {
       // a name that collides can be changed right here (#1487)
@@ -11324,11 +10882,9 @@ function renderModels(p) {
   if (noTest) { testAll.disabled = true; testAll.title = noTest; }
   foot.append(testAll);
   foot.append(rename);
-  // a plugin's list that failed is its defaults, not the vendor's
-  if (p.fetched && !p.listError) foot.append(el("span", "hint", t("vendor list · {when}", { when: ago(p.fetched) })));
-  // a signed-in account's list, until the vendor gives one, is fogway's own
-  else if (p.models.length) foot.append(el("span", "hint", t(p.account ? "fogway's list · Fetch models asks the vendor" : decideOnly(p) ? "Jev's names · Fetch models asks the vendor" : "from models.dev · Fetch models asks the vendor")));
-  if (p.fetched && !p.account) {
+  if (p.fetched) foot.append(el("span", "hint", t("vendor list · {when}", { when: ago(p.fetched) })));
+  else if (p.models.length) foot.append(el("span", "hint", t(decideOnly(p) ? "Jev's names · Fetch models asks the vendor" : "from models.dev · Fetch models asks the vendor")));
+  if (p.fetched) {
     // the fetched list stands in for the picks when none are made
     const forget = el("button", "text action", t("Forget"));
     forget.title = t("Drop the list fetched from the vendor; the models.dev one is used until models are fetched again");
@@ -11342,7 +10898,6 @@ function renderModels(p) {
   box.append(foot);
   // a plugin whose list failed shows its defaults (Cursor's Auto alone):
   // why, rather than a short list that looks like the account's
-  if (p.listError) box.append(el("div", "hint model-hint warn list-error", t("{p} couldn't list its models: {error}", { p: p.name, error: p.listError })));
   const why = el("div", "hint");
   const [tk, cb] = tick(t("Only through routing groups"), !!draft.unlisted);
   cb.onchange = () => { draft.unlisted = cb.checked; draw(); };
@@ -11376,12 +10931,10 @@ const ROUTINGS = [
   ["", "Smart", "The first takes requests while it has quota to spare; when it runs low, the one with the most left takes over. One out of credit sits out half an hour, one out of quota until it resets, one rate limited as long as the vendor asks, and one that fails a minute, longer each time it fails again."],
   ["order", "In order", "Requests go to the first; the next takes over when the one before runs out of quota, hits a rate limit or fails."],
   ["rotate", "In turn", "Each turn of a conversation goes to the next one, spreading the load evenly; the requests within a turn stay where it began, so the prompt cache holds, and one that fails is passed over while it rests."],
-  ["usage", "Least used first", "Each request goes to the one used least: a subscription by the share of its allowance used, a key by the tokens it served in the last hours."],
-  ["pace", "Weekly pace", "Each request goes to the subscription with the most of its week left per hour until it renews — the one with the most to lose at its reset — so less of each week is lost at its reset; one at 90% or more waits until the others can't answer. A key goes by the tokens it served in the last hours."],
+  ["usage", "Least used first", "Each request goes to the one used least: a key on a plan by the share of its allowance used, any other by the tokens it served in the last hours."],
+  ["pace", "Weekly pace", "Each request goes to the key on a plan with the most of its week left per hour until it renews — the one with the most to lose at its reset — so less of each week is lost at its reset; one at 90% or more waits until the others can't answer. Any other key goes by the tokens it served in the last hours."],
   ["weight", "By weight", "Requests spread over the keys by the weight set beside each: a key weighing 3 takes three requests for every one a key weighing 1 takes, evenly over a few requests. One that fails is passed over while it rests, and the others share its requests; a conversation stays with its key as Stays says."],
 ];
-// weight is a key's share: offered for a provider with keys only
-const routingsOf = (p) => p.account ? ROUTINGS.filter(([id]) => id !== "weight") : ROUTINGS;
 // as on the Routing page's list of these (routing.js AFF_OPTS)
 const STAYS = [
   ["", "Auto", "A conversation stays with the account or key that answered it while what the vendor cached of it is worth keeping — within a turn always, across turns while it's fresh."],
@@ -11411,20 +10964,6 @@ function renderRouting(p) {
   const routingNow = () => draft.routing ?? (p.routing || "");
   const affinityNow = () => draft.affinity ?? (p.affinity || "");
   const sinkNow = () => draft.sink ?? !!p.sink;
-  // what Codex or Claude Code sends past fogway goes to the account it is
-  // signed in to, which fogway moves on once Smart would count it spent
-  // and back once the first has room (provider.KeepOnAnAccountWithRoom,
-  // #209, #408)
-  const a = p.account;
-  // — at 98%, In order once used up (#530), never when kept on the first (#524)
-  const own = (routing) => !a || (a.agent !== "codex" && a.agent !== "claude") ? ""
-    : " " + (keptLogin(p)
-      ? t("Routing picks the account for each request through fogway, in the accounts' order; {agent} on its own stays signed in to {user}, whatever it has left.", { agent: a.agentName, user: keptLogin(p) })
-      : p.keepLogin
-      ? t("Routing picks the account for each request through fogway; {agent} on its own stays signed in to the first account, whatever it has left.", { agent: a.agentName })
-      : routing === "order"
-        ? t("Routing picks the account for each request through fogway; {agent} on its own uses the one it is signed in to, which fogway moves to the next ticked account with room once it is used up, and back to the first once that has room again.", { agent: a.agentName })
-        : t("Routing picks the account for each request through fogway; {agent} on its own uses the one it is signed in to, which fogway moves to the next ticked account with room once it is 98% used, and back to the first once that has room again.", { agent: a.agentName }));
   // what the Save will make of it differs from what it is: said beside it
   const unsaved = () => {
     const u = el("span", "hint munsaved", t("unsaved"));
@@ -11434,14 +10973,14 @@ function renderRouting(p) {
   const rHint = el("div", "hint"), rUnsaved = unsaved();
   const drawRouting = () => {
     const cur = ROUTINGS.find(([id]) => id === routingNow()) || ROUTINGS[0];
-    rHint.textContent = t(cur[2]) + own(cur[0]);
+    rHint.textContent = t(cur[2]);
     rUnsaved.hidden = routingNow() === (p.routing || "");
     // in turn and by weight go round already
     kLabel.hidden = kWrap.hidden = routingNow() === "rotate" || routingNow() === "weight";
     // each key's weight shows beside it while the routing is by weight
     for (const l of document.querySelectorAll(".accts.keys")) if (l.dataset.provider === p.id) l.classList.toggle("weighted", routingNow() === "weight");
   };
-  const rPick = segs(routingsOf(p).map(([id, name]) => [id, t(name)]), routingNow(), (routing) => { draft.routing = routing; drawRouting(); });
+  const rPick = segs(ROUTINGS.map(([id, name]) => [id, t(name)]), routingNow(), (routing) => { draft.routing = routing; drawRouting(); });
   const rRow = el("div", "route-pick");
   rRow.append(rPick, rUnsaved);
   const rWrap = el("div");
@@ -11537,401 +11076,12 @@ function fallbackHint(p) {
   return t("When {name} is out of quota, rate limited or down, a request goes to these instead, top first. It only happens before any of the reply is sent, and {name} then sits out a minute.", { name: p.name });
 }
 
-// ---------- subscriptions ----------
+// ---------- keys, plans and what they have left ----------
 //
-// A Claude or ChatGPT subscription is added here, not in a terminal: fogway
-// opens the vendor's own sign-in in the browser, takes the account when it
-// comes back, and lists it with the others — any of them one click from
-// being the one in use.
-//
-// Some of these are deprecated: once moved onto their community plugin
-// (providers.onPlugins, the default for a new sign-in), the plugin signs in
-// and serves them, and subOf hands back the plugin's sign-in. A change to
-// such a built-in's sign-in on the Go side doesn't reach those users; see
-// AGENTS.md (PLUGIN-SERVED).
+// A provider's keys, each a row of its own, and what a plan bought with a
+// key has left: the windows, balances and their meters.
 
-const SUBS = [
-  // both can also come from CLIProxyAPI's auth files or the agent's own (importing below)
-  // Anthropic has banned accounts it saw used from other tools: said before one is added
-  { agent: "claude", name: "Claude", icon: "claude-color", plans: "Pro · Max · Team", importable: true, risk: true,
-    riskNote: "Anthropic may suspend or ban a Claude account it sees used outside its own apps. fogway sends requests through Claude Code, but Anthropic may still act on them; you use it at your own risk. Use an account you can afford to lose." },
-  { agent: "codex", name: "ChatGPT", icon: "openai", plans: "Plus · Pro · Business", importable: true },
-  // OpenAI's Sign in with ChatGPT: the plan asked on api.openai.com, with the agent's own instructions (#933)
-  { agent: "chatgpt-api", name: "ChatGPT API", icon: "openai", plans: "Plus · Pro · Business", own: true,
-    hint: "Sign in with ChatGPT: your plan on OpenAI's own API, with your agent's own instructions rather than Codex's." },
-  // cursor-agent keeps one account; signing in again replaces it
-  { agent: "cursor", name: "Cursor", icon: "cursor", plans: "Pro · Ultra · Teams", single: true },
-  // so does Grok Build
-  { agent: "grok", name: "Grok (SuperGrok)", icon: "xai", plans: "SuperGrok · X Premium+", own: true },
-  // signed in with GitHub's device code; the editors' own sign-in stays theirs
-  { agent: "copilot", name: "Copilot", icon: "githubcopilot", plans: "Free · Education · Pro · Pro+ · Max · Business · Enterprise", own: true },
-  // Z.ai's GLM Coding Plan, signed in as ZCode does; ZCode's own account is read too
-  // sites: where the account is, Z.ai's or BigModel's (智谱), asked before
-  // the sign-in opens; a team's plan (团队套餐) is signed in on its site too
-  { agent: "zcode", name: "ZCode (GLM Coding Plan)", icon: "zcode", plans: "Lite · Pro · Max · Team", own: true,
-    sites: [["zai", "Z.ai", "z.ai"], ["bigmodel", "BigModel (智谱)", "bigmodel.cn"]] },
-  // Tencent's CodeBuddy plan, signed in as WorkBuddy does; WorkBuddy's own account is read too
-  { agent: "workbuddy", name: "WorkBuddy (CodeBuddy)", icon: "workbuddy-color", plans: "Free · Pro", own: true },
-  // the same plan sold abroad, WorkBuddy AI (workbuddy.ai / codebuddy.ai), its accounts its own
-  { agent: "workbuddy-ai", get name() { return t("WorkBuddy AI (international)"); }, icon: "workbuddy-color", plans: "Free · Pro", own: true },
-  // a commandcode.ai plan, signed in as its CLI does; the CLI's own key is read too
-  // a Go plan is asked at the CLI's private /alpha/generate, which Command Code
-  // said on X may get an account banned when used from other tools
-  { agent: "commandcode-plan", name: "Command Code", icon: "commandcode", plans: "Go · Pro · GOAT · Max · Ultra", own: true, risk: true,
-    riskNote: "A Go plan account is used through Command Code's private interface, which Command Code may treat as a breach of its terms and ban the account for. Pro, Max and the other plans use its Provider API. Use a Go account you can afford to lose." },
-  // Qoder's two sites: qoder.com, and Qoder CN (qoder.cn), where accounts made
-  // with Alibaba Cloud or a phone number live and can't sign in on qoder.com;
-  // hint says which accounts each is for
-  { agent: "qoder", get name() { return t("Qoder (international)"); }, icon: "qoder", plans: "Pro", own: true, risk: true,
-    hint: "For accounts on qoder.com, the international site.",
-    riskNote: "Qoder has no public API for this; fogway signs requests as its desktop client would, which Qoder may treat as third-party use and act on. Use an account you can afford to lose." },
-  { agent: "qoder-cn", name: "Qoder CN", icon: "qoder", plans: "Pro", own: true, risk: true,
-    hint: "For accounts on qoder.cn: signed in with an Alibaba Cloud account or a phone number.",
-    riskNote: "Qoder has no public API for this; fogway signs requests as its desktop client would, which Qoder may treat as third-party use and act on. Use an account you can afford to lose." },
-  // the devin CLI's own account is read; more are signed in beside it, each in a data folder of fogway's
-  { agent: "devin", name: "Devin", icon: "devin", plans: "Pro · Enterprise", own: true },
-  // Zed's hosted models (Zed Pro, its trial), signed in at zed.dev as the editor is
-  { agent: "zed", name: "Zed", icon: "zed", plans: "Pro · Student · Business", own: true, risk: true,
-    riskNote: "Zed serves these models to its own editor; fogway signs requests as the editor would, which Zed may treat as third-party use and act on. Use an account you can afford to lose." },
-  // Factory's plans (Droid's account), signed in with WorkOS's device code as droid does; droid's own login stays its own
-  // or added by an API key (fk-…), as droid takes FACTORY_API_KEY (the import box)
-  { agent: "factory", name: "Factory", icon: "factory", plans: "Pro · Plus · Max", own: true, risk: true, importable: true,
-    riskNote: "Factory serves these models to its own Droid CLI; fogway signs requests as Droid would, which Factory may treat as third-party use and act on. Use an account you can afford to lose." },
-  // Xiaomi MiMo's models (its free offer, MiMo plans), signed in at account.xiaomi.com as MiMo's app is
-  { agent: "mimo-app", name: "Xiaomi MiMo", icon: "mimocode", plans: "Free · Starter · Plus · Pro · Ultra", own: true, risk: true,
-    riskNote: "Xiaomi serves these models to its own MiMo app; fogway signs requests as the app would, which Xiaomi may treat as third-party use and act on. Use an account you can afford to lose." },
-  // Kiro's own sign-in page (Google, GitHub, Builder ID, Identity Center); kiro-cli's or the IDE's is read too
-  { agent: "kiro", name: "Kiro", icon: "kiro-color", plans: "Free · Pro · Pro+ · Power", own: true },
-  // Google's sign-ins; Gemini CLI's own account is read too
-  { agent: "gemini", name: "Gemini CLI", icon: "geminicli-color", plans: "Code Assist Standard · Enterprise", own: true },
-  // accounts can also come from another tool's export (Antigravity Cockpit, Antigravity Manager, CLIProxyAPI)
-  { agent: "antigravity", name: "Antigravity", icon: "antigravity-color", plans: "Google AI Pro · Ultra · free", risk: true, importable: true },
-];
-// subOf: the subscription an agent id is. One moved onto its plugin signs
-// in through the plugin, still named, drawn, warned about and asked where
-// as it was; it keeps as many accounts as the plugin does (Cursor's took
-// one, its plugin takes more).
-const subOf = (agent) => {
-  const own = SUBS.find((x) => x.agent === agent);
-  const pl = pluginSubs().find((x) => x.agent === agent);
-  if (own && pl && movedSub(agent)) {
-    const { name, icon, plans, risk, riskNote, hint, sites, importable } = own;
-    // a Factory API key is kept by the built-in, which the plugin replaces
-    return { ...pl, name, icon, plans, risk, riskNote, hint, sites, importable: importable && agent !== "factory", moved: true };
-  }
-  return own || pl;
-};
-// subNames: subscriptions by id, as the Add sheet names them; the Settings
-// page can be open before the providers are read (providers is null then)
-const subNames = (ids) => ids.map((id) => SUBS.find((x) => x.agent === id)?.name
-  || providers?.plugins?.find((x) => x.id === id)?.name || id).join(", ");
-const movedSub = (agent) => (providers?.onPlugins || []).includes(agent);
-
-// pluginMethod: the plugin's way to sign in a moved built-in takes when
-// the built-in had one click — its first, the browser's, or on a site the
-// one for that site (ZCode's "ZCode: Z.ai GLM Coding Plan"). None for a
-// plugin's own provider, which asks.
-function pluginMethod(sub, site) {
-  if (!sub.moved) return undefined;
-  const label = (sub.sites || []).find(([id]) => id === site)?.[1];
-  const at = label ? sub.plugin.methods.findIndex((m) => (m.label || "").includes(label)) : -1;
-  return at < 0 ? 0 : at;
-}
-
-// pluginSubs: the providers OpenCode plugins sign in to (Settings →
-// Plugins), as subscriptions like the built-in ones. The plugin, not
-// fogway, signs in and carries the requests.
-function pluginSubs() {
-  return (providers.plugins || []).map((x) => ({
-    agent: x.id, pid: x.pid, name: x.name, icon: x.icon, plugin: x, own: true,
-    get plans() { return t("from the plugin {spec}", { spec: x.spec }); },
-  }));
-}
-
-// importSay: what the import of an app's accounts says — where its files
-// come from, and who they are checked with. A ChatGPT sign-in is refreshed
-// as it comes in, which spends the file's refresh token; a Claude one is
-// kept as it came and spent when Claude Code first renews it (#1453: the
-// tool a file came from is told it loses the account either way).
-function importSay(agent) {
-  if (agent === "factory") {
-    return {
-      from: t("Add accounts by their Factory API keys (fk-…), as Droid takes FACTORY_API_KEY"),
-      title: t("Add Factory accounts by API key"),
-      intro: t("Paste one or more Factory API keys (fk-…, from app.factory.ai/settings/api-keys), one a line, or choose a file with them. Each key is checked with Factory before it is added."),
-      checking: t("Checking the keys with Factory…"),
-      checks: t("Each key is asked whose account it is, as Droid does with FACTORY_API_KEY."),
-      instead: t("Use an API key instead…"),
-      row: t("Add an account by API key…"),
-    };
-  }
-  if (agent === "codex") {
-    // codexbar's config.json; Cockpit Tools exports in its own shape
-    // (CLIProxyAPI's), Codex's auth.json, CPA and Sub2API: all read
-    // (login_import.go)
-    return {
-      from: t("Bring in accounts from Codex's auth.json, codexbar's config.json, or exports from Cockpit Tools, CLIProxyAPI or Sub2API"),
-      intro: t("Choose or paste one or more files: Codex's auth.json, codexbar's config.json (in ~/.codexbar), or an export from Cockpit Tools, CLIProxyAPI or Sub2API. Each account's sign-in is refreshed with ChatGPT before it is added."),
-      spent: t("This takes the sign-in over: the tool the file came from (Codex on another computer, codexbar, Cockpit Tools, CLIProxyAPI) is signed out of that account and has to sign in again. The file itself is only read."),
-      checking: t("Checking the accounts with {vendor}…", { vendor: "ChatGPT" }),
-      checks: t("Each account's sign-in is refreshed and its account looked up, as signing in does."),
-    };
-  }
-  if (agent === "claude") {
-    // nothing is asked of Anthropic: the sign-in is kept as the file has it
-    return {
-      from: t("Bring in accounts from CLIProxyAPI's auth files or {own}", { own: "Claude Code's .credentials.json" }),
-      intro: t("Choose or paste CLIProxyAPI's auth files (JSON) or {own}. Each account is kept as the file has it.", { own: "Claude Code's .credentials.json" }),
-      spent: t("Claude Code renews the sign-in the first time it uses it, and the file's copy then stops working: the tool it came from has to sign in again."),
-      checking: t("Adding the accounts…"),
-      checks: t("Each account is kept as the file has it; nothing is asked of Claude."),
-    };
-  }
-  return {
-    from: t("Bring in accounts exported from Antigravity Cockpit, Antigravity Manager or CLIProxyAPI"),
-    intro: t("Choose or paste an export from Antigravity Cockpit, Antigravity Manager or CLIProxyAPI — JSON, or refresh tokens one a line. Each account is checked with Google before it is added."),
-    checking: t("Checking the accounts with Google…"),
-    checks: t("Each account's sign-in is refreshed and its project looked up, as signing in does."),
-  };
-}
-let signing = null; // the sign-in under way: { id, agent, url, state, installing, error }
-const signingOpen = () => signing?.state === "waiting" || signing?.state === "installing";
-let justAdded = ""; // the account that just came in, to greet it
-
-// o: { user } signing that account in again, { proxy } the one picked to
-// sign in through (#1663): none picked, the one the account's requests go
-// through
-async function startSignIn(agent, risky, site, o = {}) {
-  if (signingOpen()) api("signin/" + signing.id + "/cancel", {}).catch(() => {});
-  // an account Google may suspend is added only once that is said
-  if (subOf(agent)?.risk && !risky) {
-    signing = { agent, state: "risk", forUser: o.user, picked: o.proxy };
-    renderProviders();
-    return;
-  }
-  // one on more than one site says which first
-  if (subOf(agent)?.sites && !site) {
-    signing = { agent, state: "site", forUser: o.user, picked: o.proxy };
-    renderProviders();
-    return;
-  }
-  if (subOf(agent)?.plugin) return startPluginSignIn(subOf(agent), pluginMethod(subOf(agent), site), {}, o);
-  const keep = { site, forUser: o.user, picked: o.proxy };
-  signing = { agent, ...keep, proxy: o.proxy ?? signInProxyOf(agent, o.user), state: "starting" };
-  renderProviders();
-  try {
-    const body = { agent };
-    if (site) body.site = site;
-    if (o.user) body.user = o.user;
-    if (o.proxy != null) body.proxy = o.proxy;
-    signing = { ...(await api("signin", body)), ...keep };
-    if (web && signing.url) api("open", { url: signing.url });
-    renderProviders();
-    followSignIn(signing.id);
-  } catch (e) {
-    signing = { agent, ...keep, proxy: o.proxy ?? signInProxyOf(agent, o.user), state: "failed", error: e.message };
-    renderProviders();
-  }
-}
-
-async function followSignIn(id) {
-  while (signing?.id === id && signingOpen()) {
-    await new Promise((r) => setTimeout(r, 800));
-    let st;
-    try { st = await api("signin/" + id); } catch { continue; }
-    if (signing?.id !== id) continue;
-    if (st.state === "waiting" || st.state === "installing") {
-      // the CLI it needed is in: now the vendor's page can open
-      if (signing.state === "installing" && st.state === "waiting" && st.url) api("open", { url: st.url }).catch(() => {});
-      if (signing.state !== st.state || signing.url !== st.url || signing.code !== st.code) { signing = { ...st, ...signingKept() }; renderProviders(); }
-      continue;
-    }
-    if (st.state === "done") return signedIn(st);
-    // a failed one keeps its site and way, for Try again
-    signing = st.state === "canceled" ? null : { ...st, ...signingKept() };
-    renderProviders();
-  }
-}
-
-// signingKept: what a sign-in under way keeps across its updates, for Try
-// again and a proxy picked for it — its site and way, the account signed
-// in to again, the proxy picked
-function signingKept() {
-  return { site: signing.site, method: signing.method, inputs: signing.inputs, forUser: signing.forUser, picked: signing.picked, askProxy: signing.askProxy, customProxy: signing.customProxy };
-}
-
-// signInProxyOf: the proxy an account's sign-in goes through when none is
-// picked, as the server picks it (#1663): the account's own, else its
-// subscription's, else the global one ("")
-function signInProxyOf(agent, user) {
-  const p = providers?.providers?.find((x) => x.account?.agent === agent);
-  const own = user && p?.accountProxies?.[String(user).trim().toLowerCase()];
-  return own || (p?.proxy || "").trim();
-}
-
-// signedIn: a sign-in done — the account opened in the editor.
-async function signedIn(st) {
-  signing = null;
-  justAdded = st.user;
-  delete loginUsage[st.agent]; // what was fetched before has nothing on the new account
-  providers = await api("providers?wait=1"); // with its vendor's list (#204)
-  const p = providers.providers.find((x) => x.account?.agent === st.agent);
-  if (p) { editing = p.id; draft = null; adding = false; presetQuery = ""; }
-  renderProviders();
-  const who = st.user || subOf(st.agent)?.name || st.agent;
-  // signed in but listed nowhere (#155): say so rather than "added"
-  if (!p) status(t("{user} signed in, but fogway can't list it — please report this", { user: who }), "err");
-  // an account listed already is said to be, not added (#413)
-  else if (st.again) status(t("{user} is already listed — its sign-in was renewed", { user: who }), "ok");
-  else status(st.using ? t("Signed in as {user}", { user: who }) : t("{user} added — switch to it any time", { user: who }), "ok");
-  state = await api("state");
-  renderAgents();
-  setTimeout(() => { justAdded = ""; }, 2000);
-}
-
-// startPluginSignIn: a plugin's provider signed in to as OpenCode's
-// `auth login` does — the way to sign in, the questions that way asks,
-// then the browser (and the code its page shows, pasted back) or a key.
-async function startPluginSignIn(sub, method, inputs = {}, o = {}) {
-  const ms = sub.plugin.methods || [];
-  if (!ms.length) {
-    signing = { agent: sub.agent, state: "failed", error: t("The plugin has no way to sign in to {name}", { name: sub.name }) };
-    return renderProviders();
-  }
-  if (method == null) {
-    if (ms.length > 1) {
-      signing = { agent: sub.agent, state: "method", forUser: o.user, picked: o.proxy };
-      return renderProviders();
-    }
-    method = 0;
-  }
-  const keep = { method, inputs, forUser: o.user, picked: o.proxy };
-  signing = { agent: sub.agent, ...keep, proxy: o.proxy ?? signInProxyOf(sub.agent, o.user), state: "starting" };
-  renderProviders();
-  try {
-    const r = await api("plugin-signin/prompt", { provider: sub.pid, method, inputs });
-    if (signing?.agent !== sub.agent) return;
-    if (r.prompt) {
-      signing = { agent: sub.agent, ...keep, prompt: r.prompt, state: "prompt" };
-      return renderProviders();
-    }
-    if (ms[method].type === "api") {
-      signing = { agent: sub.agent, ...keep, state: "key" };
-      return renderProviders();
-    }
-    const body = { provider: sub.pid, method, inputs };
-    if (o.user) body.user = o.user;
-    if (o.proxy != null) body.proxy = o.proxy;
-    signing = { ...(await api("plugin-signin", body)), ...keep };
-    if (web && signing.url) api("open", { url: signing.url });
-    renderProviders();
-    followSignIn(signing.id);
-  } catch (e) {
-    if (signing?.agent !== sub.agent) return;
-    signing = { agent: sub.agent, ...keep, proxy: o.proxy ?? signInProxyOf(sub.agent, o.user), state: "failed", error: e.message };
-    renderProviders();
-  }
-}
-
-// pluginAnswer: one of a sign-in method's questions answered, checked by
-// the plugin before the next is asked.
-async function pluginAnswer(sub, value) {
-  const flow = signing;
-  try {
-    const r = await api("plugin-signin/prompt", { provider: sub.pid, method: flow.method, inputs: flow.inputs, key: flow.prompt.key, value });
-    if (signing !== flow) return;
-    if (r.error) {
-      signing = { ...flow, error: r.error, value };
-      return renderProviders();
-    }
-    startPluginSignIn(sub, flow.method, r.inputs, { user: flow.forUser, proxy: flow.picked });
-  } catch (e) {
-    if (signing === flow) { signing = { ...flow, error: e.message, value }; renderProviders(); }
-  }
-}
-
-// pluginKey: an "api" method's key, which the plugin keeps.
-async function pluginKey(sub, key) {
-  const flow = signing;
-  signing = { ...flow, busy: true };
-  renderProviders();
-  try {
-    const st = await api("plugin-signin", { provider: sub.pid, method: flow.method, inputs: flow.inputs, key });
-    if (signing?.agent === sub.agent) signedIn(st);
-  } catch (e) {
-    if (signing?.agent === sub.agent) { signing = { ...flow, error: e.message }; renderProviders(); }
-  }
-}
-
-// renderPluginAsk: a plugin sign-in's step before the browser — the way
-// to sign in, a question, or the key.
-function renderPluginAsk(sub) {
-  const box = el("div", "signing plugin-ask");
-  const tt = el("span", "tt");
-  box.append(tt);
-  const flow = signing;
-  const close = el("button", "text", t("Cancel"));
-  close.onclick = cancelSignIn;
-  if (signing.state === "method") {
-    tt.append(el("span", "n", t("How do you sign in to {name}?", { name: sub.name })),
-      el("span", "s", t("The plugin {spec} signs in and sends {name}'s requests; fogway only passes them on.", { spec: sub.plugin.spec, name: sub.name })));
-    const ch = el("div", "choices");
-    box.append(close, ch);
-    sub.plugin.methods.forEach((m, i) => {
-      const b = el("button", "text primary", m.label || t(m.type === "api" ? "API key" : "Browser"));
-      b.dataset.method = String(i);
-      b.onclick = () => startPluginSignIn(sub, i, {}, { user: flow.forUser, proxy: flow.picked });
-      ch.append(b);
-    });
-    return box;
-  }
-  const q = signing.prompt;
-  const form = el("form", "callback-form");
-  const why = el("span", "s why", flow.error || "");
-  if (flow.state === "prompt" && q.type === "select") {
-    tt.append(el("span", "n", q.message), why);
-    const ch = el("div", "choices");
-    box.append(close, ch);
-    for (const o of q.options || []) {
-      const b = el("button", "text primary", o.label);
-      if (o.hint) b.title = o.hint;
-      b.onclick = () => pluginAnswer(sub, o.value);
-      ch.append(b);
-    }
-    return box;
-  }
-  const key = flow.state === "key";
-  // the key's field is titled by the way's label, as OpenCode's dialog
-  // is, unless that only says "API key"; the plugin's placeholder hints
-  // at what the key looks like
-  const way = key ? sub.plugin.methods?.[flow.method] || {} : {};
-  const own = (way.label || "").trim();
-  const label = key ? (own && own.toLowerCase() !== "api key" ? own : t("{name} API key", { name: sub.name })) : q.message;
-  tt.append(el("span", "n", label));
-  // a key, and a question the plugin marks "password" (a token, #1982),
-  // are typed unseen
-  const inp = input(flow.value || "", key ? (way.placeholder || "") : (q.placeholder || ""), key || q.type === "password" ? "password" : "text");
-  inp.setAttribute("aria-label", label);
-  inp.autocomplete = "off";
-  inp.disabled = !!flow.busy;
-  const go = el("button", "text primary", t(key ? "Sign in" : "Next"));
-  go.type = "submit";
-  go.disabled = !!flow.busy;
-  inp.onkeydown = (e) => e.stopPropagation();
-  const submit = (e) => {
-    e.preventDefault();
-    if (signing !== flow || flow.busy) return;
-    if (key) pluginKey(sub, inp.value);
-    else pluginAnswer(sub, inp.value);
-  };
-  form.onsubmit = submit;
-  go.onclick = submit;
-  form.append(inp, go);
-  tt.append(form, why);
-  box.append(close);
-  setTimeout(() => { if (inp.isConnected && !inp.disabled) inp.focus({ preventScroll: true }); });
-  return box;
-}
+let justAdded = ""; // the key that just came in, to greet it
 
 // renderStepPlan: a StepFun provider's platform sign-in, which the user
 // makes in their own browser and brings here with fogway's bookmarklet
@@ -11987,409 +11137,6 @@ function renderStepPlan(sp) {
   s3.append(pair);
   steps.append(s1, s2, s3);
   box.append(steps);
-  return box;
-}
-
-function cancelSignIn() {
-  if (signing?.id) api("signin/" + signing.id + "/cancel", {}).catch(() => {});
-  signing = null;
-  renderProviders();
-}
-
-// A sign-in goes through the proxy its account's requests will go through,
-// so the vendor sees the account come from one place (#1663,
-// demystify0137): the sheet says which, and another can be picked, which
-// starts it again through that one and is kept as the account's proxy.
-// proxyShown is a proxy's address without the name and password in it.
-function proxyShown(u) {
-  return String(u || "").replace(/^([a-z][a-z0-9+.-]*:\/\/)[^@/]*@/i, "$1");
-}
-function proxyName(v) {
-  return !v ? t("Global proxy") : v === "direct" ? t("Direct") : proxyShown(v);
-}
-
-// signInThrough: the sign-in under way started again through proxy v.
-function signInThrough(sub, v) {
-  const f = signing;
-  const o = { user: f?.forUser, proxy: v };
-  if (!sub.plugin) return startSignIn(sub.agent, true, f?.site, o); // which ends this one
-  if (f?.id && signingOpen()) api("signin/" + f.id + "/cancel", {}).catch(() => {});
-  startPluginSignIn(sub, f?.method, f?.inputs || {}, o);
-}
-
-// signInProxyChoices: the proxies a sign-in can go through — the global
-// one, none, the subscription's, the ones its other accounts go through,
-// or one typed in. The global one is left out while the subscription has
-// a proxy of its own and other accounts: an account can't be kept on the
-// global proxy then.
-function signInProxyChoices(sub) {
-  const p = providers?.providers?.find((x) => x.account?.agent === sub.agent);
-  const own = (p?.proxy || "").trim();
-  const me = String(signing.forUser || "").trim().toLowerCase();
-  const others = (p?.account?.logins || []).some((l) => String(l.user || "").trim().toLowerCase() !== me);
-  const opts = [];
-  const seen = new Set(["", "direct"]);
-  const add = (v, note) => {
-    if (seen.has(v)) return;
-    seen.add(v);
-    opts.push({ v, name: proxyShown(v), literalName: true, note });
-  };
-  if (!own || own === "direct" || !others) opts.push({ v: "", name: "Global proxy", note: "Follows the proxy in Settings" });
-  opts.push({ v: "direct", name: "Direct", note: "Through no proxy" });
-  if (own) add(own, t("{name}'s proxy", { name: sub.name }));
-  for (const [u, v] of Object.entries(p?.accountProxies || {})) add((v || "").trim(), t("{user}'s proxy", { user: u }));
-  if (signing.proxy) add(signing.proxy, "");
-  opts.push({ v: "\x01", name: "Custom…", note: "http://, https:// or socks5://" });
-  return opts;
-}
-
-// signInProxyLink: the proxy the sign-in goes through, a link that picks
-// another.
-function signInProxyLink(sub) {
-  const b = el("button", "link via", t("Proxy: {proxy}", { proxy: proxyName(signing.proxy) }));
-  // the whole address too, which a narrow sheet cuts short
-  b.title = proxyName(signing.proxy) + "\n" + t("The sign-in goes through this proxy, as the account's requests will. One picked here is kept as the account's.");
-  b.setAttribute("aria-haspopup", "menu");
-  b.setAttribute("aria-expanded", "false");
-  b.onclick = (e) => {
-    e.stopPropagation();
-    const flow = signing;
-    openProtoMenu(b, signInProxyChoices(sub), flow.askProxy ? "\x01" : flow.proxy || "", (v) => {
-      if (signing !== flow) return;
-      if (v === "\x01") { flow.askProxy = true; return renderProviders(); }
-      if (v === (flow.proxy || "") && !flow.askProxy) return;
-      signInThrough(sub, v);
-    }, "Sign in through");
-  };
-  return b;
-}
-
-// signInProxyForm: a proxy typed in to sign in through.
-function signInProxyForm(sub) {
-  const flow = signing;
-  const form = el("form", "callback-form proxy-ask");
-  const label = t("Proxy");
-  const inp = input(flow.customProxy || "", "http://127.0.0.1:7890");
-  inp.setAttribute("aria-label", label);
-  inp.autocomplete = "off";
-  inp.onkeydown = (e) => e.stopPropagation();
-  const go = el("button", "text primary", t("Sign in through it"));
-  go.type = "submit";
-  go.disabled = !inp.value.trim();
-  inp.oninput = () => { flow.customProxy = inp.value; go.disabled = !inp.value.trim(); };
-  const submit = (e) => {
-    e.preventDefault();
-    if (signing !== flow || !inp.value.trim()) return;
-    signInThrough(sub, inp.value.trim());
-  };
-  form.onsubmit = submit;
-  go.onclick = submit;
-  form.append(inp, go);
-  setTimeout(() => { if (inp.isConnected) inp.focus({ preventScroll: true }); });
-  return form;
-}
-
-// A Copilot account on GitHub Enterprise Cloud with data residency signs in
-// at its enterprise's <name>.ghe.com, not github.com (#723): the device
-// code's panel offers that, and the host is asked in place of the code.
-const GHE_HOST = /^(https?:\/\/)?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.ghe\.com\/?$/i;
-
-// copilotHostSwitch: the link from a Copilot sign-in to the other place it
-// can be — an enterprise's GHE.com, or back to github.com.
-function copilotHostSwitch(sub) {
-  if (sub.agent !== "copilot" || sub.plugin) return null;
-  const site = signing.site;
-  const b = el("button", "link", site ? t("Sign in on github.com instead") : t("Account on GHE.com?"));
-  b.dataset.ghe = site ? "github" : "ghe";
-  b.title = site ? t("Signing in on {host}", { host: site }) : t("An account of an enterprise on GitHub Enterprise Cloud with data residency signs in at its <name>.ghe.com");
-  b.onclick = () => {
-    if (site) return startSignIn("copilot", true); // which ends this one
-    if (signing?.id) api("signin/" + signing.id + "/cancel", {}).catch(() => {});
-    signing = { agent: "copilot", state: "ghe" };
-    renderProviders();
-  };
-  return b;
-}
-
-// renderCopilotGHE: the enterprise's host asked before its sign-in starts.
-function renderCopilotGHE(sub) {
-  const box = el("div", "signing copilot-ghe");
-  const tt = el("span", "tt");
-  box.append(tt);
-  const flow = signing;
-  const label = t("Your enterprise on GHE.com");
-  tt.append(el("span", "n", label),
-    el("span", "s", t("The address you sign in to GitHub at, like acme.ghe.com. An account on github.com doesn't need it.")));
-  const form = el("form", "callback-form");
-  const inp = input(flow.host || "", "acme.ghe.com");
-  inp.setAttribute("aria-label", label);
-  const go = el("button", "text primary", t("Sign in"));
-  go.type = "submit";
-  go.disabled = !GHE_HOST.test(inp.value.trim());
-  const why = el("span", "s why", "");
-  inp.oninput = () => { flow.host = inp.value; go.disabled = !GHE_HOST.test(inp.value.trim()); why.textContent = ""; };
-  const submit = (e) => {
-    e.preventDefault();
-    if (signing !== flow) return;
-    const host = inp.value.trim().replace(/^https?:\/\//i, "").replace(/\/$/, "").toLowerCase();
-    if (!GHE_HOST.test(host)) { why.textContent = t("Type your enterprise's <name>.ghe.com"); return; }
-    startSignIn("copilot", true, host);
-  };
-  form.onsubmit = submit;
-  go.onclick = submit;
-  form.append(inp, go);
-  tt.append(form, why);
-  const close = el("button", "text", t("Cancel"));
-  close.onclick = cancelSignIn;
-  const back = el("button", "text", "github.com");
-  back.title = t("Sign in on github.com instead");
-  back.onclick = () => startSignIn("copilot", true);
-  box.append(close, back);
-  setTimeout(() => { if (inp.isConnected) inp.focus({ preventScroll: true }); });
-  return box;
-}
-
-// dropSigningIn: the editor of provider id closing (Cancel, Save, Remove)
-// leaves no sign-in of its account waiting behind it, to come back with the
-// editor (#526: 无论我点击底部的移除、取消、保存都没办法); an import being
-// read is left to finish.
-function dropSigningIn(id) {
-  const p = typeof id === "string" && providers?.providers?.find((x) => x.id === id);
-  if (!p?.account || !signing || signing.agent !== p.account.agent || signing.state === "importing") return;
-  if (signing.id) api("signin/" + signing.id + "/cancel", {}).catch(() => {});
-  signing = null;
-}
-
-// renderSigning: where a sign-in stands, in place of the button that
-// started it — waiting on the browser, or what went wrong.
-function renderSigning(sub) {
-  const box = el("div", "signing" + (signing.state === "failed" ? " failed" : ""));
-  const tt = el("span", "tt");
-  if (signing.state === "risk") {
-    box.append(el("span", "mark", "!"));
-    tt.append(el("span", "n", t("{name} accounts can be suspended", { name: sub.name })));
-    if (sub.hint) tt.append(el("span", "s", t(sub.hint)));
-    tt.append(el("span", "s", t(sub.riskNote || "Google may suspend an Antigravity account it sees used outside Antigravity. Use one you can afford to lose.")));
-    box.append(tt);
-    const go = el("button", "text primary", t("Sign in anyway"));
-    const o = { user: signing.forUser, proxy: signing.picked };
-    go.onclick = () => startSignIn(sub.agent, true, undefined, o);
-    const close = el("button", "text", t("Cancel"));
-    close.onclick = cancelSignIn;
-    if (sub.importable) {
-      const imp = el("button", "text", importSay(sub.agent).instead || t("Import instead…"));
-      imp.title = importSay(sub.agent).from;
-      imp.onclick = () => startImport(sub.agent);
-      box.append(close, imp, go);
-    } else box.append(close, go);
-    return box;
-  }
-  if (signing.state === "site") {
-    // ZCode: a Z.ai account or a BigModel (智谱) one, a team's seat included
-    tt.append(el("span", "n", t("Where is your {name} account?", { name: sub.name })),
-      el("span", "s", t("Sign in where your GLM Coding Plan was bought, a team's plan too: z.ai, or bigmodel.cn for 智谱.")));
-    // the question keeps the row's width, Cancel beside it; the sites go
-    // under it as one group and a plugin's other ways under them as links,
-    // each line wrapping (361: four buttons in its row left the question a
-    // strip a character or two wide)
-    box.classList.add("site-pick");
-    box.append(tt);
-    const close = el("button", "text", t("Cancel"));
-    close.onclick = cancelSignIn;
-    box.append(close);
-    const sites = el("div", "sites");
-    const flow = signing;
-    for (const [id, label, host] of sub.sites) {
-      const b = el("button", "text primary", t(label));
-      b.dataset.site = id;
-      b.title = host;
-      b.onclick = () => startSignIn(sub.agent, true, id, { user: flow.forUser, proxy: flow.picked });
-      sites.append(b);
-    }
-    box.append(sites);
-    // a plugin's other ways, after the sites: ZCode's app's own sign-in
-    // (Jinyu: use the account ZCode is signed in to), its API key
-    if (sub.plugin && sub.moved) {
-      const labels = sub.sites.map(([, label]) => label);
-      const ways = el("div", "ways");
-      sub.plugin.methods.forEach((m, i) => {
-        if (labels.some((l) => (m.label || "").includes(l))) return;
-        const b = el("button", "link", t(m.label || (m.type === "api" ? "API key" : "Browser")));
-        b.dataset.method = String(i);
-        b.onclick = () => startPluginSignIn(sub, i, {}, { user: flow.forUser, proxy: flow.picked });
-        ways.append(b);
-      });
-      if (ways.childElementCount) box.append(ways);
-    }
-    return box;
-  }
-  if (signing.state === "ghe") return renderCopilotGHE(sub);
-  if (signing.state === "import" || signing.state === "importing" || signing.state === "imported") return renderLoginImport(sub);
-  if (signing.state === "method" || signing.state === "prompt" || signing.state === "key") return renderPluginAsk(sub);
-  if (signing.state === "failed") {
-    box.append(el("span", "mark", "!"));
-    tt.append(el("span", "n", t("Sign-in didn't finish")), el("span", "s", signing.error || ""));
-    box.append(tt);
-    const again = el("button", "text primary", t("Try again"));
-    const o = { user: signing.forUser, proxy: signing.picked };
-    again.onclick = () => sub.plugin ? startPluginSignIn(sub, signing.method, signing.inputs || {}, o) : startSignIn(sub.agent, true, signing.site, o);
-    const close = el("button", "text", t("Cancel"));
-    close.onclick = cancelSignIn;
-    const acts = el("span", "acts");
-    const ghe = copilotHostSwitch(sub);
-    if (ghe) acts.append(ghe);
-    acts.append(signInProxyLink(sub));
-    tt.append(acts);
-    if (signing.askProxy) tt.append(signInProxyForm(sub));
-    box.append(close, again);
-    return box;
-  }
-  box.append(el("span", "spinner"));
-  if (signing.state === "installing") {
-    tt.append(el("span", "n", t("Installing {cli}…", { cli: signing.installing })),
-      el("span", "s", t("{name} is used through its own CLI, which isn't on this computer yet. fogway is installing it with the official installer; the sign-in page opens as soon as it's done.", { name: sub.name })));
-    box.append(tt);
-    const x = el("button", "text", t("Cancel"));
-    x.onclick = cancelSignIn;
-    box.append(x);
-    return box;
-  }
-  tt.append(el("span", "n", t("Finish signing in to {name} in your browser", { name: sub.name })),
-    el("span", "s", signing.state === "starting" ? t("Starting the sign-in…")
-      : sub.plugin ? (signing.instructions || (signing.pasteCode ? t("fogway opened the sign-in page. Paste the code it shows below.") : t("fogway opened the sign-in page. The account shows up here as soon as you're done.")))
-      : signing.pasteCode ? t("fogway opened the sign-in page. Paste the code it shows below.")
-      : signing.code && sub.agent === "factory" ? t("fogway opened Factory's sign-in page. Check it shows this code and confirm it; the account shows up here as soon as you're done.")
-      : signing.code ? t("fogway opened GitHub's device page. Enter this code there; the account shows up here as soon as you're done.") : t("fogway opened the sign-in page. The account shows up here as soon as you're done.")));
-  if (signing.code) {
-    const code = el("span", "devcode");
-    code.append(el("code", "", signing.code), copyBtn(signing.code, t("Code")));
-    tt.append(code);
-  }
-  box.append(tt);
-  if (signing.url) {
-    // the link itself, to select or copy into another browser or profile
-    // than the one fogway opened it in
-    const link = el("span", "signlink");
-    const u = el("code", "", signing.url);
-    u.title = t("Open it in another browser or profile: copy it there");
-    const cp = copyBtn(signing.url, t("Sign-in link"));
-    cp.title = t("Copy link");
-    link.append(u, cp);
-    tt.append(link);
-    const acts = el("span", "acts");
-    const open = el("button", "link", t("Open again"));
-    open.onclick = () => api("open", { url: signing.url }).catch(() => {});
-    acts.append(open);
-    const ghe = copilotHostSwitch(sub);
-    if (ghe) acts.append(ghe);
-    acts.append(signInProxyLink(sub));
-    tt.append(acts);
-    if (signing.askProxy) tt.append(signInProxyForm(sub));
-  } else if (signing.state === "waiting") {
-    // a sign-in run by the vendor's CLI, no page of fogway's to show
-    tt.append(el("span", "acts", signInProxyLink(sub)));
-    if (signing.askProxy) tt.append(signInProxyForm(sub));
-  }
-  if (signing.pasteCallback || signing.pasteCode || signing.pasteKey) {
-    const flow = signing;
-    const what = flow.pasteCode ? t("Code") : flow.pasteKey ? t("API key") : t("Callback URL");
-    if (flow.pasteKey) {
-      // Command Code's page posts its key to fogway unseen: a browser that
-      // can't reach fogway (Docker) has no address to paste, so a key made
-      // on the keys page finishes it, as Command Code's CLI takes one
-      const s = el("span", "s", t("If the page can't reach fogway (it runs on a server or in Docker), make an API key on {name}'s keys page and paste it here.", { name: sub.name }) + " ");
-      if (flow.keysURL) {
-        const keys = el("button", "link", t("Open the keys page"));
-        keys.onclick = () => api("open", { url: flow.keysURL }).catch(() => {});
-        s.append(keys);
-      }
-      tt.append(s);
-    } else if (flow.callbackBlocked) {
-      // the port the page sends the browser back to couldn't be opened, so
-      // only the pasted address finishes this sign-in (#1782)
-      tt.append(el("span", "s port-blocked", flow.callbackBlocked === "reserved"
-        ? t("Windows keeps port {port}, where the sign-in comes back, for Hyper-V, WSL or Docker, so the page the browser ends on won't load. Copy its whole address and paste it here.", { port: flow.callbackPort })
-        : t("Another program has port {port}, where the sign-in comes back, so the page the browser ends on won't finish the sign-in. Copy its whole address and paste it here.", { port: flow.callbackPort })));
-    } else if (!flow.pasteCode) tt.append(el("span", "s", t("If the page the browser ends on won't load (fogway runs on a server or in Docker), copy its whole address and paste it here.")));
-    const form = el("form", "callback-form");
-    const url = input(flow.callbackURL || "", what, flow.pasteKey ? "password" : "text");
-    url.setAttribute("aria-label", what);
-    url.autocomplete = "off";
-    url.disabled = !!flow.callbackSubmitted || !!flow.callbackSubmitting;
-    const submit = el("button", "text primary", t("Finish sign-in"));
-    submit.type = "submit";
-    submit.disabled = url.disabled || !url.value.trim();
-    const why = el("span", "s why", flow.callbackError || "");
-    url.oninput = () => { flow.callbackURL = url.value; submit.disabled = !!flow.callbackSubmitted || !!flow.callbackSubmitting || !url.value.trim(); };
-    const finish = async (e) => {
-      e.preventDefault();
-      if (flow.callbackSubmitted || flow.callbackSubmitting || signing !== flow) return;
-      flow.callbackSubmitting = true;
-      submit.disabled = true;
-      url.disabled = true;
-      why.textContent = "";
-      try {
-        await api("signin/" + flow.id + "/callback", { url: url.value });
-        flow.callbackSubmitted = true;
-        url.disabled = true;
-      } catch (err) {
-        if (signing !== flow) return;
-        flow.callbackError = why.textContent = err.message;
-        url.disabled = false;
-        submit.disabled = !url.value.trim();
-      } finally {
-        flow.callbackSubmitting = false;
-      }
-    };
-    form.onsubmit = finish;
-    submit.onclick = finish;
-    form.append(url, submit);
-    tt.append(form, why);
-  }
-  // a plugin's browser sign-in whose page can't reach fogway (Docker: the
-  // Command Code plugin's Studio posts its key to 127.0.0.1) can be left
-  // for the plugin's own API key way, without starting over
-  const keyWay = sub.plugin && signing.method != null && !signing.pasteCode && signing.state === "waiting"
-    ? (sub.plugin.methods || []).findIndex((m) => m.type === "api") : -1;
-  if (keyWay >= 0 && keyWay !== signing.method) {
-    const acts = tt.querySelector(".acts") || tt.appendChild(el("span", "acts"));
-    const k = el("button", "link", t("Use an API key instead"));
-    k.title = t("If the page can't reach fogway (it runs on a server or in Docker)");
-    k.onclick = () => {
-      if (signing?.id) api("signin/" + signing.id + "/cancel", {}).catch(() => {});
-      startPluginSignIn(sub, keyWay);
-    };
-    acts.append(k);
-  }
-  // a moved subscription goes straight to its plugin's usual way (#777:
-  // one click, as the built-in did); ways other than that one and the key
-  // above (ZCode's app's own sign-in) are a link away
-  const others = sub.plugin && sub.moved && signing.state === "waiting"
-    ? (sub.plugin.methods || []).filter((_, i) => i !== signing.method && i !== keyWay).length : 0;
-  if (others) {
-    const acts = tt.querySelector(".acts") || tt.appendChild(el("span", "acts"));
-    const other = el("button", "link other-ways", t("Other ways to sign in…"));
-    other.onclick = () => {
-      if (signing?.id) api("signin/" + signing.id + "/cancel", {}).catch(() => {});
-      signing = { agent: sub.agent, state: "method" };
-      renderProviders();
-    };
-    acts.append(other);
-  }
-  if (sub.importable) {
-    // an account another tool is signed in to comes in from its file
-    const imp = el("button", "link", importSay(sub.agent).instead || t("Import from a file instead…"));
-    imp.title = importSay(sub.agent).from;
-    imp.onclick = () => startImport(sub.agent);
-    const acts = tt.querySelector(".acts") || tt.appendChild(el("span", "acts"));
-    acts.append(imp);
-  }
-  // the one way to put it away (#526): a Close beside Open again did what
-  // this does, two buttons for one thing
-  const x = el("button", "text", t("Cancel"));
-  x.title = t("Stop waiting for this sign-in");
-  x.onclick = cancelSignIn;
-  box.append(x);
   return box;
 }
 
@@ -12465,453 +11212,8 @@ function arrangeAccountRows(list, p) {
   }
 }
 
-// renderAccounts: every account of an agent fogway has, the one the agent
-// is signed in to first, and a way to add another. Like keys, any number
-// can be ticked: the gateway moves to the next ticked account when the
-// first is out of quota. Each shows how much of its allowance is used, so
-// which one to go to next is plain to see.
-// forgetOwnTitle: what Remove does to the agent's own sign-in, which fogway
-// only reads — it is hidden, and shows again when the agent signs in anew.
-function forgetOwnTitle(a) {
-  return t("fogway stops showing and using {agent}'s own sign-in; its files are left as they are, and it shows again when {agent} signs in anew", { agent: a.agentName });
-}
-
-// keptLogin: the account Codex or Claude Code is kept signed in to in
-// place of the first (#524), "" when none — the gateway then tries the
-// accounts in their order, the one signed in to at its own place
-function keptLogin(p) {
-  const a = p?.account;
-  if (!a || (a.agent !== "codex" && a.agent !== "claude") || !p.keepLogin || !p.keepLoginAs) return "";
-  const as = p.keepLoginAs.toLowerCase();
-  return (a.logins || []).find((l) => (l.user || "").toLowerCase() === as)?.user || "";
-}
-
-// loginsInOrder: an agent's accounts as its provider lists them and the
-// gateway tries them, the one it is signed in to first — unless it is
-// kept signed in to one of the user's choosing (p given), when the order
-// is the accounts' own
-function loginsInOrder(a, p) {
-  const ls = a.logins?.length ? [...a.logins] : [{ user: a.user, plan: a.plan, active: true, on: true }];
-  if (p && keptLogin(p)) return ls;
-  return ls.sort((x, y) => (y.active ? 1 : 0) - (x.active ? 1 : 0));
-}
-
-function renderAccounts(a, p) {
-  const sub = subOf(a.agent);
-  const list = el("div", "accts");
-  const ls = loginsInOrder(a, p);
-  // a Claude account whose sign-in Anthropic refused, or that has none,
-  // can't be used till it is signed in again; another subscription's lapse
-  // shows on its quota line only, as before
-  const unusable = (l) => a.agent === "claude" && !!l.lapsed;
-  // a plugin's account whose sign-in its vendor refused (#1363: Grok after
-  // a restart): marked lapsed, or its allowance read saying so. Whatever
-  // else it is (in use, the agent's own), it keeps a way to sign in again
-  // and its Remove, and the reason never stands in their place.
-  // A built-in Copilot account whose GitHub token GitHub refused (echo_ts
-  // on Discord: a revoked token) is the same, marked lapsed by fogway, and
-  // signed in again in place. So is any other built-in account whose
-  // sign-in its vendor revoked (#1793: ChatGPT's 401 token_revoked) or
-  // refused to refresh: the gateway passes over it till then.
-  const signedOut = (l) => !unusable(l) && (sub?.plugin ? !!l.lapsed || SIGN_IN_GONE.test(quota?.[l.user]?.error || "") : (a.agent === "copilot" && !!l.lapsed) || SIGN_IN_GONE.test(l.lapsed || ""));
-  // a Copilot account on an enterprise's GHE.com is named login@host, and
-  // signs in again there
-  const againSite = (l) => !sub?.plugin && a.agent === "copilot" && String(l.user).includes("@") ? String(l.user).split("@").pop() : undefined;
-  const several = ls.filter((l) => !unusable(l) && ((l.active && !l.paused) || l.on)).length > 1;
-  // kept signed in to one of the user's choosing (#524), the first is the
-  // first in use in the order, which Make first sets without a sign-in
-  const kept = keptLogin(p);
-  const firstUser = kept ? ls.find((l) => (l.active || l.on) && !l.paused && !l.lapsed)?.user : ls.find((l) => l.active)?.user;
-  const makeFirst = (l) => {
-    const b = el("button", "text", t("Make first"));
-    b.title = t("The gateway uses this account first; {agent} stays signed in to {user}", { agent: a.agentName, user: kept });
-    b.onclick = () => { b.classList.add("busy"); accountAction("provider/arrange", { id: p.id, accountOrder: [l.user, ...ls.filter((x) => x !== l).map((x) => x.user)] }, t("The gateway now uses {user} first", { user: l.user })); };
-    return b;
-  };
-  // the account Claude Code or Codex is signed in to can be paused while
-  // another is on: the gateway passes over it, the agent staying signed in
-  // to it (#263)
-  const pausable = (a.agent === "claude" || a.agent === "codex") && ls.some((l) => !unusable(l) && !l.active && l.on);
-  const quota = loginUsageOf(a.agent);
-  // the first, which fogway signed the agent out of while it was spent:
-  // it is signed back in once it has room (#408)
-  const back = ls.find((l) => l.returns && !l.active);
-  for (const l of ls) {
-    const on = !unusable(l) && !l.paused && (l.active || l.on);
-    const row = el("div", "acc" + (on ? " in-use" : " off") + (l.user === justAdded ? " new" : ""));
-    row.dataset.accountId = l.user;
-    const dot = el("button", "dot tick");
-    if (on) dot.append(svg(CHECK, 10, 2.2));
-    if (unusable(l)) {
-      dot.disabled = true;
-      dot.title = t("Sign in again to use this account");
-    } else if (l.active && (pausable || l.paused)) {
-      dot.title = l.paused ? t("Resume: the gateway uses this account first again") : t("Pause: the gateway uses the other accounts, {agent} stays signed in to this one", { agent: a.agentName });
-      dot.onclick = () => accountAction("login/" + (l.paused ? "on" : "off"), { agent: a.agent, user: l.user });
-    } else if (l.active) {
-      dot.title = sub?.own ? t("The gateway uses this account first") : t("{agent} is signed in to this account", { agent: a.agentName });
-      dot.classList.add("fixed");
-    } else {
-      dot.title = on ? t("Stop using this account") : t("Use this account too");
-      dot.onclick = () => accountAction("login/" + (on ? "off" : "on"), { agent: a.agent, user: l.user });
-    }
-    row.append(dot, accountNameButton(p, l.user), el("span", "plan", accountPlan({ agent: a.agent, builtin: a.builtin, plan: l.plan })));
-    // its own models (#474), when there is another account to send the rest to
-    const [amPill, amBox] = ls.length > 1 || accountModelsOf(p, l.user).length ? accountModels(p, l.user, false, l.user) : [];
-    if (amPill) row.append(amPill);
-    // its usage cap: the share of each window it is used to at most
-    const cap = accountCapOf(p, l.user);
-    // Claude Code or Codex signed in to it asks its vendor itself, not
-    // through fogway: with no other account to sign it in to, the cap
-    // holds back only what goes through fogway (𝕏 on Discord: a 90% cap
-    // and the five hours run to 100%)
-    const direct = l.active && !several && (a.agent === "claude" || a.agent === "codex") ? a.agentName : "";
-    if (p) row.append(accountCapPill(p, l.user, cap, direct));
-    // and each window's own, set on its meter (willz on Discord)
-    const capFor = (w) => windowCapOf(p, l.user, w);
-    // how many requests it has out at once, and waiting (#892)
-    if (p) row.append(laneLimitPill(p, l.user, p.id + "@" + String(l.user).toLowerCase(), l.user));
-    const held = capHeldOf(quota?.[l.user], capFor);
-    if (held) row.append(capHeldNote(held, held.cap, several, direct));
-    row.append(el("span", "grow"));
-    if (unusable(l)) {
-      row.classList.add("signed-out");
-      row.append(el("span", "using", t("Sign-in required")));
-      const again = el("button", "text", t("Sign in again"));
-      again.onclick = () => startSignIn(a.agent, false, undefined, { user: l.user });
-      row.append(again);
-      // the one Claude Code is signed in to can't be forgotten (ForgetLogin)
-      if (!l.active) {
-        const forget = el("button", "text quiet", t("Remove"));
-        forget.onclick = () => accountAction("login/forget", { agent: a.agent, user: l.user }, t("{user} removed", { user: l.user }));
-        row.append(forget);
-      }
-    } else if (signedOut(l)) {
-      row.classList.add("signed-out");
-      row.append(el("span", "using", t("Sign-in required")));
-      const again = el("button", "text", t("Sign in again"));
-      again.onclick = () => startSignIn(a.agent, false, againSite(l), { user: l.user });
-      const forget = el("button", "text quiet", t("Remove"));
-      forget.title = l.own ? forgetOwnTitle(a) : t("fogway forgets this account's sign-in; the account itself is untouched");
-      forget.onclick = () => accountAction("login/forget", { agent: a.agent, user: l.user }, t("{user} removed", { user: l.user }));
-      row.append(again, forget);
-    } else if (l.active && kept && l.user !== firstUser) {
-      // signed in to, kept so, and tried at its place in the order
-      const signed = el("span", "using", l.paused ? t("Paused") : t("Signed in"));
-      signed.title = t("{agent} is kept signed in to this account; requests through fogway go to the accounts in their order", { agent: a.agentName });
-      row.append(signed);
-      if (on) row.append(makeFirst(l));
-    } else if (l.active) {
-      const using = el("span", "using", l.paused ? t("Paused") : back ? t("First for now") : several ? t("First") : t("In use"));
-      if (back && !l.paused) using.title = t("{user} was nearly used up, so fogway signed {agent} in to this one; it goes back to {user} once that has room again", { user: back.user, agent: a.agentName });
-      row.append(using);
-      if (a.agent === "qoder" || a.agent === "qoder-cn" || l.own) {
-        const forget = el("button", "text quiet", t("Remove"));
-        if (l.own) forget.title = forgetOwnTitle(a);
-        forget.onclick = () => accountAction("login/forget", { agent: a.agent, user: l.user }, t("{user} removed", { user: l.user }));
-        row.append(forget);
-      } else if (a.agent === "codex" && ls.length === 1) {
-        // Codex's only account: no other to sign it in to first, so it is
-        // signed out, as codex logout does (ForgetLogin)
-        const out = el("button", "text quiet", t("Sign out"));
-        out.title = t("Signs Codex out of this account, as codex logout does");
-        out.onclick = () => askSignOutLogin(a, l);
-        row.append(out);
-      } else if (a.agent === "codex") {
-        // Codex is signed in to another of its accounts first, then this
-        // one goes (ForgetLogin), rather than Codex signed out
-        const forget = el("button", "text quiet", t("Remove"));
-        forget.title = t("Codex is signed in to another of its accounts, and fogway forgets this one; the account itself is untouched");
-        forget.onclick = () => accountAction("login/forget", { agent: a.agent, user: l.user }, t("{user} removed", { user: l.user }));
-        row.append(forget);
-      }
-    } else {
-      const forget = el("button", "text quiet", t("Remove"));
-      forget.title = l.own ? forgetOwnTitle(a) : t("fogway forgets this account's sign-in; the account itself is untouched");
-      forget.onclick = () => accountAction("login/forget", { agent: a.agent, user: l.user }, t("{user} removed", { user: l.user }));
-      if (l === back) {
-        const again = el("span", "using", t("First again once it has room"));
-        again.title = t("fogway signs {agent} back in to this account once it has room again", { agent: a.agentName });
-        row.append(again);
-      }
-      if (kept) {
-        // the sign-in stays where it is kept: Make first is the order's,
-        // and an account not in use is ticked on by its dot
-        row.append(forget);
-        if (l.user === firstUser) row.append(el("span", "using", t("First")));
-        else if (on) row.append(makeFirst(l));
-      } else {
-        const use = el("button", "text", on ? t("Make first") : t("Use"));
-        use.title = sub?.own ? t("The gateway uses this account first") : t("Sign {agent} in to this account", { agent: a.agentName });
-        use.onclick = () => { use.classList.add("busy"); accountAction("login/switch", { agent: a.agent, user: l.user }, sub?.own ? t("The gateway now uses {user} first", { user: l.user }) : t("{agent} is now signed in as {user}", { agent: a.agentName, user: l.user })); };
-        row.append(forget, use);
-      }
-    }
-    row.append(accountQuota(l.lapsed ? { [l.user]: { error: t(l.lapsed) } } : quota, l.user, capFor, p ? (m, w) => windowCapMeter(m, p, l.user, w) : null));
-    row.classList.add("with-aq"); // not :has(.aq), which Safari 15.0 lacks (#220)
-    if (amBox) row.append(amBox);
-    list.append(row);
-  }
-  // fogway signs Codex or Claude Code in to the next account when the
-  // first runs low (#209, #408); this keeps it on the first instead, or on
-  // an account of the user's choosing, the gateway still spreading requests
-  // over the ticked ones in their order (#524)
-  if ((a.agent === "codex" || a.agent === "claude") && several && p) {
-    const box = el("div", "keep-login");
-    const [keep, cb] = tick(t("Keep {agent} signed in to", { agent: a.agentName }), !!p.keepLogin);
-    keep.title = t("fogway won't sign {agent} in to another account when the first runs low; requests through fogway still go to the other ticked accounts as Routing says", { agent: a.agentName });
-    // the app's own menu, as every other pick in it, not a native select
-    let keepAs = kept;
-    const opts = [{ v: "", name: t("the first account"), note: "", literalName: true }];
-    for (const l of ls) if (!l.lapsed) opts.push({ v: l.user, name: l.user, note: "", literalName: true });
-    const as = el("button", "sess-pick keep-as" + (keepAs ? " set" : ""));
-    as.type = "button";
-    as.title = t("The account {agent} stays signed in to; the first is the one the gateway uses first", { agent: a.agentName });
-    as.dataset.value = keepAs;
-    as.setAttribute("aria-haspopup", "menu");
-    as.setAttribute("aria-expanded", "false");
-    as.append(el("span", "", keepAs || t("the first account")), svg(CHEV, 11, 1.6));
-    const post = (keepLogin) => {
-      const body = { id: p.id, keepLogin };
-      if (keepLogin && keepAs) body.keepLoginAs = keepAs;
-      accountAction("provider/keeplogin", body, !keepLogin ? t("fogway moves {agent} to an account with room again", { agent: a.agentName })
-        : keepAs ? t("{agent} stays signed in to {user}", { agent: a.agentName, user: keepAs }) : t("{agent} stays signed in to the first account", { agent: a.agentName }));
-    };
-    cb.onchange = () => post(cb.checked);
-    // picking one keeps it so, ticked or not
-    as.onclick = (e) => {
-      e.stopPropagation();
-      if (as.classList.contains("open")) return closeProtoMenu();
-      openProtoMenu(as, opts, keepAs, (v) => {
-        if (v === keepAs && cb.checked) return;
-        keepAs = v;
-        as.dataset.value = v;
-        as.classList.toggle("set", !!v);
-        as.firstChild.textContent = v || t("the first account");
-        cb.checked = true;
-        post(true);
-      }, "Account to stay signed in to", "sess-menu");
-    };
-    box.append(keep, as);
-    list.append(box);
-  }
-  // with more of its accounts on, fogway sends Codex's own requests through
-  // the gateway to fail over between them (#1385); this has it only switch
-  // Codex's own sign-in instead, its requests going straight to OpenAI
-  // (#1907: Codex Desktop and the CLI on their own subscription alone)
-  if (a.agent === "codex" && several && p) {
-    const box = el("div", "switch-only");
-    const [only, cb] = tick(t("Only switch {agent}'s sign-in", { agent: a.agentName }), !!p.switchOnly);
-    only.title = t("fogway signs {agent} in to the next account with room when the one it is on is used up, and back once that has room again, by writing {agent}'s own sign-in; {agent}'s requests go straight to OpenAI, never through fogway. A {agent} app or session already open stays on its account until it is opened again. Connected to fogway, {agent}'s requests go through it as before.", { agent: a.agentName });
-    cb.onchange = () => accountAction("provider/switchonly", { id: p.id, switchOnly: cb.checked }, cb.checked
-      ? t("fogway only switches {agent}'s sign-in; its requests go straight to OpenAI", { agent: a.agentName })
-      : t("{agent}'s requests go through fogway to fail over to your other accounts again", { agent: a.agentName }));
-    box.append(only);
-    list.append(box);
-  }
-  if (a.agent === "codex" && providers?.codexDaemon) list.append(renderCodexDaemon(providers.codexDaemon));
-  if (a.agent === "codex" && providers?.codexApp) list.append(renderCodexApp(providers.codexApp));
-  if (signing?.agent === a.agent) list.append(renderSigning(sub));
-  else {
-    const add = el("button", "acc add");
-    const ic = el("span", "dot");
-    ic.append(svg(PLUS, 10, 1.8));
-    add.append(ic, el("span", "n", t(sub.single ? "Sign in to another {name} account" : "Add another {name} account", { name: sub.name })));
-    add.onclick = () => startSignIn(a.agent);
-    list.append(add);
-    if (sub.importable) {
-      const imp = el("button", "acc add");
-      const ic2 = el("span", "dot");
-      ic2.append(svg(PLUS, 10, 1.8));
-      imp.append(ic2, el("span", "n", importSay(a.agent).row || t("Import accounts from a file…")));
-      imp.title = importSay(a.agent).from;
-      imp.onclick = () => startImport(a.agent);
-      list.append(imp);
-    }
-  }
-  arrangeAccountRows(list, p);
-  return list;
-}
-
-// renderCodexDaemon: Codex's background app-server read the sign-in when it
-// started, so after a switch the Codex sessions that attach to it are still
-// on the account before (user) until it restarts. fogway doesn't restart it
-// unasked: that ends the Codex sessions running on it.
-function renderCodexDaemon(user) {
-  const box = el("div", "signing daemon");
-  box.append(el("span", "mark", "!"));
-  const tt = el("span", "tt");
-  tt.append(el("span", "n", t("Codex's background service is still signed in as {user}", { user })),
-    el("span", "s", t("Restart it to use the new account. Running Codex sessions will be interrupted.")));
-  box.append(tt);
-  const later = el("button", "text", t("Later"));
-  later.onclick = () => accountAction("codex/daemon/dismiss", {});
-  const go = el("button", "text primary", t("Restart"));
-  go.title = "codex app-server daemon restart";
-  go.onclick = () => { go.classList.add("busy"); accountAction("codex/daemon/restart", {}, t("Codex's background service restarted")); };
-  box.append(later, go);
-  return box;
-}
-
-// renderCodexApp: the Codex desktop app reads the sign-in only when it
-// opens, so after a switch it stays on the account before (user): it shows
-// that account's limits and, once they are spent, sends in no thread. Only
-// quitting and opening it again moves it; fogway doesn't quit it unasked.
-function renderCodexApp(user) {
-  const box = el("div", "signing daemon");
-  box.append(el("span", "mark", "!"));
-  const tt = el("span", "tt");
-  tt.append(el("span", "n", t("The Codex app is still signed in as {user}", { user })),
-    el("span", "s", t("It shows that account's usage limits until it is quit and opened again. Quit it and open it again to use the new account.")));
-  box.append(tt);
-  const ok = el("button", "text", t("Got it"));
-  ok.onclick = () => accountAction("codex/daemon/dismiss-app", {});
-  box.append(ok);
-  return box;
-}
-
-// Accounts brought in from another tool's export instead of signing in
-// again: the files' text (or what is pasted) goes to fogway, which checks
-// each account with the vendor before keeping it, and says what became of
-// each. What is read stays here only until it is sent; the box masks it.
-function startImport(agent) {
-  if (signingOpen()) api("signin/" + signing.id + "/cancel", {}).catch(() => {});
-  signing = { agent, state: "import", text: "", files: [] };
-  renderProviders();
-  document.querySelector(".signing.import textarea")?.focus();
-}
-
-async function runImport(agent) {
-  const files = signing.files.map((f) => f.text);
-  // each file's name, to say which one held no account (a result's file)
-  const names = signing.files.map((f) => f.name);
-  if (signing.text.trim()) { files.push(signing.text); names.push(t("The pasted text")); }
-  if (!files.length) return;
-  signing = { agent, state: "importing", names };
-  renderProviders();
-  try {
-    const r = await api("signin/import", { agent, files });
-    if (signing?.agent !== agent) return;
-    providers = r.providers;
-    const added = r.results.filter((x) => x.status === "added" || x.status === "updated");
-    signing = { agent, state: "imported", results: r.results, names };
-    delete loginUsage[agent];
-    const p = providers.providers.find((x) => x.account?.agent === agent);
-    if (p && added.length) {
-      editing = p.id; draft = null; adding = false; presetQuery = "";
-      justAdded = added[0].user;
-      setTimeout(() => { justAdded = ""; }, 2000);
-    }
-    renderProviders();
-    const failed = r.results.filter((x) => x.status === "failed").length;
-    status(t("{n} added, {m} not added", { n: added.length, m: failed }), added.length || !failed ? "ok" : "err");
-    state = await api("state");
-    renderAgents();
-  } catch (e) {
-    if (signing?.agent !== agent) return;
-    signing = { agent, state: "import", text: "", files: [], error: e.message };
-    renderProviders();
-  }
-}
-
-const importStatus = { added: "Added", updated: "Updated with this sign-in", exists: "Already in fogway", failed: "Not added" };
-
-function renderLoginImport(sub) {
-  const box = el("div", "signing import");
-  const tt = el("span", "tt");
-  if (signing.state === "importing") {
-    box.append(el("span", "spinner"));
-    const say = importSay(sub.agent);
-    tt.append(el("span", "n", say.checking), el("span", "s", say.checks));
-    box.append(tt);
-    return box;
-  }
-  if (signing.state === "imported") {
-    box.append(el("span", "mark", "✓"));
-    tt.append(el("span", "n", t("Import finished")));
-    const rs = el("span", "results");
-    for (const r of signing.results || []) {
-      const row = el("span", "res " + r.status);
-      // a file that held no account is named, not passed over
-      const who = r.user || (r.file && signing.names?.[r.file - 1]) || "";
-      row.append(el("span", "u", who), el("span", "st", t(importStatus[r.status] || r.status)));
-      if (r.error) { row.title = r.error; row.append(el("span", "why", r.error)); }
-      rs.append(row);
-    }
-    tt.append(rs);
-    box.append(tt);
-    const done = el("button", "text", t("Done"));
-    done.onclick = cancelSignIn;
-    box.append(done);
-    return box;
-  }
-  box.append(el("span", "mark", "↑"));
-  const say = importSay(sub.agent);
-  tt.append(el("span", "n", say.title || t("Import {name} accounts", { name: sub.name })), el("span", "s", say.intro));
-  if (say.spent) tt.append(el("span", "s", say.spent));
-  if (sub.risk) tt.append(el("span", "s", t(sub.riskNote || "Google may suspend an Antigravity account it sees used outside Antigravity. Use one you can afford to lose.")));
-  const area = el("textarea");
-  area.rows = 3;
-  area.spellcheck = false;
-  area.autocomplete = "off";
-  area.placeholder = t("…or paste it here");
-  area.value = signing.text || "";
-  const file = el("input");
-  file.type = "file";
-  file.multiple = true;
-  file.accept = ".json,.txt,application/json,text/plain";
-  file.hidden = true;
-  const names = el("span", "fname", signing.files.map((f) => f.name).join(", "));
-  const go = el("button", "text primary", t("Import"));
-  const ready = () => { go.disabled = !(signing.files.length || signing.text.trim()); };
-  area.oninput = () => { signing.text = area.value; ready(); };
-  file.onchange = async () => {
-    const picked = [];
-    for (const f of file.files) {
-      if (f.size > 4 << 20) { status(t("{name} is too big to be an export", { name: f.name }), "err"); continue; }
-      picked.push({ name: f.name, text: await f.text() });
-    }
-    signing.files = picked;
-    names.textContent = picked.map((f) => f.name).join(", ");
-    ready();
-  };
-  const pick = el("button", "link", t("Choose files…"));
-  pick.onclick = () => file.click();
-  const acts = el("span", "acts");
-  acts.append(pick, names, file);
-  tt.append(acts, area);
-  if (signing.error) tt.append(el("span", "s why", signing.error));
-  box.append(tt);
-  go.onclick = () => runImport(sub.agent);
-  ready();
-  const close = el("button", "text", t("Cancel"));
-  close.onclick = cancelSignIn;
-  box.append(close, go);
-  return box;
-}
-
 // Each account's allowance comes from the vendor and takes a moment, so it
 // loads on its own and fills the rows in when it's there.
-const loginUsage = {}; // agent → { at, data: { user: quota }, loading }
-function loginUsageOf(agent) {
-  const u = (loginUsage[agent] ||= {});
-  if (!u.loading && !(Date.now() - (u.at || 0) < 60000)) {
-    u.loading = api("login/usage?agent=" + agent)
-      .then((d) => { u.data = d || {}; }, () => { u.data = u.data || {}; })
-      .finally(() => {
-        u.at = Date.now(); u.loading = null;
-        if (providers?.providers.find((p) => p.id === editing)?.account?.agent === agent && !document.querySelector(".editor .rename-in, .editor input:focus, .signing.import textarea:focus")) renderProviders();
-      });
-  }
-  return u.data;
-}
-
-// quotaError says why an allowance can't be read: a Google account with
-// no Cloud project named can't be used at all until one is, so that is
-// said outright; anything else is in the tooltip.
-// SIGN_IN_GONE: an allowance read saying the account's sign-in is gone,
-// as the gateway reads a plugin's (signInGone, plugin_usage.go)
-const SIGN_IN_GONE = /sign-in has (expired|lapsed)|sign in again/i;
 
 function quotaError(err) {
   if (/sign-in has expired/.test(err)) return t("Signed out — add this account again to use it");
@@ -13038,352 +11340,6 @@ function balanceFix(p) {
   return box;
 }
 
-// accountQuota: an account's allowance as a line of small meters under its
-// name, the reset time on the ones nearly used up, credits and held resets.
-function accountQuota(data, user, capFor = () => 0, settable = null) {
-  const line = el("div", "aq");
-  if (!data) {
-    line.append(el("span", "skeleton sk-aq"), el("span", "skeleton sk-aq"));
-    return line;
-  }
-  const q = data[user];
-  if (q?.asOf && !q.error) {
-    line.classList.add("stale");
-    line.append(el("span", "aq-asof", asOfText(q)));
-  }
-  if (q?.resets?.count && !q.error) {
-    const words = resetsWords(q.resets);
-    const resets = el("span", "aq-w aq-resets");
-    resets.title = [words.textContent, words.title].filter(Boolean).join("\n");
-    resets.append(words.querySelector(".resets-n"));
-    line.append(resets);
-  }
-  // an account on no plan says so, whatever else can be read of it
-  const noPlan = q?.plan === "No plan" ? [t("No plan")] : [];
-  if (q && !q.error && !q.windows?.length && q.balance) {
-    // no rolling limits, only what is left to spend
-    line.append(el("span", "aq-none", [...noPlan, t("Balance") + " " + q.balance].join(" · ")));
-    return line;
-  }
-  if (!q || q.error || !q.windows?.length) {
-    line.append(el("span", "aq-none", [...noPlan, q?.error ? quotaError(q.error) : t("No allowance reported")].join(" · ")));
-    if (q?.error) line.title = q.error;
-    return line;
-  }
-  if (q.balance) {
-    const balance = el("span", "aq-w aq-balance");
-    balance.title = t("What is left on the account besides its windows");
-    balance.append(el("span", "aq-n", t("Balance")), el("b", "", q.balance));
-    line.append(balance);
-  }
-  // the two rolling windows fit a line; the per-model ones go in its
-  // tooltip; per-model windows of a family are the family's one
-  const counted = q.windows.filter((w) => !w.unlimited);
-  const ws = familyWindows(counted);
-  if (!ws.length) { line.append(el("span", "aq-none", t("Unlimited"))); return line; }
-  if (ws.some((w) => w.members)) return poolLine(line, ws, q, capFor, settable);
-  line.title = ws.slice(2).map((w) => w.tiers ? tiersText(w) : t(w.name) + " " + quotaText(w)).join(ws !== counted ? "\n" : " · ");
-  if (q.asOf) line.title = [line.title, asOfText(q)].filter(Boolean).join("\n");
-  for (const w of ws.slice(0, 2)) {
-    const used = Math.max(0, Math.min(100, w.used));
-    const m = el("span", "aq-w" + (used >= 90 ? " full" : ""));
-    const track = el("span", "aq-track");
-    const fill = el("i");
-    fill.style.width = quotaFill(w) + "%";
-    track.append(fill);
-    capMark(track, w, capFor(w));
-    m.append(el("span", "aq-n", t(w.name)), track, el("b", "", quotaText(w)));
-    if (w.resetsAt) {
-      const at = new Date(w.resetsAt);
-      m.title = resetText(at, at.toLocaleString(intlLang()));
-      if (used >= 80) m.append(el("span", "aq-r", resetInText(at)));
-    }
-    const out = runsOutText(w, (at) => at.toLocaleString(intlLang()));
-    if (out) m.title = [m.title, out].filter(Boolean).join("\n");
-    if (w.tiers) m.title = tiersText(w);
-    line.append(settable ? settable(m, w) : m);
-  }
-  return line;
-}
-
-// poolLine: an account row's pools, each its name then its 5-hour and
-// weekly meters (Gemini 5h ▬ 95% 7d ▬ 75%), two pools on the line and the
-// rest in its tooltip.
-function poolLine(line, ws, q, capFor = () => 0, settable = null) {
-  const pools = [];
-  for (const w of ws) {
-    const k = w.members ? w.pool : "\0" + pools.length;
-    const p = pools.find((x) => x.k === k);
-    if (p) p.ws.push(w); else pools.push({ k, name: w.members ? w.pool : t(w.name), ws: [w] });
-  }
-  line.title = pools.slice(2).map((p) => p.ws.map((w) => t(w.name) + " " + quotaText(w)).join(" · ")).join("\n");
-  if (q.asOf) line.title = [line.title, asOfText(q)].filter(Boolean).join("\n");
-  for (const p of pools.slice(0, 2)) {
-    const m = el("span", "aq-w aq-pool" + (p.ws.some((w) => w.used >= 90) ? " full" : ""));
-    m.append(el("span", "aq-n", p.name));
-    for (const w of p.ws) {
-      const track = el("span", "aq-track");
-      const fill = el("i");
-      fill.style.width = quotaFill(w) + "%";
-      track.append(fill);
-      capMark(track, w, capFor(w));
-      // each of a pool's windows is set apart: its own part of the meter
-      const part = el("span", "aq-win");
-      part.append(el("span", "aq-k", w.window ? shortWindow(w.window) : ""), track, el("b", "", quotaText(w)));
-      m.append(settable ? settable(part, w) : part);
-    }
-    const w = p.ws[0];
-    m.title = p.ws.map((x) => t(x.name) + " " + quotaText(x) + (x.resetsAt ? " · " + resetText(new Date(x.resetsAt), new Date(x.resetsAt).toLocaleString(intlLang())) : "")).join("\n")
-      + (w.members ? "\n\n" + poolTip(w) : w.tiers ? "\n\n" + tiersText(w) : "");
-    line.append(m);
-  }
-  return line;
-}
-
-// An account's usage cap (provider.AccountCaps): the share of each of its
-// windows it is used to at most — a new account kept to 70% of its five
-// hours and its week. At it, routing takes the account for used up and
-// goes on to the others until the window renews. The pill on its row says
-// the cap and opens the app's menu of shares; a mark on each meter the cap
-// counts shows where it is, and a note says when it holds the account.
-const CAP_SHARES = [50, 60, 70, 80, 90];
-// An account's name of the user's own (#1515): a team's GLM seats under
-// masked emails told apart. Kept by fogway (provider.AccountNames), never
-// in the vendor's or plugin's sign-in. accountSeatOf is the key plan the
-// account was found to stand in for, the name it goes by till it has one.
-function accountNameOf(p, user) { return p?.accountNames?.[String(user).toLowerCase()] || ""; }
-function accountSeatOf(p, user) { return p?.accountSeats?.[String(user).toLowerCase()] || ""; }
-// accountNameButton is the account's name on its editor row: the name of
-// its own, the account beside it, and a click renames it.
-function accountNameButton(p, user) {
-  const own = accountNameOf(p, user), seat = accountSeatOf(p, user);
-  if (!p) return el("span", "n", user);
-  const wrap = el("span", "acct-who");
-  // a span, not a button: the address stays selectable, and a drag that
-  // selects it renames nothing
-  const name = el("span", "n rename", own || user);
-  name.tabIndex = 0;
-  name.setAttribute("role", "button");
-  name.title = own ? t("{user} · click to rename", { user }) : t("Name this account");
-  name.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); name.onclick(); } };
-  name.onclick = () => {
-    if (String(getSelection?.() || "").length) return;
-    const i = input(own, seat || t("Name, e.g. Personal or Team"));
-    i.className = "rename-in";
-    i.maxLength = 64;
-    // once: Enter re-renders the row, and the input's blur then follows
-    let over = false;
-    const done = (save) => {
-      if (over) return;
-      over = true;
-      if (save && i.value.trim() !== own) accountAction("provider/accountname", { id: p.id, account: user, alias: i.value });
-      else renderProviders();
-    };
-    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); };
-    i.onblur = () => done(true);
-    wrap.replaceWith(i);
-    i.focus();
-  };
-  wrap.append(name);
-  if (own) wrap.append(el("span", "acct-user", user));
-  else if (seat) {
-    const s = el("span", "acct-seat", "≡ " + seat);
-    s.title = t("The same seat as the key plan {name}, shown once, on this account's card", { name: seat });
-    wrap.append(s);
-  }
-  return wrap;
-}
-function accountCapOf(p, user) { return p?.accountCaps?.[String(user).toLowerCase()] || 0; }
-// A window's own cap (provider.AccountWindowCaps, willz on Discord): a
-// friend's account stops at 50% of its five hours while its week may go to
-// 40%. Kept by the account and the window's capId, 1–99, or 100 for no cap
-// on that window; a window with none of its own takes the account's cap.
-// windowOwnCapOf is the window's own, 0 when it follows the account's.
-function windowOwnCapOf(p, user, w) {
-  return (w?.capId && p?.accountWindowCaps?.[String(user).toLowerCase()]?.[w.capId]) || 0;
-}
-function windowCapsOf(p, user) { return Object.keys(p?.accountWindowCaps?.[String(user).toLowerCase()] || {}).length; }
-// windowCapOf: the share the window holds the account at, 0 for none
-function windowCapOf(p, user, w) {
-  const own = windowOwnCapOf(p, user, w);
-  if (own) return own >= 100 ? 0 : own;
-  return accountCapOf(p, user);
-}
-// capHeldOf: how the account is held at cap, as the gateway reads it —
-// a window at or past its cap (capFor: its own, else the account's), not
-// yet renewed — or null: the fullest such window's share and its cap, and
-// when the last of them renews (0 when one doesn't say).
-function capHeldOf(q, capFor) {
-  if (!q || q.error || !q.windows?.length) return null;
-  const now = Date.now();
-  // a window of some models only (Opus's week, a pool's) holds the account
-  // for those alone (#760): the account's own windows say when it is back
-  // when one of them holds it, else those windows do and are named
-  const all = { used: 0, cap: 0, back: 0, unknown: false, n: 0 }, some = { used: 0, cap: 0, back: 0, unknown: false, n: 0, names: [] };
-  for (const w of q.windows) {
-    const cap = w.capped ? capFor(w) : 0;
-    if (!cap || w.used < cap) continue;
-    const r = w.resetsAt ? Date.parse(w.resetsAt) : 0;
-    if (r && r <= now) continue; // renewed since it was read
-    const h = w.capsSome ? some : all;
-    h.n++;
-    if (w.used >= h.used) { h.used = w.used; h.cap = cap; }
-    if (w.capsSome && !some.names.includes(w.name)) some.names.push(w.name);
-    if (!r) h.unknown = true; else h.back = Math.max(h.back, r);
-  }
-  const h = all.n ? all : some.n ? some : null;
-  return h && { used: h.used, cap: h.cap, back: h.unknown ? 0 : h.back, all: h === all, some: some.names };
-}
-// directNote: why the cap can't stop agent, signed in to the account and
-// asking its vendor itself, with no other account on to move it to
-function directNote(agent) {
-  return t("{agent} is signed in to this account and asks its vendor itself, not through fogway, so with no other account on to move it to, {agent} goes on using it past the cap. Add another account, or pick {agent}'s models via fogway, for the cap to hold it", { agent });
-}
-function capHeldNote(held, cap, several, direct) {
-  if (direct) {
-    // the account is held for what goes through fogway, but the agent
-    // signed in to it isn't: the note doesn't say it is safe at its cap
-    const n = el("span", "using acap-held acap-direct", t("At its cap · {agent} still uses it", { agent: direct }));
-    n.title = t("A usage window is at {n}%, past this account's {cap}% cap: requests through fogway are refused with a usage-cap error until it renews", { n: Math.round(held.used), cap })
-      + (held.back ? " · " + resetText(new Date(held.back), new Date(held.back).toLocaleString(intlLang())) : "")
-      + "\n" + directNote(direct);
-    return n;
-  }
-  if (!held.all) {
-    const names = held.some.join(", ");
-    const n = el("span", "using acap-held", held.back ? t("{names} at its cap · back {in}", { names, in: untilText(held.back) }) : t("{names} at its cap", { names }));
-    n.title = t("{names} is at {n}%, past this account's {cap}% cap, so fogway sends the requests it counts to the other accounts until it renews; other models still use this account", { names, n: Math.round(held.used), cap })
-      + (held.back ? " · " + resetText(new Date(held.back), new Date(held.back).toLocaleString(intlLang())) : "")
-      + (several ? "" : "\n" + t("With no other account on, those requests are refused with a usage-cap error until then"));
-    return n;
-  }
-  const n = el("span", "using acap-held", held.back ? t("At its cap · back {in}", { in: untilText(held.back) }) : t("At its cap"));
-  n.title = t("A usage window is at {n}%, past this account's {cap}% cap, so fogway counts it as used up and sends requests to the other accounts until that window renews", { n: Math.round(held.used), cap })
-    + (held.back ? " · " + resetText(new Date(held.back), new Date(held.back).toLocaleString(intlLang())) : "")
-    + (several ? "" : "\n" + t("With no other account on, requests are refused with a usage-cap error until then"));
-  return n;
-}
-function capMark(track, w, cap) {
-  if (!cap || !w.capped) return;
-  const mk = el("span", "aq-cap");
-  mk.style.left = (quotaLeft ? 100 - cap : cap) + "%";
-  mk.title = t("Usage cap {n}%", { n: cap });
-  track.classList.add("capped");
-  track.append(mk);
-}
-// windowCapMeter: a window's meter on an account's row as the button that
-// sets the window's own cap, in the app's menu: the account's cap, none on
-// this window, a share, or one typed in place. A window of a model family
-// shown as one figure (tiers) stands for several windows and isn't set
-// here; one the cap doesn't count (on-demand) has none to set.
-function windowCapMeter(m, p, user, w) {
-  if (!w.capId || w.tiers) return m;
-  const own = windowOwnCapOf(p, user, w), cap = accountCapOf(p, user);
-  const name = t(w.name);
-  // a span acting as the button: a <button> here, a flex item of the
-  // wrapping meter line, leaves WebKit's row its one-line height until the
-  // next layout, and the row grows under the pointer at the first click
-  const b = el("span", m.className + " aq-set" + (own ? " own" : ""));
-  b.setAttribute("role", "button");
-  b.tabIndex = 0;
-  b.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); b.click(); } };
-  b.append(...m.childNodes);
-  if (own) b.append(el("span", "aq-own", own >= 100 ? t("No cap") : t("Cap {n}%", { n: own })));
-  const reset = m.title || (w.resetsAt ? resetText(new Date(w.resetsAt), new Date(w.resetsAt).toLocaleString(intlLang())) : "");
-  b.title = [reset, own >= 100 ? t("No cap on {window}: it is used to 100%, whatever this account's cap. Click to change", { window: name })
-    : own ? t("{window} has a cap of its own: fogway counts this account as used up once {window} is at {n}%, until it renews. Click to change", { window: name, n: own })
-    : t("Click to give {window} a cap of its own, apart from this account's", { window: name })].filter(Boolean).join("\n");
-  b.setAttribute("aria-haspopup", "menu");
-  b.setAttribute("aria-expanded", "false");
-  const set = (v) => accountAction("provider/windowcap", { id: p.id, account: user, window: w.capId, cap: v },
-    v === 0 ? t("{window} of {who} follows the account's cap", { window: name, who: user })
-      : v >= 100 ? t("{window} of {who} has no cap", { window: name, who: user })
-      : t("{who} stops at {n}% of {window}", { who: user, n: v, window: name }));
-  const other = () => {
-    const i = input(own && own < 100 ? String(own) : "", "1–99", "text");
-    i.className = "rename-in acap-in";
-    i.inputMode = "numeric";
-    i.setAttribute("aria-label", t("Cap for {window}, in percent", { window: name }));
-    let done = false;
-    const finish = (save) => {
-      if (done) return;
-      done = true;
-      const v = parseInt(i.value.replace("%", "").trim(), 10);
-      if (save && i.value.trim() && !(v >= 1 && v <= 99)) { status(t("A cap is a share from 1% to 99%"), "err"); renderProviders(); return; }
-      if (save && i.value.trim() && v !== own) set(v);
-      else renderProviders();
-    };
-    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") finish(true); else if (e.key === "Escape") finish(false); };
-    i.onblur = () => finish(true);
-    b.replaceWith(i);
-    i.focus({ preventScroll: true });
-  };
-  b.onclick = (e) => {
-    e.stopPropagation();
-    if (b.classList.contains("open")) return closeProtoMenu();
-    const mine = own && own < 100 ? own : 0;
-    const shares = CAP_SHARES.includes(mine) || !mine ? CAP_SHARES : [...CAP_SHARES, mine].sort((a, c) => a - c);
-    const opts = [
-      { v: 0, name: cap ? t("Account's cap · {n}%", { n: cap }) : t("Account's cap · none"), note: t("As the account's other windows"), literalName: true },
-      { v: 100, name: "No cap on this window", note: "Use this window to 100%" },
-    ];
-    for (const n of shares) opts.push({ v: n, name: n + "%", note: "", literalName: true });
-    opts.push({ v: -1, name: "Other…", note: "A share of your own, 1–99%" });
-    openProtoMenu(b, opts, own, (v) => {
-      if (v === -1) return other();
-      if (v !== own) set(v);
-    }, t("Cap for {window}", { window: name }), "sess-menu");
-  };
-  return b;
-}
-function accountCapPill(p, user, cap, direct) {
-  // with no cap of its own but some windows', it says so
-  const byWindow = !cap && windowCapsOf(p, user) > 0;
-  const pill = el("button", "acap" + (cap || byWindow ? " set" : ""), cap ? t("Cap {n}%", { n: cap }) : byWindow ? t("Caps by window") : t("No cap"));
-  pill.type = "button";
-  pill.title = (cap ? t("Stops at {n}% of each usage window: once fogway reads a window at {n}% or past it, it counts this account as used up and sends it nothing more until the window renews. A turn already under way can still take it past {n}%, so the cap doesn't promise the rest is left. Click to change", { n: cap })
-    : t("Used to 100% of its usage windows. Click to cap it at a share of each, so fogway goes on to the other accounts past it"))
-    + "\n" + t("A window can have a cap of its own: click its meter below")
-    + (direct ? "\n\n" + directNote(direct) : "");
-  pill.setAttribute("aria-haspopup", "menu");
-  pill.setAttribute("aria-expanded", "false");
-  const set = (v) => accountAction("provider/accountcap", { id: p.id, account: user, cap: v },
-    v ? t("{who} stops at {n}% of each window", { who: user, n: v }) : t("{who} has no usage cap", { who: user }));
-  const other = () => {
-    // a share of the user's own, typed where the pill was
-    const i = input(cap ? String(cap) : "", "1–99", "text");
-    i.className = "rename-in acap-in";
-    i.inputMode = "numeric";
-    i.setAttribute("aria-label", t("Usage cap, in percent"));
-    let done = false;
-    const finish = (save) => {
-      if (done) return;
-      done = true;
-      const v = parseInt(i.value.replace("%", "").trim(), 10);
-      if (save && i.value.trim() && !(v >= 1 && v <= 99)) { status(t("A cap is a share from 1% to 99%"), "err"); renderProviders(); return; }
-      if (save && i.value.trim() && v !== cap) set(v);
-      else renderProviders();
-    };
-    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") finish(true); else if (e.key === "Escape") finish(false); };
-    i.onblur = () => finish(true);
-    pill.replaceWith(i);
-    i.focus({ preventScroll: true });
-  };
-  pill.onclick = (e) => {
-    e.stopPropagation();
-    if (pill.classList.contains("open")) return closeProtoMenu();
-    const shares = CAP_SHARES.includes(cap) || !cap ? CAP_SHARES : [...CAP_SHARES, cap].sort((a, b) => a - b);
-    const opts = [{ v: 0, name: "No cap", note: "Use each window to 100%" }];
-    for (const n of shares) opts.push({ v: n, name: n + "%", note: "", literalName: true });
-    opts.push({ v: -1, name: "Other…", note: "A share of your own, 1–99%" });
-    openProtoMenu(pill, opts, cap, (v) => {
-      if (v === -1) return other();
-      if (v !== cap) set(v);
-    }, "Usage cap", "sess-menu");
-  };
-  return pill;
-}
-
 // An account's or key's limit on requests at once (#892): its own, else
 // the provider's Concurrency. The pill says it, and while requests are out
 // under it how many run and wait — the gateway's lanes, read again every
@@ -13398,7 +11354,7 @@ function laneOwnOf(p, ref) {
 }
 function laneLimitOf(p, ref) {
   const own = laneOwnOf(p, ref);
-  return own != null ? own : p?.maxConcurrency != null ? p.maxConcurrency : p?.pluginConcurrency || 0;
+  return own != null ? own : p?.maxConcurrency != null ? p.maxConcurrency : 0;
 }
 // laneText sets the pill's words and marks for the lane as it stands
 function laneText(pill) {
@@ -13454,7 +11410,7 @@ function laneLimitPill(p, ref, who, name) {
   pill.onclick = (e) => {
     e.stopPropagation();
     if (pill.classList.contains("open")) return closeProtoMenu();
-    const base = p.maxConcurrency != null ? p.maxConcurrency : p.pluginConcurrency || 0;
+    const base = p.maxConcurrency != null ? p.maxConcurrency : 0;
     const opts = [{ v: "default", name: "Provider's", note: base ? t("{n} at once", { n: base }) : t("No limit") }, { v: 0, name: "No limit", note: "Any number at once" }];
     const nums = own == null || own === 0 || LANE_LIMITS.includes(own) ? LANE_LIMITS : [...LANE_LIMITS, own].sort((a, b) => a - b);
     for (const n of nums) opts.push({ v: n, name: String(n), note: "", literalName: true });
@@ -13505,91 +11461,6 @@ function quotaCount(w) {
   const amount = Math.max(0, w.amount || 0), n = quotaLeft ? Math.max(0, w.limit - amount) : amount;
   return (countFormat.format(n) + " / " + countFormat.format(w.limit) + (w.unit ? " " + t(w.unit) : "")).trim();
 }
-// familyWindows: an account's per-model windows as one a model family.
-// Antigravity reports each level of each model (Gemini 3.1 Pro (High), (Low),
-// Gemini 3.7 Flash (Low), (Medium), (High)…), which over several accounts
-// reads as a wall of meters (01huadalang on Discord); Gemini and Claude
-// first, then any other. A family's figure is its tightest window, the most
-// used, the soonest to start again of those; its windows go along as tiers
-// for its tooltip and for "Every model". Windows that name no family, or an
-// account with a window a family already, are as they were.
-const FAMILY_FIRST = ["Gemini", "Claude"];
-function familyWindows(ws) {
-  if (ws?.some(isPool)) return poolWindows(ws);
-  if (!ws?.some((w) => w.family)) return ws;
-  const fams = new Map();
-  for (const w of ws) {
-    const k = w.family ? "f:" + w.family : "w:" + fams.size;
-    if (!fams.has(k)) fams.set(k, []);
-    fams.get(k).push(w);
-  }
-  if (fams.size === ws.length) return ws;
-  const soon = (w) => (w.resetsAt ? new Date(w.resetsAt).getTime() : Infinity);
-  const out = [];
-  for (const tiers of fams.values()) {
-    if (!tiers[0].family) { out.push(tiers[0]); continue; }
-    const top = tiers.reduce((a, b) => (b.used > a.used || (b.used === a.used && soon(b) < soon(a)) ? b : a));
-    out.push({ ...top, name: top.family, tiers });
-  }
-  const rank = (w) => (w.tiers && FAMILY_FIRST.includes(w.name) ? FAMILY_FIRST.indexOf(w.name) : FAMILY_FIRST.length);
-  return out.map((w, i) => [w, i]).sort(([a, i], [b, j]) => rank(a) - rank(b) || i - j).map(([w]) => w);
-}
-// poolWindows: an account's windows one row a pool, where models share one
-// allowance (Antigravity's Gemini, Claude & GPT): the pool's 5-hour window
-// then its weekly one, each named with its pool, its models along as
-// members for its tooltip (a user on Discord: the three models read the
-// same, show the 5 hours and the week left a group). The models' windows
-// in no pool go on as families.
-const isPool = (w) => w.pool && !w.family;
-function poolWindows(ws) {
-  const pools = new Map();
-  for (const w of ws.filter(isPool)) {
-    if (!pools.has(w.pool)) pools.set(w.pool, []);
-    pools.get(w.pool).push(w);
-  }
-  const hours = (w) => {
-    const m = /^(\d+)\s*(hour|day|week)s?$/i.exec(w.name || "");
-    return m ? m[1] * { hour: 1, day: 24, week: 168 }[m[2].toLowerCase()] : Infinity;
-  };
-  const first = (p) => { const i = FAMILY_FIRST.indexOf(p.split(/[ &]/)[0]); return i < 0 ? FAMILY_FIRST.length : i; };
-  const rest = ws.filter((w) => !isPool(w) && !(w.pool && pools.has(w.pool)));
-  let fam = familyWindows(rest);
-  const out = [];
-  for (const pool of [...pools.keys()].sort((a, b) => first(a) - first(b))) {
-    const members = ws.filter((w) => w.family && w.pool === pool);
-    const own = pools.get(pool).sort((a, b) => hours(a) - hours(b));
-    // a pool read without its 5 hours (#745) keeps its models' own 5-hour
-    // windows as families: they go in the pool's place, before its week,
-    // so the card reads in the same order whether or not the summary sent
-    // the 5 hours this time (#860: 5h and 7d swapped after a refresh)
-    if (!own.some((w) => hours(w) === 5)) {
-      const mine = (w) => { const f = w.tiers ? w.name : w.family; return !!f && pool.toLowerCase().includes(f.toLowerCase()); };
-      out.push(...fam.filter(mine));
-      fam = fam.filter((w) => !mine(w));
-    }
-    for (const w of own) out.push({ ...w, name: pool + " · " + t(w.name), window: w.name, members });
-  }
-  return out.concat(fam);
-}
-// pooledModels: the models a whole account's card lists under "Every model"
-// when its windows are a pool's: the models' own, not the pools' again.
-const pooledModels = (ws) => (ws?.some(isPool) ? ws.filter((w) => !isPool(w)) : ws);
-// poolTip: what a pool's window counts, and its models, for its tooltip.
-function poolTip(w) {
-  return t("{pool}: one allowance for these models", { pool: w.pool }) + "\n" + tiersText({ tiers: w.members });
-}
-// ringName: a window's name short enough for a ring: a pool's first word
-// and its span (Gemini 5h, Claude 7d).
-function ringName(w) {
-  return w.window ? w.pool.split(/[ &]/)[0] + " " + shortWindow(w.window) : shortWindow(w.name);
-}
-
-// tiersText: a family's windows, one a line, for its tooltip.
-function tiersText(w) {
-  return (w.tiers || []).map((x) => t(x.name) + " " + quotaText(x)
-    + (x.resetsAt && x.used > 0 ? " · " + resetInText(new Date(x.resetsAt)) : "")).join("\n");
-}
-
 async function setQuotaLeft(on) {
   quotaLeft = on;
   renderQuotas();
@@ -13630,10 +11501,6 @@ function untilText(at) {
 
 function resetText(at, when = at <= Date.now() ? at.toLocaleString(intlLang()) : resetClock(at)) {
   return t(at <= Date.now() ? "Reset time passed {when}" : "Resets {when}", { when });
-}
-
-function resetInText(at) {
-  return at <= Date.now() ? t("Reset time passed") : t("resets {in}", { in: untilText(at) });
 }
 
 // runsOutText: when the soonest of what a window has left is lost, apart
@@ -14340,92 +12207,11 @@ function respellURL(u, api) {
   return /\/v\d+[a-z]*$/.test(u) || !/^https?:\/\/[^/]+$/.test(u) ? u : u + "/v1";
 }
 
-// renderMove: a built-in subscription a community plugin can run — which
-// of the two runs it, and the way to the other. Accounts, models and the
-// agents on them stay as they are either way.
-// moveWhy is why a move failed, in the reader's language: m is the move
-// as the page has it, {why, error}.
-function moveWhy(m, p) {
-  const a = m.why?.args || {};
-  switch (m.why?.code) {
-    case "offline": return t("fogway couldn't reach npm to install the plugin. Check the network or proxy, then try again.");
-    case "install": return t("npm couldn't install the plugin: {line}", { line: a.line });
-    case "lapsed": return t("every {name} account needs signing in again. Sign one in above, then move.", { name: p.name });
-    case "unserved": return a.user
-      ? t("the plugin doesn't serve {models} for {user}, though the built-in does. Untick them under Models, or keep the built-in.", { models: a.models, user: a.user })
-      : t("the plugin doesn't serve {models}. Untick them under Models, or keep the built-in.", { models: a.models });
-    case "account": return t("{user} doesn't work through the plugin: {error}", { user: a.user, error: a.error });
-  }
-  return m.error || "";
-}
-
-// renderMove: which runs the subscription, fogway's built-in or its
-// community plugin, and the move between them. The editor stays open
-// through it: the button says what it is doing, a failure is said under
-// it, and on success the field turns over where the reader is.
-function renderMove(p) {
-  const m = p.move;
-  const box = el("div", "stack move");
-  const onPlugin = m.state === "plugin";
-  const said = el("div", "", onPlugin
-    ? t("The community {name} plugin, with the accounts you had here.", { name: p.name })
-    : t("fogway's built-in · or the community {name} plugin, with the same accounts", { name: p.name }));
-  said.title = m.package; // the npm package: for the curious, not the sentence
-  const why = el("div", "move-why");
-  why.setAttribute("role", "alert");
-  const say = (text) => { why.textContent = text; why.hidden = !text; };
-  const failed = m.state === "failed" && (m.why || m.error);
-  say(failed ? t("It stays built-in: {error}", { error: moveWhy(m, p) }) : "");
-  const idle = () => onPlugin ? t("Use the built-in again") : failed ? t("Try again") : t("Move to the plugin");
-  const b = el("button", "text action", idle()); // a button, not a line of text: it changes what runs the subscription
-  b.onclick = async () => {
-    b.classList.add("busy");
-    b.disabled = true;
-    say("");
-    b.textContent = onPlugin ? t("Moving back…") : t("Installing the plugin and checking each account…");
-    try {
-      // the models as the editor shows them picked, when changed and not
-      // saved: the reason a move fails says to untick one there (noting_ever)
-      const picks = !onPlugin && draft && editing === p.id ? chosenIds() : null;
-      const was = pickedOf(p);
-      const changed = picks && (picks.length !== was.length || picks.some((id) => !was.includes(id)));
-      providers = await api("provider/" + (onPlugin ? "moveback" : "move"), changed ? { id: p.id, models: picks } : { id: p.id });
-      draft = null; // the provider changed under it
-      renderProviders(); // the editor stays open, turned over, where it was
-      const now = providers.providers.find((x) => x.id === p.id);
-      const accts = now?.account?.logins?.length || 0, models = (now?.models || []).filter((x) => x.on).length;
-      saidMoved(onPlugin ? t("{name} is built-in again, with its accounts", { name: p.name })
-        : t("{name} now runs on its plugin — {accounts}, {models}. Use the built-in again from here any time.", {
-          name: p.name,
-          accounts: t(accts === 1 ? "{n} account" : "{n} accounts", { n: accts }),
-          models: t(models === 1 ? "{n} model" : "{n} models", { n: models }),
-        }));
-      state = await api("state");
-      renderAgents();
-    } catch (e) {
-      say(onPlugin ? e.message : t("It stays built-in: {error}", { error: moveWhy({ why: e.why, error: e.message }, p) }));
-      b.classList.remove("busy");
-      b.disabled = false;
-      b.textContent = onPlugin ? t("Use the built-in again") : t("Try again");
-    }
-  };
-  box.append(said);
-  if (!onPlugin) {
-    const note = el("div", "dep-note");
-    note.append(el("span", "badge deprecated", t("Deprecated")), el("span", "", t(DEPRECATED_WHY)));
-    box.append(note);
-  }
-  box.append(b, why);
-  return field(t("Runs on"), box, onPlugin ? t("Going back puts every account, with the plugin's newer sign-ins, back into the built-in.") : t("If an account doesn't work through the plugin, nothing changes."));
-}
-
 async function providerAction(action, body, okMsg, base = "provider/") {
   if (action === "delete" && !await confirmRemoval(providers?.providers.find((p) => p.id === body.id)?.name || body.id,
     "Its saved configuration will be removed. Agents using it may switch to another provider or their default model.")) return false;
   try {
-    const was = editing;
     providers = await api(base + action, body);
-    dropSigningIn(was); // saved or removed, the editor takes its sign-in with it
     editing = null;
     draft = null;
     importing = null;
@@ -15163,23 +12949,17 @@ function renderQuotas() {
     const folded = keys ? keysFolded(subs) : accts ? acctsFolded(subs) : new Set();
     for (const sub of subs) {
       if (folded.has(sub)) continue;
-      // "Every model" by the account, or the card's name: where the click
-      // was, whichever way the meters under it grow or shrink
-      const [meters, every] = familyQuota(sub);
+      const meters = quotaWindows(sub);
       const brief = several && !usageAcctOpen(sub, subs);
       if (sub.user) {
         const who = el("div", "subscription-account" + (brief ? " brief" : ""));
         who.dataset.card = trayCardID(sub);
         if (sub.balanceCard) who.dataset.balCard = sub.balanceCard;
         who.append(...quotaWho(sub));
-        // in brief, its resets and whether it uses them by itself (#719)
-        const auto = brief && autoResetBrief(sub);
-        if (auto) who.append(auto);
         if (sub.plan || sub.until) who.append(planSpan(sub));
-        if (every) who.append(every);
         if (several) who.append(usageAcctFold(sub, !brief));
         card.append(who);
-      } else if (every) head.append(every);
+      }
       // in brief: each window's name, figure and bar, when it resets in
       // its tooltip; the curve and the rest only in full
       if (brief) meters.classList.add("brief");
@@ -15190,15 +12970,9 @@ function renderQuotas() {
       // how many of the period's requests to it fogway made itself (#1839)
       const own = !brief && ownLine(sub);
       if (own) card.append(own);
-      // WorkBuddy's, Trae CN's or MiniMax Code's daily check-in, how this account's went,
-      // and the switch for it, on the card rather than only in Settings
-      // (#694); the switch on the first card of each vendor's
-      if (sub.checkins) card.append(checkinRow(sub, sub === subs.find((x) => x.checkins && (x.checkinBy || "") === (sub.checkinBy || "")), subs));
       // what was left over time, against an even burn (#651)
       const curve = !brief && !sub.error && quotaCurve(sub);
       if (curve) card.append(curve);
-      // WorkBuddy's credits, day by day, as fogway counted them (#568)
-      if (!brief && sub.daily && !sub.error) card.append(creditDays(sub));
       // what is left besides the windows, under them
       if (sub.balance && sub.windows?.length && !sub.error) card.append(balanceRow(sub, "What is left on the account besides its windows", false));
       // the balance over time, and when it runs out at that pace
@@ -15209,25 +12983,6 @@ function renderQuotas() {
       // balance alone says it in its row)
       const read = !brief && sub.windows?.length && !sub.error && readWhen(sub, true);
       if (read) card.append(read);
-      if (!brief && sub.resets?.count) {
-        const r = el("div", "quota-resets");
-        r.append(resetsWords(sub.resets, sub));
-        // only Codex's are spent from here: a GLM team's are spent on
-        // bigmodel.cn, a plugin's wherever its vendor spends them
-        if (!sub.resets.byWindow && sub.provider === "codex") {
-          const use = el("button", "text", t("Use a reset"));
-          use.title = resetUseTitle(sub);
-          use.onclick = () => askReset(sub);
-          r.append(use);
-        }
-        card.append(r);
-      }
-      // the account's standing say on its resets, held or not (#719)
-      const policy = !brief && autoResetRow(sub, "quota-autoreset");
-      if (policy) card.append(policy);
-      // and on its credits, when its windows run out
-      const credits = !brief && creditsRow(sub, "quota-credits");
-      if (credits) card.append(credits);
     }
     // in the card's head, beside its name: no line of its own
     // (of the keys in sight: the ones folded away are the foot's button's)
@@ -15303,11 +13058,10 @@ function keysMore(provider, n) {
   };
   return b;
 }
-// A card of more than ACCTS_FOLD accounts shows the first ACCTS_SHOWN, any
-// in full and the one carrying a check-in switch, the rest behind "Show N
-// more accounts" at its foot, as a card of keys does; remembered by
-// provider (fogway.usageAcctsAll). The tray panel leaves the ones in brief
-// out already.
+// A card of more than ACCTS_FOLD accounts shows the first ACCTS_SHOWN and
+// any in full, the rest behind "Show N more accounts" at its foot, as a
+// card of keys does; remembered by provider (fogway.usageAcctsAll). The
+// tray panel leaves the ones in brief out already.
 const ACCTS_FOLD = 8, ACCTS_SHOWN = 5;
 let usageAcctsAll = new Set();
 try { usageAcctsAll = new Set(JSON.parse(localStorage.getItem("fogway.usageAcctsAll") || "[]")); } catch {}
@@ -15316,8 +13070,6 @@ function acctsFolded(subs) {
   const shown = new Set(subs.slice(0, ACCTS_SHOWN));
   for (const q of subs) {
     if (usageAcctOpen(q, subs)) shown.add(q);
-    // the check-in switch is on the first account of each vendor's (checkinRow)
-    if (q.checkins && q === subs.find((x) => x.checkins && (x.checkinBy || "") === (q.checkinBy || ""))) shown.add(q);
   }
   return new Set(subs.filter((q) => !shown.has(q)));
 }
@@ -15566,55 +13318,6 @@ async function moveUsage(key, to) {
   }
 }
 
-// creditDays: the credits an account used each day of the period, as
-// fogway counted them from its readings of the vendor's meter, which tells
-// only what the cycle has used so far — a bar a day, and the period's sum;
-// a day before fogway first read it is not known rather than nothing.
-function creditDays(sub) {
-  const box = el("div", "credit-days");
-  const { since, days } = sub.daily;
-  const by = new Map(days.map((d) => [d.day, d.used]));
-  const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const today = new Date();
-  today.setHours(12, 0, 0, 0);
-  // the period's days, the first from when counting began for All, a
-  // picked range's own (#1492), its last 120 at most
-  const range = periodDays(period);
-  const last = range ? dayOfKey(range.to) : today;
-  let n = range ? Math.round((last - dayOfKey(range.from)) / 864e5) + 1 : { today: 1, "7d": 7, "30d": 30 }[period];
-  if (!n) n = Math.round((today - new Date(since + "T12:00:00")) / 864e5) + 1;
-  n = Math.min(120, Math.max(1, n));
-  const list = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(last);
-    d.setDate(d.getDate() - i);
-    list.push({ day: key(d), date: d, used: by.get(key(d)) || 0, known: key(d) >= since });
-  }
-  const num = (v) => (Math.round(v * 100) / 100).toLocaleString(intlLang());
-  const dayName = (d) => d.toLocaleDateString(intlLang(), { month: "short", day: "numeric" });
-  const sum = list.reduce((a, d) => a + d.used, 0);
-  const head = el("div", "cd-head");
-  const name = el("span", "", t("Credits used per day"));
-  name.title = t("Counted from fogway's readings of the vendor's meter, since {date}: what is used while fogway isn't reading it is counted on the day it next does", { date: dayName(new Date(since + "T12:00:00")) });
-  head.append(name, el("b", "", n > 1 ? t("{n} in {days} days", { n: num(sum), days: n }) : range && range.to !== key(today) ? t("{n} on {date}", { n: num(sum), date: dayName(last) }) : t("{n} today", { n: num(sum) })));
-  box.append(head);
-  if (n > 1) {
-    const bars = el("div", "cd-bars");
-    const peak = Math.max(...list.map((d) => d.used), 0);
-    for (const d of list) {
-      const b = el("span", "cd-day" + (d.known ? "" : " unknown"));
-      const fill = el("i");
-      fill.style.height = d.known && peak ? Math.max(d.used ? 6 : 0, 100 * d.used / peak).toFixed(1) + "%" : "0%";
-      b.append(fill);
-      b.title = d.known ? t("{date}: {n} credits", { date: dayName(d.date), n: num(d.used) }) : t("{date}: not counted — fogway began counting on {since}", { date: dayName(d.date), since: dayName(new Date(since + "T12:00:00")) });
-      bars.append(b);
-    }
-    box.append(bars);
-  }
-  if (since > list[0].day) box.append(el("div", "cd-note", t("Counted since {date}", { date: dayName(new Date(since + "T12:00:00")) })));
-  return box;
-}
-
 // What was left of an account's windows over time (#651), from fogway's
 // readings of them (and those of the computers sharing usage with it): a
 // line a window, the percent left, broken where the window started again;
@@ -15660,12 +13363,11 @@ function quotaLines(sub) {
   if (!h) return [];
   const out = [];
   for (const w of sub.windows || []) {
-    if (w.unlimited || w.family) continue;
-    // a pool's window is kept under the pool's name and its own
-    const name = w.pool ? w.pool + " · " + w.name : w.name;
+    if (w.unlimited) continue;
+    const name = w.name;
     const l = h.lines.find((x) => x.name === name);
     if (!l?.points?.length || out.some((x) => x.name === l.name)) continue;
-    out.push({ name, label: w.pool ? w.pool + " · " + t(w.name) : t(w.name), window: w, points: l.points.map((p) => ({
+    out.push({ name, label: t(w.name), window: w, points: l.points.map((p) => ({
       at: Date.parse(p.at), left: p.left,
       start: p.start ? Date.parse(p.start) : null, reset: p.resetsAt ? Date.parse(p.resetsAt) : null,
     })) });
@@ -15902,7 +13604,7 @@ function setQuotaRange(id) {
 // even burn faint under it; none while the curves are off
 function quotaSpark(q, w) {
   if (quotaRange === "off") return null;
-  const lines = quotaLines({ ...q, windows: [w.window ? { ...w, name: w.window } : w] });
+  const lines = quotaLines({ ...q, windows: [w] });
   if (!lines.length) return null;
   const now = Date.now(), c = quotaCycle(lines[0], now);
   const x1 = c.reset || now;
@@ -16405,7 +14107,7 @@ function renderPanelQuota() {
   const foot = el("div", "pq-foot");
   const arrange = el("button", "pq-more pq-arrange", t("Arrange"));
   arrange.type = "button";
-  arrange.title = t("Choose which subscriptions this tab shows, and their order");
+  arrange.title = t("Choose which cards this tab shows, and their order");
   arrange.onclick = () => { panelArranging = true; panelPeek = ""; renderPanelQuota(); $("#panelQuota .pq-arow .pq-ahandle")?.focus({ preventScroll: true }); };
   foot.append(arrange);
   if (away.size) foot.append(el("span", "pq-hidden", t("{n} hidden", { n: away.size })));
@@ -16570,21 +14272,21 @@ function panelQuotaCard(q) {
     card.title += "\n" + asOfText(q);
   }
   const balance = q.balance && balanceRow(q, "What is left on the account besides its windows", false);
-  // a pool's 5-hour and weekly rings, two pools of them, else three
-  const fam = familyWindows(q.windows.filter((w) => !w.unlimited));
-  if (!fam.length && q.windows.some((w) => w.unlimited)) {
+  const limited = q.windows.filter((w) => !w.unlimited);
+  if (!limited.length && q.windows.some((w) => w.unlimited)) {
     card.append(el("span", "pq-sub", t("Unlimited")));
     if (balance) card.append(balance);
     return card;
   }
-  const ws = fam.slice(0, fam.some((w) => w.members) ? 4 : 3);
+  // three rings at most
+  const ws = limited.slice(0, 3);
   // when the windows begun start again: the first bare, the others by name
   const begun = ws.filter((w) => w.resetsAt && w.used > 0);
   card.append(el("span", "pq-sub", begun.length
     ? begun.map((w, i) => {
       const at = new Date(w.resetsAt);
-      return at <= Date.now() ? (i || w.members ? ringName(w) + " " : "") + resetText(at)
-        : (i || w.members ? ringName(w) + " " : "↻ ") + resetClock(at);
+      return at <= Date.now() ? (i ? shortWindow(w.name) + " " : "") + resetText(at)
+        : (i ? shortWindow(w.name) + " " : "↻ ") + resetClock(at);
     }).join(" · ")
     : t("Not used yet")));
   const rings = el("span", "pq-rings");
@@ -16594,16 +14296,8 @@ function panelQuotaCard(q) {
     const dial = el("span", "pq-dial");
     dial.style.setProperty("--p", quotaFill(w));
     dial.append(el("b", "", quotaFill(w) + "%"));
-    // a pool's ring: its first word over its span, too long for one line
-    const rn = el("span", "pq-rn", w.window ? undefined : ringName(w));
-    if (w.window) {
-      rn.classList.add("pq-rn2");
-      rn.append(el("span", "", w.pool.split(/[ &]/)[0]), el("span", "", shortWindow(w.window)));
-    }
-    r.append(dial, rn);
+    r.append(dial, el("span", "pq-rn", shortWindow(w.name)));
     r.title = t(w.name) + " · " + quotaText(w) + (w.resetsAt ? "\n" + resetText(new Date(w.resetsAt), new Date(w.resetsAt).toLocaleString(intlLang())) + (new Date(w.resetsAt) > Date.now() ? " · " + untilText(new Date(w.resetsAt)) : "") : "")
-      + (w.tiers ? "\n\n" + tiersText(w) + "\n" : "")
-      + (w.members ? "\n\n" + poolTip(w) + "\n" : "")
       + "\n" + t(quotaLeft ? "Show how much of each window is used" : "Show how much of each window is left");
     // used or left turns here too, as on the Usage page (#124)
     r.onclick = () => setQuotaLeft(!quotaLeft);
@@ -16612,457 +14306,15 @@ function panelQuotaCard(q) {
   card.append(rings);
   if (balance) card.append(balance);
   // the first window's cycle, a thin line under the card (#651)
-  const spark = ws[0] && !ws[0].tiers ? quotaSpark(q, ws[0]) : null;
+  const spark = ws[0] ? quotaSpark(q, ws[0]) : null;
   if (spark) card.append(spark);
   if (q.asOf) card.append(el("span", "pq-sub pq-asof", asOfText(q, true)));
-  if (q.resets?.count) {
-    const r = el("div", "pq-resets");
-    r.append(resetsWords(q.resets, q));
-    if (!q.resets.byWindow && q.provider === "codex") { // as on the Usage page
-      const use = el("button", "pq-use", t("Use one…"));
-      use.title = resetUseTitle(q);
-      use.onclick = () => askReset(q);
-      r.append(use);
-    }
-    card.append(r);
-  }
-  const policy = autoResetRow(q, "pq-autoreset");
-  if (policy) card.append(policy);
-  const credits = creditsRow(q, "pq-credits");
-  if (credits) card.append(credits);
   return card;
 }
 
-// resetsWords: a Codex account's rate-limit resets, "↺ 2 resets · until
-// Sat 22:30", the date only when one of them runs out. A GLM Coding team
-// plan's are counted by window, "↺ 2 five-hour resets · 1 weekly reset",
-// and spent on the vendor's page, not here.
-function resetsWords(r, q) {
-  const w = el("span", "resets-words");
-  if (r.byWindow) {
-    const parts = [];
-    if (r.fiveHour) parts.push(t(r.fiveHour === 1 ? "1 five-hour reset" : "{n} five-hour resets", { n: r.fiveHour }));
-    if (r.weekly) parts.push(t(r.weekly === 1 ? "1 weekly reset" : "{n} weekly resets", { n: r.weekly }));
-    w.append(el("span", "resets-n", "↺ " + parts.join(" · ")));
-    // a GLM Coding plan's resets, a team's or the person's own (#1191)
-    w.title = r.team ? t("The team plan's resets, used on bigmodel.cn or z.ai") : t("The plan's resets, used on bigmodel.cn or z.ai");
-    if (r.until) {
-      const at = new Date(r.until);
-      w.append(el("span", "resets-until", " · " + t("until {when}", { when: resetClock(at) })));
-      if (!r.each?.length) w.title += "\n" + t("The first runs out {when}", { when: at.toLocaleString(intlLang()) });
-    }
-    if (r.each?.length) w.title += "\n" + resetsEach(r);
-    return w;
-  }
-  w.append(el("span", "resets-n", "↺ " + t(r.count === 1 ? "1 reset" : "{n} resets", { n: r.count })));
-  if (r.until) {
-    const at = new Date(r.until);
-    w.append(el("span", "resets-until", " · " + t("until {when}", { when: resetClock(at) })));
-    w.title = r.each?.length ? resetsEach(r) : t("The first runs out {when}", { when: at.toLocaleString(intlLang()) });
-    // whether the one that runs out first is kept from going to waste:
-    // with Auto-use on it is used shortly before it does (#624, #719)
-    if (q && autoResetKept(q)) {
-      const on = autoResetOn(q);
-      w.append(el("span", "resets-kept" + (on ? " on" : ""), " · " + t(on ? "auto-used before it expires" : "not auto-used")));
-      w.title += "\n" + t(on ? "Auto-use is on: the reset that runs out first is used about half an hour before it does, if this account's windows have been used, so what they have left can be used until then and it isn't lost; at once if the account is held up until after then."
-        : "Auto-use is off: the reset that runs out first is lost unless it's used by hand before then.");
-    }
-  } else if (r.each?.length) w.title = resetsEach(r);
-  return w;
-}
-
-// resetsEach lists every reset left and when it runs out, a line each,
-// soonest first, as the vendor said them (#960: the hover only named the
-// first, which the card already shows).
-function resetsEach(r) {
-  return r.each.map((c, i) => {
-    const when = c.until ? new Date(c.until).toLocaleString(intlLang()) : "";
-    if (c.window === "fiveHour") return when ? t("Five-hour reset runs out {when}", { when }) : t("Five-hour reset never runs out");
-    if (c.window === "weekly") return when ? t("Weekly reset runs out {when}", { when }) : t("Weekly reset never runs out");
-    return when ? t("Reset {n} runs out {when}", { n: i + 1, when }) : t("Reset {n} never runs out", { n: i + 1 });
-  }).join("\n");
-}
-
-// resetUseTitle says which reset a use spends: the one that runs out
-// first, so no one hesitates for fear of losing one that lasts longer.
-function resetUseTitle(q) {
-  const r = q.resets;
-  return (r.until
-    ? t("Uses the reset that runs out first ({when}), never one that lasts longer.", { when: new Date(r.until).toLocaleString(intlLang()) })
-    : t("Uses one of its resets; none of them runs out."))
-    + "\n" + t("This account's windows start again at once, as if none had been used. You're asked before anything is spent.");
-}
-
-// A Codex account spending a reset by itself is a standing say of the
-// account's, kept by its name (settings' codexAutoReset, the CLI's quota
-// auto-reset): when its week is used up and no other account can answer,
-// one a week at most, and the one about to run out unused shortly before
-// it does. Off unless the user turns it on; nothing for an account with no
-// name to keep it by. autoResetKept: the accounts that can have it.
-const AUTO_RESET_KEPT = { codex: "codexAutoReset" };
-function autoResetKept(q) {
-  return !!(q.user && AUTO_RESET_KEPT[q.provider] && !q.resets?.byWindow);
-}
-function autoResetOn(q) {
-  return autoResetKept(q) && !!(state.settings?.[AUTO_RESET_KEPT[q.provider]] || []).includes(q.user.toLowerCase());
-}
-
-// autoResetRow is that say on an account's card, whether or not it holds a
-// reset now, so it can be set ahead of one (#719): both times it uses one,
-// in words, and the switch.
-function autoResetRow(q, cls) {
-  if (!autoResetKept(q)) return null;
-  const on = autoResetOn(q);
-  const row = el("div", cls + (on ? " on" : ""));
-  const say = el("span", "ar-say");
-  say.append(el("b", "", t("Auto-use resets:")), document.createTextNode(" " + t("when the week runs out, or before one expires")));
-  say.title = autoResetTitle(on);
-  const used = resetsUsedLine(q);
-  if (used) say.append(used);
-  row.dataset.user = q.user;
-  row.append(say, autoResetButton(q));
-  return row;
-}
-
-// resetsUsedLine: the last of the account's resets fogway used, when and
-// why, on a line of its own under the say; every one kept in its title.
-// A reset gone from the card otherwise read the same whether fogway used
-// it, the user did, or it ran out (foobra12 on Discord: 我发现刚才好像不小心
-// 自动给我使用了一张). Nothing when fogway used none.
-function resetsUsedLine(q) {
-  const used = q.resetsUsed || [];
-  if (!used.length) return null;
-  const line = el("span", "ar-used");
-  const last = used[0];
-  line.textContent = t("Last reset used: {when} · {why}", { when: resetUsedWhen(last.at), why: resetUsedWhy(last.why) });
-  line.title = used.map((u) => resetUsedWhen(u.at) + " · " + resetUsedWhy(u.why)).join("\n");
-  return line;
-}
-function resetUsedWhen(at) {
-  return new Date(at).toLocaleString(intlLang(), { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-function resetUsedWhy(why) {
-  if (why === "week") return t("by itself, its week used up");
-  if (why === "expiring") return t("by itself, before it expired");
-  return t("by hand");
-}
-function autoResetTitle(on) {
-  return t(on ? "On: a reset is used by itself when this account's week is used up and no other account can answer, one a week at most, and the one about to run out is used about half an hour before it does, if the account has been used, or at once when the account is held up until after then. Otherwise the five hours running out never uses one. Click to turn it off."
-    : "Off: this account's resets are used only by hand. Turned on, one is used by itself when its week is used up and no other account can answer, one a week at most, and the one about to run out about half an hour before it does, if the account has been used, or at once when the account is held up until after then. Otherwise the five hours running out never uses one.");
-}
-
-// autoResetBrief: an account in brief says it too, beside its name — the
-// resets it holds and the say — with its switch: the account a week ran
-// out on is the one not served, so the one shown in brief, and its switch
-// only in full was lost (#801, ezdemo: 自动使用重置卡的开关的入口找不到了).
-function autoResetBrief(q) {
-  if (!autoResetKept(q)) return null;
-  const on = autoResetOn(q);
-  const s = el("span", "acct-auto" + (on ? " on" : ""));
-  if (q.resets?.count) s.append(el("span", "acct-auto-n", "↺ " + q.resets.count + " ·"));
-  s.append(el("span", "acct-auto-say", t("Auto-use")), autoResetButton(q));
-  s.title = (q.resets?.count ? t(q.resets.count === 1 ? "1 reset" : "{n} resets", { n: q.resets.count }) + "\n" : "") + autoResetTitle(on);
-  const used = resetsUsedLine(q);
-  if (used) s.title += "\n" + used.textContent;
-  return s;
-}
-
-// autoResetButton turns that on or off: a switch, its words beside it.
-function autoResetButton(q) {
-  const on = autoResetOn(q);
-  const b = el("button", "lib-switch auto-reset" + (on ? " on" : ""));
-  b.type = "button";
-  b.setAttribute("role", "switch");
-  b.setAttribute("aria-checked", String(on));
-  b.setAttribute("aria-label", t("Auto-use resets"));
-  b.title = autoResetTitle(on);
-  b.append(el("i"));
-  b.onclick = async (e) => {
-    e.stopPropagation();
-    if (b.disabled) return;
-    b.disabled = true;
-    try {
-      prefs = await writingPrefs(api("settings/" + q.provider + "-auto-reset", { user: q.user, on: !on }));
-      state.settings = prefs;
-      status(t(on ? "{who} no longer uses a reset by itself" : "{who} uses a reset by itself when its week runs out, or before one expires", { who: q.user }), "ok");
-      renderQuotas();
-      if ($("#codexAutoResetRow")) renderAutoResetOwn(prefs); // Settings › Usage says the same
-    } catch (err) {
-      b.disabled = false;
-      status(err.message, "err");
-    }
-  };
-  return b;
-}
-
-// Whether a Codex account spends its credits once one of its windows is
-// used up, a standing say of the account's kept by its name (settings'
-// codexNoCredits, the CLI's quota credits): on unless the user turns it
-// off. Off, routing holds the account as used up till the window renews,
-// as a usage cap does at its share. creditsKept: the accounts that can
-// have it.
-function creditsKept(q) {
-  return !!(q.user && q.provider === "codex");
-}
-function creditsOn(q) {
-  return creditsKept(q) && !(state.settings?.codexNoCredits || []).includes(q.user.toLowerCase());
-}
-
-// creditsRow is that say on an account's card, credits held or not, so it
-// can be set ahead: what it does, in words, and the switch.
-function creditsRow(q, cls) {
-  if (!creditsKept(q)) return null;
-  const on = creditsOn(q);
-  const row = el("div", cls + (on ? " on" : ""));
-  const say = el("span", "ar-say");
-  say.append(el("b", "", t("Use credits:")), document.createTextNode(" " + t(on ? "when its windows run out, so a task goes on" : "no — held when a window runs out")));
-  say.title = creditsTitle(on);
-  row.dataset.user = q.user;
-  row.append(say, creditsButton(q));
-  return row;
-}
-function creditsTitle(on) {
-  return t(on ? "On: once one of this account's windows is used up, ChatGPT answers on the account's credits, if it holds any, so a task goes on. Click to turn it off."
-    : "Off: once one of this account's windows is used up, by fogway's latest reading (refreshed about every minute), fogway holds it till the window renews, and requests go to your other accounts, groups and fallbacks rather than spending its credits. With none of them left, a request is refused with why, unless Auto-use resets is on and its week is used up: then a reset is used first.");
-}
-
-// creditsButton turns that on or off: a switch, its words beside it.
-function creditsButton(q) {
-  const on = creditsOn(q);
-  const b = el("button", "lib-switch use-credits" + (on ? " on" : ""));
-  b.type = "button";
-  b.setAttribute("role", "switch");
-  b.setAttribute("aria-checked", String(on));
-  b.setAttribute("aria-label", t("Use credits"));
-  b.title = creditsTitle(on);
-  b.append(el("i"));
-  b.onclick = async (e) => {
-    e.stopPropagation();
-    if (b.disabled) return;
-    b.disabled = true;
-    try {
-      prefs = await writingPrefs(api("settings/codex-credits", { user: q.user, on: !on }));
-      state.settings = prefs;
-      status(t(on ? "{who} no longer spends its credits: held when a window runs out" : "{who} spends its credits when its windows run out", { who: q.user }), "ok");
-      renderQuotas();
-    } catch (err) {
-      b.disabled = false;
-      status(err.message, "err");
-    }
-  };
-  return b;
-}
-
-// checkinRow is a WorkBuddy (China), Trae CN or MiniMax Code account's daily check-in
-// on its Usage card: today's (a Beijing day) done, with the credits and
-// the streak, or why not, or the last day it was; the vendor's first such
-// row also holds the switch, which is Settings' "Daily check-in", and a
-// press for its accounts not in yet today (#694, Dazzle-sys:
-// 卡片显示今日是否已经签到; Hu9956: TRAE cn 也有每天签到送100积分;
-// #811, MiniMax Code's).
-const CHECKINS = {
-  "": {
-    pref: "workbuddyCheckin", api: "workbuddy-checkin",
-    say: "WorkBuddy's daily check-in, as pressing 签到 in WorkBuddy does",
-    on: "On: fogway checks each WorkBuddy (China) account in once a day, as Settings' Daily check-in does. Click to turn it off.",
-    off: "Check each WorkBuddy (China) account in once a day, as Settings' Daily check-in does",
-  },
-  trae: {
-    pref: "traeCheckin", api: "trae-checkin",
-    say: "Trae CN's daily check-in, as pressing 签到 in Trae does",
-    on: "On: fogway checks each Trae CN account in once a day, as Settings' Daily check-in does. Click to turn it off.",
-    off: "Check each Trae CN account in once a day, as Settings' Daily check-in does",
-  },
-  minimax: {
-    pref: "minimaxCheckin", api: "minimax-checkin",
-    say: "MiniMax Code's daily check-in, as pressing 签到 in MiniMax Code does",
-    on: "On: fogway checks each MiniMax Code account in once a day, as Settings' Daily check-in does. Click to turn it off.",
-    off: "Check each MiniMax Code account in once a day, as Settings' Daily check-in does",
-  },
-  qoder: {
-    pref: "qoderCheckin", api: "qoder-checkin",
-    say: "Qoder's daily credits, as claiming them in Qoder does",
-    on: "On: fogway claims each Qoder account's daily credits once a day, as Settings' Daily check-in does. Click to turn it off.",
-    off: "Claim each Qoder account's daily credits once a day, as Settings' Daily check-in does",
-  },
-};
-// pluginCheckin is the check-in of a plugin that presses it itself
-// (auth.checkin; Lemon on Discord), by its provider: its switch is its own.
-function pluginCheckin(id, name) {
-  return {
-    plugin: id, api: "plugin-checkin",
-    say: t("{name}'s daily check-in, pressed by its plugin", { name }),
-    on: t("On: fogway has the {name} plugin check each account in once a day, as Settings' Daily check-in does. Click to turn it off.", { name }),
-    off: t("Have the {name} plugin check each account in once a day, as Settings' Daily check-in does", { name }),
-  };
-}
-// the built-in check-in a plugin's provider took over, whose switch it
-// follows until its own is set: provider.PluginCheckinOn's switch
-const PLUGIN_CHECKIN_INHERITS = {
-  workbuddy: "workbuddyCheckin", "trae-cn": "traeCheckin",
-  "minimax-code": "minimaxCheckin", "minimax-code-global": "minimaxCheckin",
-  qoder: "qoderCheckin", "qoder-cn": "qoderCheckin",
-};
-function pluginCheckinOn(id) {
-  // /api/state carries the saved map, without /api/settings's plugin list.
-  // An explicit false must win over the list's inherited vendor default,
-  // and with neither the built-in's own switch is that default (#1912).
-  const prefs = state.settings;
-  const own = prefs?.pluginCheckins?.[id] ?? prefs?.checkinPlugins?.find((p) => p.id === id)?.on;
-  if (own !== undefined) return !!own;
-  const inherits = Object.hasOwn(PLUGIN_CHECKIN_INHERITS, id) ? PLUGIN_CHECKIN_INHERITS[id] : "";
-  return !!(inherits && prefs?.[inherits]);
-}
-function checkinRow(q, first, subs) {
-  const by = q.checkinBy || "";
-  const vendor = by.startsWith("plugin:") ? pluginCheckin(by.slice(7), q.name || by.slice(7)) : CHECKINS[by] || CHECKINS[""];
-  const on = vendor.plugin ? pluginCheckinOn(vendor.plugin) : !!state.settings?.[vendor.pref];
-  const r = q.checkin;
-  const today = wbToday();
-  const row = el("div", "wb-checkin");
-  row.dataset.feature = "warmups";
-  let kind = "", text;
-  const last = r && r.day !== today && (r.outcome === "claimed" || r.outcome === "done") ? t("last checked in {day}", { day: r.day }) : "";
-  if (r && r.day === today) {
-    switch (r.outcome) {
-      case "claimed":
-      case "done":
-        kind = "ok";
-        text = t("Checked in today") + (r.credit ? " +" + r.credit : "") + (r.streak ? " · " + t("{n}-day streak", { n: r.streak }) : "");
-        break;
-      case "ineligible":
-        text = t("Not eligible for the daily check-in");
-        break;
-      case "inactive":
-        text = t("No check-in event now");
-        break;
-      case "captcha":
-        // the vendor wants a captcha, which fogway never solves
-        text = t("Asks for a captcha; check in in its own app") + (r.msg ? " · " + r.msg : "");
-        break;
-      case "own-app":
-        // the vendor pays only its own app (Trae CN's 9074, #808): not
-        // tried again today
-        text = t("{name} only gives check-in credits to its own app; check in in the {name} app", { name: checkinVendorName(r, q.name) });
-        break;
-      default:
-        kind = "bad";
-        // why, in the row: a reason only in the tooltip read as no reason (#808)
-        text = t(on ? "Check-in failed; fogway tries again later" : "Check-in failed") + (r.msg ? " · " + r.msg : "");
-    }
-  } else if (q.checkinOff) {
-    // left out on its own in Settings (#1902)
-    text = [t("Auto check-in is off for this account"), last].filter(Boolean).join(" · ");
-  } else {
-    kind = on ? "wait" : "";
-    text = [t(on ? "Not checked in yet today" : "Auto check-in is off"), last].filter(Boolean).join(" · ");
-  }
-  row.dataset.state = kind || "none";
-  const say = el("span", "ci-say");
-  say.append(el("i", "ci-dot" + (kind ? " " + kind : "")), el("span", "", text));
-  say.title = [t(vendor.say),
-    r?.outcome === "failed" || r?.outcome === "ineligible" || r?.outcome === "own-app" ? r.msg : ""].filter(Boolean).join("\n");
-  row.append(say);
-  if (!first) return row;
-  const auto = el("button", "text ci-auto" + (on ? " on" : ""), t("Auto check-in"));
-  auto.type = "button";
-  auto.setAttribute("aria-pressed", String(on));
-  auto.title = t(on ? vendor.on : vendor.off);
-  auto.onclick = async (e) => {
-    e.stopPropagation();
-    auto.disabled = true;
-    try {
-      prefs = await writingPrefs(api("settings/" + vendor.api, vendor.plugin ? { provider: vendor.plugin, on: !on } : { on: !on }));
-      state.settings = prefs;
-      status(t(on ? "Daily check-in turned off" : "Daily check-in turned on; fogway checks in within a few minutes"), "ok");
-      renderQuotas();
-    } catch (err) {
-      auto.disabled = false;
-      status(err.message, "err");
-    }
-  };
-  row.append(auto);
-  // pressed now: shown while an account isn't in today and could be
-  const due = subs.filter((x) => x.checkins && !x.checkinOff && (x.checkinBy || "") === by && !(x.checkin?.day === today && x.checkin.outcome !== "failed"));
-  if (due.length) {
-    const now = el("button", "text ci-now", t("Check in now"));
-    now.type = "button";
-    now.title = t("Press 签到 now for the accounts not checked in today");
-    now.onclick = async (e) => {
-      e.stopPropagation();
-      now.disabled = true;
-      now.classList.add("busy");
-      try {
-        const rs = await api("usage/" + vendor.api, vendor.plugin ? { provider: vendor.plugin } : {});
-        const bad = (rs || []).filter((x) => x.outcome === "failed").length;
-        status(bad ? t("Check-in failed for {n} account(s)", { n: bad }) : t("Checked in"), bad ? "err" : "ok");
-      } catch (err) {
-        status(err.message, "err");
-      }
-      loadQuotas();
-    };
-    row.append(now);
-  }
-  return row;
-}
-
-// checkinVendorName is the vendor of check-in r by name: a plugin's as
-// it says, a built-in check-in's own, else fallback.
-function checkinVendorName(r, fallback) {
-  return r?.vendor || { trae: "Trae CN", minimax: "MiniMax Code", qoder: "Qoder", "": "WorkBuddy" }[r?.by || ""] || fallback || "";
-}
-
-// wbToday is today as WorkBuddy's check-in counts it, a Beijing day
-function wbToday() {
-  return new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
-}
-
-// askReset: spending a Codex account's reset can't be taken
-// back, so it asks first; then it says what came of it and reads the
-// usage again.
+// confirmAsk: the confirmation the dialog shows now, if any; Escape and the
+// backdrop close only it.
 let confirmAsk = null;
-function askReset(q) {
-  const ed = el("div", "editor reset-ask");
-  const head = el("div", "ehead");
-  head.append(icon(q.icon || "codex"), el("b", "", t("Use a Codex reset?")));
-  ed.append(head);
-  const who = q.alias || q.user || q.name;
-  ed.append(el("p", "lib-confirm", t(q.resets.count === 1
-    ? "{who} has 1 reset. Using it starts its windows again at once, as if none of them had been used. It can't be undone."
-    : "{who} has {n} resets. Using one starts its windows again at once, as if none of them had been used. It can't be undone.", { who, n: q.resets.count })));
-  if (q.resets.until) ed.append(el("p", "lib-confirm", t("The one used is the one that runs out first, {when}.", { when: new Date(q.resets.until).toLocaleString(intlLang()) })));
-  // nothing used yet: a reset would start nothing again
-  if (!q.windows?.some((w) => w.used > 0)) ed.append(el("p", "lib-confirm reset-idle", t("None of its windows has been used yet, so there is nothing to start again.")));
-  const bar = el("div", "bar");
-  const go = el("button", "text primary", t("Use a reset"));
-  go.onclick = async (e) => {
-    e.stopPropagation();
-    go.disabled = true;
-    go.classList.add("busy");
-    try {
-      const out = await api("usage/codex-reset", { user: q.user || "" });
-      closeConfirmAsk();
-      status(who + ": " + resetOutcome(out), out.code === "reset" ? "ok" : "err");
-      // the providers' editor reads the account's windows and resets
-      // on its own, kept a minute: read again, as Usage is (#1491)
-      delete loginUsage.codex;
-      if (editing && view === "providers") renderProviders();
-      loadQuotas();
-    } catch (err) {
-      go.disabled = false;
-      go.classList.remove("busy");
-      status(err.message, "err");
-    }
-  };
-  const cancel = el("button", "text", t("Cancel"));
-  cancel.onclick = (e) => { e.stopPropagation(); closeConfirmAsk(); };
-  bar.append(el("span", "grow"), cancel, go);
-  ed.append(bar);
-  confirmAsk = ed;
-  openModal(ed);
-  $("#modal").classList.add("lib");
-  go.focus();
-}
 function closeConfirmAsk() {
   if (!confirmAsk) return;
   // Escape and the backdrop must not expose row actions while a bulk write
@@ -17082,21 +14334,6 @@ $("#modal").addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (!confirmationPending && confirmAsk && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); closeConfirmAsk(); }
 }, true);
-function resetOutcome(out) {
-  switch (out.code) {
-    case "reset": return t(out.windows === 1 ? "1 window started again" : "{n} windows started again", { n: out.windows });
-    case "nothing_to_reset": return t("nothing to start again — no window has been used, and the reset is kept");
-    case "no_credit": return t("no reset left on the account");
-    case "already_redeemed":
-    case "already_used": return t("that reset was already used");
-    // Anthropic's
-    case "not_limited": return t("nothing to reset — no window is used up yet, and the reset is kept");
-    case "cooldown": return t("a reset was used a short while ago — try again later");
-    case "ineligible": return t("the account can't use a reset");
-    case "unavailable": return t("resets can't be used right now — try again later");
-  }
-  return out.code;
-}
 
 // panelAge: on the Usage tab, the footer says how old what it shows is.
 function panelAge() {
@@ -17218,37 +14455,6 @@ function quotaRefresh(q) {
   return b;
 }
 
-// familyQuota: an account's windows one a model family where they name
-// one, and "Every model", for above them, turning to each window and back
-// in place: the card grows or shrinks below it, the page doesn't move.
-const everyModel = new Set(); // provider|user shown window by window
-function familyQuota(sub) {
-  const fam = sub.error ? sub.windows : familyWindows(sub.windows);
-  if (fam === sub.windows) return [quotaWindows(sub), null];
-  const key = sub.provider + "|" + (sub.user || "");
-  const models = pooledModels(sub.windows);
-  const pooled = models !== sub.windows;
-  const shown = () => quotaWindows({ ...sub, windows: everyModel.has(key) ? models : fam });
-  let box = shown();
-  const b = el("button", "text quota-every");
-  const label = () => {
-    const all = everyModel.has(key);
-    b.textContent = all ? t(pooled ? "By group" : "By family") : t("Every model ({n})", { n: models.length });
-    b.title = all ? t(pooled ? "Each group of models' 5-hour and weekly allowance, shared by its models" : "One figure a model family, its most used model's") : t("Each model's allowance, level by level");
-    b.setAttribute("aria-expanded", String(all));
-  };
-  label();
-  b.onclick = () => {
-    if (everyModel.has(key)) everyModel.delete(key); else everyModel.add(key);
-    const next = shown();
-    if (box.classList.contains("brief")) next.classList.add("brief");
-    box.replaceWith(next);
-    box = next;
-    label();
-  };
-  return [box, b];
-}
-
 // holdsLine: a window's whole, reckoned from the calls fogway routed
 // through the account since it began over the share used (WindowHolds),
 // and in its tooltip how, and why it reads low if the account is used
@@ -17361,10 +14567,6 @@ function quotaWindows(sub) {
       if (!r) quota.append(r = el("div", "quota-reset"));
       r.append(holdsLine(w.holds));
     }
-    // a model family's figure: its models, level by level, in its tooltip
-    if (w.tiers) quota.title = t("{family}: the most used of its models", { family: w.name }) + "\n" + tiersText(w);
-    // a pool's: when it starts again, and the models it counts
-    if (w.members) quota.title = [quota.title, poolTip(w)].filter(Boolean).join("\n");
     windows.append(quota);
   }
   quotaFit.observe(windows);
@@ -19015,8 +16217,7 @@ function renderLedger() {
       badges.append(badge);
     }
     let access = "";
-    if (!local && r.access === "subscription") access = "Subscription";
-    else if (!local && r.access === "api") access = "API";
+    if (!local && r.access === "api") access = "API";
     if (access) {
       const badge = el("span", "src access access-" + r.access, t(access));
       badge.title = t(access);
@@ -20836,30 +18037,6 @@ const prefsSettled = (since) => !prefsBusy && since === prefsWrites;
 const GITHUB_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>';
 const DISCORD_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>';
 
-// The Settings page's warm-ups and check-in are one section whose heading
-// is a tab per service (Codex, Claude Code, WorkBuddy), the card under it
-// showing the picked one's rows. The tab is remembered; WorkBuddy's, there
-// only while an account is signed in or the check-in is on, falls back to
-// Codex's when it is not. A click on a tab leaves the page where it is, as
-// every click does (see "where the reader is"): a shorter card under it at
-// the page's end gets room kept at the view's foot.
-const WARM_TABS = { codex: "codexWarmList", claude: "claudeWarmList", wb: "wbList", trae: "traeList", minimax: "minimaxList", qoder: "qoderList", plugins: "pluginCheckinList" };
-let warmTab = "codex";
-try { const k = localStorage.getItem("fogway.warmTab"); if (k in WARM_TABS) warmTab = k; } catch {}
-function setWarmTab(tab, remember) {
-  if (remember) {
-    warmTab = tab;
-    try { localStorage.setItem("fogway.warmTab", tab); } catch {}
-  }
-  if (!(tab in WARM_TABS) || $("#warmTab-" + tab).hidden) tab = "codex";
-  for (const [id, list] of Object.entries(WARM_TABS)) {
-    const b = $("#warmTab-" + id), on = id === tab;
-    b.classList.toggle("on", on);
-    b.setAttribute("aria-selected", String(on));
-    b.tabIndex = on ? 0 : -1;
-    $("#" + list).hidden = !on;
-  }
-}
 // A tab list's keys: the arrows, Home and End move along its shown tabs,
 // and the tab reached is clicked, so the page is held as for a click
 function tabKeys(tabs, sel) {
@@ -20875,14 +18052,6 @@ function tabKeys(tabs, sel) {
     b.focus({ preventScroll: true });
     b.click();
   };
-}
-{
-  const tabs = $("#warmTabs");
-  tabs.onclick = (e) => {
-    const b = e.target.closest("button[data-warm]");
-    if (b) setWarmTab(b.dataset.warm, true);
-  };
-  tabKeys(tabs, "button[data-warm]");
 }
 
 // The Settings page is a page per part (#471: one long scroll of some 45
@@ -21190,67 +18359,6 @@ function renderSettings() {
   // the system's record, set on its own, not with the other choices
   $("#loginSegs").replaceChildren(segs([["off", t("Off")], ["on", t("On")]], s.login ? "on" : "off", (v) =>
     writingPrefs(api("settings/login", { on: v === "on" })).then((ns) => { prefs = ns; renderSettings(); }).catch((e) => { status(t(e.message), "err"); renderSettings(); })));
-  // Codex's and Claude Code's warm-ups and WorkBuddy's check-in, one tab
-  // each over one card, the rows' names not saying the service again.
-  // A ChatGPT account's next window started as soon as the last resets
-  $("#warmSegs").replaceChildren(segs([["off", t("Off")], ["week", t("Weekly")], ["all", t("Weekly and 5-hour")]],
-    s.codexWarmup || "off", (v) => savePrefs({ ...keep, codexWarmup: v === "off" ? "" : v })));
-  $("#warmSub").textContent = t("One tiny request starts the next window at once")
-    + (s.codexWarmed ? " · " + t("last started {when}", { when: syncWhen(s.codexWarmed) }) : "");
-  // and a Claude account's, the request sent through Claude Code
-  $("#claudeWarmSegs").replaceChildren(segs([["off", t("Off")], ["week", t("Weekly")], ["all", t("Weekly and 5-hour")]],
-    s.claudeWarmup || "off", (v) => savePrefs({ ...keep, claudeWarmup: v === "off" ? "" : v })));
-  $("#claudeWarmSub").textContent = t("One tiny request through Claude Code (Haiku) starts the next window at once")
-    + (s.claudeWarmed ? " · " + t("last started {when}", { when: syncWhen(s.claudeWarmed) }) : "");
-  // and the 5-hour windows started at times of day, so they line up with it
-  renderWarmAt($("#warmAtSegs"), $("#warmAtSub"), warmTimes(s.codexWarmAts, s.codexWarmAt), s.codexWarmup, "",
-    (v) => savePrefs({ ...keep, codexWarmAts: v, codexWarmAt: v[0] || "" }));
-  renderWarmAt($("#claudeWarmAtSegs"), $("#claudeWarmAtSub"), warmTimes(s.claudeWarmAts, s.claudeWarmAt), s.claudeWarmup, t("Sent through Claude Code."),
-    (v) => savePrefs({ ...keep, claudeWarmAts: v, claudeWarmAt: v[0] || "" }));
-  renderWarmAtOwn(s);
-  renderAutoResetOwn(s);
-  // WorkBuddy's daily check-in pressed for each account, its tab shown
-  // while one is signed in
-  $("#warmTab-wb").hidden = !s.workbuddy && !s.workbuddyCheckin;
-  $("#warmTabs").setAttribute("aria-label", t("Warm-up and check-in"));
-  setWarmTab(warmTab);
-  $("#wbCheckinSegs").replaceChildren(segs([["off", t("Off")], ["on", t("On")]], s.workbuddyCheckin ? "on" : "off",
-    (v) => savePrefs({ ...keep, workbuddyCheckin: v === "on" })));
-  $("#wbCheckinSub").textContent = [t("Claims each signed-in China account's check-in credits once a day"),
-    ...(s.workbuddyCheckins || []).map(wbCheckinLine)].filter(Boolean).join(" · ");
-  $("#wbCheckinSub").title = t("As pressing 签到 in WorkBuddy does");
-  // and Trae CN's (#694), its tab shown while a Trae CN account is signed in
-  $("#warmTab-trae").hidden = !s.trae && !s.traeCheckin;
-  setWarmTab(warmTab);
-  $("#traeCheckinSegs").replaceChildren(segs([["off", t("Off")], ["on", t("On")]], s.traeCheckin ? "on" : "off",
-    (v) => savePrefs({ ...keep, traeCheckin: v === "on" })));
-  $("#traeCheckinSub").textContent = [t("Claims each signed-in Trae CN account's check-in credits once a day"),
-    ...(s.traeCheckins || []).map(wbCheckinLine)].filter(Boolean).join(" · ");
-  $("#traeCheckinSub").title = t("As pressing 签到 in Trae does");
-  // and MiniMax Code's (#811), its tab shown while a MiniMax Code account is signed in
-  $("#warmTab-minimax").hidden = !s.minimax && !s.minimaxCheckin;
-  setWarmTab(warmTab);
-  $("#minimaxCheckinSegs").replaceChildren(segs([["off", t("Off")], ["on", t("On")]], s.minimaxCheckin ? "on" : "off",
-    (v) => savePrefs({ ...keep, minimaxCheckin: v === "on" })));
-  $("#minimaxCheckinSub").textContent = [t("Claims each signed-in MiniMax Code account's check-in credits once a day"),
-    ...(s.minimaxCheckins || []).map(wbCheckinLine)].filter(Boolean).join(" · ");
-  $("#minimaxCheckinSub").title = t("As pressing 签到 in MiniMax Code does");
-  // and Qoder's daily credits, its tab shown while a Qoder account is signed in
-  $("#warmTab-qoder").hidden = !s.qoder && !s.qoderCheckin;
-  setWarmTab(warmTab);
-  $("#qoderCheckinSegs").replaceChildren(segs([["off", t("Off")], ["on", t("On")]], s.qoderCheckin ? "on" : "off",
-    (v) => savePrefs({ ...keep, qoderCheckin: v === "on" })));
-  $("#qoderCheckinSub").textContent = [t("Claims each signed-in Qoder account's daily credits once a day"),
-    ...(s.qoderCheckins || []).map(wbCheckinLine)].filter(Boolean).join(" · ");
-  $("#qoderCheckinSub").title = t("As claiming the daily credits in Qoder does");
-  // and under each vendor's switch, its accounts', each on its own (#1902)
-  for (const [list, by] of [["#wbList", ""], ["#traeList", "trae"], ["#minimaxList", "minimax"], ["#qoderList", "qoder"]]) {
-    $(list).querySelectorAll(".ci-acct").forEach((x) => x.remove());
-    $(list).append(...checkinAccountRows(s, by));
-  }
-  // and the plugins that check in themselves, a row each, their tab shown
-  // while one is signed in
-  renderPluginCheckins(s);
   renderTrayUsage(s, keep);
   renderProxy(s, keep);
   renderGitHubToken(s);
@@ -21485,7 +18593,6 @@ async function renderSync(v) {
   if (v.on && !v.error && v.usageError) sub.after(el("div", "sub bad wraps sync-usage-err", t("Couldn't share usage: {error}", { error: v.usageError })));
   // subscriptions whose settings sync brought with no account here: sync
   // carries no sign-in, and they are listed once signed in to here
-  if (v.on && v.signIn?.length) sub.after(el("div", "sub wraps sync-sign-in", t("Not signed in on this computer: {names}. Sync carries no sign-in: sign in to them in Providers → Add a provider.", { names: subNames(v.signIn) })));
   // the server's file isn't a backup a sync can read, and is a file: this
   // computer's setup can go up in its place, the user choosing it
   if (v.on && v.error && v.serverFile?.replace) {
@@ -21790,7 +18897,7 @@ function exportForm() {
   const [libL, lib] = tick(t("With the library: instructions, MCP servers and skills"), true);
   const what = el("div", "stack");
   what.append(keysL, libL);
-  ed.append(...field(t("Passphrase"), p1, t("Needed to open the file. Subscriptions aren't in it: sign in to them on the other computer.")),
+  ed.append(...field(t("Passphrase"), p1, t("Needed to open the file.")),
     ...field("", p2), ...field("", what));
   const go = el("button", "text primary", t("Export"));
   const cancel = el("button", "text", t("Cancel"));
@@ -21851,7 +18958,6 @@ function importForm() {
       const lines = [t("Providers: {added} added, {replaced} replaced; {profiles} profiles; {agents} agent settings changed", { added: r.Added, replaced: r.Replaced, profiles: r.Profiles, agents: r.Agents })];
       if (r.NeedKey?.length) lines.push(t("Needs a key: {names}", { names: r.NeedKey.join(", ") }));
       // a backup carries a subscription's settings, never its sign-in
-      if (r.SignIn?.length) lines.push(t("Not signed in on this computer: {names}. A backup carries no sign-in: sign in to them in Providers → Add a provider.", { names: subNames(r.SignIn) }));
       if (r.Plugins?.length) lines.push(t("Plugins added: {names}", { names: r.Plugins.join(", ") }));
       for (const [spec, error] of Object.entries(r.PluginErrors || {})) lines.push(t("Couldn't add the plugin {spec}: {error}", { spec, error }));
       if (r.Library) lines.push(t("Library brought in and written into the agents"));
@@ -22016,8 +19122,8 @@ function renderTrayUsage(s, keep) {
   $("#trayUsageRow").hidden = web;
   if (web) return;
   const mac = document.body.classList.contains("mac");
-  $("#trayUsageSub").textContent = mac ? t("Show your subscriptions' allowances, or the tokens and cost of today or the last 7 days, beside fogway's icon in the menu bar, side by side, refreshed every few minutes")
-    : t("Show your subscriptions' allowances, or the tokens and cost of today or the last 7 days, when pointing at fogway's tray icon, refreshed every few minutes");
+  $("#trayUsageSub").textContent = mac ? t("Show your plans' allowances, or the tokens and cost of today or the last 7 days, beside fogway's icon in the menu bar, side by side, refreshed every few minutes")
+    : t("Show your plans' allowances, or the tokens and cost of today or the last 7 days, when pointing at fogway's tray icon, refreshed every few minutes");
   const ids = s.trayUsages || (s.trayUsage ? [s.trayUsage] : []);
   const pill = el("button", "proto pick" + (ids.length ? " set" : ""));
   pill.type = "button";
@@ -22025,7 +19131,7 @@ function renderTrayUsage(s, keep) {
     const card = (quotas || []).find((q) => trayCardID(q) === ids[0] || q.provider + IN_USE === ids[0]);
     const total = TRAY_TOTALS.find(([v]) => v === ids[0]);
     pill.replaceChildren(el("span", "", !ids.length ? t("Off")
-      : ids.length > 1 ? ids.some((id) => TRAY_TOTALS.some(([v]) => v === id)) ? t("{n} shown", { n: ids.length }) : t("{n} subscriptions", { n: ids.length })
+      : ids.length > 1 ? ids.some((id) => TRAY_TOTALS.some(([v]) => v === id)) ? t("{n} shown", { n: ids.length }) : t("{n} plans", { n: ids.length })
       : total ? t(total[1]) : card ? card.name : ids[0].split("|")[0]), svg(CHEV, 11, 1.6));
   };
   paint();
@@ -22055,7 +19161,7 @@ function renderTrayUsage(s, keep) {
     // one ticked that isn't there now (signed out, or not answering) stays
     // to be unticked
     for (const id of ids) if (!opts.some((o) => o.v === id)) opts.push({ v: id, name: id.split("|")[0], note: id.endsWith(IN_USE) ? "Account in use" : id.split("|")[1] || "" });
-    if (!cards.length) opts.push({ v: "\x00", name: "No subscriptions yet", note: "Sign in to one, or add a plan's key, and it shows on the Usage page" });
+    if (!cards.length) opts.push({ v: "\x00", name: "No plans yet", note: "Add a plan's key and it shows on the Usage page" });
     openProtoMenu(pill, opts, ids, (trayUsages) => savePrefs({ ...keep, trayUsages }), "Shown beside the icon");
   };
   pill.onclick = async (e) => {
@@ -22248,165 +19354,6 @@ function renderGitHubToken(s) {
   const get = el("button", "link", t("Create one ↗"));
   get.onclick = () => api("open", { url: "https://github.com/settings/tokens/new?description=fogway" }).catch(() => {});
   val.append(i, get, save);
-}
-
-// warmTimes is a daily warm-up's times of day as settings keep them: the
-// list, else the one time a settings file from before it has.
-function warmTimes(ats, at) {
-  return Array.isArray(ats) ? ats : at ? [at] : [];
-}
-
-// nextWarmTime is the time a daily warm-up's + adds after ats: a 5-hour
-// window after the last, so the two follow one another, or the first
-// hour that isn't taken when that wraps past midnight onto one.
-function nextWarmTime(ats) {
-  const [h, m] = (ats[ats.length - 1] || "06:00").split(":").map(Number);
-  const pad = (n) => String(n).padStart(2, "0");
-  let at = pad((h + 5) % 24) + ":" + pad(m);
-  for (let i = 0; ats.includes(at) && i < 24; i++) at = pad(i) + ":00";
-  return at;
-}
-
-// renderWarmAt draws a daily warm-up's control: Off, or its times of day,
-// each in a time field saved as it is changed (#1260: several, each
-// starting a window once a day). On picks 06:00 to begin with, + adds a
-// time a window after the last, and × beside a time takes it away while
-// another is left; the fields are there only while it is on. save gets
-// the whole list. via says how the request goes.
-function renderWarmAt(box, sub, ats, onReset, via, save) {
-  // the purpose on the line; the fine print, too long for it, in the
-  // title: what is left be, and how it goes with the warm-up on reset
-  const what = ats.length > 1 ? t("Starts each account's 5-hour window at each of these times every day")
-    : t("Starts each account's 5-hour window at this time every day");
-  sub.textContent = what;
-  sub.title = [what, t("06:00 gives three by 21:00."), via, t("One tiny request, sent only to an account whose 5-hour window isn't running then."),
-    t("A computer asleep then sends it on waking, up to an hour late; later than that, the day is left be."),
-    onReset === "all" ? t("With Weekly and 5-hour on, a window that would still be running then isn't started on its reset: the windows follow one another from this time.") : ""].filter(Boolean).join("\n");
-  box.replaceChildren();
-  box.classList.toggle("times", ats.length > 0);
-  // the times wrap in a group of their own, + and Off/On kept beside its
-  // first line: a time added or taken away never moves the button pressed
-  const list = el("span", "warm-times");
-  ats.forEach((at, n) => {
-    const one = el("span", "warm-time");
-    const i = input(at, "06:00", "time");
-    i.className = "at";
-    i.setAttribute("aria-label", t("Time of day"));
-    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") i.blur(); };
-    i.onchange = () => { if (i.value && i.value !== at) save(ats.map((a, k) => (k === n ? i.value : a))); };
-    one.append(i);
-    if (ats.length > 1) {
-      const rm = el("button", "text quiet warm-rm", "×");
-      rm.title = t("Remove {at}", { at });
-      rm.setAttribute("aria-label", rm.title);
-      rm.onclick = () => save(ats.filter((_, k) => k !== n));
-      one.append(rm);
-    }
-    list.append(one);
-  });
-  if (ats.length) {
-    const add = el("button", "text warm-add", "+");
-    add.title = t("Add a time");
-    add.setAttribute("aria-label", add.title);
-    add.onclick = () => save([...ats, nextWarmTime(ats)]);
-    box.append(list, add);
-  }
-  box.append(segs([["off", t("Off")], ["on", t("On")]], ats.length ? "on" : "off", (v) => save(v === "on" ? (ats.length ? ats : ["06:00"]) : [])));
-}
-
-// renderAutoResetOwn lists each ChatGPT account under Settings › Usage's
-// "Codex: auto-use resets", with its switch, the same say as on the
-// account's card (settings' codexAutoReset, the CLI's quota auto-reset).
-// Avalon on Discord, after foobra12 asked where it was: it was only on the
-// accounts' cards, and they found it from the menu bar's panel alone,
-// nothing for it in the window's Settings. The row shows while a Codex
-// account is signed in, or one is still on.
-function renderAutoResetOwn(s) {
-  const head = $("#codexAutoResetRow");
-  const list = head.parentElement;
-  list.querySelectorAll(".ar-own").forEach((r) => r.remove());
-  const on = s.codexAutoReset || [];
-  const users = [...(s.codexUsers || [])];
-  for (const u of on) if (!users.some((x) => x.toLowerCase() === u)) users.push(u);
-  head.hidden = !users.length;
-  let after = head;
-  for (const user of users) {
-    const r = el("div", "row pref ar-own");
-    r.dataset.user = user;
-    const who = el("div", "who");
-    const name = el("div", "name", user);
-    name.title = user;
-    who.append(name);
-    const was = on.includes(user.toLowerCase());
-    const pick = segs([["off", t("Off")], ["on", t("On")]], was ? "on" : "off", async (v) => {
-      try {
-        prefs = await writingPrefs(api("settings/codex-auto-reset", { user, on: v === "on" }));
-        if (state) state.settings = prefs;
-        status(t(v === "on" ? "{who} uses a reset by itself when its week runs out, or before one expires" : "{who} no longer uses a reset by itself", { who: user }), "ok");
-        renderSettings();
-        if (quotas) renderQuotas(); // the account's card says the same
-      } catch (e) {
-        status(t(e.message), "err");
-        renderSettings();
-      }
-    });
-    pick.setAttribute("aria-label", t("Auto-use resets") + " · " + user);
-    r.append(who, pick);
-    after.after(r);
-    after = r;
-  }
-}
-
-// renderWarmAtOwn gives each ChatGPT account its own row under Daily
-// warm-up (#957, Evan26Ma): two accounts started at one time run out
-// together, one at 06:00 and one at 09:00 take over from one another. An
-// account follows the time above, has its own, or none (settings'
-// codexWarmAtOf, set on its own); the rows show with two accounts or more,
-// or while one has a time of its own.
-function renderWarmAtOwn(s) {
-  const list = $("#codexWarmList");
-  list.querySelectorAll(".warm-own").forEach((r) => r.remove());
-  const own = s.codexWarmAtOf || {};
-  const users = [...(s.codexUsers || [])];
-  for (const u of Object.keys(own)) if (!users.some((x) => x.toLowerCase() === u)) users.push(u);
-  if (users.length < 2 && !Object.keys(own).length) return;
-  const save = async (user, at) => {
-    try {
-      prefs = await writingPrefs(api("settings/codex-warm-at", { user, at }));
-      if (state) state.settings = prefs;
-      renderSettings();
-    } catch (e) {
-      status(t(e.message), "err");
-      renderSettings();
-    }
-  };
-  for (const user of users) {
-    const at = own[user.toLowerCase()];
-    const mode = at === undefined ? "same" : at === "off" ? "off" : "own";
-    const r = el("div", "row pref warm-own");
-    r.dataset.user = user;
-    const who = el("div", "who");
-    const name = el("div", "name", user);
-    name.title = user;
-    const sub = el("div", "sub", mode === "own" ? t("Its own time each day")
-      : mode === "off" ? t("Not started at a time of day")
-      : s.codexWarmAt ? t("Same as above, {at}", { at: warmTimes(s.codexWarmAts, s.codexWarmAt).join(", ") }) : t("Same as above, off"));
-    sub.title = t("Give accounts different times and one window starts as another runs out.");
-    who.append(name, sub);
-    const box = el("div", "warm-at");
-    if (mode === "own") {
-      const i = input(at, "06:00", "time");
-      i.className = "at";
-      i.setAttribute("aria-label", t("{who}'s time of day", { who: user }));
-      i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") i.blur(); };
-      i.onchange = () => { if (i.value && i.value !== at) save(user, i.value); };
-      box.append(i);
-    }
-    box.append(segs([["same", t("Same")], ["own", t("Own")], ["off", t("Off")]], mode, (v) =>
-      save(user, v === "same" ? "" : v === "off" ? "off" : s.codexWarmAt || "06:00")));
-    r.append(who, box);
-    list.append(r);
-  }
 }
 
 // renderAlerts draws the usage alerts (#368): a notification when a window
@@ -23064,47 +20011,6 @@ const REDACT_KINDS = [
   ["ip", "Public IP addresses", "Private, local and documentation addresses stay. Off by default: logs and configs are full of them", false],
   ["bucket", "Cloud storage buckets", "The bucket in s3://, gs://, oss://, cos:// and storage URLs; the path in it stays", false],
 ];
-
-// renderDiscovery: whether fogway reads the agents' own sign-ins —
-// Claude Code's and Codex's files, the Keychain, Copilot's, Cursor's and
-// the rest — and serves them as subscriptions (#1535). Set on its own:
-// saved, fogway forgets the accounts it read, and API-key providers go on.
-// FOGWAY_NO_ACCOUNTS keeps it off for that run whatever is saved.
-function renderDiscovery(s) {
-  const box = $("#discoveryList");
-  const r = el("div", "row pref");
-  const who = el("div", "who");
-  who.append(el("div", "name", t("Subscription accounts")),
-    el("div", "sub", s.noAccountsEnv
-      ? t("Off for this run: FOGWAY_NO_ACCOUNTS is set")
-      : t("Read the accounts your agents are signed in to (Claude Code, Codex, Copilot, Cursor and others: their files and the Keychain) and serve them. Off, fogway reads none of them; API-key providers work as before")));
-  const val = el("div", "val");
-  const on = !s.noAccountDiscovery && !s.noAccountsEnv;
-  val.append(segs([["off", t("Off")], ["on", t("On")]], on ? "on" : "off", async (v) => {
-    if ((v === "on") === on) return;
-    // Off takes every subscription out of fogway at once, and a click that
-    // didn't mean that left a user with none working and no word why
-    // (#1761): it asks first, naming the subscriptions that stop
-    if (v === "off" && !(await confirmAction(t("Turn off subscription accounts?"), await discoveryOffWarning(), t("Turn them off")))) {
-      renderSettings();
-      return;
-    }
-    writingPrefs(api("settings/account-discovery", { off: v === "off" }))
-      .then((ns) => { prefs = state.settings = ns; renderSettings(); refreshAfterSync(); })
-      .catch((e) => { status(t(e.message), "err"); renderSettings(); });
-  }));
-  r.append(who, val);
-  box.replaceChildren(r);
-}
-// what turning discovery off stops: the subscriptions signed in now, by
-// name, the Providers list read for it when no page has yet
-async function discoveryOffWarning() {
-  const list = providers || await api("providers").catch(() => null);
-  const subs = (list?.providers || []).filter((p) => p.account && !p.off).map((p) => p.name);
-  return subs.length
-    ? t("{names} stop working in fogway until this is on again: fogway reads none of the sign-ins they come from. API-key providers work as before.", { names: subs.join(", ") })
-    : t("Every subscription stops working in fogway until this is on again: fogway reads none of the sign-ins they come from. API-key providers work as before.");
-}
 
 // renderRedact: what the gateway masks before a request goes to a vendor —
 // secrets, personal data, the user's own words — and puts back in what the
@@ -23793,85 +20699,6 @@ async function renderUpdate(r, u) {
   if (kept && !pageShown) kept.remove();
 }
 
-// renderPluginCheckins draws a Daily check-in row for each plugin's
-// provider that checks in itself (auth.checkin), under the Plugins tab.
-function renderPluginCheckins(s) {
-  const ps = s.checkinPlugins || [];
-  $("#warmTab-plugins").hidden = !ps.length;
-  setWarmTab(warmTab);
-  $("#pluginCheckinList").replaceChildren(...ps.map((p) => {
-    const row = el("div", "row pref");
-    row.dataset.provider = p.id;
-    const who = el("div", "who");
-    const sub = el("div", "sub", [t("Has the {name} plugin check each signed-in account in once a day", { name: p.name || p.id }),
-      ...(p.checkins || []).map(wbCheckinLine)].filter(Boolean).join(" · "));
-    who.append(el("div", "name", (p.name || p.id) + " · " + t("Daily check-in")), sub);
-    const segBox = el("div");
-    segBox.append(segs([["off", t("Off")], ["on", t("On")]], p.on ? "on" : "off", async (v) => {
-      try {
-        prefs = await writingPrefs(api("settings/plugin-checkin", { provider: p.id, on: v === "on" }));
-        state.settings = prefs;
-        renderPluginCheckins(prefs);
-      } catch (err) {
-        status(err.message, "err");
-      }
-    }));
-    row.append(who, segBox);
-    return [row, ...checkinAccountRows(s, "plugin:" + p.id)];
-  }).flat());
-}
-
-// checkinAccountRows are an Off/On row for each account vendor by checks
-// in (#1902, magicLaLa: 根据每个账号设置是否开启自动签到), under its Daily
-// check-in; none for a vendor of one account, whose switch is its own.
-function checkinAccountRows(s, by) {
-  const accts = (s.checkinAccounts || []).filter((a) => (a.by || "") === by);
-  if (accts.length < 2) return [];
-  return accts.map((a) => {
-    const row = el("div", "row pref ci-acct");
-    row.dataset.key = a.key;
-    const who = el("div", "who");
-    who.append(el("div", "name", a.user || a.key), el("div", "sub", t(a.on ? "Checked in once a day while Daily check-in is on" : "Left out of the daily check-in")));
-    const segBox = el("div");
-    segBox.append(segs([["off", t("Off")], ["on", t("On")]], a.on ? "on" : "off", async (v) => {
-      try {
-        prefs = await writingPrefs(api("settings/checkin-account", { key: a.key, on: v === "on" }));
-        state.settings = prefs;
-      } catch (err) {
-        status(t(err.message), "err");
-      }
-      renderSettings();
-    }));
-    row.append(who, segBox);
-    return row;
-  });
-}
-
-// wbCheckinLine is how an account's last WorkBuddy check-in went: today's
-// (a Beijing day) with the credits and the streak, an earlier one by its day.
-function wbCheckinLine(r) {
-  const today = wbToday();
-  if (r.day !== today) {
-    return r.outcome === "claimed" || r.outcome === "done" ? t("{user} checked in {day}", { user: r.user, day: r.day }) : "";
-  }
-  switch (r.outcome) {
-    case "claimed":
-    case "done":
-      return t("{user} checked in today", { user: r.user }) + (r.credit ? " +" + r.credit : "")
-        + (r.streak ? ", " + t("{n}-day streak", { n: r.streak }) : "");
-    case "ineligible":
-      return t("{user} is not eligible", { user: r.user });
-    case "inactive":
-      return t("{user}: no check-in event now", { user: r.user });
-    case "captcha":
-      return t("{user} is asked for a captcha; check in in the app", { user: r.user });
-    case "own-app":
-      return t("{user}: {name} only gives check-in credits to its own app; check in in the {name} app", { user: r.user, name: checkinVendorName(r) });
-    default:
-      return t("{user} couldn't check in, tried again later", { user: r.user });
-  }
-}
-
 // prefsKeep is what the settings page sends of s, all of it each time.
 function prefsKeep(s) {
   return { theme: s.theme, lang: s.lang, tray: s.tray, dock: !!s.dock, dockWindow: !!s.dockWindow, lightweight: !!s.lightweight, keepAwake: !!s.keepAwake, keepAwakeDisplay: !!s.keepAwakeDisplay, noWSLAgents: !!s.noWSLAgents, proxy: s.proxy || "",
@@ -23879,9 +20706,8 @@ function prefsKeep(s) {
     uiFont: s.uiFont || null, codeFont: s.codeFont || null,
     otel: s.otel || {},
     trayUsages: s.trayUsages || [],
-    redact: !!s.redact, redactPersonal: !!s.redactPersonal, redactKinds: s.redactKinds || {}, redactWords: s.redactWords || [], codexWarmup: s.codexWarmup || "",
-    claudeWarmup: s.claudeWarmup || "", codexWarmAt: s.codexWarmAt || "", claudeWarmAt: s.claudeWarmAt || "",
-    codexWarmAts: warmTimes(s.codexWarmAts, s.codexWarmAt), claudeWarmAts: warmTimes(s.claudeWarmAts, s.claudeWarmAt), workbuddyCheckin: !!s.workbuddyCheckin, traeCheckin: !!s.traeCheckin, minimaxCheckin: !!s.minimaxCheckin, qoderCheckin: !!s.qoderCheckin, noStats: !!s.noStats, noUsageStats: !!s.noUsageStats,
+    redact: !!s.redact, redactPersonal: !!s.redactPersonal, redactKinds: s.redactKinds || {}, redactWords: s.redactWords || [],
+    noStats: !!s.noStats, noUsageStats: !!s.noUsageStats,
     memberModel: !!s.memberModel, noLoopGuard: !!s.noLoopGuard, refusalRetries: s.refusalRetries ?? null,
     noUpdatePill: !!s.noUpdatePill, noAutoUpdate: !!s.noAutoUpdate, updateEvery: s.updateEvery || 360,
     trayUsage: s.trayUsage || "", trayUsageEvery: s.trayUsageEvery || 3, trayNoLogos: !!s.trayNoLogos, trayNoBird: !!s.trayNoBird, vision: s.vision || "", visionEffort: s.visionEffort || "", searcherEffort: s.searcherEffort || "", imageGen: s.imageGen || "", searcher: s.searcher || "", searchFirst: s.searchFirst || "", currency: s.currency || "usd",
@@ -25201,14 +22027,13 @@ setInterval(renderPluginDot, 15 * 60 * 1000);
 // ---------- hiding accounts, for a screenshot to share ----------
 // Routing and Usage each have a Hide accounts button, one setting for both,
 // which the tray panel follows too. Each account on the page — an email
-// address, or a name that isn't one (WorkBuddy's nickname or phone number,
-// a plugin's account id, #568), in a row, a sentence, a tooltip — is
-// swapped for blurred stand-in letters while it's on, as the page redraws
-// too; the account itself is kept aside to put back.
+// address, or a name that isn't one (#568), in a row, a sentence, a
+// tooltip — is swapped for blurred stand-in letters while it's on, as the
+// page redraws too; the account itself is kept aside to put back.
 //
-// accountNames are the names of subscription accounts fogway has told the
-// page of (noteAccounts, from what the API answered), beside the accounts
-// of the providers and allowances it holds now.
+// accountNames are the account names fogway has told the page of
+// (noteAccounts, from what the API answered), beside the accounts of the
+// providers and allowances it holds now.
 const accountNames = new Set();
 // generic words an account can't be named, lest every one of them on the
 // page is hidden
@@ -25248,8 +22073,7 @@ window.noteAccounts = noteAccounts;
   function names() {
     const all = new Set(accountNames), not = new Set(NOT_ACCOUNTS);
     for (const p of providers?.providers || []) {
-      for (const n of [p.id, p.name, p.account?.agentName, p.account?.agent]) if (n) not.add(String(n).toLowerCase());
-      if (p.account) { all.add((p.account.user || "").trim()); for (const l of p.account.logins || []) all.add((l.user || "").trim()); }
+      for (const n of [p.id, p.name]) if (n) not.add(String(n).toLowerCase());
       // the names the user gave accounts (#1515), as the accounts are
       for (const n of Object.values(p.accountNames || {})) all.add(String(n).trim());
     }

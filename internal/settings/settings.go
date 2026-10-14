@@ -22,7 +22,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/carey569/fogway/internal/appdir"
 	"github.com/carey569/fogway/internal/catalog"
@@ -121,74 +120,6 @@ type Settings struct {
 	// GatewayConversations is local, opt-in recording of session traffic.
 	// Only SetGatewayConversations changes it; other saves keep local consent.
 	GatewayConversations bool `json:"gatewayConversations,omitempty"`
-	// CodexWarmup starts a ChatGPT account's next window as soon as the
-	// last one resets, with one tiny request, so it counts from then (a
-	// Codex window starts at its first use): "" off, "week" the weekly
-	// window, "all" the 5-hour one too.
-	CodexWarmup string `json:"codexWarmup,omitempty"`
-	// ClaudeWarmup is CodexWarmup for the Claude accounts, the request
-	// sent through Claude Code.
-	ClaudeWarmup string `json:"claudeWarmup,omitempty"`
-	// CodexWarmAt starts each ChatGPT account's 5-hour window at a time of
-	// day of the user's choosing, local "15:04", with the same tiny
-	// request: an account whose 5-hour window isn't running then gets one,
-	// so the windows line up with the day (06:00 gives three by 21:00, where
-	// the first use at 9 gives two by the end of it); "" off. It works
-	// with CodexWarmup or without it. ClaudeWarmAt is the Claude accounts'.
-	// Each is CodexWarmAts' (ClaudeWarmAts') first, all a fogway before
-	// them read: a file with it and no list has that one time, and it is
-	// kept written for an older fogway to go on starting the day's first.
-	CodexWarmAt  string `json:"codexWarmAt,omitempty"`
-	ClaudeWarmAt string `json:"claudeWarmAt,omitempty"`
-	// CodexWarmAts are the times of day CodexWarmAt's start is made at,
-	// each once a day, earliest first: 09:00, 15:05 and 19:10 start a
-	// window at each, where it isn't running (#1260); none when empty.
-	// ClaudeWarmAts is the Claude accounts'.
-	CodexWarmAts  []string `json:"codexWarmAts,omitempty"`
-	ClaudeWarmAts []string `json:"claudeWarmAts,omitempty"`
-	// CodexWarmAtOf is a ChatGPT account's own time of day for that, by
-	// its name in lower case, "off" for none: two accounts started hours
-	// apart take over from one another, where at one time they run out
-	// together (#957). An account not in it has CodexWarmAt.
-	CodexWarmAtOf map[string]string `json:"codexWarmAtOf,omitempty"`
-	// CodexAutoReset are the ChatGPT accounts (lower-case) that spend one
-	// of their rate-limit resets by themselves once their weekly window is
-	// used up and no other account can take the request: at most one a
-	// week each (see provider.AutoUseCodexReset); and one about to run out
-	// unused half an hour before it does, or at once when the account is
-	// held up past then (provider.SpendExpiringCodexResets).
-	CodexAutoReset []string `json:"codexAutoReset,omitempty"`
-	// CodexNoCredits are the ChatGPT accounts (lower-case) that don't
-	// spend their credits: once a usage window is used up, routing holds
-	// the account as used up and goes on to the user's other accounts,
-	// groups and fallbacks, where by default the vendor answers on its
-	// credits (see provider.CodexCredits).
-	CodexNoCredits []string `json:"codexNoCredits,omitempty"`
-	// WorkBuddyCheckin presses WorkBuddy's daily check-in (签到) for each
-	// signed-in WorkBuddy (China) account once a Beijing day, claiming the
-	// credits it gives while its event runs.
-	WorkBuddyCheckin bool `json:"workbuddyCheckin,omitempty"`
-	// TraeCheckin presses Trae CN's daily check-in (每日签到) for each
-	// signed-in Trae CN account (its plugin's) once a Beijing day, claiming
-	// the credits it gives.
-	TraeCheckin bool `json:"traeCheckin,omitempty"`
-	// MiniMaxCheckin presses MiniMax Code's daily check-in (签到) for each
-	// signed-in MiniMax Code (China) account (its plugin's) once a Beijing
-	// day, claiming the credits it gives (#811).
-	MiniMaxCheckin bool `json:"minimaxCheckin,omitempty"`
-	// QoderCheckin claims Qoder's daily credits for each signed-in Qoder
-	// and Qoder CN account (its plugin's) once a Beijing day (ARNO on
-	// Discord).
-	QoderCheckin bool `json:"qoderCheckin,omitempty"`
-	// PluginCheckins turns a plugin's own daily check-in (auth.checkin)
-	// on or off, by the plugin's provider id; one not set follows its
-	// vendor's switch above, which the plugin took over, else is off.
-	PluginCheckins map[string]bool `json:"pluginCheckins,omitempty"`
-	// CheckinOff are the accounts left out of their vendor's daily
-	// check-in while it is on (#1902), each by its entry in the vendor's
-	// check-in file: "<site or provider>|<account id>" ("workbuddy|<uid>",
-	// "trae-cn|<uid>", a plugin's "<provider>|<account>").
-	CheckinOff []string `json:"checkinOff,omitempty"`
 	// MemberModel has a reply's model name the routing group's member
 	// that answered, as fogway's provider/model id (workbuddy/glm-5.3-flash),
 	// rather than the vendor's own name for it, for agents that count
@@ -206,12 +137,11 @@ type Settings struct {
 	// the vendor's own reply, stop_reason "refusal", which Claude Code
 	// answers by switching to its fallback model itself (DD on Discord).
 	RefusalRetries *int `json:"refusalRetries,omitempty"`
-	// NoAccountDiscovery leaves every agent's sign-in unread (#1535,
-	// MaxHaiCom): no credential file, Keychain item or agent CLI is asked
-	// who is signed in, and no subscription is offered; API-key providers
-	// work as before (see AccountDiscoveryOff, provider/discovery.go). Off,
-	// as by default, subscriptions are found as ever. This computer's own
-	// (KeepOwn), set only by its own switch or `fogway accounts discovery`.
+	// NoAccountDiscovery leaves every agent's own sign-in unread (#1535,
+	// MaxHaiCom): Claude Code's .claude.json, Codex's auth.json and
+	// OpenCode's are not read to tell what an agent runs on or how to wire
+	// it (see AccountDiscoveryOff). This computer's own (KeepOwn), set by
+	// hand in settings.json; FOGWAY_NO_ACCOUNTS does the same for a run.
 	NoAccountDiscovery bool `json:"noAccountDiscovery,omitempty"`
 	// NoStats and NoUsageStats were magpie's switches for the event a day
 	// that counted its users; fogway sends none, and keeps them only so a
@@ -735,8 +665,6 @@ var (
 	Langs      = []string{"system", "en", "zh", "zh-TW", "ja", "de"}
 	Trays      = []string{"panel", "window"}
 	Currencies = []string{"usd", "cny"}
-	// Warmups are CodexWarmup's and ClaudeWarmup's values, off as "".
-	Warmups = []string{"", "week", "all"}
 	// TrayEvery are TrayUsageEvery's values, in minutes.
 	TrayEvery = []int{1, 3, 5, 10, 30}
 	// UpdateEveries are UpdateEvery's values, in minutes.
@@ -1089,22 +1017,6 @@ func save(s Settings, recording bool) error {
 	if !slices.Contains(Currencies, s.Currency) {
 		return fmt.Errorf("currency must be one of %v, not %q", Currencies, s.Currency)
 	}
-	if !slices.Contains(Warmups, s.CodexWarmup) {
-		return fmt.Errorf("codex warm-up must be off, week or all, not %q", s.CodexWarmup)
-	}
-	if !slices.Contains(Warmups, s.ClaudeWarmup) {
-		return fmt.Errorf("claude warm-up must be off, week or all, not %q", s.ClaudeWarmup)
-	}
-	for _, at := range slices.Concat(s.CodexWarmAts, s.ClaudeWarmAts) {
-		if _, _, ok := Clock(at); !ok {
-			return fmt.Errorf("a warm-up's time of day must look like 06:00, not %q", at)
-		}
-	}
-	for user, at := range s.CodexWarmAtOf {
-		if _, _, ok := Clock(at); at != "off" && !ok {
-			return fmt.Errorf("%s's warm-up time of day must look like 06:00 or be off, not %q", user, at)
-		}
-	}
 	if !slices.Contains(TrayEvery, s.TrayUsageEvery) {
 		return fmt.Errorf("the menu bar's usage is refreshed every %v minutes, not %d", TrayEvery, s.TrayUsageEvery)
 	}
@@ -1196,14 +1108,6 @@ func save(s Settings, recording bool) error {
 	s.UsageAgentsHidden = ids(s.UsageAgentsHidden)
 	s.ClientAgents = clientAgents(s.ClientAgents)
 	s.TrayUsages = ids(s.TrayUsages)
-	for i, u := range s.CodexAutoReset {
-		s.CodexAutoReset[i] = strings.ToLower(u)
-	}
-	s.CodexAutoReset = ids(s.CodexAutoReset)
-	for i, u := range s.CodexNoCredits {
-		s.CodexNoCredits[i] = strings.ToLower(u)
-	}
-	s.CodexNoCredits = ids(s.CodexNoCredits)
 	s.TrayUsage = ""
 	if len(s.TrayUsages) > 0 {
 		s.TrayUsage = s.TrayUsages[0]
@@ -1283,12 +1187,6 @@ func (s Settings) normal() Settings {
 	if s.Currency == "" {
 		s.Currency = "usd"
 	}
-	if s.CodexWarmup == "off" {
-		s.CodexWarmup = ""
-	}
-	if s.ClaudeWarmup == "off" {
-		s.ClaudeWarmup = ""
-	}
 	if s.TrayUsageEvery == 0 {
 		s.TrayUsageEvery = 3
 	}
@@ -1303,74 +1201,7 @@ func (s Settings) normal() Settings {
 	if s.TrayUsages == nil && s.TrayUsage != "" {
 		s.TrayUsages = []string{s.TrayUsage}
 	}
-	// the times of day: the one a fogway before the lists kept, when the
-	// list isn't there (an empty one sent on purpose stays empty), each as
-	// 06:00 whichever way it came (6:00, 06:00:00), earliest first, once;
-	// and the first kept as the one for that older fogway
-	for _, w := range []struct {
-		at  *string
-		ats *[]string
-	}{{&s.CodexWarmAt, &s.CodexWarmAts}, {&s.ClaudeWarmAt, &s.ClaudeWarmAts}} {
-		if *w.ats == nil && strings.TrimSpace(*w.at) != "" {
-			*w.ats = []string{*w.at}
-		}
-		*w.ats = clocks(*w.ats)
-		*w.at = ""
-		if len(*w.ats) > 0 {
-			*w.at = (*w.ats)[0]
-		}
-	}
-	// an account's own, by its name in lower case; one with none follows
-	// CodexWarmAt and isn't kept
-	if s.CodexWarmAtOf != nil {
-		of := map[string]string{}
-		for user, at := range s.CodexWarmAtOf {
-			user, at = strings.ToLower(strings.TrimSpace(user)), strings.ToLower(strings.TrimSpace(at))
-			if h, m, ok := Clock(at); ok {
-				at = fmt.Sprintf("%02d:%02d", h, m)
-			}
-			if user != "" && at != "" {
-				of[user] = at
-			}
-		}
-		s.CodexWarmAtOf = of
-		if len(of) == 0 {
-			s.CodexWarmAtOf = nil
-		}
-	}
 	return s
-}
-
-// Clock reads a time of day, "06:00" (seconds, as a time field may send
-// them, are dropped), as its hour and minute.
-func Clock(at string) (hour, min int, ok bool) {
-	for _, layout := range []string{"15:04", "15:04:05"} {
-		if t, err := time.Parse(layout, at); err == nil {
-			return t.Hour(), t.Minute(), true
-		}
-	}
-	return 0, 0, false
-}
-
-// clocks is ats as 06:00 (one Clock can't read kept as it came, for Save
-// to name), earliest first, with no empties or repeats; nil when none,
-// and an empty list stays one.
-func clocks(ats []string) []string {
-	if ats == nil {
-		return nil
-	}
-	out := []string{}
-	for _, at := range ats {
-		at = strings.TrimSpace(at)
-		if h, m, ok := Clock(at); ok {
-			at = fmt.Sprintf("%02d:%02d", h, m)
-		}
-		if at != "" && !slices.Contains(out, at) {
-			out = append(out, at)
-		}
-	}
-	slices.Sort(out)
-	return out
 }
 
 // ids trims, drops empties and repeats, and keeps the first of each.

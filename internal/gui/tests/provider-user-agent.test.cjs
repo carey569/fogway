@@ -2,9 +2,8 @@
 // #1851: a coding plan that serves only the agents it names knows them by
 // their User-Agent. The provider editor's User-Agent row, "Send the agent's
 // own User-Agent", is there for a provider with a key, opens as it was
-// saved, and Save posts it. A signed-in account and a vendor fogway goes as
-// the client of (OpenCode here) have no such row. In every language, wide
-// and narrow.
+// saved, and Save posts it. A vendor fogway goes as the client of
+// (OpenCode here) has no such row. In every language, wide and narrow.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -20,15 +19,9 @@ const base = {
 const plan = { ...base, id: "plan", name: "Agent Plan", chat: "https://plan.example.com/v1" };
 const passing = { ...base, id: "passing", name: "Passing Plan", chat: "https://passing.example.com/v1", passUserAgent: true };
 const zen = { ...base, id: "opencode", name: "OpenCode Zen", chat: "https://opencode.ai/zen/v1", ownClient: true };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "",
-};
 
 function serve(lang, posts) {
-  const providers = { providers: [plan, passing, zen, codex], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [plan, passing, zen], presets: [], excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -127,12 +120,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.deepEqual(errors, []);
       });
 
-      test(`${engine} ${lang} ${width}: a vendor fogway goes as the client of, and a signed-in account, have no such row`, async (t) => {
-        for (const name of ["OpenCode Zen", "Codex"]) {
-          const { page, errors } = await open(t, name);
-          assert.equal(await row(page).count(), 0, name);
-          assert.deepEqual(errors, []);
-        }
+      test(`${engine} ${lang} ${width}: a vendor fogway goes as the client of has no such row`, async (t) => {
+        const { page, errors } = await open(t, "OpenCode Zen");
+        assert.equal(await row(page).count(), 0);
+        assert.deepEqual(errors, []);
       });
     }
   }

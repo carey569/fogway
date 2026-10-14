@@ -21,7 +21,6 @@ const rows = [
 ];
 
 [10000,10001,30000,30001,1250,0,undefined,900,-1].forEach((ms,i) => rows[i].ms=ms);
-rows.push({t:now,agent:"codex",agentName:"Codex",provider:"codex",providerName:"ChatGPT",access:"subscription",model:"gpt-6-sol",in:10,out:2,status:200,ms:4000,cost:0,priced:false});
 
 for (const engine of ["chromium", "webkit"]) {
   test(engine + ": session account identities", async t => {
@@ -97,13 +96,13 @@ for (const engine of ["chromium", "webkit"]) {
         }
         for (const i of [5,6,8]) assert.equal(await page.locator(".led-row .duration").nth(i).textContent(),"—");
         const palette=await page.evaluate(() => {
-          const selectors=[".src.official",".src.local",".access-api",".access-subscription"];
+          const selectors=[".src.official",".src.local",".access-api"];
           const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");canvas.width=canvas.height=1;
           const rgb=color=>{ctx.clearRect(0,0,1,1);ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].slice(0,3);};
           const luminance=c=>c.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0);
           return selectors.map(selector=>{const s=getComputedStyle(document.querySelector(selector)),a=luminance(rgb(s.color)),b=luminance(rgb(s.backgroundColor));return {color:s.color,contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};});
         });
-        assert.equal(new Set(palette.map(p=>p.color)).size,4,"source types have distinct colors");
+        assert.equal(new Set(palette.map(p=>p.color)).size,3,"source types have distinct colors");
         assert(palette.every(p=>p.contrast>=4.5),"small badge text remains readable: "+JSON.stringify(palette));
         if (process.env.FOGWAY_STYLE_SHOTS && lang === "zh" && engine === "chromium") {
           await page.setViewportSize({width:1900,height:950});

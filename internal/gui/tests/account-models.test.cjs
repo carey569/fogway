@@ -1,12 +1,10 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// Each account of a subscription, and each key, can be kept for some of the
-// provider's models only (#474: 增加账号级别的模型选项). Its row has a badge:
-// one kept for some says how many, always shown; one serving every model
-// says All models, on hover. A click opens the provider's models under the
-// row as chips; Save posts provider/accountmodels with the account (or the
-// key's id) and the models picked, All models posts none. A click moves
-// nothing and the page stays where it is. A subscription with one account
-// has no badge. In English and Chinese.
+// Each of a provider's keys can be kept for some of its models only (#474:
+// 增加账号级别的模型选项). Its row has a badge: one kept for some says how many,
+// always shown; one serving every model says All models, on hover. A click
+// opens the provider's models under the row as chips; Save posts
+// provider/accountmodels with the key's id and the models picked. A click
+// moves nothing and the page stays where it is. In English and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -15,24 +13,6 @@ const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
 const fresh = () => ({
-  codex: {
-    id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-    models: [{ id: "gpt-6", name: "", on: true }, { id: "gpt-6-mini", name: "", on: true }, { id: "gpt-5", name: "", on: false }],
-    agents: [], fallback: [], headers: {}, keyList: [], proxy: "",
-    account: {
-      agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS",
-      logins: [
-        { user: "me@example.com", plan: "PLUS", active: true, on: true },
-        { user: "Spare@Example.com", plan: "PLUS", on: true },
-      ],
-    },
-    accountModels: { "spare@example.com": ["gpt-6-mini"] },
-  },
-  claude: {
-    id: "claude", name: "Claude", icon: "claude-color", chat: "", responses: "", anthropic: "", catalog: "",
-    models: [{ id: "claude-opus-5", name: "", on: true }], agents: [], fallback: [], headers: {}, keyList: [], proxy: "",
-    account: { agent: "claude", agentName: "Claude Code", user: "solo@example.com", plan: "MAX", logins: [{ user: "solo@example.com", plan: "MAX", active: true, on: true }] },
-  },
   relay: {
     id: "relay", name: "Relay", icon: "generic", chat: "https://relay.example.com/v1", responses: "", anthropic: "", catalog: "",
     models: [{ id: "big", name: "", on: true }, { id: "cheap", name: "Cheap one", on: true }], agents: [], fallback: [], headers: {},
@@ -43,7 +23,7 @@ const fresh = () => ({
 
 function serve(lang, posts) {
   const ps = fresh();
-  const providers = { providers: [ps.codex, ps.claude, ps.relay], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [ps.relay], presets: [], excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -120,40 +100,21 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       return posts.at(-1);
     };
 
-    test(`${engine} ${lang}: a Codex account is kept for some models, and given all again`, async (t) => {
-      const { page, errors, posts } = await open(t, "Codex", ".editor .accts .acc .amodels");
-      // the one kept for gpt-6-mini says so, always; the other says All models on hover only
-      assert.equal(await pill(page, "Spare@Example.com").textContent(), w.one);
-      assert.equal(await pill(page, "Spare@Example.com").getAttribute("title"), w.only);
-      assert.equal(await pill(page, "Spare@Example.com").evaluate((e) => getComputedStyle(e).opacity), "1");
-      assert.equal(await pill(page, "me@example.com").textContent(), w.all);
-      await page.mouse.move(0, 0);
-      await page.waitForTimeout(250);
-      assert.equal(await pill(page, "me@example.com").evaluate((e) => getComputedStyle(e).opacity), "0");
-
-      // me: the provider's models it serves agents, none picked; Save waits for one
-      await still(page, "me@example.com", pill(page, "me@example.com"));
-      assert.deepEqual(await chips(page, "me@example.com"), ["gpt-6", "gpt-6-mini"]);
-      const save = panel(page, "me@example.com").getByRole("button", { name: w.save, exact: true });
-      assert(await save.isDisabled());
-      await still(page, "me@example.com", panel(page, "me@example.com").locator(".mchip", { hasText: /^gpt-6$/ }));
-      assert.deepEqual(await chips(page, "me@example.com"), ["gpt-6*", "gpt-6-mini"]);
-      assert(await save.isEnabled());
-      let n = posts.length;
-      await save.click();
-      assert.deepEqual(await posted(posts, n), { id: "codex", account: "me@example.com", allow: ["gpt-6"] });
-      await panel(page, "me@example.com").waitFor({ state: "detached" });
-      assert.equal(await pill(page, "me@example.com").textContent(), w.one);
-
-      // the spare opens on what it has; All models gives it every one again
-      await still(page, "Spare@Example.com", pill(page, "Spare@Example.com"));
-      assert.deepEqual(await chips(page, "Spare@Example.com"), ["gpt-6", "gpt-6-mini*"]);
-      n = posts.length;
-      await panel(page, "Spare@Example.com").locator("button.action").click();
-      assert.deepEqual(await posted(posts, n), { id: "codex", account: "Spare@Example.com", allow: [] });
+    test(`${engine} ${lang}: a key is kept for some models by its id`, async (t) => {
+      const { page, errors, posts } = await open(t, "Relay", ".editor .accts .acc");
+      // a key's All models badge takes no room till its row is hovered (#841)
+      await row(page, "aaaaaaaaaa").hover();
+      assert.equal(await pill(page, "aaaaaaaaaa").textContent(), w.all);
+      await still(page, "aaaaaaaaaa", pill(page, "aaaaaaaaaa"));
+      assert.deepEqual(await chips(page, "aaaaaaaaaa"), ["big", "Cheap one"], "a model's own name, as the provider's chips");
+      await panel(page, "aaaaaaaaaa").locator(".mchip", { hasText: "Cheap one" }).click();
+      await panel(page, "aaaaaaaaaa").locator(".mchip", { hasText: "big" }).click();
+      const n = posts.length;
+      await panel(page, "aaaaaaaaaa").getByRole("button", { name: w.save, exact: true }).click();
+      assert.deepEqual(await posted(posts, n), { id: "relay", account: "aaaaaaaaaa", allow: ["cheap", "big"] });
       await page.locator(".editor .acct-models").waitFor({ state: "detached" });
-      assert.equal(await pill(page, "Spare@Example.com").textContent(), w.all);
-
+      assert.equal(await pill(page, "aaaaaaaaaa").textContent(), w.two);
+      assert.equal(await pill(page, "bbbbbbbbbb").textContent(), w.all);
       const border = await page.evaluate(() => [...document.querySelectorAll(".accts .amodels, .acct-models, .acct-models *")].map((e) => getComputedStyle(e).borderLeftWidth).filter((b) => parseFloat(b) > 1));
       assert.deepEqual(border, [], "no border stripes");
       const missing = await page.evaluate(() => [
@@ -170,30 +131,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         "{who} is left out: it is set to serve other models, not {model}.",
       ].filter((k) => !I18N.zh[k]));
       assert.deepEqual(missing, [], "every string has its Chinese");
-      assert.deepEqual(errors, []);
-    });
-
-    test(`${engine} ${lang}: a key is kept for some models by its id`, async (t) => {
-      const { page, errors, posts } = await open(t, "Relay", ".editor .accts .acc");
-      // a key's All models badge takes no room till its row is hovered (#841)
-      await row(page, "aaaaaaaaaa").hover();
-      assert.equal(await pill(page, "aaaaaaaaaa").textContent(), w.all);
-      await still(page, "aaaaaaaaaa", pill(page, "aaaaaaaaaa"));
-      assert.deepEqual(await chips(page, "aaaaaaaaaa"), ["big", "Cheap one"], "a model's own name, as the provider's chips");
-      await panel(page, "aaaaaaaaaa").locator(".mchip", { hasText: "Cheap one" }).click();
-      await panel(page, "aaaaaaaaaa").locator(".mchip", { hasText: "big" }).click();
-      const n = posts.length;
-      await panel(page, "aaaaaaaaaa").getByRole("button", { name: w.save, exact: true }).click();
-      assert.deepEqual(await posted(posts, n), { id: "relay", account: "aaaaaaaaaa", allow: ["cheap", "big"] });
-      await page.locator(".editor .acct-models").waitFor({ state: "detached" });
-      assert.equal(await pill(page, "aaaaaaaaaa").textContent(), w.two);
-      assert.equal(await pill(page, "bbbbbbbbbb").textContent(), w.all);
-      assert.deepEqual(errors, []);
-    });
-
-    test(`${engine} ${lang}: a subscription with one account has no models badge`, async (t) => {
-      const { page, errors } = await open(t, "Claude", ".editor .accts .acc");
-      assert.equal(await page.locator(".editor .accts .amodels").count(), 0);
       assert.deepEqual(errors, []);
     });
   }

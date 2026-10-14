@@ -2,9 +2,8 @@
 // A provider's Max concurrent requests (Discord, Lemon): its editor has the
 // field, empty for none set; Save posts the number typed (0 for no limit),
 // null when it is empty, and refuses one that isn't a whole number before
-// anything is posted. A signed-in account (Codex) opens on what it has, and
-// a plugin's provider shows what its plugin says as the placeholder. A
-// click in the field leaves the page where it is. In English and Chinese.
+// anything is posted. One with a limit saved opens on it. A click in the
+// field leaves the page where it is. In English and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -17,21 +16,13 @@ const relay = {
   models: [{ id: "model-a", name: "Model A", on: true }], agents: [], fallback: [], headers: {},
   key: { set: true, masked: "sk-…one" }, keyList: [], balanceToken: { takes: false, set: false }, proxy: "", maxConcurrency: null,
 };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "", maxConcurrency: 5,
-};
-const lemon = {
-  id: "lemon", name: "Lemon", icon: "generic", chat: "plugin://lemon/v1", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "m1", name: "M1", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "plugin", agentName: "Lemon", user: "lemon@example.com", plan: "" },
-  proxy: "", maxConcurrency: null, pluginConcurrency: 4,
+const capped = {
+  ...relay, id: "capped", name: "Capped", chat: "https://capped.example.com/v1",
+  models: [{ id: "gpt-6", name: "GPT-6", on: true }], key: { set: true, masked: "sk-…two" }, maxConcurrency: 5,
 };
 
 function serve(lang, posts) {
-  const providers = { providers: [relay, codex, lemon], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [relay, capped], presets: [], excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -53,8 +44,8 @@ function serve(lang, posts) {
 }
 
 const words = {
-  en: { label: "Concurrency", save: "Save", none: "No limit", plugin: "4, as its plugin says", hint: "Over it, requests queue and go out in order; 0 or empty is no limit", bad: "Concurrency: a whole number from 0 to 1000" },
-  zh: { label: "并发上限", save: "保存", none: "不限制", plugin: "4（插件的默认值）", hint: "超出时排队，按顺序发出；0 或留空为不限制", bad: "并发上限：请填写 0 到 1000 之间的整数" },
+  en: { label: "Concurrency", save: "Save", none: "No limit", hint: "Over it, requests queue and go out in order; 0 or empty is no limit", bad: "Concurrency: a whole number from 0 to 1000" },
+  zh: { label: "并发上限", save: "保存", none: "不限制", hint: "超出时排队，按顺序发出；0 或留空为不限制", bad: "并发上限：请填写 0 到 1000 之间的整数" },
 };
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -129,9 +120,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(saved.body.maxConcurrency, null);
 
       const missing = await page.evaluate(() => [
-        "Concurrency", "No limit", "{n}, as its plugin says",
+        "Concurrency", "No limit",
         "Over it, requests queue and go out in order; 0 or empty is no limit",
-        "Over it, requests queue and go out in order; empty takes the plugin's {n}, 0 is no limit",
         "Concurrency: a whole number from 0 to 1000",
       ].filter((k) => !I18N.zh[k]));
       assert.deepEqual(missing, [], "every string has its Chinese");
@@ -160,29 +150,16 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       });
     }
 
-    test(`${engine} ${lang}: a signed-in account's limit opens as it is and is saved`, async (t) => {
-      const { page, errors, posts } = await open(t, "Codex");
+    test(`${engine} ${lang}: a saved limit opens as it is and is saved`, async (t) => {
+      const { page, errors, posts } = await open(t, "Capped");
       assert.equal(await box(page).inputValue(), "5");
       await click(page);
       await box(page).fill("0");
       const saved = await save(page, posts);
       assert.equal(saved.action, "save");
-      assert.equal(saved.body.id, "codex");
+      assert.equal(saved.body.id, "capped");
       assert.equal(saved.body.maxConcurrency, 0, "0 is no limit, saved as such");
       assert.deepEqual(saved.body.models, ["gpt-6"], "its picks go with it");
-      assert.deepEqual(errors, []);
-    });
-
-    test(`${engine} ${lang}: a plugin's provider shows what its plugin says`, async (t) => {
-      const { page, errors, posts } = await open(t, "Lemon");
-      assert.equal(await box(page).inputValue(), "");
-      assert.equal(await box(page).getAttribute("placeholder"), w.plugin);
-      let saved = await save(page, posts);
-      assert.equal(saved.body.maxConcurrency, null, "empty follows the plugin");
-      await page.locator(".row.provider", { hasText: "Lemon" }).click();
-      await box(page).fill("8");
-      saved = await save(page, posts);
-      assert.equal(saved.body.maxConcurrency, 8);
       assert.deepEqual(errors, []);
     });
   }

@@ -1,10 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
-// A subscription with many accounts (Linx on X: twenty-odd signed in to one
-// plugin made the Usage page a tower) shows the first five on its card, any
-// in full and the one with the check-in switch, the rest behind "Show N more
-// accounts" at the card's foot. The button opens them in place, the page not
-// moving, and folds them again; it is remembered across a reload. Eight
-// accounts aren't folded. At 440px nothing in the card is cut or spills.
+// A plan with many keys (Linx on X: twenty-odd accounts on one provider
+// made the Usage page a tower) shows the first five on its card, and any in
+// full, the rest behind "Show N more accounts" at the card's foot. The
+// button opens them in place, the page not moving, and folds them again; it
+// is remembered across a reload. Eight keys aren't folded. At 440px nothing in the card is cut or spills.
 // English, Chinese, Japanese and German; no backend, the API is faked here.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
@@ -15,17 +14,16 @@ const { chromium, webkit } = require("playwright");
 const assets = path.resolve(__dirname, "../assets");
 const now = new Date().toISOString();
 const pad = (i) => String(i).padStart(2, "0");
-const acct = (provider, name, user, used, extra) => ({ provider, name, kind: "subscription", icon: "generic", plan: "Pro", user, readAt: now, windows: [{ name: "Daily", used }], ...extra });
+const acct = (provider, name, user, used, extra) => ({ provider, name, kind: "plan", icon: "generic", plan: "Pro", user, readAt: now, windows: [{ name: "Daily", used }], ...extra });
+const three = (used) => ["Daily", "Weekly", "Monthly"].map((name) => ({ name, used }));
 const quotas = () => [
-  // 22 accounts: 5 in sight, 17 folded
-  ...Array.from({ length: 22 }, (_, i) => acct("workbuddy-ai", "WorkBuddy AI", `wb-${pad(i + 1)}@example.com`, 3 * i)),
-  // 9 accounts, the 8th in full (it answered last) and the 7th checks in
-  ...Array.from({ length: 9 }, (_, i) => acct("trae", "Trae", `t-${i + 1}@example.com`, 5 * i, {
-    ...(i === 7 ? { lastServedAt: now } : {}),
-    ...(i >= 6 ? { checkins: true } : {}),
-  })),
-  // 8 accounts: not folded
-  ...Array.from({ length: 8 }, (_, i) => acct("codex", "Codex", `c${i + 1}@example.com`, 10 * i)),
+  // 22 keys: 5 in sight, 17 folded
+  ...Array.from({ length: 22 }, (_, i) => acct("zhipu", "Zhipu GLM", `wb-${pad(i + 1)}`, 3 * i)),
+  // 9 keys, the 8th in full (it answered last); with three windows each, so
+  // the column beside the first card stays taller than it folded
+  ...Array.from({ length: 9 }, (_, i) => acct("kimi", "Kimi Code", `t-${i + 1}`, 5 * i, { windows: three(5 * i), ...(i === 7 ? { lastServedAt: now } : {}) })),
+  // 8 keys: not folded
+  ...Array.from({ length: 8 }, (_, i) => acct("minimax", "MiniMax", `c${i + 1}`, 10 * i, { windows: three(10 * i) })),
 ];
 
 function serve(lang) {
@@ -49,10 +47,10 @@ function serve(lang) {
 }
 
 const words = {
-  en: { more17: "Show 17 more accounts", more2: "Show 2 more accounts", fewer: "Show fewer accounts" },
-  zh: { more17: "展开其余 17 个账号", more2: "展开其余 2 个账号", fewer: "收起其余账号" },
-  ja: { more17: "さらに 17 個のアカウントを表示", more2: "さらに 2 個のアカウントを表示", fewer: "アカウントの表示を減らす" },
-  de: { more17: "17 weitere Konten anzeigen", more2: "2 weitere Konten anzeigen", fewer: "Weniger Konten anzeigen" },
+  en: { more17: "Show 17 more accounts", more3: "Show 3 more accounts", fewer: "Show fewer accounts" },
+  zh: { more17: "展开其余 17 个账号", more3: "展开其余 3 个账号", fewer: "收起其余账号" },
+  ja: { more17: "さらに 17 個のアカウントを表示", more3: "さらに 3 個のアカウントを表示", fewer: "アカウントの表示を減らす" },
+  de: { more17: "17 weitere Konten anzeigen", more3: "3 weitere Konten anzeigen", fewer: "Weniger Konten anzeigen" },
 };
 
 // each card: the accounts in sight and its foot button
@@ -78,7 +76,7 @@ const fits = (page, key) => page.evaluate((key) => {
   return bad;
 }, key);
 
-const wb = (i) => `wb-${pad(i)}@example.com`;
+const wb = (i) => `wb-${pad(i)}`;
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => wb(a + i));
 
 for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium", "webkit"])) {
@@ -95,20 +93,19 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.route("**/*", serve(lang));
       await page.addInitScript(() => { try { if (!sessionStorage.getItem("set")) { localStorage.clear(); localStorage.setItem("fogway.quotaRange", "off"); sessionStorage.setItem("set", "1"); } } catch {} });
       await page.goto("http://fogway.test/?view=usage");
-      const sel = '#subscriptionUsage > [data-key="workbuddy-ai"]';
+      const sel = '#subscriptionUsage > [data-key="zhipu"]';
       await page.waitForSelector(`${sel} .subscription-account .user`, { state: "attached" });
 
       let got = await cards(page);
-      assert.deepEqual(got["workbuddy-ai"].users, range(1, 5));
-      assert.equal(got["workbuddy-ai"].more, w.more17);
-      // the one in full and the one with the check-in switch stay in sight
-      assert.deepEqual(got.trae.users, ["t-1@example.com", "t-2@example.com", "t-3@example.com", "t-4@example.com", "t-5@example.com", "t-7@example.com", "t-8@example.com"]);
-      assert.equal(got.trae.more, w.more2);
-      assert.equal(await page.locator('#subscriptionUsage > [data-key="trae"] .ci-auto').count(), 1, "the check-in switch is in sight");
+      assert.deepEqual(got.zhipu.users, range(1, 5));
+      assert.equal(got.zhipu.more, w.more17);
+      // the one in full stays in sight
+      assert.deepEqual(got.kimi.users, ["t-1", "t-2", "t-3", "t-4", "t-5", "t-8"]);
+      assert.equal(got.kimi.more, w.more3);
       // eight: all in sight, no button
-      assert.equal(got.codex.users.length, 8);
-      assert.equal(got.codex.more, null);
-      const foldedHeight = got["workbuddy-ai"].height;
+      assert.equal(got.minimax.users.length, 8);
+      assert.equal(got.minimax.more, null);
+      const foldedHeight = got.zhipu.height;
 
       // opening them doesn't move the page
       const view = page.locator("#view-usage");
@@ -129,17 +126,17 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.equal(await view.evaluate((v) => v.scrollTop), before, "the view didn't scroll");
       assert.equal(await head.evaluate((e) => e.getBoundingClientRect().top), headAt, "the card stays where it was");
       got = await cards(page);
-      assert.deepEqual(got["workbuddy-ai"].users, range(1, 22));
-      assert.equal(got["workbuddy-ai"].more, w.fewer);
+      assert.deepEqual(got.zhipu.users, range(1, 22));
+      assert.equal(got.zhipu.more, w.fewer);
       assert.equal(await more.getAttribute("aria-expanded"), "true");
-      assert.ok(got["workbuddy-ai"].height > foldedHeight, "the card grew");
-      assert.equal(got.trae.more, w.more2, "another card stays as it was");
+      assert.ok(got.zhipu.height > foldedHeight, "the card grew");
+      assert.equal(got.kimi.more, w.more3, "another card stays as it was");
 
       // remembered across a reload
       await page.reload();
       await page.waitForSelector(`${sel} .subscription-account .user`, { state: "attached" });
       got = await cards(page);
-      assert.equal(got["workbuddy-ai"].users.length, 22);
+      assert.equal(got.zhipu.users.length, 22);
 
       // and folded again from its foot
       const fewer = page.locator(`${sel} .quota-accts-more`);
@@ -155,8 +152,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await page.mouse.click(fb.x + fb.width / 2, fb.y + fb.height / 2);
       await page.waitForTimeout(500);
       got = await cards(page);
-      assert.deepEqual(got["workbuddy-ai"].users, range(1, 5));
-      assert.equal(got["workbuddy-ai"].more, w.more17);
+      assert.deepEqual(got.zhipu.users, range(1, 5));
+      assert.equal(got.zhipu.more, w.more17);
       // the card's head stays where it was, as a provider's keys' does: the
       // cards packed into columns (#860), the next goes on under this one, so
       // the page no longer has to end there and come down to the button
@@ -165,10 +162,10 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       // 440px: nothing cut or spilling, folded and open
       await page.setViewportSize({ width: 440, height: 700 });
       await page.waitForTimeout(300);
-      for (const k of ["workbuddy-ai", "trae", "codex"]) assert.deepEqual(await fits(page, k), [], `${k} fits at 440px, folded`);
+      for (const k of ["zhipu", "kimi", "minimax"]) assert.deepEqual(await fits(page, k), [], `${k} fits at 440px, folded`);
       await page.locator(`${sel} .quota-accts-more`).evaluate((b) => b.click());
-      await page.waitForFunction(() => document.querySelectorAll('#subscriptionUsage > [data-key="workbuddy-ai"] .subscription-account').length === 22);
-      assert.deepEqual(await fits(page, "workbuddy-ai"), [], "fits at 440px, open");
+      await page.waitForFunction(() => document.querySelectorAll('#subscriptionUsage > [data-key="zhipu"] .subscription-account').length === 22);
+      assert.deepEqual(await fits(page, "zhipu"), [], "fits at 440px, open");
       assert.deepEqual(errors, []);
     });
   }

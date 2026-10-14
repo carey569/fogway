@@ -3,8 +3,7 @@
 // at the end of the Settings tabs. Words typed in it show every part's rows
 // that say them — in the language shown or in English — each part under its
 // name, the tabs set aside; a part's name or a section's heading brings all
-// of it; the warm-ups' cards all show, Codex's and Claude Code's alike;
-// nothing found says so. Escape, or clearing the box, brings back the part
+// of it; nothing found says so. Escape, or clearing the box, brings back the part
 // picked as it was. Nothing is posted and the page doesn't scroll. In the
 // smallest window (560 x 420) and fogway web on a phone (390 wide), nothing
 // runs off to the side. Every language; no backend, the API is faked here.
@@ -21,11 +20,11 @@ function server(lang, posts, web) {
   const cur = {
     theme: "light", lang, tray: "panel", quotaLeft: false, currency: "usd", textSize: 100,
     dock: false, dockWindow: false, proxy: "", redact: false, redactPersonal: false, redactWords: [],
-    codexWarmup: "", claudeWarmup: "", codexWarmAt: "", claudeWarmAt: "", workbuddyCheckin: false, noStats: false,
+    noStats: false,
     trayUsage: "", trayUsageEvery: 3, vision: "", imageGen: "",
     version: "0.1.400", dir: "~/.config/fogway", gateway: "http://127.0.0.1:3725",
     proxyNow: "none", proxySource: "none", login: false,
-    visionModels: [], imageGenModels: [], workbuddyCheckins: [], lanURLs: [],
+    visionModels: [], imageGenModels: [], lanURLs: [],
     fx: { rate: 7.2, at: new Date().toISOString(), stale: false },
   };
   return async (route) => {
@@ -126,13 +125,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.deepEqual(s.parts, ["usage"]);
         assert(await seen(page, "#currencySegs"), "Currency's row shows");
         assert.equal(await seen(page, "#trayUsagePick"), false);
-        assert.equal(await seen(page, "#warmTabs"), false, "the warm-ups' tabs set aside");
-
-        // the warm-ups: every agent's card that says it, not just the one picked
-        await type(page, (await tr("Warm up on reset")).toLowerCase());
-        assert(await seen(page, "#warmSegs"), "Codex's warm-up shows");
-        assert(await seen(page, "#claudeWarmSegs"), "Claude Code's warm-up shows");
-        assert.equal(await page.locator("#claudeWarmList").evaluate((p) => getComputedStyle(p, "::before").content), JSON.stringify("Claude Code"));
 
         // a part's name brings the whole part
         await type(page, await tr("Privacy"));
@@ -153,7 +145,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await q.inputValue(), "");
         assert.deepEqual(await state(page), { parts: ["usage"], tabs: true, none: "", misses: 0 });
         assert.equal(await page.locator(":is(#setTab-usage, .nav-s[data-of=setTab-usage]):visible").getAttribute("aria-selected"), "true");
-        assert(await seen(page, "#warmTabs"), "the warm-ups' tabs back");
         assert(await seen(page, "#trayUsagePick"), "every row back");
         // so does clearing it by hand
         await type(page, "currency");

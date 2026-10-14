@@ -3,8 +3,8 @@
 // provider editor's Redaction row, "Send requests unmasked", is there while
 // every address of the provider is local (localhost, a private IP), opens as
 // it was saved, and Save posts it. A relay at a vendor's address has no such
-// row, and one whose address is changed to a vendor's is saved masked. A
-// signed-in account has none. In English and Chinese, wide and narrow.
+// row, and one whose address is changed to a vendor's is saved masked. In
+// English and Chinese, wide and narrow.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -20,15 +20,9 @@ const base = {
 const local = { ...base, id: "local", name: "Local Box", chat: "http://localhost:11434/v1" };
 const lan = { ...base, id: "lan", name: "LAN Box", chat: "http://192.168.1.20:8000/v1", unredacted: true };
 const relay = { ...base, id: "relay", name: "Relay", chat: "https://relay.example.com/v1" };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "",
-};
 
 function serve(lang, posts) {
-  const providers = { providers: [local, lan, relay, codex], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [local, lan, relay], presets: [], excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -131,12 +125,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.equal(await row(page).isVisible(), false, "the row goes with the local address");
         const saved = await save(page, posts);
         assert.equal(saved.body.unredacted, false);
-        assert.deepEqual(errors, []);
-      });
-
-      test(`${engine} ${lang} ${width}: a signed-in account has no such row`, async (t) => {
-        const { page, errors } = await open(t, "Codex");
-        assert.equal(await row(page).count(), 0);
         assert.deepEqual(errors, []);
       });
     }

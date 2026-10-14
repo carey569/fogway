@@ -72,33 +72,6 @@ func TestRoundTrip(t *testing.T) {
 	if filepath.Base(Path()) != "settings.json" {
 		t.Fatal(Path())
 	}
-	if Save(Settings{CodexWarmup: "week"}) != nil || Load().CodexWarmup != "week" {
-		t.Fatal("codex warm-up not kept")
-	}
-	if Save(Settings{CodexWarmup: "off"}) != nil || Load().CodexWarmup != "" {
-		t.Fatal("off is off")
-	}
-	if Save(Settings{CodexWarmup: "daily"}) == nil {
-		t.Fatal("bad codex warm-up accepted")
-	}
-	if Save(Settings{ClaudeWarmup: "all"}) != nil || Load().ClaudeWarmup != "all" {
-		t.Fatal("claude warm-up not kept")
-	}
-	if Save(Settings{ClaudeWarmup: "hourly"}) == nil {
-		t.Fatal("bad claude warm-up accepted")
-	}
-	// a time of day to start the 5-hour windows at, as 06:00 however given
-	if Save(Settings{CodexWarmAt: "6:00", ClaudeWarmAt: "21:30:00"}) != nil || Load().CodexWarmAt != "06:00" || Load().ClaudeWarmAt != "21:30" {
-		t.Fatalf("warm-up times not kept: %+v", Load())
-	}
-	for _, bad := range []string{"25:00", "6am", "06:60"} {
-		if Save(Settings{CodexWarmAt: bad}) == nil {
-			t.Fatalf("bad time %q accepted", bad)
-		}
-	}
-	if Save(Settings{}) != nil || Load().CodexWarmAt != "" {
-		t.Fatal("no time is off")
-	}
 	// the menu bar's usage: every 3 minutes unless told, left or used
 	if s := Load(); s.TrayUsageEvery != 3 || s.QuotaLeft {
 		t.Fatalf("tray defaults: %+v", s)

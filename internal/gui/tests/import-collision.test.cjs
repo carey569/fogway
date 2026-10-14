@@ -1,9 +1,9 @@
 // A provider another app has, named as one fogway has (#1487, Dudung1018):
-// one named as a subscription (a relay called "claude", a proxy called
-// "workbuddy") is picked like a new one and is never offered to replace the
-// subscription; a name that collides can be changed right in the row, and
-// a renamed one is added under that name, never in another's place. All
-// APIs and keys are fixtures.
+// one named as fogway keeps for itself (a relay called "fogway") is picked
+// like a new one and is never offered to take that name; a name that
+// collides can be changed right in the row, and a renamed one is added
+// under that name, never in another's place. All APIs and keys are
+// fixtures.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -16,10 +16,8 @@ const langs = ["en", "zh", "zh-TW", "ja", "de"];
 const sources = () => [{
   id: "cc-switch", name: "CC Switch", path: "/fixture/.cc-switch/cc-switch.db", found: true,
   items: [
-    { ref: "claude/cl2", from: "Claude Code", fingerprint: "cl2", status: "taken", reserved: true, existing: "Claude",
-      provider: { id: "claude", name: "claude", anthropic: "https://relay-1487.example.com", key: "sk-…beef", models: ["claude-sonnet-5"] } },
-    { ref: "pi/wb", from: "Pi", fingerprint: "wb", status: "taken", reserved: true, existing: "workbuddy",
-      provider: { id: "workbuddy", name: "workbuddy", chat: "http://127.0.0.1:7863/v1", key: "sk-5…3432", models: ["glm-5"] } },
+    { ref: "claude/cl2", from: "Claude Code", fingerprint: "cl2", status: "taken", reserved: true, existing: "fogway",
+      provider: { id: "fogway", name: "fogway", anthropic: "https://relay-1487.example.com", key: "sk-…beef", models: ["claude-sonnet-5"] } },
     { ref: "opencode/mine", from: "OpenCode", fingerprint: "mine", status: "taken", existing: "My Relay",
       provider: { id: "my-relay", name: "My Relay", chat: "https://other.example.com/v1", key: "sk-…1234", models: [] } },
   ],
@@ -71,20 +69,17 @@ const opts = (row) => row.locator(".segs .opt").allTextContents();
 for (const engine of engines) {
   for (const lang of langs) {
     for (const width of [900, 390]) {
-      test(`${engine} ${lang} ${width}px: a name that collides can be changed in the row, and a subscription is never replaced`, async (t) => {
+      test(`${engine} ${lang} ${width}px: a name that collides can be changed in the row, and fogway's own name is never taken`, async (t) => {
         const { page, picker, posts } = await fixture(t, engine, lang, width);
         const T = (s, v) => page.evaluate(([s, v]) => t(s, v), [s, v]);
         const claude = picker.locator(".approw", { hasText: "Claude Code" });
-        const wb = picker.locator(".approw", { hasText: "127.0.0.1:7863" });
         const mine = picker.locator(".approw", { hasText: "OpenCode" });
 
-        // named as a subscription: picked, said so, added beside it only
-        for (const row of [claude, wb]) {
-          assert.equal(await row.locator('input[type="checkbox"]').isChecked(), true);
-          assert.deepEqual(await opts(row), [], "no choice: it can only come in beside the subscription");
-          assert.equal(await row.locator("input.appname").isVisible(), true);
-        }
-        assert.equal(await claude.locator(".sub", { hasText: await T("{name} is a subscription in fogway; this one comes in beside it as a provider of its own", { name: "Claude" }) }).count(), 1);
+        // named as fogway: picked, said so, added as a provider of its own only
+        assert.equal(await claude.locator('input[type="checkbox"]').isChecked(), true);
+        assert.deepEqual(await opts(claude), [], "no choice: it can only come in as a provider of its own");
+        assert.equal(await claude.locator("input.appname").isVisible(), true);
+        assert.equal(await claude.locator(".sub", { hasText: await T("{name} is a name fogway keeps for itself; this one comes in as a provider of its own", { name: "fogway" }) }).count(), 1);
         // a name of the user's own provider: off until chosen, Replace offered
         assert.equal(await mine.locator('input[type="checkbox"]').isChecked(), false);
         assert.deepEqual(await opts(mine), [await T("Keep both"), await T("Replace it")]);
@@ -108,7 +103,6 @@ for (const engine of engines) {
         assert.deepEqual(posts.length, 1);
         const picks = Object.fromEntries(posts[0].picks.map((p) => [p.ref, p]));
         assert.deepEqual(picks["claude/cl2"], { source: "cc-switch", ref: "claude/cl2", mode: "add", name: "Findcg Claude" });
-        assert.deepEqual(picks["pi/wb"], { source: "cc-switch", ref: "pi/wb", mode: "add" });
         assert.deepEqual(picks["opencode/mine"], { source: "cc-switch", ref: "opencode/mine", mode: "add", name: "Other Relay" });
       });
     }

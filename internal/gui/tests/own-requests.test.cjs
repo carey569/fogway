@@ -5,11 +5,9 @@
 // among the agents and its rows in the ledger carry a "fogway's own" mark,
 // an account's, a key's or a model's row says how many of its calls fogway
 // made itself, and the account's card says how many of the period's
-// requests were fogway's own. The Routing page says, beside a classifier on
-// a subscription (or a group whose first model is one), that every turn
-// starts with a request to it; a classifier on a key says nothing of it.
-// In every language, in Chromium and WebKit at 1100 and 390 wide, no click
-// moving the page and nothing wider than the window; the API is faked.
+// requests were fogway's own. In every language, in Chromium and WebKit at
+// 1100 and 390 wide, no click moving the page and nothing wider than the
+// window; the API is faked.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -80,52 +78,6 @@ function serveUsage(lang) {
     await route.fulfill({ body: await fs.readFile(file), contentType });
   };
 }
-
-// the Routing page: a classifier on a subscription's model, one on a key's,
-// and one that is a group whose first model is a subscription's
-const models = [
-  { id: "codex/gpt-5-mini", name: "gpt-5-mini", providerName: "Codex", icon: "codex-color", context: 400000, ready: true, sub: true },
-  { id: "or/flash", name: "flash", providerName: "OpenRouter", icon: "generic", context: 128000, ready: true },
-  { id: "a/opus", name: "opus", providerName: "A", icon: "generic", context: 1000000, ready: true },
-];
-const member = (id, context) => ({ id, ready: true, context });
-const group = (id, classifier, extra) => ({ id, name: id, members: ["a/opus", "or/flash"], routing: "order", ready: true, classifier,
-  memberInfo: [member("a/opus", 1000000), member("or/flash", 128000)], rules: [{ use: "or/flash", intent: "a quick question" }], ...extra });
-const GROUPS = {
-  models,
-  groups: [
-    group("onsub", "codex/gpt-5-mini"),
-    group("onkey", "or/flash"),
-    { ...group("bysubgroup", "group/cls"), effort: "auto" },
-    { id: "cls", name: "cls", members: ["codex/gpt-5-mini", "or/flash"], routing: "order", ready: true, memberInfo: [member("codex/gpt-5-mini", 400000), member("or/flash", 128000)] },
-  ],
-  pools: [],
-};
-
-function serveRouting(lang) {
-  const state = { agents: [{ id: "claude", name: "Claude Code", path: "/test/claude", fields: [] }], profiles: [], settings: { lang, theme: "light" } };
-  return async (r) => {
-    const url = new URL(r.request().url());
-    const json = (data) => r.fulfill({ json: data });
-    if (url.pathname === "/boot.js") return r.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:"${lang}",theme:"light",web:true};` });
-    if (url.pathname === "/wails/runtime.js") return r.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
-    if (url.pathname === "/api/state") return json(state);
-    if (url.pathname === "/api/gateway/trace") {
-      if (url.searchParams.get("wait")) return new Promise(() => {});
-      return json({ mine: true, now: new Date().toISOString(), seq: 1, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });
-    }
-    if (url.pathname === "/api/gateway/history") return json({ cut: false, days: [], routes: [] });
-    if (url.pathname === "/api/groups") return json(GROUPS);
-    if (url.pathname === "/api/providers") return json({ providers: [], presets: [], excluded: [], gateway: { running: true, window: true, url: "http://127.0.0.1:3999" } });
-    if (url.pathname.startsWith("/api/")) return json({});
-    const file = path.join(assets, url.pathname === "/" ? "index.html" : url.pathname);
-    const contentType = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" }[path.extname(file)];
-    await r.fulfill({ body: await fs.readFile(file), contentType });
-  };
-}
-
-const ONE = "Every turn starts with a request to {name}, a subscription: it counts against its allowance as the agent's own do. A free model or one on an API key leaves the subscription to the agents.";
-const TWO = "Every turn starts with two requests to {name}, a subscription: they count against its allowance as the agent's own do. A free model or one on an API key leaves the subscription to the agents.";
 
 // the page's word for a string, and that it is the language's own
 async function say(page, lang, key, vars) {
@@ -208,62 +160,6 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
             if (process.env.ARTIFACT_DIR) {
               await fs.mkdir(process.env.ARTIFACT_DIR, { recursive: true });
               await page.screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${width}-${lang}-own-usage.png`) });
-            }
-            await context.close();
-          }
-        });
-      }
-    });
-
-    test(`${engine} ${width}: a classifier on a subscription says every turn starts with a request to it`, async (t) => {
-      const browser = await (engine === "webkit" ? webkit.launch() : chromium.launch({ channel: "chromium" }));
-      t.after(() => browser.close());
-      for (const lang of LANGS) {
-        await t.test(lang, async () => {
-          const height = 1400;
-          const context = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" });
-          const page = await context.newPage();
-          page.setDefaultTimeout(5000);
-          const errors = [];
-          page.on("pageerror", (e) => errors.push(e.message));
-          await page.route("**/*", serveRouting(lang));
-          try {
-            const open = async (i) => {
-              await page.goto("http://fogway.test/?view=routing");
-              const g = page.locator(".rt-group").nth(i);
-              await g.waitFor();
-              const edit = g.locator("button", { hasText: await page.evaluate(() => t("Edit")) });
-              await page.mouse.move(Math.min(550, (width / 2) | 0), 300);
-              for (let k = 0; k < 12 && (await edit.boundingBox()).y > height - 160; k++) {
-                await page.mouse.wheel(0, 300);
-                await page.waitForTimeout(150);
-              }
-              const bb = await edit.boundingBox();
-              await page.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2);
-              const ed = page.locator(".rt-gedit");
-              await ed.locator(".rt-classifier").waitFor();
-              return ed;
-            };
-            const name = "gpt-5-mini · Codex";
-            // a subscription's model: one request
-            let ed = await open(0);
-            let hint = ed.locator(".rt-cls-sub");
-            assert.equal(await hint.textContent(), await say(page, lang, ONE, { name }));
-            const hb = await hint.boundingBox(), eb = await ed.boundingBox();
-            assert(hb.width > 0 && hb.x >= eb.x - 0.5 && hb.x + hb.width <= eb.x + eb.width + 0.5, `inside the editor: ${JSON.stringify(hb)} in ${JSON.stringify(eb)}`);
-            assert.equal(await leftStripe(hint), false, "no left-border accent");
-            assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "the page scrolls sideways");
-            // a key's model: nothing of it
-            ed = await open(1);
-            assert.equal(await ed.locator(".rt-cls-sub").count(), 0, "a classifier on a key says nothing of a subscription");
-            // a group asking a subscription first, picking the effort too: two
-            ed = await open(2);
-            assert.equal(await ed.locator(".rt-cls-sub").textContent(), await say(page, lang, TWO, { name }));
-            assert.deepEqual(errors, []);
-          } finally {
-            if (process.env.ARTIFACT_DIR) {
-              await fs.mkdir(process.env.ARTIFACT_DIR, { recursive: true });
-              await page.screenshot({ path: path.join(process.env.ARTIFACT_DIR, `${engine}-${width}-${lang}-own-routing.png`) });
             }
             await context.close();
           }

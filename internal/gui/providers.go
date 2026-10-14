@@ -102,25 +102,15 @@ type providerJSON struct {
 	// the proxy its requests go through: "" the global one, "direct"
 	// none, or an address (#237)
 	Proxy string `json:"proxy"`
-	// the proxy of each of a subscription's accounts that has one of its
-	// own, by its name in lower case; the others follow Proxy
+	// the proxy of each of its keys that has one of its own, by its key's
+	// id; the others follow Proxy
 	AccountProxies map[string]string `json:"accountProxies,omitempty"`
 	// the models each account or key the user narrowed serves alone, by
 	// its name in lower case or its key's id (#474); the others serve all
 	AccountModels map[string][]string `json:"accountModels,omitempty"`
-	// the usage cap each account the user capped is held at, in percent
-	// of its windows, by its name in lower case (provider.AccountCaps)
-	AccountCaps map[string]int `json:"accountCaps,omitempty"`
-	// the share of a window each account is held at where the user set
-	// one for that window apart, by the account and then the window's
-	// capId (provider.AccountWindowCaps); 100 is none on that window
-	AccountWindowCaps map[string]map[string]int `json:"accountWindowCaps,omitempty"`
 	// the names the user gave its accounts, by the account in lower
-	// case (provider.AccountNames, #1515), and the name of the key plan
-	// each account was found to stand in for (provider.SeatNameOf): the
-	// name an account has until the user gives it one
+	// case (provider.AccountNames, #1515)
 	AccountNames map[string]string `json:"accountNames,omitempty"`
-	AccountSeats map[string]string `json:"accountSeats,omitempty"`
 	// where a custom provider's balance is asked (see provider.Balance)
 	BalanceURL  string `json:"balanceURL,omitempty"`
 	BalancePath string `json:"balancePath,omitempty"`
@@ -182,20 +172,9 @@ type providerJSON struct {
 	// Sink: a key or account rate limited with quota left goes to the
 	// back of the order (provider.Provider.Sink)
 	Sink bool `json:"sink,omitempty"`
-	// KeepLogin: fogway keeps Codex or Claude Code signed in to the first
-	// account rather than moving it on when that runs low (#524)
-	KeepLogin bool `json:"keepLogin,omitempty"`
-	// KeepLoginAs: the account it is kept signed in to instead of the
-	// first, the gateway still trying them in their order
-	KeepLoginAs string `json:"keepLoginAs,omitempty"`
-	// SwitchOnly: fogway only moves Codex's own sign-in between its
-	// accounts, never routing its requests for failover (#1907)
-	SwitchOnly bool `json:"switchOnly,omitempty"`
-	// how many requests each of its keys or accounts has out at once, the
-	// rest queued: the user's (null: not set), and what its plugin says
-	// when the user set none (provider.Concurrency)
-	MaxConcurrency    *int `json:"maxConcurrency"`
-	PluginConcurrency int  `json:"pluginConcurrency,omitempty"`
+	// how many requests each of its keys has out at once, the rest
+	// queued (null: not set, no limit; provider.Concurrency)
+	MaxConcurrency *int `json:"maxConcurrency"`
 	// each key's or account's own limit over it (#892), by its name in
 	// lower case or its key id; 0 there is none
 	AccountConcurrency map[string]int `json:"accountConcurrency,omitempty"`
@@ -217,29 +196,15 @@ type providerJSON struct {
 	// Groups are the routing groups ("group/<id>") each of its models is
 	// in, by model id: what an unlisted one is still used through, and the
 	// editor names those in none
-	Groups   map[string][]string `json:"groups,omitempty"`
-	Off      bool                `json:"off"`                // switched off: kept, but agents get none of its models
-	Contexts map[string]int      `json:"contexts,omitempty"` // the windows the user set, "*" for all its models
-	Outputs  map[string]int      `json:"outputs,omitempty"`  // the reply limits the user set (provider.OutputsOf)
-	Compacts map[string]int      `json:"compacts,omitempty"` // where Codex and Claude Code compact on its models (provider.CompactsOf)
-	Fetched  *time.Time          `json:"fetched,omitempty"`  // when the list came from the vendor; the page says how long ago in its language
-	// ListError is why a plugin's account has only the plugin's defaults
-	// (provider.ListError): the editor says so under its models
-	ListError string             `json:"listError,omitempty"`
-	Agents    []providerAgent    `json:"agents"` // detected agents, current ones flagged
-	Sponsored bool               `json:"sponsored"`
-	KeyList   []provider.KeyInfo `json:"keyList"`           // its keys, in the order requests try them
-	Account   *accountJSON       `json:"account,omitempty"` // a signed-in agent, see provider.Account
-	// Move is where a built-in subscription stands with the community
-	// plugin that can run it (provider.Move): set for those that have one
-	Move *moveJSON `json:"move,omitempty"`
-}
-
-type moveJSON struct {
-	Package string `json:"package"`
-	// State is "" (built-in, never moved), "plugin", "back" or "failed"
-	State string `json:"state"`
-	Error string `json:"error,omitempty"`
+	Groups    map[string][]string `json:"groups,omitempty"`
+	Off       bool                `json:"off"`                // switched off: kept, but agents get none of its models
+	Contexts  map[string]int      `json:"contexts,omitempty"` // the windows the user set, "*" for all its models
+	Outputs   map[string]int      `json:"outputs,omitempty"`  // the reply limits the user set (provider.OutputsOf)
+	Compacts  map[string]int      `json:"compacts,omitempty"` // where Codex and Claude Code compact on its models (provider.CompactsOf)
+	Fetched   *time.Time          `json:"fetched,omitempty"`  // when the list came from the vendor; the page says how long ago in its language
+	Agents    []providerAgent     `json:"agents"`             // detected agents, current ones flagged
+	Sponsored bool                `json:"sponsored"`
+	KeyList   []provider.KeyInfo  `json:"keyList"` // its keys, in the order requests try them
 }
 
 // stepPlanJSON: whether a StepFun provider's platform sign-in is kept, and
@@ -279,17 +244,6 @@ type stepPlanJSON struct {
 	SignedIn    bool   `json:"signedIn"`
 	URL         string `json:"url"`
 	Bookmarklet string `json:"bookmarklet"`
-}
-
-type accountJSON struct {
-	Agent string `json:"agent"`     // the agent's id
-	Name  string `json:"agentName"` // the agent's name, for "from Codex CLI's sign-in"
-	Icon  string `json:"agentIcon"`
-	// Builtin is a plugin's provider id, for a plugin beside a built-in
-	// subscription (cursor-plugin's cursor): its plan named as the built-in's
-	Builtin string `json:"builtin,omitempty"`
-	// WSL is the distro Claude Code runs in, for a Windows with none of its own
-	WSL string `json:"wsl,omitempty"`
 }
 
 type providerAgent struct {
@@ -372,33 +326,10 @@ type gwGroupJSON struct {
 	Members []string `json:"members,omitempty"` // the models it sends to, provider/model, in its order
 }
 
-type excludedJSON struct {
-	Name string `json:"agentName"`
-	Icon string `json:"agentIcon"`
-}
-
 type providersJSON struct {
 	Providers []providerJSON `json:"providers"`
 	Presets   []presetJSON   `json:"presets"`
-	Excluded  []excludedJSON `json:"excluded"` // sign-ins fogway found but will not share
 	Gateway   gatewayJSON    `json:"gateway"`
-	// CodexDaemon is the account Codex's background app-server is still
-	// signed in to after Codex was switched to another; "" when none is
-	// left behind (provider.CodexDaemonStale).
-	CodexDaemon string `json:"codexDaemon,omitempty"`
-	// CodexApp is the account the Codex desktop app is still signed in to
-	// after Codex was switched to another, until it is quit and opened
-	// again (provider.CodexAppStale)
-	CodexApp string `json:"codexApp,omitempty"`
-	// OnPlugins are the built-in subscriptions moved onto their plugins,
-	// which the add sheet offers as the plugin's alone
-	OnPlugins []string `json:"onPlugins,omitempty"`
-	// Movable are the built-in subscriptions a community plugin can run,
-	// deprecated in fogway itself: the add sheet marks them so
-	Movable []string `json:"movable,omitempty"`
-	// MovesTo is the plugin each of them goes to, for the add sheet's
-	// offer to install it before signing in
-	MovesTo map[string]string `json:"movesTo,omitempty"`
 	// Moved is the agents the change moved off models it stopped serving
 	// (agent.Reseat), for the page to say so.
 	Moved []agent.Move `json:"moved,omitempty"`
@@ -409,8 +340,8 @@ type providersJSON struct {
 	// Removed: of the keys removed at once (keys/remove-many), how many.
 	Removed int `json:"removed,omitempty"`
 	// FileError is why providers.json can't be read (provider.FileError):
-	// the page says so over what is listed, which is then the signed-in
-	// accounts alone, never "add your first provider".
+	// the page says so over what is listed, never "add your first
+	// provider".
 	FileError string `json:"fileError,omitempty"`
 	// Fetching: accounts' lists are still being asked for
 	// (provider.FetchingNew); the page asks again until they are in
@@ -466,8 +397,8 @@ func providerInfo(p provider.Provider, agents []agentUse) providerJSON {
 		Catalog: p.Catalog, Website: p.Website, KeysURL: p.KeysURL,
 		Proxy: p.Proxy, AccountProxies: p.AccountProxies, AccountModels: p.AccountModels, Headers: p.Headers, ExtraBody: p.ExtraBody, Searches: p.Searches, Cline: p.ClinePinnable(), PinUpstream: p.PinUpstream, Unredacted: p.Unredacted, PassUserAgent: p.PassUserAgent, OwnClient: p.OwnClient(), AuthHeader: p.AuthHeader, BothAuth: p.BothAuth(), BalanceURL: p.BalanceURL, BalancePath: p.BalancePath, ModelsURL: p.ModelsURL,
 		Ready: p.Ready(), Chosen: p.Picks(), Models: []modelJSON{}, Agents: []providerAgent{},
-		Fallback: p.Fallback, Routing: p.Routing, Sink: p.Sink, Affinity: p.Affinity, KeepLogin: p.KeepLogin, KeepLoginAs: p.KeepLoginAs, SwitchOnly: p.SwitchOnly, Unlisted: p.Unlisted, NoModels: p.ServesNone(), Off: p.Off, Contexts: p.Contexts,
-		MaxConcurrency: p.MaxConcurrency, PluginConcurrency: p.PluginConcurrency(), PriceRate: p.PriceRate,
+		Fallback: p.Fallback, Routing: p.Routing, Sink: p.Sink, Affinity: p.Affinity, Unlisted: p.Unlisted, NoModels: p.ServesNone(), Off: p.Off, Contexts: p.Contexts,
+		MaxConcurrency: p.MaxConcurrency, PriceRate: p.PriceRate,
 		AccountConcurrency: p.AccountConcurrency, QueueLimit: p.QueueLimit, QueueWait: p.QueueWait, MaxRPM: p.MaxRPM,
 		Outputs: provider.OutputsOf(p.ID), Compacts: provider.CompactsOf(p.ID),
 	}
@@ -644,7 +575,7 @@ func providersState() providersJSON {
 	// which is told so and asks again, never waited for (#541)
 	provider.FetchNewBehind(8 * time.Second)
 	agents := agent.Detected()
-	s := providersJSON{Providers: []providerJSON{}, Presets: []presetJSON{}, Excluded: []excludedJSON{}}
+	s := providersJSON{Providers: []providerJSON{}, Presets: []presetJSON{}}
 	if err := provider.FileError(); err != nil {
 		s.FileError = err.Error()
 	}
@@ -938,12 +869,6 @@ func providerRoutes(mux *http.ServeMux, w Windows) {
 			// the provider's (#474)
 			Account string   `json:"account"`
 			Allow   []string `json:"allow"`
-			// Cap, for accountcap: the share (1–99) of its windows the
-			// account is used to at most, 0 for no cap; for windowcap, the
-			// share of Window alone (1–99, 100 for none on it), 0 to have
-			// it follow the account's cap
-			Cap    int    `json:"cap"`
-			Window string `json:"window"`
 			// Alias, for accountname: the account's name of the user's
 			// own, "" to take it off (#1515)
 			Alias string `json:"alias"`
@@ -1131,8 +1056,8 @@ func providerRoutes(mux *http.ServeMux, w Windows) {
 				if old != nil {
 					in.AccountModels = old.AccountModels
 				}
-				// and their usage caps, with accountcap and windowcap, and their
-				// limits on requests at once, with accountconcurrency
+				// and their limits on requests at once, with
+				// accountconcurrency
 				if old != nil {
 					in.AccountConcurrency = old.AccountConcurrency
 				}

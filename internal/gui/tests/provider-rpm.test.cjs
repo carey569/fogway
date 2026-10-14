@@ -3,9 +3,8 @@
 // models take 20 a minute, which Concurrency can't keep to): its editor
 // has the field under Concurrency, empty for no limit; Save posts the
 // number typed, 0 when it is empty, and refuses one that isn't a whole
-// number from 0 to 10000 before anything is posted. A signed-in account
-// (Codex) opens on what it has and saves it with its picks. At the
-// narrowest window the label stays on one line and the field keeps its
+// number from 0 to 10000 before anything is posted. One with a limit
+// saved opens on it and saves it with its picks. At the narrowest window the label stays on one line and the field keeps its
 // placeholder readable. In English, Chinese, Japanese and German.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
@@ -19,15 +18,13 @@ const openrouter = {
   models: [{ id: "x/free", name: "Free", on: true }], agents: [], fallback: [], headers: {},
   key: { set: true, masked: "sk-…one" }, keyList: [], balanceToken: { takes: false, set: false }, proxy: "", maxConcurrency: null,
 };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "", maxConcurrency: null, maxRPM: 20,
+const paced = {
+  ...openrouter, id: "paced", name: "Paced", chat: "https://paced.example.com/v1",
+  models: [{ id: "gpt-6", name: "GPT-6", on: true }], key: { set: true, masked: "sk-…two" }, maxRPM: 20,
 };
 
 function serve(lang, posts) {
-  const providers = { providers: [openrouter, codex], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [openrouter, paced], presets: [], excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -134,12 +131,12 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, []);
     });
 
-    test(`${engine} ${lang}: a signed-in account's limit opens as it is and is saved with its picks`, async (t) => {
-      const { page, errors, posts } = await open(t, "Codex");
+    test(`${engine} ${lang}: a saved limit opens as it is and is saved with its picks`, async (t) => {
+      const { page, errors, posts } = await open(t, "Paced");
       assert.equal(await box(page).inputValue(), "20");
       await box(page).fill("12");
       const saved = await save(page, posts);
-      assert.equal(saved.body.id, "codex");
+      assert.equal(saved.body.id, "paced");
       assert.equal(saved.body.maxRPM, 12);
       assert.deepEqual(saved.body.models, ["gpt-6"], "its picks go with it");
       assert.deepEqual(errors, []);

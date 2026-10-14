@@ -2,9 +2,8 @@
 // A provider's own proxy (#237): its editor has a Proxy row, Global proxy |
 // Direct | Custom, the address field there only for Custom; Save posts
 // "" for the global one, "direct", or the address typed, and Custom with
-// none typed is refused before anything is posted. A signed-in account
-// (Codex here) has the row too, opening on what it has. A click on the
-// row leaves the page where it is. In English and Chinese.
+// none typed is refused before anything is posted. One with its own proxy
+// saved opens on it. A click on the row leaves the page where it is. In English and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -17,15 +16,13 @@ const relay = {
   models: [{ id: "model-a", name: "Model A", on: true }], agents: [], fallback: [], headers: {},
   key: { set: true, masked: "sk-…one" }, keyList: [], balanceToken: { takes: false, set: false }, proxy: "",
 };
-const codex = {
-  id: "codex", name: "Codex", icon: "codex-color", chat: "", responses: "", anthropic: "", catalog: "",
-  models: [{ id: "gpt-6", name: "GPT-6", on: true }], agents: [], fallback: [], headers: {}, keyList: [],
-  account: { agent: "codex", agentName: "Codex", user: "me@example.com", plan: "PLUS", logins: [{ user: "me@example.com", plan: "PLUS", active: true, on: true }] },
-  proxy: "http://10.0.0.2:7890",
+const proxied = {
+  ...relay, id: "proxied", name: "Proxied", chat: "https://proxied.example.com/v1",
+  models: [{ id: "gpt-6", name: "GPT-6", on: true }], key: { set: true, masked: "sk-…two" }, proxy: "http://10.0.0.2:7890",
 };
 
 function serve(lang, posts) {
-  const providers = { providers: [relay, codex], presets: [], excluded: [], gateway: { running: true, window: true } };
+  const providers = { providers: [relay, proxied], presets: [], excluded: [], gateway: { running: true, window: true } };
   const state = { agents: [], profiles: [], settings: { lang, theme: "light" } };
   return async (route) => {
     const url = new URL(route.request().url());
@@ -136,15 +133,15 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(errors, []);
     });
 
-    test(`${engine} ${lang}: a signed-in account's proxy opens as it is and is saved`, async (t) => {
-      const { page, errors, posts } = await open(t, "Codex");
-      assert.equal(await mode(page), w.custom, "Codex's own proxy is shown");
+    test(`${engine} ${lang}: a saved proxy opens as it is and is saved`, async (t) => {
+      const { page, errors, posts } = await open(t, "Proxied");
+      assert.equal(await mode(page), w.custom, "its own proxy is shown");
       assert.equal(await addr(page).inputValue(), "http://10.0.0.2:7890");
       assert.equal(await page.locator(".editor .proxy-pick .opt.on").count(), 1);
       await pick(page, w.direct);
       const saved = await save(page, posts);
       assert.equal(saved.action, "save");
-      assert.equal(saved.body.id, "codex");
+      assert.equal(saved.body.id, "proxied");
       assert.equal(saved.body.proxy, "direct");
       assert.deepEqual(saved.body.models, ["gpt-6"], "its picks go with it");
       const border = await page.evaluate(() => [...document.querySelectorAll(".proxy-pick, .proxy-pick *")].map((e) => getComputedStyle(e).borderLeftWidth).filter((b) => parseFloat(b) > 1));

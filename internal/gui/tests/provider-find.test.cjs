@@ -1,9 +1,9 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // #1614 (ququdu): "供应商很多，然后经常需要翻找，排序拖动也比较慢". The
 // Providers page has a search box over the list: the words typed keep the
-// rows that say them, matched on the name, the id, a model's id, an
-// account's user and the rest, the ones turned off too (their fold opens
-// while searching); nothing found says so; Escape clears it and puts the
+// rows that say them, matched on the name, the id, a model's id, a key's
+// name and the rest, the ones turned off too (their fold opens while
+// searching); nothing found says so; Escape clears it and puts the
 // fold back. A row's right-click has Move to Top, Move Up, Move Down and
 // Move to Bottom, Alt+Shift+↑/↓ go to the top or the bottom from the
 // keyboard. While searching, a row moves among the ones shown (Alt+↑/↓, a
@@ -33,7 +33,7 @@ function fixture(lang) {
       prov("deepseek", "DeepSeek", { models: [{ id: "deepseek-v3.2", name: "DeepSeek V3.2", on: true }] }),
       prov("relay-three", "Relay Three", { models: [{ id: "gpt-5", name: "GPT-5", on: true }] }),
       prov("moonshot", "Moonshot", { keyList: [{ id: "k1", name: "work key", masked: "sk-…1", active: true, on: true }] }),
-      prov("zhipu", "Zhipu GLM", { account: { user: "alice@example.com", agentName: "ZCode", agentIcon: "generic", plan: "Coding Plan" } }),
+      prov("zhipu", "Zhipu GLM", { keyList: [{ id: "k2", name: "alice@example.com", masked: "sk-…2", active: true, on: true }] }),
       prov("relay-off", "Relay Off", { off: true, models: [{ id: "gpt-5", name: "GPT-5", on: true }] }),
     ],
     presets: [], excluded: [], gateway: { running: true, window: true },
