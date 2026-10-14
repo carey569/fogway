@@ -19905,6 +19905,7 @@ function sideEffortChip(val, levels, saved, now, cls, dflt, save) {
     openProtoMenu(b, [{ v: "", name: "Default", note: dflt }, ...levels.map((l) => ({ v: l, name: l, note: "" }))], shown,
       (e) => { if (e !== saved) save(e); }, "Thinking", "side-effort-menu", "right");
   };
+  val.classList.add("with-effort");
   val.append(b);
 }
 
