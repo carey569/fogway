@@ -1145,6 +1145,18 @@ body.window .field.solo { grid-column: auto; }
 .led-arch-sw { display: inline-flex; align-items: center; gap: 7px; padding: 2px 0; background: none; border: 0; font: inherit; font-size: 11.5px; color: var(--muted); cursor: pointer; }
 .led-arch-sw:hover, .led-arch-sw.on { color: var(--fg); }
 .led-arch-sw:disabled { opacity: .6; cursor: default; }
+/* the switch the Agents, Sessions and Settings pages share, and the words
+   and red button of a confirming dialog: these lived in the Library's
+   stylesheet, and went with it */
+.lib-switch { flex: none; position: relative; width: 32px; height: 19px; border-radius: 10px; background: var(--line); transition: background .2s var(--ease); }
+.lib-switch i { position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .22s var(--ease); }
+.lib-switch.on { background: var(--fg); }
+.lib-switch.on i { transform: translateX(13px); background: var(--card); }
+:root[data-theme="dark"] .lib-switch.on i { background: var(--bg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lib-switch.on i { background: var(--bg); } }
+.lib-confirm { grid-column: 1 / -1; margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--fg-2); }
+.text.danger-fill { background: var(--red); color: #fff; }
+.editor .editor-error:empty { display: none; }
 .led-arch-sw .lib-switch { width: 28px; height: 16px; }
 .led-arch-sw .lib-switch i { width: 12px; height: 12px; }
 .led-arch-sw .lib-switch.on i { transform: translateX(12px); }
