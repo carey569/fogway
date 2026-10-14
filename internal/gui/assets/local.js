@@ -13,35 +13,26 @@
   if (!page) return;
 
   Object.assign((I18N.zh ||= {}), {
-    "Local model": "本地模型",
-    "Edge": "端侧",
+    "Switched off": "已关闭",
+    "This computer": "本机",
+    "RAM": "内存",
     "The model on this computer": "本机模型",
     "Runs a small model on this computer with llama.cpp, pulled from Hugging Face. Fogway serves it as local/…, and group/auto sends each turn to it or to the cloud.": "用 llama.cpp 在本机运行一个小模型，模型从 Hugging Face 拉取。Fogway 以 local/… 提供它，group/auto 按轮把任务分给它或云端。",
-    "Off": "已关闭",
     "Getting llama.cpp ready": "正在准备 llama.cpp",
     "Downloading the model": "正在下载模型",
     "Loading the model": "正在加载模型",
     "Serving": "运行中",
     "Stopped": "已停止",
-    "Turn on": "开启",
-    "Turn off": "关闭",
-    "Model": "模型",
     "Recommended for this computer": "本机推荐",
     "Another model on Hugging Face": "Hugging Face 上的其他模型",
-    "Repository": "仓库",
-    "File": "文件",
     "Download from": "下载源",
     "Hugging Face": "Hugging Face 官方",
     "hf-mirror.com (China)": "hf-mirror.com（国内镜像）",
-    "Context window": "上下文窗口",
     "about {gb}": "约 {gb}",
     "tight on memory": "内存吃紧",
     "The memory shown is taken as the model loads, whether the window fills or not. A long conversation is slow to read the first time: the 4B took about 15 minutes over 140K tokens on an M4 Pro; after that only what is new is read.": "所示内存在模型加载时就会占用，不论窗口是否用满。很长的对话第一次读入会很慢：在 M4 Pro 上，4B 读 14 万 token 用了约 15 分钟；之后每轮只读新增的部分。",
     "too much for this computer": "本机内存不够",
-    "tokens": "tokens",
     "Save and restart": "保存并重启",
-    "Computer": "本机",
-    "memory": "内存",
     "Apple silicon, memory shared with the GPU": "Apple 芯片，内存与 GPU 共享",
     "llama.cpp build": "llama.cpp 构建",
     "Its log": "运行日志",
@@ -52,9 +43,6 @@
     "On: a sensitive turn the local model can do stays here even if it fails; one it can't goes to the cloud with what is sensitive masked by the local model, and comes back unmasked.": "开启后：本地能做的敏感任务只在本机完成（失败也不上云）；本地做不了的，由本地模型脱敏后发往云端，回复再还原。",
     "Point agents at group/auto on the Agents page to use it.": "在 Agents 页把 Agent 的模型设为 group/auto 即可使用。",
     "No edge-cloud group yet: it is made once the local model serves and a cloud provider is added.": "还没有端云路由组：本地模型运行起来、并添加了云端 provider 后会自动创建。",
-    "Add": "添加",
-    "Remove": "移除",
-    "Saved": "已保存",
     "This computer's assessment": "本机评测",
     "Assess again": "重新评测",
     "Assessing…": "正在评测…",
@@ -113,7 +101,7 @@
   let assessing = false, measuring = false, autoAssessed = false;
 
   const PHASES = {
-    off: "Off", preparing: "Getting llama.cpp ready", downloading: "Downloading the model",
+    off: "Switched off", preparing: "Getting llama.cpp ready", downloading: "Downloading the model",
     starting: "Loading the model", ready: "Serving", failed: "Stopped",
   };
   const tokens = (n) => (n >= 1 << 20 && n % (1 << 20) === 0 ? n / (1 << 20) + "M" : n >= 1024 && n % 1024 === 0 ? n / 1024 + "K" : String(n));
@@ -231,11 +219,11 @@
       card.append(r);
     }
     const h = a.hardware || {};
-    let comp = `${h.cpu || h.os + "/" + h.arch} · ${t("{n} cores", { n: h.cores || "?" })} · ${gb(h.ram || 0)} ${t("memory")}`;
+    let comp = `${h.cpu || h.os + "/" + h.arch} · ${t("{n} cores", { n: h.cores || "?" })} · ${gb(h.ram || 0)} ${t("RAM")}`;
     if (h.gpu) comp += ` · ${h.gpu} ${gb(h.vram || 0)}`;
     else if (h.unified && h.gpuCores) comp += " · " + t("GPU {n} cores, memory shared", { n: h.gpuCores });
     if (a.disk) comp += " · " + t("{gb} free on the disk", { gb: gb(a.disk) });
-    card.append(row("Computer", comp));
+    card.append(row("This computer", comp));
     if (!a.quick && a.bench) {
       const c = a.bench.compute || 0;
       card.append(row("Measured", t("memory read at {bw} GB/s · {c} billion multiply-adds a second", { bw: Math.round(a.bench.bandwidth || 0), c: Math.round(c), c10: Math.round(c * 10) })));
@@ -294,10 +282,10 @@
     if (s.phase === "ready" && s.url) card.append(row("Serving", `${s.url} · ${tokens(s.context || c.context || 32768)} ${t("tokens")}`));
     if (s.error) card.append(el("p", "lm-err", s.error));
     const h = data.hardware || {};
-    let comp = `${h.os}/${h.arch} · ${gb(h.ram || 0)} ${t("memory")}`;
+    let comp = `${h.os}/${h.arch} · ${gb(h.ram || 0)} ${t("RAM")}`;
     if (h.gpu) comp += ` · ${h.gpu} ${gb(h.vram || 0)}`;
     else if (h.unified) comp += ` · ${t("Apple silicon, memory shared with the GPU")}`;
-    card.append(row("Computer", comp));
+    card.append(row("This computer", comp));
     if (s.backend) card.append(row("llama.cpp build", `${s.build || ""} ${s.backend}`.trim()));
     if (data.log) {
       const a = el("a", "", data.log);
