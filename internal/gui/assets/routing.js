@@ -804,8 +804,6 @@
   function trySaid(r, i) {
     const tr = r.tries[i], w = tried(r, tr), agent = agentName(r.agent);
     let name = w ? `${who(w)} (${w.model})` : tr.id;
-    // Copilot's Auto: the model it picked last, which this try went as
-    if (w && tr.auto?.length) name = `${who(w)} (${w.model} → ${tr.auto[tr.auto.length - 1].model})`;
     if (tr.effort) name += " " + t("at {level} reasoning", { level: tr.effort });
     if (!tr.done) return t("{who} is answering…", { who: name });
     if (tr.status < 400 && tr.fail)
@@ -1728,15 +1726,6 @@
     r.tries.forEach((tr, i) => {
       items.push([tryWhy(r, i), tr.done ? (tryOk(tr) ? "ok" : "bad") : "wait"]);
       // each model Copilot's Auto picked for it, where from, and whether
-      // Copilot refused it, on which API and with Auto's session token or
-      // without (#256)
-      for (const p of tr.auto || []) {
-        let s = t("Copilot's Auto picked {model} ({via})", { model: p.model, via: p.via === "fallback" ? t("the model the account may pick by hand") : p.via });
-        if (p.skipped) s += " · " + t("not from /auto: {why}", { why: p.skipped });
-        if (p.api) s += " · " + t(p.session ? "sent to {api} with Auto's session token" : "sent to {api}", { api: p.api });
-        if (p.refused) s += " · " + t("Copilot refused it: {error}", { error: p.refused });
-        items.push([s, "aside"]);
-      }
       // what the vendor said, word for word: the why above is fogway's reading of it
       if (tr.done && !tryOk(tr) && tr.error) {
         const hint = HINTS.find((h) => tr.error.endsWith(" — " + h));

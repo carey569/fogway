@@ -11062,51 +11062,18 @@ function arrangeAccountRows(list, p) {
 // loads on its own and fills the rows in when it's there.
 
 function quotaError(err) {
-  if (/sign-in has expired/.test(err)) return t("Signed out — add this account again to use it");
-  // a Copilot account GitHub refused the token of (copilot_lapsed.go), as
-  // its row says it, in English or already in the user's language
-  const copilotLapsed = "GitHub refused this Copilot sign-in; sign in again";
-  if (err === copilotLapsed || err === t(copilotLapsed)) return t(copilotLapsed);
-  // an account whose sign-in its vendor revoked (signin_revoked.go, #1793)
-  if (/'s sign-in was revoked; sign in again$/.test(err)) return t("The vendor revoked this sign-in; sign in again");
-  if (/no longer supported for Gemini Code Assist for individuals/.test(err)) return t("Google no longer serves personal accounts to Gemini CLI — hover for more");
-  if (/fogway accounts project/.test(err)) return t("Needs a Google Cloud project — hover for how");
-  if (/^Antigravity (hasn't set|won't serve)/.test(err)) return t("Antigravity hasn't set this account up — hover for why");
-  if (/violation of Terms of Service/i.test(err)) return t("Google has suspended this account — hover for details");
   if (/access token is invalid or expired|didn't take the access token/.test(err)) return t("AiHubMix didn't take the access token — paste a new one in the provider's settings");
   if (/this key has no limit/.test(err)) return t("This key has no limit — add the account's access token in the provider's settings to see its balance");
   // a Volcengine or Tencent plan whose provider has no access key to read
   // it with (accessKeyCard, #1821): the card used to be left out unsaid
   if (/^this plan's usage is read with the account's access key: give its SecretId/.test(err)) return t("This plan's usage needs the account's SecretId and SecretKey — give them in the provider's settings");
   if (/^this plan's usage is read with the account's access key/.test(err)) return t("This plan's usage needs the account's AccessKey ID and Secret — give them in the provider's settings");
-  // ZCode with no GLM Coding Plan and no Start Plan left: the account has
-  // nothing to spend, which is not a reading that failed (#1001). Both the
-  // built-in (zcodeStartQuota, internal/provider/zcode_start.go) and the
-  // plugin (NO_START, packages/zcode) put these words on the card — the
-  // same string, byte for byte — and neither names a way out: the
-  // "subscribe at …" wording is in the sign-in errors (zcodeSignedIn /
-  // signedIn), which never reach this card. So the action is said here, on
-  // the card. "has ended" would also be wrong for an account that never
-  // started one, hence "no free Start Plan". "could not be read" is the
-  // other one: that is a reading that failed. The match is anchored on the whole
-  // card sentence, so the sign-in errors — which name the address themselves —
-  // and "could not be read" are left alone.
-  if (/^this account has no GLM Coding Plan, and ZCode's Start Plan has ended or was never started$/.test(err)) return t("ZCode: no GLM Coding Plan, and no free Start Plan — subscribe to a GLM Coding Plan to use this account");
   // an OpenCode Go key's windows (planWindows, planquota.go): Go is the
   // subscribing member's, in their workspace, so a key from anyone else
   // reads none — said with the way out, as a phone can't hover for it
   if (/^this key has no OpenCode Go subscription/.test(err)) return t("No OpenCode Go on this key — use a key made by the member who subscribed, in that workspace");
   if (/^OpenCode didn't take this key/.test(err)) return t("OpenCode didn't take this key — paste a current one in the provider's settings");
   if (/^OpenCode Go's reply has no rolling/.test(err)) return t("OpenCode Go answered in a form fogway doesn't read — hover for what it sent");
-  // a remote fogway's card (remote_quotas.go)
-  if (/^nothing read on that fogway yet/.test(err)) return t("Nothing read on that computer yet — refresh this card to have it read");
-  if (/^remote fogway doesn't share its quotas/.test(err)) return t("That computer's fogway doesn't share its quotas yet — update fogway there");
-  if (/^remote fogway isn't shared/.test(err)) return t("That computer's fogway isn't shared — turn on Settings → Share on local network there");
-  if (/^remote fogway didn't take this key/.test(err)) return t("That computer's fogway didn't take this key — use one of its gateway keys in this provider");
-  if (/^couldn't reach the remote fogway/.test(err)) return t("Couldn't reach that computer's fogway — check that it is running and its address");
-  // a remote fogway's gateway key card (#1547, remote_key_limits.go)
-  if (/^remote fogway is too old to tell this key's limit/.test(err)) return t("That computer's fogway is too old to tell this key's limit — update fogway there");
-  if (/answered its key's limit in a form fogway doesn't read$/.test(err)) return t("That computer answered this key's limit in a form fogway doesn't read — hover for more");
   // a ClinePass card with its balance but not its limits (#79): the
   // built-in key card (clineLimitsUnread, cline_usage.go) and the Cline
   // plugin both begin their error with these words
