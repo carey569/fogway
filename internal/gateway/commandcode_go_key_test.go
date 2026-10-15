@@ -12,7 +12,8 @@ import (
 
 // A Go plan's key added as a Command Code API-key provider is refused by
 // the Provider API (#969); the error the agent sees says where the key
-// works, on every protocol the preset serves.
+// works and which plan's key fogway needs, on every protocol the preset
+// serves.
 func TestCommandCodeGoKeySaysWhereItWorks(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
@@ -34,7 +35,7 @@ func TestCommandCodeGoKeySaysWhereItWorks(t *testing.T) {
 	} {
 		forgetRouting()
 		code, body := post(t, q.path, q.body)
-		if code < 400 || !strings.Contains(body, "Go plan doesn't include API access") || !strings.Contains(body, "Plugins › Command Code") {
+		if code < 400 || !strings.Contains(body, "Go plan doesn't include API access") || !strings.Contains(body, "Provider plan or higher") {
 			t.Errorf("%s: %d %s", q.path, code, body)
 		}
 	}

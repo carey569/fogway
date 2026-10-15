@@ -546,13 +546,13 @@ func APIError(b []byte, fallback string) string {
 
 // cmdGoNoAPI is Command Code's Provider API refusing a Go plan's key:
 // "Your Go plan doesn't include API access. Upgrade to Provider or higher
-// …" (#969). Go's key is only taken where Command Code's CLI asks, which
-// the Command Code plugin does; an API-key provider (the "commandcode"
-// preset) never can.
+// …" (#969). Go's key is only taken where Command Code's own CLI asks, and
+// fogway asks the Provider API (the "commandcode" preset) alone.
 var cmdGoNoAPI = regexp.MustCompile(`(?i)\bGo plan doesn.t include API access`)
 
-// CommandCodeGoHint says where a Go plan's key works.
-const CommandCodeGoHint = "a Go plan's key works in fogway through the Command Code plugin (Plugins › Command Code, then sign in with the key), which asks Command Code as its CLI does; a Command Code API-key provider can't use it"
+// CommandCodeGoHint says where a Go plan's key works, and what fogway
+// needs.
+const CommandCodeGoHint = "a Go plan's key works only in Command Code's own CLI; fogway asks Command Code's Provider API, which takes a key of the Provider plan or higher"
 
 // ErrorType is the kind of error a vendor's body names — the error's type
 // (rate_limit_error, usage_limit_reached), else its code — or "" when it
