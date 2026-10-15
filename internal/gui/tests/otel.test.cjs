@@ -1,5 +1,6 @@
 // OTLP preferences: metadata export stays off until enabled, credentials are
-// masked, and later preference saves retain the endpoint and headers.
+// masked, a malformed header is said and not saved, and later preference
+// saves retain the endpoint and headers.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -110,6 +111,18 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
           await field.fill("Authorization=Basic%20YWJjZA==,X-Tag=a%2Cb%2Bc"); await field.press("Enter");
         });
         assert.deepEqual(p.otel.headers, { Authorization: "Basic YWJjZA==", "X-Tag": "a,b+c" });
+        // a header with no "=" is said in the status line, in the page's
+        // language, and nothing is saved: the error was handed to a toast()
+        // the page doesn't have, which threw instead
+        {
+          const n = posts.length;
+          const field = page.locator("#otelHeadersRow input");
+          await field.fill("Authorization"); await field.press("Enter");
+          const bad = lang === "zh" ? "请使用以逗号分隔的 name=value 请求头" : "Use comma-separated name=value headers";
+          await page.waitForFunction((want) => document.querySelector("#status")?.textContent.trim() === want, bad);
+          assert.equal(posts.length, n, "a malformed header isn't saved");
+          assert.deepEqual(errors, [], "a malformed header throws nothing");
+        }
         p = await saved(() => page.locator("#otelExportRow .opt").nth(1).click());
         assert.equal(p.otel.enabled, true);
         p = await saved(() => page.locator("#otelMetricsRow .opt").nth(1).click());

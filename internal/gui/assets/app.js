@@ -19426,7 +19426,7 @@ function renderOTel(s, keep) {
         values[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
       }
       save({ headers: values });
-    } catch (e) { toast(e.message, true); }
+    } catch (e) { status(e.message, "err"); }
   };
   row("otelHeadersRow", "OTLP headers", "Comma-separated name=value pairs; percent-encode spaces and commas in values", headers);
   section("Export scope");
