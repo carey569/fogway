@@ -6,43 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carey569/fogway/internal/provider"
 	"github.com/carey569/fogway/internal/sessions"
 )
-
-func TestCodexSessionAttributionRequiresRecordedIdentity(t *testing.T) {
-	r := &sessionResolver{identities: []provider.SessionIdentity{
-		{Agent: "codex", AccountID: "a-old", UserID: "u-old", User: "old@example.com"},
-		{Agent: "codex", AccountID: "a-now", UserID: "u-now", User: "now@example.com"},
-	}}
-	for _, tc := range []struct {
-		name string
-		call sessions.Call
-		want string
-	}{
-		{"official metadata", sessions.Call{Agent: "codex", Upstream: "openai", AccountID: "a-old", UserID: "u-old"}, "old@example.com"},
-		{"named provider never establishes historical route", sessions.Call{Agent: "codex", Upstream: "custom", AccountID: "a-old", UserID: "u-old"}, "old@example.com"},
-		{"named provider on the ChatGPT sign-in, no address", sessions.Call{Agent: "codex", Upstream: "chatgpt", AccountID: "a-old", UserID: "u-old"}, "old@example.com"},
-		{"ChatGPT sign-in sent to a relay", sessions.Call{Agent: "codex", Upstream: "oauth-relay", AccountID: "a-old", UserID: "u-old"}, "old@example.com"},
-		{"named provider with neither address nor sign-in", sessions.Call{Agent: "codex", Upstream: "bare"}, ""},
-		{"named provider no longer configured", sessions.Call{Agent: "codex", Upstream: "gone"}, ""},
-		{"third party despite OAuth login", sessions.Call{Agent: "codex", Upstream: "relay", AccountID: "a-old", UserID: "u-old"}, "old@example.com"},
-		{"older file is not current account", sessions.Call{Agent: "codex", Upstream: "custom"}, ""},
-		{"another user", sessions.Call{Agent: "codex", Upstream: "custom", AccountID: "a-old", UserID: "u-other"}, ""},
-		{"unrecorded provider", sessions.Call{Agent: "codex", AccountID: "a-now", UserID: "u-now"}, "now@example.com"},
-		{"provider without account", sessions.Call{Agent: "codex", Upstream: "openai"}, ""},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := r.resolve(tc.call); got != tc.want {
-				t.Fatalf("got %+v, want %+v", got, tc.want)
-			}
-		})
-	}
-	r.identities = append(r.identities, provider.SessionIdentity{Agent: "codex", AccountID: "a-old", UserID: "u-other", User: "other@example.com"})
-	if got := r.codexUser(sessions.Call{AccountID: "a-old"}); got != "" {
-		t.Fatal("an ambiguous workspace must not pick an email")
-	}
-}
 
 func TestDesktopSessionAccountMetadata(t *testing.T) {
 	home := t.TempDir()
@@ -93,10 +58,6 @@ func TestDesktopSessionAccountMetadata(t *testing.T) {
 func TestLocalSessionAccountsDoNotEstablishProviders(t *testing.T) {
 	account, org := "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
 	r := &sessionResolver{
-		identities: []provider.SessionIdentity{
-			{Agent: "codex", AccountID: "a-mine", UserID: "u-mine", User: "mine@example.com"},
-			{Agent: "claude", AccountID: account, OrganizationID: org, User: "claude@example.com"},
-		},
 		desktop: map[string]desktopSessionIdentity{},
 		bySession: map[string][]desktopSessionIdentity{
 			"mine":     {{account: account, org: org, email: "claude@example.com", linkable: true}},
@@ -109,10 +70,8 @@ func TestLocalSessionAccountsDoNotEstablishProviders(t *testing.T) {
 		call sessions.Call
 		want string
 	}{
-		{"Codex on fogway's account", sessions.Call{Agent: "codex", Upstream: "openai", AccountID: "a-mine", UserID: "u-mine"}, "mine@example.com"},
-		{"Codex on another account", sessions.Call{Agent: "codex", Upstream: "openai", AccountID: "a-other"}, ""},
+		{"Codex with an account recorded", sessions.Call{Agent: "codex", Upstream: "openai", AccountID: "a-mine", UserID: "u-mine"}, ""},
 		{"Codex with no account recorded", sessions.Call{Agent: "codex", Upstream: "openai"}, ""},
-		{"fogway's account through a relay", sessions.Call{Agent: "codex", Upstream: "relay", AccountID: "a-mine", UserID: "u-mine"}, "mine@example.com"},
 		{"Claude Desktop on fogway's account", sessions.Call{Agent: "claude-desktop", Session: "mine"}, "claude@example.com"},
 		{"Claude Desktop in another organization", sessions.Call{Agent: "claude-desktop", Session: "other"}, "team@example.com"},
 		{"Claude-3p on fogway's account's ids", sessions.Call{Agent: "claude-desktop", Session: "third-3p"}, "claude@example.com"},

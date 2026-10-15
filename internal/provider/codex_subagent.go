@@ -29,24 +29,10 @@ func CodexSubagentModel() string {
 
 // CodexSubagentModels are the models and routing groups Codex's subagents
 // may be put on, the ones Codex's own lists show (a model taken out of
-// them, or not picked, isn't offered here either): the ChatGPT accounts'
-// first, as they open a task sealed for them too, then the rest in the
-// catalog's order.
+// them, or not picked, isn't offered here either), in the catalog's order.
 func CodexSubagentModels() []Entry {
-	var chatgpt, rest []Entry
 	shown, _ := CatalogFor("codex")
-	for _, e := range shown {
-		if chatGPTEntry(e) {
-			chatgpt = append(chatgpt, e)
-		} else {
-			rest = append(rest, e)
-		}
-	}
-	return append(chatgpt, rest...)
-}
-
-func chatGPTEntry(e Entry) bool {
-	return false
+	return shown
 }
 
 // CodexSubagentUnserved says why Codex's subagents can't be put on id now,
@@ -58,15 +44,7 @@ func CodexSubagentUnserved(id string) string {
 			return ""
 		}
 	}
-	if !CodexAccountModel(id) {
-		return "fogway doesn't serve it now"
-	}
-	for _, e := range served {
-		if chatGPTEntry(e) {
-			return "no ChatGPT account on in fogway serves it"
-		}
-	}
-	return "no ChatGPT account is on in fogway"
+	return "fogway doesn't serve it now"
 }
 
 // SetCodexSubagentModel puts Codex's subagents on id, a model or routing
@@ -92,19 +70,4 @@ func SetCodexSubagentModel(id string) error {
 	}
 	Changed() // a held settings read sees it
 	return nil
-}
-
-// CodexAccountModel says id names a model of a ChatGPT account's, served
-// now or not: codex/<model>, or one of a provider that is a ChatGPT
-// account.
-func CodexAccountModel(id string) bool {
-	pid, model, ok := strings.Cut(id, "/")
-	if !ok || model == "" {
-		return false
-	}
-	if pid == "codex" {
-		return true
-	}
-	_, _ = Find(pid)
-	return false
 }

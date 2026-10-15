@@ -56,9 +56,6 @@ type agentModelJSON struct {
 	Hidden  bool   `json:"hidden,omitempty"`
 	// InUse: the agent is set to it, so it can't be taken out
 	InUse bool `json:"inUse,omitempty"`
-	// Own: one of Codex's own, a ChatGPT account's, which Codex lists
-	// ahead of fogway's until the user puts them in an order (#855)
-	Own bool `json:"own,omitempty"`
 }
 
 // takesCatalog reports whether an agent picks among fogway's catalog: some
@@ -157,7 +154,7 @@ func agentModelList(a *agent.Agent) []agentModelJSON {
 	out := []agentModelJSON{}
 	for _, e := range listed {
 		m := agentModelJSON{ID: e.ID, Name: e.Name, Group: e.Provider.Name, Icon: e.Provider.Icon, Context: e.Context,
-			Hidden: off(e.ID), InUse: usedBy(a, vals, e), Own: id == "codex" && provider.CodexOwn(e)}
+			Hidden: off(e.ID), InUse: usedBy(a, vals, e)}
 		if m.Name == "" {
 			m.Name = e.Model
 		}

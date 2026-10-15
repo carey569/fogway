@@ -175,7 +175,7 @@ func (s *Server) retrieve(path, operation string) http.HandlerFunc {
 			if c.p.Key != "" {
 				providerKeyID, providerKeyName = provider.KeyID(c.p.Key), c.p.KeyName
 			}
-			appendUsage(r, usage.Record{Operation: operation, Time: start, Agent: call.Agent, Via: call.Via, Provider: c.p.ID, Host: c.p.Where(), Model: c.model, Requested: asked, ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName, ProviderAccount: accountOf(c.p),
+			appendUsage(r, usage.Record{Operation: operation, Time: start, Agent: call.Agent, Via: call.Via, Provider: c.p.ID, Host: c.p.Where(), Model: c.model, Requested: asked, ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName,
 				Input: in, Millis: call.Millis, Status: code, Session: sessionOf(r.Header)})
 			if err != nil {
 				call.Error = err.Error()

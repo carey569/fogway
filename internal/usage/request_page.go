@@ -297,12 +297,11 @@ func queryPage(p Period, f Filter, offset, limit int, readSource func(sessions.C
 		}
 		return strings.Compare(a.Path, b.Path)
 	})
-	ids, _ := json.Marshal(provider.SessionIdentities(sessions.CodexDir()))
 	renamed, _ := json.Marshal(provider.Renamed())
 	cfg := settings.Load()
 	prices, _ := json.Marshal(cfg.ModelPrices)
 	wires, _ := json.Marshal(cfg.ModelWires)
-	meta := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s", ids, renamed, prices, wires, statKey(provider.Path()), statKey(catalog.CachePath()), clientAgentsKey())
+	meta := fmt.Sprintf("%s|%s|%s|%s|%s|%s", renamed, prices, wires, statKey(provider.Path()), statKey(catalog.CachePath()), clientAgentsKey())
 	h := sha256.New()
 	for _, current := range provider.All() {
 		fmt.Fprintf(h, "%q:%q:%v:%t:%t:%t;", current.ID, current.Where(), current.Catalogs(), false, true, current.Key != "")
@@ -435,7 +434,6 @@ func queryPage(p Period, f Filter, offset, limit int, readSource func(sessions.C
 			for _, call := range cs {
 				r := logRecord(call)
 				r.SessionAccount = resolver.resolve(call)
-				r.SessionOfficialLogin = resolver.officialLogin(call, r.SessionAccount)
 				r.SessionProvider = call.Upstream
 				c.add(priceRow(r, "log"), call.Msg, call.To, call.Error != "")
 			}

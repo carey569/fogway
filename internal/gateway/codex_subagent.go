@@ -61,7 +61,7 @@ func codexSubagentPick(r *http.Request, agent, kind, asked string, body []byte) 
 		pick.Kept = why
 		return pick
 	}
-	if !provider.CodexAccountModel(to) && sealedTaskIn(body) {
+	if sealedTaskIn(body) {
 		pick.Kept = sealedKept
 		return pick
 	}

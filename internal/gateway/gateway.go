@@ -1746,7 +1746,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	floored := false // the reply's length raised to what the provider takes
 	plainFor := ""   // the account and model asked again without effort updates (#617)
 	// the key or subscription account the last try went to (#557)
-	providerKeyID, providerKeyName, providerAccount := "", "", ""
+	providerKeyID, providerKeyName := "", ""
 	var other *Try // the first failure that wasn't an allowance run out
 	// what the tries' held streams sent the agent ahead of a reply (#751)
 	kept := &keptAlive{proto: from, told: start}
@@ -1828,7 +1828,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 		if c.p.Key != "" {
 			providerKeyID, providerKeyName = provider.KeyID(c.p.Key), c.p.KeyName
 		}
-		providerAccount = accountOf(c.p)
 		began := time.Now()
 		ended = time.Time{}
 		if firstBegan.IsZero() {
@@ -2216,7 +2215,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			matesFirst(cands[i+1:], c)
 			if call.To != "" {
 				rec := usage.Record{RouteID: tr.ID, Time: began, Agent: call.Agent, Via: call.Via, Provider: call.Provider, Host: where, Model: c.model,
-					ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName, ProviderAccount: providerAccount,
+					ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName,
 					Requested: call.Model, Served: call.Usage.Served, Upstream: call.Usage.Upstream,
 					Input: call.Usage.billed().Input, Output: call.Usage.billed().Output, CacheRead: call.Usage.billed().CacheRead,
 					CacheWrite: call.Usage.billed().CacheWrite, CacheWrite1h: call.Usage.billed().CacheWrite1h, Reasoning: call.Usage.billed().Reasoning, Effort: wentAt, Millis: try.Millis, Status: call.Status,
@@ -2585,7 +2584,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 	s.record(call)
 	if call.To != "" {
 		rec := usage.Record{RouteID: tr.ID, Time: start, Agent: call.Agent, Via: call.Via, Provider: call.Provider, Host: where, Model: model,
-			ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName, ProviderAccount: providerAccount,
+			ProviderKeyID: providerKeyID, ProviderKeyName: providerKeyName,
 			Requested: call.Model, Served: call.Usage.Served, Upstream: call.Usage.Upstream,
 			Input: call.Usage.billed().Input, Output: call.Usage.billed().Output, CacheRead: call.Usage.billed().CacheRead,
 			CacheWrite: call.Usage.billed().CacheWrite, CacheWrite1h: call.Usage.billed().CacheWrite1h, Reasoning: call.Usage.billed().Reasoning, Effort: wentAt, Millis: call.Millis, Status: call.Status,

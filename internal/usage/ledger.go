@@ -409,7 +409,6 @@ func ledgerMatched(since, until time.Time, f Filter, recs []Record, logs []sessi
 		// record through the same lookup without inferring one from the account.
 		r := logRecord(c)
 		r.SessionAccount = identities.resolve(c)
-		r.SessionOfficialLogin = identities.officialLogin(c, r.SessionAccount)
 		r.SessionProvider = c.Upstream
 		add(r, priceOf(r), "log")
 	}

@@ -792,15 +792,13 @@ func ClaudeSpelled(ref string) string {
 }
 
 // CodexCatalog is shown as a Codex that names fogway its model_provider is
-// handed it from GET /v1/codex/models (#1281): every model, a ChatGPT
-// account's own among them, since that Codex reaches them through fogway's
-// /v1 by fogway's id, not through the ChatGPT backend's list.
+// handed it from GET /v1/codex/models (#1281).
 func CodexCatalog(shown []Entry) []catalog.Model {
 	find := GroupFinder()
 	return codexListed(shown, func(id string) []Member {
 		_, ms, _ := find(id)
 		return ms
-	}, true)
+	})
 }
 
 // FlatName is the name a namespaced tool is offered to a model under, which
@@ -947,22 +945,15 @@ func objectRootIn(root, ps map[string]any, depth int) bool {
 	return true
 }
 
-// codexListed marks a group Fast when a ChatGPT account's GPT model is in
-// it, so Codex offers /fast there too; the tier goes out only to that
-// account (buildResponses). own keeps a ChatGPT account's own models in,
-// which a signed-in Codex has from the backend already.
-func codexListed(shown []Entry, members func(id string) []Member, own bool) []catalog.Model {
+// codexListed is shown as Codex's catalog: each model's label, efforts,
+// window and compaction, and its tiers (CodexTiers).
+func codexListed(shown []Entry, members func(id string) []Member) []catalog.Model {
 	var ms []catalog.Model
-	// named among all shown: the account's own, which the backend lists,
-	// are in Codex's picker beside these
 	labels := Labels(shown)
 	seen := described()
 	s := settings.Load()
 	find := func(id string) (Group, []Member, bool) { return Group{}, members(id), true }
 	for i, e := range shown {
-		if CodexOwn(e) && !own {
-			continue
-		}
 		m := catalog.Model{ID: e.ID, Name: labels[i], Efforts: e.Efforts, Images: e.Images || seen, Context: e.Context, AgentsV2: e.AgentsV2}
 		m.Compact = CompactFor(s, e, find)
 		CodexTiers(&m, e, members)
@@ -1086,16 +1077,15 @@ func CodexListTag() string {
 }
 
 // CodexListed is the catalog as a Codex signed in to ChatGPT is handed it,
-// after the backend's own models: all but a ChatGPT account's in fogway,
-// which the backend lists already. A group answers for its first member
-// but is not that provider's.
+// after the backend's own models. A group answers for its first member but
+// is not that provider's.
 func CodexListed() []catalog.Model {
 	shown, _ := CatalogFor("codex")
 	find := GroupFinder()
 	return codexListed(shown, func(id string) []Member {
 		_, ms, _ := find(id)
 		return ms
-	}, false)
+	})
 }
 
 // Count is the window's own count as the GUI says it, beside its share:

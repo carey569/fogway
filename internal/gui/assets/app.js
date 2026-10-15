@@ -3166,13 +3166,8 @@ async function openAgentModels(a, anchor, ev) {
         ownSw.setAttribute("aria-checked", String(!ownHidden));
       });
   };
-  // the shown models as the agent lists them: as dragged, or, before any
-  // drag, Codex's own (a ChatGPT account's) ahead of fogway's, as its
-  // /model has them
-  const inOrder = () => {
-    const shown = models.filter((m) => !m.hidden);
-    return ordered ? shown : [...shown.filter((m) => m.own), ...shown.filter((m) => !m.own)];
-  };
+  // the shown models as the agent lists them, as dragged or as they came
+  const inOrder = () => models.filter((m) => !m.hidden);
   const saveOrder = (ids) => {
     me.changed = true;
     me.saving = me.saving.then(() => api("agent-models/" + encodeURIComponent(a.id), { order: ids }))

@@ -1,8 +1,8 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // Codex's /model in the user's order (M3chD09, #855): its model list's
-// "Order" lists the models shown as Codex does, the account's own first,
-// and a drag or Alt+↑/↓ puts one elsewhere, saved at once; "Default order"
-// puts fogway's back. The hidden stay out, and nothing scrolls the page.
+// "Order" lists the models shown as fogway hands them, and a drag or
+// Alt+↑/↓ puts one elsewhere, saved at once; "Default order" puts fogway's
+// back. The hidden stay out, and nothing scrolls the page.
 // Every agent's list has the Order (#1052): Claude Code's, which had none,
 // orders and saves the same way, saying it is the order fogway hands it.
 const assert = require("node:assert/strict");
@@ -12,26 +12,24 @@ const { test } = require("node:test");
 const { chromium, webkit } = require("playwright");
 
 const assets = path.resolve(__dirname, "../assets");
-// fogway's first, as the catalog has them; Codex's own after
+// as the catalog has them
 const models = () => [
   { id: "relay/claude-opus-5.5", name: "claude-opus-5.5", group: "Relay", icon: "anthropic" },
   { id: "relay/claude-sonnet-4-5", name: "claude-sonnet-4-5", group: "Relay", icon: "anthropic" },
   { id: "relay/old", name: "old", group: "Relay", icon: "anthropic", hidden: true },
-  { id: "codex-acc/gpt-5.5", name: "gpt-5.5", group: "ChatGPT", icon: "openai", own: true, inUse: true },
-  { id: "codex-acc/gpt-5-codex", name: "gpt-5-codex", group: "ChatGPT", icon: "openai", own: true },
+  { id: "openai/gpt-5.5", name: "gpt-5.5", group: "OpenAI", icon: "openai", inUse: true },
+  { id: "openai/gpt-5-codex", name: "gpt-5-codex", group: "OpenAI", icon: "openai" },
 ];
 
 function fixture(lang, agent = { id: "codex", name: "Codex", icon: "codex-color" }) {
-  // only Codex has models of its own, which the server marks
-  const mine = () => models().map((m) => agent.id === "codex" ? m : { ...m, own: undefined });
-  const first = mine();
-  let list = mine();
+  const first = models();
+  let list = models();
   const posts = [];
   const state = () => ({
     agents: [{
       id: agent.id, name: agent.name, path: "/test/config.toml", icon: agent.icon, wired: true,
-      fields: [{ key: "model", label: "model", value: "gpt-5.5", options: [{ value: "gpt-5.5", label: "gpt-5.5", ref: "codex-acc/gpt-5.5" }] }],
-      models: { shown: 4, listed: 5, by: [{ name: "Relay", icon: "anthropic", n: 2 }, { name: "ChatGPT", icon: "openai", n: 2 }] },
+      fields: [{ key: "model", label: "model", value: "gpt-5.5", options: [{ value: "gpt-5.5", label: "gpt-5.5", ref: "openai/gpt-5.5" }] }],
+      models: { shown: 4, listed: 5, by: [{ name: "Relay", icon: "anthropic", n: 2 }, { name: "OpenAI", icon: "openai", n: 2 }] },
     }],
     profiles: [], settings: { lang, theme: "light" },
   });
@@ -102,9 +100,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await seg.click();
       assert(await seg.evaluate((e) => e.classList.contains("on")));
       assert.deepEqual(await scroll(), was, "nothing scrolls");
-      // the shown as Codex lists them: its own first, the hidden left out
+      // the shown as handed, the hidden left out
       const names = async () => (await pop.locator(".am-or .n").allInnerTexts()).map((s) => s.trim());
-      assert.deepEqual(await names(), ["gpt-5.5", "gpt-5-codex", "claude-opus-5.5", "claude-sonnet-4-5"]);
+      assert.deepEqual(await names(), ["claude-opus-5.5", "claude-sonnet-4-5", "gpt-5.5", "gpt-5-codex"]);
       assert.deepEqual(await pop.locator(".am-or .ix").allInnerTexts(), ["1", "2", "3", "4"]);
       assert(!(await pop.locator(".am-search").isVisible()), "no search while ordering");
       assert(!(await pop.locator(".am-rail").isVisible()), "no providers' rail while ordering");
@@ -119,9 +117,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await pop.locator(".am-or").first().focus();
       await page.keyboard.press("Alt+ArrowDown");
       await page.waitForTimeout(150);
-      assert.deepEqual(fx.posts.at(-1), ["codex-acc/gpt-5-codex", "codex-acc/gpt-5.5", "relay/claude-opus-5.5", "relay/claude-sonnet-4-5"]);
-      assert.deepEqual(await names(), ["gpt-5-codex", "gpt-5.5", "claude-opus-5.5", "claude-sonnet-4-5"]);
-      assert.equal(await page.evaluate(() => document.activeElement?.dataset.id), "codex-acc/gpt-5.5");
+      assert.deepEqual(fx.posts.at(-1), ["relay/claude-sonnet-4-5", "relay/claude-opus-5.5", "openai/gpt-5.5", "openai/gpt-5-codex"]);
+      assert.deepEqual(await names(), ["claude-sonnet-4-5", "claude-opus-5.5", "gpt-5.5", "gpt-5-codex"]);
+      assert.equal(await page.evaluate(() => document.activeElement?.dataset.id), "relay/claude-opus-5.5");
       assert(!(await unorder.isDisabled()));
 
       // a drag puts the last first
@@ -132,21 +130,21 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       for (let i = 1; i <= 12; i++) await page.mouse.move(last.x + 20, last.y + last.height / 2 - (last.y - top.y + 10) * i / 12);
       await page.mouse.up();
       await page.waitForTimeout(250);
-      assert.deepEqual(fx.posts.at(-1), ["relay/claude-sonnet-4-5", "codex-acc/gpt-5-codex", "codex-acc/gpt-5.5", "relay/claude-opus-5.5"]);
-      assert.deepEqual(await names(), ["claude-sonnet-4-5", "gpt-5-codex", "gpt-5.5", "claude-opus-5.5"]);
+      assert.deepEqual(fx.posts.at(-1), ["openai/gpt-5-codex", "relay/claude-sonnet-4-5", "relay/claude-opus-5.5", "openai/gpt-5.5"]);
+      assert.deepEqual(await names(), ["gpt-5-codex", "claude-sonnet-4-5", "claude-opus-5.5", "gpt-5.5"]);
       assert.deepEqual(await scroll(), was, "nothing scrolls");
 
       // All shows every one again, the hidden among them, in that order
       await pop.locator(".am-seg button").first().click();
       assert(await pop.locator(".am-search").isVisible());
       await seg.click();
-      assert.deepEqual(await names(), ["claude-sonnet-4-5", "gpt-5-codex", "gpt-5.5", "claude-opus-5.5"]);
+      assert.deepEqual(await names(), ["gpt-5-codex", "claude-sonnet-4-5", "claude-opus-5.5", "gpt-5.5"]);
 
       // Default order puts fogway's back
       await unorder.click();
       await page.waitForTimeout(150);
       assert.deepEqual(fx.posts.at(-1), []);
-      assert.deepEqual(await names(), ["gpt-5.5", "gpt-5-codex", "claude-opus-5.5", "claude-sonnet-4-5"]);
+      assert.deepEqual(await names(), ["claude-opus-5.5", "claude-sonnet-4-5", "gpt-5.5", "gpt-5-codex"]);
       assert(await unorder.isDisabled());
       assert.deepEqual(await scroll(), was, "nothing scrolls");
       assert.deepEqual(errors, []);
@@ -197,7 +195,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       await pop.locator(".am-or").first().focus();
       await page.keyboard.press("Alt+ArrowDown");
       await page.waitForTimeout(150);
-      assert.deepEqual(fx.posts.at(-1), ["relay/claude-sonnet-4-5", "relay/claude-opus-5.5", "codex-acc/gpt-5.5", "codex-acc/gpt-5-codex"]);
+      assert.deepEqual(fx.posts.at(-1), ["relay/claude-sonnet-4-5", "relay/claude-opus-5.5", "openai/gpt-5.5", "openai/gpt-5-codex"]);
       assert.deepEqual(await names(), ["claude-sonnet-4-5", "claude-opus-5.5", "gpt-5.5", "gpt-5-codex"]);
       const unorder = pop.locator(".am-foot .am-reset", { hasText: w.unorder });
       await unorder.click();

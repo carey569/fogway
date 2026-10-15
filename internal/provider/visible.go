@@ -348,8 +348,6 @@ func SetModelOrder(agent string, ids []string) error {
 
 // InOrder is es in agent's order: the entries ModelOrder names first, as it
 // names them, then the rest as they come — a model added since goes after.
-// Codex's own, a ChatGPT account's models, lead the rest, as Codex's list
-// has them before fogway's.
 func InOrder(agent string, es []Entry) []Entry {
 	order := ModelOrder(agent)
 	if len(order) == 0 {
@@ -364,17 +362,8 @@ func InOrder(agent string, es []Entry) []Entry {
 		if i, ok := at[e.ID]; ok {
 			return i
 		}
-		if strings.EqualFold(agent, "codex") && !CodexOwn(e) {
-			return len(order) + 1
-		}
 		return len(order)
 	}
 	slices.SortStableFunc(out, func(a, b Entry) int { return rank(a) - rank(b) })
 	return out
-}
-
-// CodexOwn reports whether e is one of a ChatGPT account's own models,
-// which the ChatGPT backend lists to Codex by its bare slug (e.Model).
-func CodexOwn(e Entry) bool {
-	return false
 }

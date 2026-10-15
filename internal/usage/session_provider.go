@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/carey569/fogway/internal/filememo"
-	"github.com/carey569/fogway/internal/provider"
 	"github.com/carey569/fogway/internal/sessions"
 )
 
@@ -23,11 +22,10 @@ type desktopSessionIdentity struct {
 // sessionResolver only identifies accounts recorded by local sessions. It does
 // not infer a service provider, endpoint, or billing account.
 type sessionResolver struct {
-	identities []provider.SessionIdentity
-	desktop    map[string]desktopSessionIdentity // absolute metadata file
-	bySession  map[string][]desktopSessionIdentity
-	emails     map[string]string // exact account/organization identity
-	roots      []string
+	desktop   map[string]desktopSessionIdentity // absolute metadata file
+	bySession map[string][]desktopSessionIdentity
+	emails    map[string]string // exact account/organization identity
+	roots     []string
 }
 
 func newSessionResolver(logs []sessions.Call) *sessionResolver {
@@ -35,15 +33,9 @@ func newSessionResolver(logs []sessions.Call) *sessionResolver {
 	if len(logs) == 0 {
 		return r
 	}
-	r.identities = provider.SessionIdentities(sessions.CodexDir())
 	r.desktop = map[string]desktopSessionIdentity{}
 	r.bySession = map[string][]desktopSessionIdentity{}
 	r.emails = map[string]string{}
-	for _, id := range r.identities {
-		if id.Agent == "claude" {
-			r.noteEmail(id.AccountID, id.OrganizationID, id.User)
-		}
-	}
 	r.roots = sessions.DesktopDataDirs()
 	for _, root := range r.roots {
 		for _, kind := range []string{"local-agent-mode-sessions", "claude-code-sessions"} {
@@ -102,26 +94,9 @@ func (r *sessionResolver) noteEmail(account, org, email string) {
 	}
 }
 
-func (r *sessionResolver) codexUser(c sessions.Call) string {
-	if c.AccountID == "" || c.UserID == "" {
-		return ""
-	}
-	user := ""
-	for _, id := range r.identities {
-		if id.Agent != "codex" || id.AccountID != c.AccountID || id.UserID != c.UserID {
-			continue
-		}
-		if user != "" && user != id.User {
-			return "" // a workspace can have more than one signed-in member
-		}
-		user = id.User
-	}
-	return user
-}
-
 func (r *sessionResolver) resolve(c sessions.Call) string {
 	if c.Agent == "codex" {
-		return r.codexUser(c)
+		return ""
 	}
 	id, found := r.desktopIdentity(c)
 	if !found {
@@ -131,33 +106,6 @@ func (r *sessionResolver) resolve(c sessions.Call) string {
 		id.email = r.emails[id.account+"/"+id.org]
 	}
 	return id.email
-}
-
-// officialLogin requires explicit login metadata for the exact session
-// identity. A model, a provider ID, an email alone, or another signed-in
-// account never establishes it. It makes no claim about the request's route.
-func (r *sessionResolver) officialLogin(c sessions.Call, account string) bool {
-	if account == "" {
-		return false
-	}
-	if c.Agent == "codex" {
-		for _, id := range r.identities {
-			if id.Agent == "codex" && id.OfficialLogin && c.AccountID != "" && c.UserID != "" && id.AccountID == c.AccountID && id.UserID == c.UserID && id.User == account {
-				return true
-			}
-		}
-		return false
-	}
-	desktop, found := r.desktopIdentity(c)
-	if !found || desktop.account == "" || desktop.org == "" {
-		return false
-	}
-	for _, id := range r.identities {
-		if id.Agent == "claude" && id.OfficialLogin && id.AccountID == desktop.account && id.OrganizationID == desktop.org && id.User == account {
-			return true
-		}
-	}
-	return false
 }
 
 func (r *sessionResolver) desktopIdentity(c sessions.Call) (desktopSessionIdentity, bool) {
