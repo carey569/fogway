@@ -94,9 +94,6 @@ var vendorInstall = map[string]func(goos string) []InstallCmd{
 // fogway knows no command for.
 func installCommands(id, goos string, node bool) []InstallCmd {
 	var out []InstallCmd
-	if only := cliSpecs[id].only; len(only) > 0 && !slices.Contains(only, goos) {
-		return nil
-	}
 	if f := vendorInstall[id]; f != nil {
 		out = append(out, f(goos)...)
 	}

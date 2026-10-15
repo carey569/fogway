@@ -42,6 +42,11 @@ func miseNode(t *testing.T, data string) (prefix string) {
 	return prefix
 }
 
+// snowSpec is Snow CLI's (snow-ai, on npm alone), the CLI the shims in
+// testdata were read from on a real install: they keep its name and bytes,
+// though fogway lists Snow no more.
+var snowSpec = cliSpec{npm: []string{"snow-ai"}}
+
 // An agent installed with npm -g under mise's Node is found on PATH as
 // mise's shim, ~/.local/share/mise/shims/snow, a link to the mise binary,
 // which says nothing of npm (flp on Discord). The program it runs is asked
@@ -68,7 +73,7 @@ func TestMiseShimIsNodesNpm(t *testing.T) {
 	link(t, mise, filepath.Join(shims, "npm"))
 	t.Setenv("PATH", shims)
 
-	real, u := installedAt(cliSpecs["snow"], snow)
+	real, u := installedAt(snowSpec, snow)
 	if real != filepath.Join(data, "installs/node/22/bin/snow") {
 		t.Errorf("program: %q", real)
 	}
@@ -85,7 +90,7 @@ func TestMiseShimIsNodesNpm(t *testing.T) {
 		t.Errorf("mise was asked %q", b)
 	}
 	// asked once, not on every look at the Agents page
-	installedAt(cliSpecs["snow"], snow)
+	installedAt(snowSpec, snow)
 	if b, _ := os.ReadFile(asked); strings.Count(string(b), "\n") != 1 {
 		t.Errorf("mise asked again: %q", b)
 	}
@@ -106,7 +111,7 @@ func TestMiseShimIsNodesNpm(t *testing.T) {
 	// a program that isn't a shim is read as it is: mise not asked
 	os.Remove(asked)
 	direct := filepath.Join(prefix, "bin/snow")
-	if real, u := installedAt(cliSpecs["snow"], direct); real != direct || u == nil || u.reshim != nil {
+	if real, u := installedAt(snowSpec, direct); real != direct || u == nil || u.reshim != nil {
 		t.Errorf("mise activate's PATH: %q %+v", real, u)
 	}
 	if _, err := os.Stat(asked); err == nil {
@@ -146,6 +151,8 @@ func TestUpdateCLIThroughMiseShim(t *testing.T) {
 		return nil, nil
 	}
 
+	cliSpecs["snow"] = snowSpec
+	t.Cleanup(func() { delete(cliSpecs, "snow") })
 	a := &Agent{ID: "snow", Name: "Snow CLI", Bin: "snow"}
 	c, ok := a.CLI()
 	if !ok || c.Version != "0.9.1" || c.Via != "npm" || !c.Update || c.Path != filepath.Join(shims, "snow") {
@@ -180,12 +187,12 @@ func TestAsdfShimIsNodesNpm(t *testing.T) {
 	testenv.Program(t, snow, "#!/usr/bin/env bash\n# asdf-plugin: nodejs 22.0.0\nexec asdf exec \"snow\" \"$@\"")
 	fake := filepath.Join(tmp, "asdf-dl")
 	t.Setenv("PATH", shims+string(os.PathListSeparator)+fake)
-	if _, u := installedAt(cliSpecs["snow"], snow); u != nil {
+	if _, u := installedAt(snowSpec, snow); u != nil {
 		t.Errorf("no asdf to ask, yet: %+v", u)
 	}
 	resetShims(t)
 	file(t, filepath.Join(fake, "asdf"), "#!/bin/sh\n[ \"$1 $2\" = 'which snow' ] && echo '"+filepath.Join(prefix, "bin/snow")+"'\n")
-	real, u := installedAt(cliSpecs["snow"], snow)
+	real, u := installedAt(snowSpec, snow)
 	if real != filepath.Join(prefix, "bin/snow") || u == nil || u.reshim != nil {
 		t.Fatalf("asdf's shim: %q %+v", real, u)
 	}
@@ -243,7 +250,7 @@ func TestMiseShimWindows(t *testing.T) {
 		}
 		resetShims(t)
 		asked = nil
-		real, u := installedAt(cliSpecs["snow"], filepath.Join(shims, c.bin))
+		real, u := installedAt(snowSpec, filepath.Join(shims, c.bin))
 		if real != filepath.Join(prefix, "snow.cmd") {
 			t.Errorf("%s: program %q", c.mode, real)
 		}
@@ -300,7 +307,7 @@ func TestMiseShimWindowsFiveAgents(t *testing.T) {
 		{"pi", "pi", "@earendil-works/pi-coding-agent", `@earendil-works\pi-coding-agent\dist\cli.js`},
 		{"codex", "codex", "@openai/codex", `@openai\codex\bin\codex.js`},
 		{"opencode", "opencode", "opencode-ai", `opencode-ai\bin\opencode`},
-		{"codebuddy", "codebuddy", "@tencent-ai/codebuddy-code", `@tencent-ai\codebuddy-code\bin\codebuddy`},
+		{"dsh", "dsh", "@deepseek-ai/dsh", `@deepseek-ai\dsh\bin\dsh.js`},
 	} {
 		file(t, filepath.Join(prefix, "node_modules", c.script), "")
 		file(t, filepath.Join(prefix, "node_modules", filepath.FromSlash(c.pkg), "package.json"), `{"name":"`+c.pkg+`","version":"1.2.3"}`)

@@ -11,7 +11,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/carey569/fogway/internal/testenv"
 )
@@ -139,12 +138,6 @@ func TestHowInstalled(t *testing.T) {
 	if u := howInstalled(cliSpecs["codex"], gem); u != nil {
 		t.Errorf("gemini's package taken for codex: %+v", u)
 	}
-	atomcodePkg := "@atomgit.com/atomcode"
-	file(t, filepath.Join(prefix, "lib/node_modules", atomcodePkg, "bin/atomcode.js"), "")
-	atomcodeBin := link(t, "../lib/node_modules/"+atomcodePkg+"/bin/atomcode.js", filepath.Join(prefix, "bin/atomcode"))
-	if u := howInstalled(cliSpecs["atomcode"], atomcodeBin); u == nil || u.via != "npm" || !reflect.DeepEqual(u.cmd, []string{npm, "install", "-g", "--prefix", prefix, atomcodePkg + "@latest"}) {
-		t.Errorf("AtomCode npm: %+v", u)
-	}
 	// npm with no npm of its own takes the one on PATH, or none
 	prefix2 := filepath.Join(tmp, "node2")
 	file(t, filepath.Join(prefix2, "lib/node_modules/@github/copilot/npm-loader.js"), "")
@@ -205,11 +198,6 @@ func TestHowInstalled(t *testing.T) {
 	if u := howInstalled(cliSpecs["claude"], cc); u == nil || !u.cask || !reflect.DeepEqual(u.cmd, []string{brew, "upgrade", "--cask", "claude-code"}) {
 		t.Errorf("brew cask: %+v", u)
 	}
-	file(t, filepath.Join(brewDir, "Caskroom/atomcode/5.2.1/atomcode"), "")
-	atomcode := link(t, "../Caskroom/atomcode/5.2.1/atomcode", filepath.Join(brewDir, "bin/atomcode"))
-	if u := howInstalled(cliSpecs["atomcode"], atomcode); u == nil || !u.cask || !reflect.DeepEqual(u.cmd, []string{brew, "upgrade", "--cask", "atomcode"}) {
-		t.Errorf("AtomCode brew cask: %+v", u)
-	}
 	// Node formulae keep the npm package in their keg, as brew's gemini-cli
 	// 0.35.3 does on this Mac: bin/gemini → ../Cellar/gemini-cli/0.35.3/
 	// bin/gemini → ../libexec/bin/gemini → ../lib/node_modules/
@@ -236,12 +224,6 @@ func TestHowInstalled(t *testing.T) {
 	if u := howInstalled(cliSpecs["copilot"], link(t, "../lib/node_modules/@github/copilot/npm-loader.js", filepath.Join(nodeKeg, "bin/copilot"))); u == nil || u.via != "npm" {
 		t.Errorf("npm under node@20's keg: %+v", u)
 	}
-	// Grok Build's cask: bin/grok → Caskroom/grok-build/1.0.52/grok-1.0.52-macos-aarch64
-	file(t, filepath.Join(brewDir, "Caskroom/grok-build/1.0.52/grok-1.0.52-macos-aarch64"), "")
-	grokBin := link(t, "../Caskroom/grok-build/1.0.52/grok-1.0.52-macos-aarch64", filepath.Join(brewDir, "bin/grok"))
-	if u := howInstalled(cliSpecs["grok"], grokBin); u == nil || !u.cask || !reflect.DeepEqual(u.cmd, []string{brew, "upgrade", "--cask", "grok-build"}) {
-		t.Errorf("Grok Build's cask: %+v", u)
-	}
 	os.Remove(filepath.Join(brewDir, "bin/gemini"))
 	file(t, filepath.Join(brewDir, "Cellar/something/1.0/bin/gemini"), "")
 	if u := howInstalled(cliSpecs["gemini"], link(t, "../Cellar/something/1.0/bin/gemini", filepath.Join(brewDir, "bin/gemini"))); u != nil {
@@ -262,12 +244,6 @@ func TestHowInstalled(t *testing.T) {
 	oc := file(t, filepath.Join(home, ".opencode/bin/opencode"), "")
 	if u := howInstalled(cliSpecs["opencode"], oc); u == nil || u.shown() != "opencode upgrade" {
 		t.Errorf("opencode's installer: %+v", u)
-	}
-	// DevEco Code's install: ~/.local/bin/deveco → its versions folder
-	file(t, filepath.Join(home, ".local/share/deveco/versions/0.2.3/deveco"), "")
-	deveco := link(t, filepath.Join(home, ".local/share/deveco/versions/0.2.3/deveco"), filepath.Join(home, ".local/bin/deveco"))
-	if u := howInstalled(cliSpecs["deveco"], deveco); u == nil || u.via != "self" || u.pkg != "@deveco/deveco-code" || !reflect.DeepEqual(u.cmd, []string{deveco, "upgrade"}) {
-		t.Errorf("deveco's installer: %+v", u)
 	}
 
 	// a binary that says nothing of how it got there: the version only
@@ -399,111 +375,5 @@ func TestUpdateWithBunBridgesSOCKS(t *testing.T) {
 		if v != socks {
 			t.Fatalf("npm is given %s", v)
 		}
-	}
-}
-
-// Grok Build from xAI's installer (xiaoxiaofeixz on Discord: Grok at
-// C:\Users\<user>\.grok\bin\grok.exe showed no newest version and no
-// update): install.sh's ~/.grok/bin/grok links to
-// ../downloads/grok-<platform>, which grok update replaces with
-// ../downloads/grok-<version>-<platform>; install.ps1 copies grok.exe into
-// ~\.grok\bin, and grok update copies the new one over it. The CLI is read
-// from there, not PATH, where grok may be Homebrew's regular-expression tool.
-func TestGrokInstalled(t *testing.T) {
-	home, _ := filepath.EvalSymlinks(t.TempDir())
-	t.Setenv("HOME", home)
-	t.Setenv("USERPROFILE", home)
-	t.Setenv("GROK_HOME", "")
-	other := t.TempDir() // another grok on PATH
-	file(t, filepath.Join(other, exe("grok")), "MZ")
-	t.Setenv("PATH", other)
-
-	a := &Agent{ID: "grok", Name: "Grok Build"} // no Bin, as grok(home)
-	if _, ok := a.CLI(); ok {
-		t.Fatal("PATH's grok taken for Grok Build")
-	}
-
-	platform := "macos-aarch64"
-	if runtime.GOOS == "windows" {
-		platform = "windows-x86_64"
-	}
-	when := time.Date(2026, 10, 2, 9, 32, 0, 0, time.UTC)
-	// install puts the release at the path the CLI is run by; the same bytes
-	// and time for every release, as nothing but the path need tell them apart
-	var bin string
-	install := func(version string) {
-		t.Helper()
-		if runtime.GOOS == "windows" {
-			bin = filepath.Join(home, `.grok\bin\grok.exe`)
-			os.Remove(bin)
-			file(t, bin, "MZ")
-			os.Chtimes(bin, when, when)
-			return
-		}
-		name := "grok-" + platform
-		if version != "" {
-			name = "grok-" + version + "-" + platform
-		}
-		os.Chtimes(file(t, filepath.Join(home, ".grok/downloads", name), "MZ"), when, when)
-		bin = filepath.Join(home, ".grok/bin/grok")
-		os.Remove(bin)
-		link(t, "../downloads/"+name, bin)
-	}
-	install("")
-
-	served := map[string]string{"/stable": "1.0.50\n", "/alpha": "1.0.51-alpha.2\n"}
-	rel := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		v, ok := served[r.URL.Path]
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-		w.Write([]byte(v))
-	}))
-	defer rel.Close()
-	says := "grok 1.0.46 (2765805b9442)"
-	oldRel, oldVer, oldRun := grokReleases, runVersion, runUpdate
-	grokReleases = []string{rel.URL + "/"}
-	runVersion = func(string) string { return says }
-	versions, latests = memo{}, memo{}
-	var ran [][]string
-	runUpdate = func(_ context.Context, u *updater) ([]byte, error) {
-		ran = append(ran, u.cmd)
-		install("1.0.50")
-		says = "grok 1.0.50 (c58f321264ba)"
-		return []byte("✓ grok v1.0.50 installed successfully!"), nil
-	}
-	t.Cleanup(func() {
-		grokReleases, runVersion, runUpdate = oldRel, oldVer, oldRun
-		versions, latests = memo{}, memo{}
-	})
-
-	c, ok := a.CLI()
-	if !ok || c.Version != "1.0.46" || c.Latest != "1.0.50" || !c.Update || c.Via != "self" || c.Command != exe("grok")+" update" {
-		t.Fatalf("before: %+v %v", c, ok)
-	}
-	if c, err := a.UpdateCLI(); err != nil || c.Version != "1.0.50" || c.Update {
-		t.Fatalf("after: %+v, %v", c, err)
-	}
-	if len(ran) != 1 || !reflect.DeepEqual(ran[0], []string{bin, "update"}) {
-		t.Errorf("ran %q", ran)
-	}
-
-	// grok's own update at launch (auto_update), not through fogway: the
-	// version is asked again
-	install("1.0.51")
-	says = "grok 1.0.51 (0a1b2c3d4e5f)"
-	if runtime.GOOS == "windows" {
-		later := when.Add(time.Hour) // the copy of a new download
-		os.Chtimes(bin, later, later)
-	}
-	if v := a.InstalledVersion(); v != "1.0.51" {
-		t.Errorf("after grok's own update: %q", v)
-	}
-
-	// on the alpha channel (grok update --alpha), the newest is alpha's
-	file(t, filepath.Join(home, ".grok", "config.toml"), "[cli]\ninstaller = \"internal\"\nchannel = \"alpha\"\n")
-	if c, _ := a.CLI(); c.Latest != "1.0.51-alpha.2" {
-		t.Errorf("alpha: %+v", c)
 	}
 }

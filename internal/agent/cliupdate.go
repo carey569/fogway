@@ -16,7 +16,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -25,7 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/carey569/fogway/internal/edit"
 	"github.com/carey569/fogway/internal/netproxy"
 	"github.com/carey569/fogway/internal/proc"
 	"github.com/carey569/fogway/internal/source"
@@ -73,16 +71,6 @@ type cliSpec struct {
 	// links lead, with forward slashes) is the one its vendor's installer
 	// put there
 	self func(bin, real string) []string
-	// at is where its vendor's installer puts the CLI under the home folder
-	// (.exe added on Windows), for an agent with no Bin: its command's name
-	// is other tools' too, so PATH can't say it is this one
-	at string
-	// latest is the newest version its own updater would install, for one
-	// not published on npm
-	latest func() string
-	// only are the systems (GOOS) its vendor builds it for, when not all:
-	// on any other its package installs nothing that runs
-	only []string
 }
 
 var cliSpecs = map[string]cliSpec{
@@ -106,19 +94,6 @@ var cliSpecs = map[string]cliSpec{
 			return nil
 		}},
 	"gemini": {npm: []string{"@google/gemini-cli"}, brew: []string{"gemini-cli"}},
-	// DevEco Code: npm's @deveco/deveco-code, or its own installer's
-	// ~/.local/bin/deveco → ~/.local/share/deveco/versions/<v>/deveco
-	// (install), deveco.exe in ~\.local\bin on Windows (install.ps1),
-	// both of which deveco upgrade replaces
-	// Its npm package carries macOS and Windows binaries only (and
-	// OpenHarmony's), none for Linux.
-	"deveco": {npm: []string{"@deveco/deveco-code"}, only: []string{"darwin", "windows"},
-		self: func(bin, real string) []string {
-			if strings.Contains(real, "/.local/share/deveco/versions/") || strings.HasSuffix(strings.ToLower(real), "/.local/bin/deveco.exe") {
-				return []string{bin, "upgrade"}
-			}
-			return nil
-		}},
 	"opencode": {npm: []string{"opencode-ai"}, brew: []string{"opencode"},
 		self: func(bin, real string) []string {
 			if strings.Contains(real, "/.opencode/bin/") {
@@ -126,39 +101,13 @@ var cliSpecs = map[string]cliSpec{
 			}
 			return nil
 		}},
-	// Grok Build: x.ai/cli/install.sh links ~/.grok/bin/grok to
-	// ../downloads/grok-<platform>, and grok update to a new
-	// ../downloads/grok-<version>-<platform>; install.ps1 copies grok.exe
-	// into ~\.grok\bin itself, as grok update does again. grok is also
-	// Homebrew's regular-expression tool, hence at; its own cask, grok-build,
-	// links $HOMEBREW_PREFIX/bin/grok to Caskroom/grok-build/<v>/grok-<v>-<platform>
-	// (Will on Discord), which brew upgrade replaces (see cliBin).
-	"grok": {at: ".grok/bin/grok", latest: grokLatest, brew: []string{"grok-build"},
-		self: func(bin, real string) []string {
-			if l := strings.ToLower(real); strings.Contains(l, "/.grok/bin/") || strings.Contains(l, "/.grok/downloads/") {
-				return []string{bin, "update"}
-			}
-			return nil
-		}},
-	"pi":        {npm: []string{"@earendil-works/pi-coding-agent", "@mariozechner/pi-coding-agent"}, brew: []string{"pi-coding-agent"}},
-	"omp":       {npm: []string{"@oh-my-pi/pi-coding-agent"}},
-	"copilot":   {npm: []string{"@github/copilot"}, brew: []string{"copilot-cli"}},
-	"crush":     {npm: []string{"@charmland/crush"}, brew: []string{"crush"}},
-	"cline":     {npm: []string{"cline"}, brew: []string{"cline"}},
-	"dsh":       {npm: []string{"@deepseek-ai/dsh"}},
-	"codebuddy": {npm: []string{"@tencent-ai/codebuddy-code"}},
-	"goose":     {brew: []string{"block-goose-cli"}},
-	// AtomCode's installer chooses /usr/local/bin or ~/.local/bin by
-	// writability (`.local\bin\atomcode.exe` on Windows); `atomcode upgrade`
-	// exists, but its installed-binary update path is not exercised here, so
-	// only its npm package and brew cask are recognized
-	"atomcode": {npm: []string{"@atomgit.com/atomcode"}, brew: []string{"atomcode"}},
-	// Snow CLI is published on npm alone (snow-ai)
-	"snow": {npm: []string{"snow-ai"}},
-	// omo update, however it was installed: OmO's own updater, which moves
-	// the engine it pins (senpi) with it
-	"omo": {npm: []string{"omo-ai"},
-		self: func(bin, real string) []string { return []string{bin, "update"} }},
+	"pi":      {npm: []string{"@earendil-works/pi-coding-agent", "@mariozechner/pi-coding-agent"}, brew: []string{"pi-coding-agent"}},
+	"omp":     {npm: []string{"@oh-my-pi/pi-coding-agent"}},
+	"copilot": {npm: []string{"@github/copilot"}, brew: []string{"copilot-cli"}},
+	"crush":   {npm: []string{"@charmland/crush"}, brew: []string{"crush"}},
+	"cline":   {npm: []string{"cline"}, brew: []string{"cline"}},
+	"dsh":     {npm: []string{"@deepseek-ai/dsh"}},
+	"goose":   {brew: []string{"block-goose-cli"}},
 }
 
 // updater is how an installed CLI is brought up to date.
@@ -173,8 +122,6 @@ type updater struct {
 	// change, so the update runs after Windows' administrator prompt
 	admin  bool
 	prefix string
-	// latest is the newest its own updater would install (cliSpec.latest)
-	latest func() string
 	// reshim is run after the update: the version manager whose shim the
 	// CLI was found as making shims for what it installed
 	reshim []string
@@ -207,7 +154,7 @@ func howInstalled(spec cliSpec, bin string) *updater {
 			if len(spec.npm) > 0 {
 				pkg = spec.npm[0]
 			}
-			return &updater{via: "self", pkg: pkg, cmd: c, latest: spec.latest}
+			return &updater{via: "self", pkg: pkg, cmd: c}
 		}
 	}
 	// a formula of the agent's own is Homebrew's, though a Node one keeps
@@ -245,31 +192,6 @@ func fromBrew(real string, m []string) *updater {
 		u.cmd = []string{brew, "upgrade", "--cask", m[2]}
 	}
 	return u
-}
-
-// brewBin is the CLI of an agent with no Bin (spec.at's name) where PATH
-// has it, when Homebrew's formula or cask of the agent's put it there: a
-// command of that name that isn't one of the agent's is another tool's
-// (Homebrew's grok formula). "" otherwise.
-func brewBin(spec cliSpec) string {
-	if spec.at == "" || len(spec.brew) == 0 {
-		return ""
-	}
-	bin := binAt(path.Base(spec.at))
-	if bin == "" {
-		return ""
-	}
-	real, err := proc.RealPath(bin)
-	if err != nil {
-		return ""
-	}
-	if m := brewPath.FindStringSubmatch(filepath.ToSlash(real)); m == nil || !contains(spec.brew, m[2]) {
-		return ""
-	}
-	if abs, err := filepath.Abs(bin); err == nil {
-		bin = abs
-	}
-	return bin
 }
 
 // fromNodeModules is the updater of a CLI the package pkg installed in a
@@ -525,9 +447,6 @@ func latestVersion(u *updater) string {
 	if u.via == "brew" {
 		return latests.get("brew:"+u.pkg, "", 6*time.Hour, 15*time.Minute, func() (string, error) { return brewLatest(u) })
 	}
-	if u.latest != nil {
-		return u.latest()
-	}
 	if u.pkg == "" {
 		return ""
 	}
@@ -558,60 +477,6 @@ func npmLatest(pkg string) (string, error) {
 		return "", errors.New("no version")
 	}
 	return r.Version, nil
-}
-
-// grokReleases is where Grok's installers and grok update read the newest
-// version of a channel (x.ai/cli/stable), in front of
-// storage.googleapis.com/grok-build-public-artifacts/cli; a var so tests can
-// serve one.
-var grokReleases = []string{"https://x.ai/cli/", "https://storage.googleapis.com/grok-build-public-artifacts/cli/"}
-
-// grokLatest is the newest Grok Build of the channel it follows: the
-// installer's GROK_CHANNEL or grok update --alpha, kept under [cli] in its
-// config.toml (stable when none).
-func grokLatest() string {
-	dir := os.Getenv("GROK_HOME")
-	if dir == "" {
-		home, _ := os.UserHomeDir()
-		dir = filepath.Join(home, ".grok")
-	}
-	channel := "stable"
-	if cli, _ := edit.GetTOMLTable(filepath.Join(dir, "config.toml"), "cli"); cli["channel"] == "alpha" || cli["channel"] == "enterprise" {
-		channel = cli["channel"]
-	}
-	return latests.get("grok:"+channel, "", 6*time.Hour, 15*time.Minute, func() (v string, err error) {
-		for _, base := range grokReleases {
-			if v, err = channelVersion(base + channel); err == nil {
-				return v, nil
-			}
-		}
-		return "", err
-	})
-}
-
-// channelVersion is the version a release channel's pointer file names.
-func channelVersion(url string) (string, error) {
-	c := &http.Client{Timeout: 8 * time.Second}
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("User-Agent", "fogway")
-	resp, err := source.Do(c, req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("%s answered %s", url, resp.Status)
-	}
-	b, err := io.ReadAll(io.LimitReader(resp.Body, 256))
-	if err != nil {
-		return "", err
-	}
-	// the whole body is the version: 1.0.50
-	v := strings.TrimSpace(string(b))
-	if v == "" || parseVersion(" "+v) != strings.TrimPrefix(v, "v") {
-		return "", fmt.Errorf("%s: no version", url)
-	}
-	return strings.TrimPrefix(v, "v"), nil
 }
 
 // brewLatest is the version Homebrew has for u, as it last updated itself:
@@ -684,18 +549,6 @@ func (a *Agent) cliBin() (string, cliSpec) {
 		return "", spec
 	}
 	if a.Bin == "" {
-		// Homebrew's, where PATH has it: what a terminal runs, before a
-		// vendor install a brew one replaced
-		if bin := brewBin(spec); bin != "" {
-			return bin, spec
-		}
-		home, err := os.UserHomeDir()
-		if spec.at == "" || err != nil {
-			return "", spec
-		}
-		if bin := filepath.Join(home, filepath.FromSlash(exe(spec.at))); isFile(bin) {
-			return bin, spec
-		}
 		return "", spec
 	}
 	bin := binAt(a.Bin)

@@ -35,9 +35,6 @@ func TestInstallCommands(t *testing.T) {
 		{"gemini", "windows", []string{"npm: npm install -g @google/gemini-cli"}},
 		{"opencode", "darwin", []string{"script: curl -fsSL https://opencode.ai/install | bash", "npm: npm install -g opencode-ai"}},
 		{"opencode", "windows", []string{"npm: npm install -g opencode-ai"}},
-		{"deveco", "darwin", []string{"npm: npm install -g @deveco/deveco-code"}},
-		{"deveco", "windows", []string{"npm: npm install -g @deveco/deveco-code"}},
-		{"deveco", "linux", nil}, // no Linux build in its package
 		{"pi", "linux", []string{"npm: npm install -g @earendil-works/pi-coding-agent"}},
 		{"cursor", "darwin", nil}, // no command fogway knows
 	} {
