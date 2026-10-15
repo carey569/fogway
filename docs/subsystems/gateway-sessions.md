@@ -232,14 +232,13 @@ summary and gets the ledger filtered to its own `CallerKey`, with its filter
 lists cut to its own rows (`usageapi.OwnPage`): the ledger's facets are drawn
 from every call in the period, so without the cut they would name other keys.
 `TestUsageOverGateway` covers both, and a red when either cut is removed.
-A held key is refused (`refuseHeld`, 403 `provider.KeyHeldCode`) the
-quotas, their history, kept cards and refresh, and `/v1/fogway/concurrency`
-(#1981); `/v1/fogway/route` tells it only routes whose `callerKey` is its
+A held key is refused (`refuseHeld`, 403 `key_held`) the quotas, their
+history, the usage summary and `/v1/fogway/concurrency` (#1981); `/v1/fogway/route` tells it only routes whose `callerKey` is its
 own. `Route.callerKey` is set by `trace.beginFor` from the request's
 caller, so a route begun without it is told to no held key.
-Their test, `TestHeldKeyToldNoAccounts` (from loopback and the LAN, a key
-held each of the three ways and one held to nothing), went in 36b17d5 and
-is to be written again with keys.
+Their test, `TestHeldKeyToldNoAccounts`, asks from loopback and the LAN
+with a key held each of the three ways (a budget, models, provider keys)
+and one held to nothing.
 
 ### Calls read from the agents' own files
 

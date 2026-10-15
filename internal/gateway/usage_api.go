@@ -37,9 +37,8 @@ func heldKey(who access.Identity) bool {
 // fogway's Usage page). The key's own limit stays at /v1/fogway/limit.
 const heldRefused = "this gateway key is held to a budget, models or accounts, so it is told nothing of this fogway's accounts: GET /v1/fogway/limit tells it its own limit"
 
-// refuseHeld answers a held key 403 with msg, marked with
-// provider.KeyHeldCode so another fogway shows the key's own card alone
-// rather than "isn't shared", and says whether it did.
+// refuseHeld answers a held key 403 with msg, its code key_held, and
+// says whether it did.
 func refuseHeld(w http.ResponseWriter, r *http.Request, msg string) bool {
 	if !heldKey(access.Caller(r.Context())) {
 		return false
