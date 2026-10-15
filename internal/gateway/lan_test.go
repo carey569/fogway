@@ -6,7 +6,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -306,5 +308,111 @@ func TestLANModelsAsText(t *testing.T) {
 	}
 	if w := get("/v1/models?format=text"); w.Code != http.StatusUnauthorized {
 		t.Fatalf("no key: %d", w.Code)
+	}
+}
+
+// Shared on the network, every route the gateway serves answers another
+// computer, or a container on the bridge, with no gateway key a 401 that
+// says so, whatever token it sends: fogway's own, any x-api-key, a Gemini
+// key. With a gateway key it gets past the guard; loopback still takes
+// any token.
+func TestNetworkGatewayGuardsEveryRoute(t *testing.T) {
+	fresh(t)
+	t.Setenv("FOGWAY_ADDR", "0.0.0.0:3725")
+	t.Setenv("FOGWAY_TRUST_PROXY", "")
+	if err := settings.Save(settings.Settings{LAN: false}); err != nil {
+		t.Fatal(err)
+	}
+	h := lanGuard(New().Handler())
+	call := func(method, path, from string, hdr ...string) (int, string) {
+		r := httptest.NewRequest(method, path, strings.NewReader("{}"))
+		r.RemoteAddr = from
+		if path == "/v1/responses" || path == "/responses" {
+			r.Header.Set("Connection", "Upgrade")
+			r.Header.Set("Upgrade", "websocket")
+			r.Header.Set("Sec-WebSocket-Version", "13")
+			r.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
+		}
+		for i := 0; i+1 < len(hdr); i += 2 {
+			r.Header.Set(hdr[i], hdr[i+1])
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code, w.Body.String()
+	}
+	for _, rt := range guardedRoutes {
+		for _, from := range []string{"172.17.0.1:40312", "192.168.1.9:5000"} {
+			for _, hdr := range [][]string{nil, {"Authorization", "Bearer " + Token}, {"x-api-key", "anything"}, {"x-goog-api-key", Token}, {"Authorization", "Bearer sk-ant-oat01-x"}} {
+				resetAuthThrottle() // test each route's own guard, not the flood limiter that would 429 later tries
+				if c, b := call(rt[0], rt[1], from, hdr...); c != http.StatusUnauthorized || !strings.Contains(b, "gateway key") {
+					t.Errorf("%s %s from %s with %v: %d %.120s", rt[0], rt[1], from, hdr, c, b)
+				}
+			}
+		}
+	}
+	// a gateway key gets past the guard; loopback still takes any token
+	_, secrets := newCaller(t, "Host")
+	settings.Save(settings.Settings{LAN: false}) // newCaller shares fogway
+	if c, b := call("GET", "/v1/models", "172.17.0.1:40312", "Authorization", "Bearer "+secrets[0]); c != 200 {
+		t.Fatal("with the key:", c, b)
+	}
+	if c, b := call("GET", "/v1/fogway/quotas", "172.17.0.1:40312", "x-api-key", secrets[0]); c != 200 {
+		t.Fatal("quotas with the key:", c, b)
+	}
+	if c, b := call("GET", "/v1/models", "127.0.0.1:5000", "Authorization", "Bearer "+Token); c != 200 {
+		t.Fatal("loopback:", c, b)
+	}
+}
+
+// guardedRoutes are the requests TestNetworkGatewayGuardsEveryRoute sends
+// from another computer, one or more for each route Handler serves.
+var guardedRoutes = [][2]string{
+	{"GET", "/"}, {"GET", "/v1"}, {"GET", "/v1/"}, {"GET", "/v1/models"}, {"GET", "/models"}, {"GET", "/v1/models/x"},
+	{"GET", "/api/hello"},
+	{"GET", "/v1/fogway/quotas"}, {"GET", "/v1/fogway/quotas/history"},
+	{"GET", "/v1/fogway/usage"}, {"GET", "/v1/fogway/usage/requests"}, {"POST", "/v1/fogway/usage/requests"},
+	{"GET", "/v1/fogway/route?session=s"}, {"GET", "/v1/fogway/concurrency"}, {"GET", "/v1/fogway/local"}, {"GET", "/v1/fogway/limit"},
+	{"POST", "/v1/chat/completions"}, {"POST", "/chat/completions"},
+	{"POST", "/v1/responses"}, {"POST", "/responses"}, {"GET", "/v1/responses"}, {"GET", "/responses"},
+	{"POST", "/v1/messages"}, {"POST", "/messages"}, {"POST", "/v1/messages/count_tokens"},
+	{"POST", "/v1/embeddings"}, {"POST", "/embeddings"}, {"POST", "/v1/rerank"}, {"POST", "/rerank"},
+	{"POST", CodexPath + "/responses"}, {"GET", CodexCatalogPath},
+	{"GET", "/v1beta/models"}, {"POST", "/v1beta/models/m:generateContent"},
+	{"GET", "/nowhere"},
+}
+
+// Every route Handler registers is among guardedRoutes, so a route added
+// later is tried from another computer too: each pattern in gateway.go's
+// Handler is registered on a mux of its own, and every pattern must be
+// the one some guarded request reaches.
+func TestGuardedRoutesCoverHandler(t *testing.T) {
+	src, err := os.ReadFile("gateway.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	consts := strings.NewReplacer(`CodexPath+"`, `"`+CodexPath, `"GET "+CodexCatalogPath`, `"GET `+CodexCatalogPath+`"`)
+	re := regexp.MustCompile(`mux\.HandleFunc\(("[^"]*")`)
+	mux := http.NewServeMux()
+	var patterns []string
+	for _, m := range re.FindAllStringSubmatch(consts.Replace(string(src)), -1) {
+		p, err := strconv.Unquote(m[1])
+		if err != nil {
+			t.Fatal(err)
+		}
+		patterns = append(patterns, p)
+		mux.HandleFunc(p, func(http.ResponseWriter, *http.Request) {})
+	}
+	if len(patterns) < 30 {
+		t.Fatalf("read %d routes from gateway.go: %v", len(patterns), patterns)
+	}
+	reached := map[string]bool{}
+	for _, rt := range guardedRoutes {
+		_, p := mux.Handler(httptest.NewRequest(rt[0], rt[1], nil))
+		reached[p] = true
+	}
+	for _, p := range patterns {
+		if !reached[p] {
+			t.Errorf("no request in guardedRoutes reaches %q", p)
+		}
 	}
 }
