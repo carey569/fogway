@@ -7139,7 +7139,7 @@ function renderAdd() {
   const drawTiles = () => {
     tiles.replaceChildren();
     const f = presetQuery.trim().toLowerCase();
-    // the note is found in the words it is shown in, too (远程 for Remote fogway)
+    // the note is found in the words it is shown in, too
     const hit = (pr) => !f || pr.name.toLowerCase().includes(f) || pr.id.includes(f) || hostOf(pr.chat || pr.responses || pr.anthropic).includes(f) || (pr.note || "").toLowerCase().includes(f) || (pr.note ? t(pr.note).toLowerCase().includes(f) : false);
     // a section: its name, what it is in a word, and its rows, three to a line
     const section = (title, hint) => {
@@ -8757,7 +8757,7 @@ function drawEditor(p, presetID) {
   // Discord). Only the user can say it is local all the way: a relay run
   // locally, or Ollama's cloud models, pass a request on to a vendor
   const addressOf = (k) => (draft[k] ?? (isNew && pr ? pr[k] : "")) || "";
-  const onLAN = () => (p?.preset || pr?.id) !== "remote-fogway" && localAddresses(["chat", "responses", "anthropic", "gemini", "decide"].map(addressOf));
+  const onLAN = () => localAddresses(["chat", "responses", "anthropic", "gemini", "decide"].map(addressOf));
   {
     const [ltk, lcb] = tick(t("Send requests unmasked"), !!draft.unredacted);
     lcb.onchange = () => { draft.unredacted = lcb.checked; };
@@ -8923,7 +8923,7 @@ function drawEditor(p, presetID) {
 
   // Jev's endpoint can be the one its gateway's docs give — Cloudflare's
   // names the account, …/accounts/<id>/ai/run — in place of the preset's
-  if (decides && !custom && (p?.preset || pr?.id) !== "remote-fogway") {
+  if (decides && !custom) {
     if (draft.decide === undefined) draft.decide = p?.decide || pr?.decide || "";
     const du = input((address && movedURLs(draft)?.decide) || draft.decide, pr?.decide || "https://…", "url");
     du.classList.add("decide-url");
@@ -10284,10 +10284,7 @@ function renderModels(p) {
     const sayLabel = (mode) => {
       const name = prefs[first.id]?.name ?? (first.default ? first.name : "");
       const base = name || first.default || first.name || first.id;
-      let label = suffixed(base, p.name || p.id, !!name, mode);
-      // a remote fogway's model, named there with its provider after it,
-      // is that name alone when none is put after it here (ARNO on Discord)
-      if (!name && first.plain && label === base) label = first.plain;
+      const label = suffixed(base, p.name || p.id, !!name, mode);
       sfxSaid.textContent = t("Agents’ lists show “{label}”", { label });
     };
     sayLabel();
@@ -10354,10 +10351,7 @@ function renderModels(p) {
       const shown = (n) => String(Math.round(n * 1e6) / 1e6);
       const listTier = m.list?.tiers?.[0];
       const priceBox = el("div", "mprice");
-      // a Remote fogway's model is listed at what that fogway counts it at
-      priceBox.title = m.remoteList
-        ? t("What {id} costs, in US dollars per million tokens, as the Usage page counts it; empty: what the other fogway counts it at, shown greyed. A price set here isn't multiplied by the provider's price rate", { id: m.id })
-        : t("What {id} costs, in US dollars per million tokens, as the Usage page counts it; empty: its list price, shown greyed. A price set here isn't multiplied by the provider's price rate", { id: m.id });
+      priceBox.title = t("What {id} costs, in US dollars per million tokens, as the Usage page counts it; empty: its list price, shown greyed. A price set here isn't multiplied by the provider's price rate", { id: m.id });
       priceBox.append(el("span", "", t("Price, $ / 1M tokens")));
       const typed = draft.priceTyped?.[id];
       const cell = (value, placeholder, k, label) => {
@@ -12740,7 +12734,7 @@ function renderQuotas() {
     if (!first.user) card.dataset.card = first.provider;
     if (!first.user && first.balanceCard) card.dataset.balCard = first.balanceCard;
     const head = el("div", "subscription-head");
-    head.append(groups.length > 1 ? usageHandle(first, card) : icon(first.icon), el("b", "", quotaName(first)));
+    head.append(groups.length > 1 ? usageHandle(first, card) : icon(first.icon), el("b", "", first.name));
     // a card with no account's name to it (a plugin's ZCode) is named in
     // its head, as the user named it or for the key plan it stands in for
     if (!first.user && first.alias) head.append(...quotaWho(first));
@@ -12777,9 +12771,6 @@ function renderQuotas() {
       // its tooltip; the curve and the rest only in full
       if (brief) meters.classList.add("brief");
       card.append(meters);
-      // a remote fogway's gateway key: what its windows don't say (#1547)
-      const keyLine = !brief && keyLimitLine(sub);
-      if (keyLine) card.append(keyLine);
       // how many of the period's requests to it fogway made itself (#1839)
       const own = !brief && ownLine(sub);
       if (own) card.append(own);
@@ -13882,7 +13873,7 @@ function renderPanelQuota() {
       else parts.push({ bals: [q] });
       continue;
     }
-    if (!groups.has(q.name)) parts.push({ name: quotaName(q), qs: groups.set(q.name, []).get(q.name) });
+    if (!groups.has(q.name)) parts.push({ name: q.name, qs: groups.set(q.name, []).get(q.name) });
     groups.get(q.name).push(q);
   }
   for (const part of parts) {
@@ -14298,27 +14289,6 @@ function holdsLine(h) {
   return line;
 }
 
-// isKeyCard: the card of a remote fogway's gateway keys (#1547,
-// remote_key_limits.go), "<remote>/~keys", one account per key; quotaName
-// says so by its name, which is the remote's.
-const isKeyCard = (q) => /\/~keys$/.test(q.provider || "");
-function quotaName(q) {
-  return isKeyCard(q) ? t("Gateway keys · {name}", { name: q.name }) : q.name;
-}
-// keyLimitLine: what a gateway key's windows don't say: the length of a
-// cycle of days, the calls made in it, that it is used up, and calls with
-// no known price that leave its spend low.
-function keyLimitLine(sub) {
-  const g = sub.gatewayKey;
-  if (!g?.limited || sub.error) return null;
-  const parts = [];
-  if (g.period === "days" && g.days) parts.push(t(g.days === 1 ? "1-day cycle" : "{n}-day cycle", { n: g.days }));
-  if (g.calls) parts.push(t(g.calls === 1 ? "1 call" : "{n} calls", { n: g.calls }));
-  if (g.spent) parts.push(t("Used up: that computer refuses this key until it resets"));
-  if (g.unpriced && g.costLeft != null) parts.push(t(g.unpriced === 1 ? "{n} call had no known price and is not counted" : "{n} calls had no known price and are not counted", { n: g.unpriced }));
-  if (!parts.length) return null;
-  return el("div", "quota-keyline" + (g.spent ? " spent" : ""), parts.join(" · "));
-}
 
 // quotaWindows: one account's allowance as meters, or why there are none.
 function quotaWindows(sub) {
