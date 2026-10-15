@@ -842,17 +842,10 @@ func emptyJSON(v any) bool {
 	return true
 }
 
-// piLike is Pi, or a fork of it that keeps Pi's settings.json and
-// models.json in an agent folder of its own (OmO, omo.go): id is its id,
-// icon and command, dir its agent folder.
+// piLike is Pi, its settings.json and models.json in its agent folder
+// dir: id is its id, icon and command.
 func piLike(at place, id, name, dir string) *Agent {
-	return piLikeKeyed(at, id, name, dir, at.gwKey)
-}
-
-// piLikeKeyed is piLike whose provider "fogway" carries key's key: one
-// that names the agent (agentKeyAt) for an agent whose requests carry
-// nothing else of it (Prime Agent, primeagent.go).
-func piLikeKeyed(at place, id, name, dir string, key func() string) *Agent {
+	key := at.gwKey
 	path := filepath.Join(dir, "settings.json")
 	modelsPath := filepath.Join(dir, "models.json")
 	auth := filepath.Join(dir, "auth.json")

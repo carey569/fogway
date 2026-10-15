@@ -1692,7 +1692,6 @@ fogway claude haiku ""          # back to the main model
 fogway gemini auth api-key
 fogway opencode anthropic/claude-sonnet-5
 fogway oc small anthropic/claude-haiku-4-5
-fogway mimo anthropic/claude-sonnet-5
 
 fogway save work                # snapshot everything as a profile
 fogway use work                 # switch back
