@@ -1,15 +1,18 @@
 package gui
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/access"
 	"github.com/carey569/fogway/internal/gateway"
 	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 func TestSettingsMigratesOldLANCredentialToManagedKey(t *testing.T) {
@@ -62,5 +65,97 @@ func TestGatewayConnectionAddressesFollowLANSharing(t *testing.T) {
 		if on && !slices.Equal(g.LANURLs, gateway.LANURLs()) {
 			t.Fatal("Connect does not list the gateway's network addresses", g.LANURLs)
 		}
+	}
+}
+
+func TestLANSettingSharesCallerKeyStore(t *testing.T) {
+	sandboxHome(t)
+	handler := Handler(nil, nil)
+	post := func(path, body string) map[string]any {
+		t.Helper()
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, httptest.NewRequest(http.MethodPost, path, strings.NewReader(body)))
+		if w.Code != http.StatusOK {
+			t.Fatalf("%s: %d %s", path, w.Code, w.Body)
+		}
+		var out map[string]any
+		if err := json.Unmarshal(w.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		return out
+	}
+	s := post("/api/settings/lan", `{"on":true}`)
+	if s["lan"] != true || s["lanKey"] != nil {
+		t.Fatal("setting generated separate key", s)
+	}
+	keys, _ := access.List()
+	key := keys[0]
+	id := key.ID
+	if keys, _ := access.List(); len(keys) != 1 || keys[0].ID != id || keys[0].Name != "Fogway" {
+		t.Fatal("LAN shortcut is not a named key", keys)
+	}
+	old, err := access.Update("copy-key", access.Change{Key: id})
+	if err != nil || strings.Contains(key.Masked, old) {
+		t.Fatal("LAN settings leaked secret", key, err)
+	}
+	created := post("/api/caller-keys/add-key", `{"name":"Remote laptop"}`)
+	secret := created["secret"].(string)
+	if who, ok := access.Authenticate(secret); !ok || who.KeyName != "Remote laptop" {
+		t.Fatal("named key is not shared", who, ok)
+	}
+	off := post("/api/settings/lan", `{"on":false,"newKey":true}`)
+	if off["lan"] != nil || off["lanKey"] != nil {
+		t.Fatal("legacy rotate request changed settings", off)
+	}
+	if _, ok := access.Authenticate(secret); !ok {
+		t.Fatal("toggling sharing revoked a key")
+	}
+	post("/api/settings/lan", `{"on":true}`)
+	if _, ok := access.Authenticate(old); !ok || settings.Load().LANKeyID != id {
+		t.Fatal("toggling sharing replaced the LAN key")
+	}
+	post("/api/caller-keys/rename-key", `{"key":"`+id+`","name":"Desk"}`)
+	usage.Append(usage.Record{Time: time.Now(), CallerKeyID: id, CallerKeyName: "Fogway", Input: 30, Status: 200})
+	post("/api/settings/lan", `{"on":true,"newKey":true}`)
+	keys, _ = access.List()
+	key = keys[0]
+	if key.ID != id || key.Name != "Desk" || key.Secret != "" {
+		t.Fatal("rotation lost key identity or leaked secret", key)
+	}
+	if _, ok := access.Authenticate(old); ok {
+		t.Fatal("rotated credential still works")
+	}
+	next, err := access.Update("copy-key", access.Change{Key: id})
+	if err != nil || next == old {
+		t.Fatal("key was not rotated", err)
+	}
+	if who, ok := access.Authenticate(next); !ok || who.KeyID != id {
+		t.Fatal("rotated key is invalid", who, ok)
+	}
+	if _, ok := access.Authenticate(secret); !ok {
+		t.Fatal("rotating LAN revoked another named key")
+	}
+	if recs := usage.Load(time.Time{}); len(recs) != 1 || recs[0].CallerKeyID != id || recs[0].Input != 30 {
+		t.Fatal("rotation changed historical usage", recs)
+	}
+	post("/api/settings", `{"theme":"dark"}`)
+	if settings.Load().LANKeyID != id {
+		t.Fatal("saving unrelated preferences lost LAN key reference")
+	}
+	post("/api/caller-keys/off-key", `{"key":"`+id+`"}`)
+	post("/api/settings/lan", `{"on":true,"newKey":true}`)
+	keys, _ = access.List()
+	if !keys[0].Off {
+		t.Fatal("rotation re-enabled a disabled key")
+	}
+	post("/api/caller-keys/remove-key", `{"key":"`+id+`"}`)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/settings", nil))
+	if keys, _ := access.List(); len(keys) != 1 {
+		t.Fatal("settings resurrected a deleted key", w.Body)
+	}
+	post("/api/settings/lan", `{"on":true,"newKey":true}`)
+	if settings.Load().LANKeyID == id {
+		t.Fatal("replacement reused a deleted identity")
 	}
 }

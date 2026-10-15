@@ -227,3 +227,23 @@ func TestVendorOf(t *testing.T) {
 		}
 	}
 }
+
+// OpenAI's page as it was on 2026-10-06: its desktop app's Codex
+// degraded and voice mode down, the API well — and an incident that
+// names no parts is the API's only while the API's parts are affected.
+func TestOpenAIAppIsNotTheAPI(t *testing.T) {
+	var body atomic.Value
+	var code atomic.Int32
+	inc := `{"name":"Elevated Work Mode errors","status":"monitoring","impact":"minor","shortlink":null,"components":null}`
+	body.Store(openAIPage("operational", "degraded_performance", inc))
+	serve(t, "openai", &body, &code)
+	if s := one(t, "openai"); s.Level != "ok" || len(s.Incidents) != 0 {
+		t.Fatalf("got %+v, want ok", s)
+	}
+	body.Store(openAIPage("major_outage", "operational", inc))
+	Forget()
+	s := one(t, "openai")
+	if s.Level != "major" || len(s.Incidents) != 1 || s.Incidents[0].Name != "Elevated Work Mode errors" {
+		t.Fatalf("got %+v, want major with its incident", s)
+	}
+}
