@@ -236,10 +236,9 @@ func TestGatewayKeyModelsCLI(t *testing.T) {
 	}
 }
 
-// fogway gateway-key accounts sets, shows and takes off a key's account
-// whitelist, and refuses an account no provider has (#905). An account's
-// stable id, named by who is signed in, is exercised against a real
-// sign-in in the gateway's tests; a key's fingerprint is one here.
+// fogway gateway-key accounts sets, shows and takes off a gateway key's
+// list of provider keys, by name or fingerprint, and refuses a key no
+// provider has (#905).
 func TestGatewayKeyAccountsCLI(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("USERPROFILE", os.Getenv("HOME"))

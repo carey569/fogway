@@ -338,8 +338,8 @@ fogway gateway-key limit <id> reset    # count its usage from 0 again
 fogway gateway-key limit <id> off      # no limit
 fogway gateway-key models <id> openai/gpt-5 anthropic/*   # only these models
 fogway gateway-key models <id> all     # every model
-fogway gateway-key accounts <id> codex/me@example.com   # only these accounts
-fogway gateway-key accounts <id> all    # every account
+fogway gateway-key accounts <id> openai/work   # only these provider keys
+fogway gateway-key accounts <id> all    # every key
 ```
 
 Each gateway key can have its own **limit**: a token total, an estimated
@@ -388,29 +388,26 @@ member, and is refused any other model with a 403 in the API's error shape
 before a provider is asked; a fallback it may not use is skipped. A key with
 no models listed may use every model.
 
-A gateway key can also be held to some **accounts** (#905): the accounts
-and keys its requests may use, picked in the same menu right after their
-provider's models — an account by who is signed in, a key by its
-fingerprint — or with
-`fogway gateway-key accounts <id> codex/me@example.com openai/<key id>`
-(`all` takes the restriction off). The list holds a key to some accounts
-**of the providers it names**: a provider it names no account of, the key
-uses as it always did. The list keeps an account by its stable id, kept
-through renames, shown by who is signed in; one gone later — a key
-rotated, an account signed out, an account of an agent that keeps no
-logins renamed — is kept as it is, matching nothing, so the key is held
-closer, never wider. A routing group the key names is its members'
-through the accounts it may use only: naming a group is not naming its
-accounts, and fogway's own calls for the key — a web search, a picture
+A gateway key can also be held to some **provider keys** (#905): the API
+keys its requests may use, picked in the same menu right after their
+provider's models, or with
+`fogway gateway-key accounts <id> openai/work deepseek/<key id>`, a key by
+its name or its fingerprint (`all` takes the restriction off). The list
+holds a gateway key to some keys **of the providers it names**: a provider
+it names no key of, the gateway key uses as it always did. The list keeps a
+key by its fingerprint, shown by its name; one gone later — a key rotated
+or removed — is kept as it is, matching nothing, so the gateway key is held
+closer, never wider. A routing group the gateway key names is its members'
+through the keys it may use only: naming a group is not naming their keys,
+and fogway's own calls for the gateway key — a web search, a picture
 described, a Codex title — are of the models the user picked, but their
-spend lands on an account, so the accounts hold them too. When every
-account or key behind a model is one the key may not use, the request is
-refused with a 403 in the API's own error shape naming the model and the
-accounts it may use, before a provider is asked — after a usage cap's 429
-and before an account barred for the model's — and `/v1/models` lists the
-key only the models an account or key it may use serves, the Routing
-view's left-out list marking what the key held out. A key with no
-accounts listed may use every account, as keys always did.
+spend lands on a key, so the list holds them too. When every key behind a
+model is one the gateway key may not use, the request is refused with a
+403 in the API's own error shape naming the model and the keys it may use,
+before a provider is asked — after a usage cap's 429 — and `/v1/models`
+lists the gateway key only the models a key it may use serves, the Routing
+view's left-out list marking what the gateway key held out. A gateway key
+with no provider keys listed may use every key, as gateway keys always did.
 
 While LAN sharing is enabled, or `FOGWAY_ADDR` puts the gateway on the
 network (a host other than loopback or `localhost`: `0.0.0.0` in the Docker
@@ -466,7 +463,7 @@ another machine (#1022): it carries a forwarding header (`Forwarded`,
 `Tailscale-User-Login`), which no agent sends. Without sharing it is refused;
 with sharing, or a `FOGWAY_ADDR` on the network, it needs an enabled gateway
 key, as from the network. This
-covers every route: the model APIs, quotas, MCP sign-ins. To serve fogway
+covers every route: the model APIs, quotas, usage. To serve fogway
 through a Cloudflare Tunnel, turn on **Settings → Share on local network**,
 add a gateway key for each client, point the tunnel's service at
 `http://127.0.0.1:3725`, and give clients the tunnel's address with that key.
