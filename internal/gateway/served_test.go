@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // servedBy is a vendor that answers in its protocol, streamed when asked,
@@ -123,5 +127,112 @@ func TestSniffServedModel(t *testing.T) {
 		if got := s.usage().Served; got != "luna" {
 			t.Errorf("%s %s: served %q", c.proto, c.ct, got)
 		}
+	}
+}
+
+// The model a vendor's reply says answered is kept on the request's
+// route, its try and its log entry, whatever the vendor speaks, streamed
+// or not, relayed or translated; the route says it was swapped when it is
+// another model than the one asked for, and not when it is that model's
+// dated name.
+func TestServedModelRecorded(t *testing.T) {
+	bodies := map[string]string{
+		"/v1/messages":         `{"model":"fake/sol","max_tokens":100,"messages":[{"role":"user","content":"hi"}]`,
+		"/v1/chat/completions": `{"model":"fake/sol","messages":[{"role":"user","content":"hi"}]`,
+		"/v1/responses":        `{"model":"fake/sol","input":"hi"`,
+	}
+	type path struct {
+		name  string
+		proto provider.Protocol // the vendor's
+		agent string            // the agent's endpoint
+	}
+	paths := []path{
+		{"anthropic", provider.Anthropic, "/v1/messages"},
+		{"chat", provider.Chat, "/v1/chat/completions"},
+		{"responses", provider.Responses, "/v1/responses"},
+		{"chat from anthropic", provider.Anthropic, "/v1/chat/completions"},
+		{"anthropic from chat", provider.Chat, "/v1/messages"},
+		{"anthropic from responses", provider.Responses, "/v1/messages"},
+	}
+	for _, pa := range paths {
+		for _, stream := range []bool{true, false} {
+			for _, c := range []struct {
+				served  string
+				swapped bool
+			}{
+				{"luna", true},
+				{"sol-2026-01-01", false},
+				{"models/SOL", false},
+			} {
+				name := pa.name + "/" + c.served
+				if stream {
+					name += "/stream"
+				}
+				t.Run(name, func(t *testing.T) {
+					fresh(t)
+					up := httptest.NewServer(servedBy(pa.proto, c.served))
+					t.Cleanup(up.Close)
+					p := provider.Provider{ID: "fake", Name: "Fake", Key: "k", Models: []string{"sol"}}
+					switch pa.proto {
+					case provider.Chat:
+						p.Chat = up.URL + "/v1"
+					case provider.Responses:
+						p.Responses = up.URL + "/v1"
+					case provider.Anthropic:
+						p.Anthropic = up.URL
+					}
+					if err := provider.Save(p); err != nil {
+						t.Fatal(err)
+					}
+					body := bodies[pa.agent]
+					if stream {
+						body += `,"stream":true`
+					}
+					s := New()
+					rec := httptest.NewRecorder()
+					s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", pa.agent, strings.NewReader(body+"}")))
+					if rec.Code != 200 || !strings.Contains(rec.Body.String(), "hi") {
+						t.Fatalf("%d %s", rec.Code, rec.Body)
+					}
+					r := lastRoute(s)
+					if r.Served != c.served || r.Swapped != c.swapped {
+						t.Errorf("route served %q swapped %v; want %q %v", r.Served, r.Swapped, c.served, c.swapped)
+					}
+					if len(r.Tries) != 1 || r.Tries[0].Model != "sol" || r.Tries[0].Served != c.served || r.Tries[0].Swapped != c.swapped {
+						t.Errorf("tries %+v", r.Tries)
+					}
+					if calls := s.Recent(); len(calls) == 0 || calls[0].Usage.Served != c.served {
+						t.Errorf("request log: %+v", calls)
+					}
+					// the usage ledger has the model asked for, the one sent
+					// and the one that answered
+					if u := usage.Load(time.Time{}); len(u) != 1 || u[0].Requested != "fake/sol" || u[0].Model != "sol" || u[0].Served != c.served {
+						t.Errorf("usage %+v", u)
+					}
+				})
+			}
+		}
+	}
+}
+
+// A reply that names no model marks nothing.
+func TestServedModelUnnamed(t *testing.T) {
+	fresh(t)
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"id":"c1","choices":[{"index":0,"message":{"role":"assistant","content":"hi"},"finish_reason":"stop"}]}`)
+	}))
+	t.Cleanup(up.Close)
+	if err := provider.Save(provider.Provider{ID: "fake", Name: "Fake", Key: "k", Models: []string{"sol"}, Chat: up.URL + "/v1"}); err != nil {
+		t.Fatal(err)
+	}
+	s := New()
+	rec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"fake/sol","messages":[{"role":"user","content":"hi"}]}`)))
+	if r := lastRoute(s); rec.Code != 200 || r.Served != "" || r.Swapped || r.Tries[0].Swapped {
+		t.Fatalf("%d, route %+v", rec.Code, r)
+	}
+	if u := usage.Load(time.Time{}); len(u) != 1 || u[0].Requested != "fake/sol" || u[0].Served != "" {
+		t.Errorf("usage %+v", u)
 	}
 }

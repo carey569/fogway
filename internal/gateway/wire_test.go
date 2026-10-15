@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/provider"
 	"github.com/carey569/fogway/internal/settings"
@@ -959,5 +960,94 @@ func TestUpstreamNamesAreReadOnceInATurn(t *testing.T) {
 	}
 	if route.Served != "vendor-c/model-2-renamed" || route.Swapped {
 		t.Errorf("the relay answered with the name the turn went out under, which is no swap: %+v", route)
+	}
+}
+
+// A relay that serves a model under an id of its own is asked for it by that
+// id, and by nothing else: the catalog agents see, the routing groups and the
+// usage records keep the name fogway knows the model by, so a rename upstream
+// is not a rename here.
+func TestUpstreamNameReachesTheVendorOnly(t *testing.T) {
+	fresh(t)
+
+	var seen asked
+	relay, other := asking(t, &seen), asking(t, &seen)
+
+	for _, p := range []provider.Provider{
+		{ID: "relay-b", Name: "Relay B", Key: "k", Models: []string{"model-2"}, Chat: relay.URL},
+		{ID: "other", Name: "Other", Key: "k", Models: []string{"model-2"}, Chat: other.URL},
+	} {
+		if err := provider.Save(p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := provider.SetUpstreamName("relay-b/model-2", "vendor-c/model-2-preview"); err != nil {
+		t.Fatal(err)
+	}
+
+	s := New()
+	ask := func(model string) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/v1/messages", strings.NewReader(
+			`{"model":"`+model+`","max_tokens":1024,"stream":true,`+
+				`"messages":[{"role":"user","content":"hi"}]}`))
+		s.Handler().ServeHTTP(rec, req)
+		if rec.Code != 200 {
+			t.Fatalf("%s: status %d: %s", model, rec.Code, rec.Body.String())
+		}
+	}
+
+	// the relay is asked for the model by the name it serves it under
+	ask("relay-b/model-2")
+	if got := seen.all(); len(got) != 1 || got[0] != "vendor-c/model-2-preview" {
+		t.Fatalf("the relay was asked for %v; want the upstream name", got)
+	}
+
+	// another provider serving the same model id is left alone: an upstream
+	// name is one provider's, not the model's
+	ask("other/model-2")
+	if got := seen.all(); len(got) != 2 || got[1] != "model-2" {
+		t.Fatalf("the other provider was asked for %v", got[1:])
+	}
+
+	// the catalog still knows the model by fogway's name for it
+	found := false
+	for _, e := range provider.Catalog() {
+		if e.ID == "relay-b/model-2" {
+			found = true
+			if e.Model != "model-2" {
+				t.Errorf("the catalog shows the model as %q; the canonical name is what agents see", e.Model)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("relay-b/model-2 is not in the catalog")
+	}
+	if _, model, ok := provider.Resolve("relay-b/model-2"); !ok || model != "model-2" {
+		t.Errorf("Resolve gave %q; the wire name is not the model's identity", model)
+	}
+
+	// a call is recorded under the canonical name; what the vendor's own
+	// answer said it was is kept beside it, which is what that field is for
+	rows := usage.Load(time.Time{})
+	if len(rows) == 0 {
+		t.Fatal("no call was recorded")
+	}
+	for _, r := range rows {
+		if r.Model != "model-2" {
+			t.Errorf("a call was recorded as %q; the vendor's name is not the model's", r.Model)
+		}
+	}
+	if rows[0].Served != "vendor-c/model-2-preview" {
+		t.Errorf("the record says the vendor served %q", rows[0].Served)
+	}
+
+	// taking the user's name away asks for the model's own again
+	if err := provider.SetUpstreamName("relay-b/model-2", ""); err != nil {
+		t.Fatal(err)
+	}
+	ask("relay-b/model-2")
+	if got := seen.all(); got[len(got)-1] != "model-2" {
+		t.Fatalf("after --reset the relay was asked for %q", got[len(got)-1])
 	}
 }

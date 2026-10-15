@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/carey569/fogway/internal/provider"
@@ -27,4 +29,31 @@ func codexViewImageRequest(t *testing.T) *Request {
 		t.Fatal(err)
 	}
 	return r
+}
+
+// What a provider on Anthropic's Messages is handed: the image in the
+// tool_result, as an image block of base64 bytes.
+func TestCodexToolImageInAnthropicToolResult(t *testing.T) {
+	var body struct {
+		Messages []struct {
+			Content []struct {
+				Type      string `json:"type"`
+				ToolUseID string `json:"tool_use_id"`
+				Content   []struct {
+					Type string `json:"type"`
+				} `json:"content"`
+			} `json:"content"`
+		} `json:"messages"`
+	}
+	b := buildAnthropic(codexViewImageRequest(t), "claude-sonnet-4.5")
+	if err := json.Unmarshal(b, &body); err != nil {
+		t.Fatal(err)
+	}
+	last := body.Messages[len(body.Messages)-1].Content
+	if len(last) != 1 || last[0].Type != "tool_result" || len(last[0].Content) != 1 || last[0].Content[0].Type != "image" {
+		t.Fatalf("tool_result = %s", b)
+	}
+	if !strings.Contains(string(b), `"source":{"type":"base64","media_type":"image/png","data":"`+viewedPNG+`"}`) {
+		t.Fatalf("the image's bytes aren't in the tool_result: %s", b)
+	}
 }

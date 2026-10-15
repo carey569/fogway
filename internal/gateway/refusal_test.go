@@ -4,8 +4,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // A reply the vendor's safety filter ended before anything was said in it
@@ -189,5 +191,47 @@ func TestStreamEventRefusals(t *testing.T) {
 		if k, _, _ := streamEvent([]byte(x.ev)); k != x.kind {
 			t.Errorf("streamEvent(%s) = %d, want %d", x.ev, k, x.kind)
 		}
+	}
+}
+
+// With nobody else to ask, the agent is told it was refused, as a request
+// not to send again as it is — not handed an empty reply that looks whole —
+// and the usage says it failed. An agent on Anthropic's API has the
+// vendor's refusal itself, which says so in its own words.
+func TestRefusalWithNobodyLeftIsAnError(t *testing.T) {
+	fresh(t)
+	a := &scripted{replies: []reply{{200, "text/event-stream", anthropicRefusal}}}
+	scriptedOn(t, "a", provider.Anthropic, a)
+	refusalGroup(t, "a/m")
+	s := New()
+	code, body := sendTo(s, "/v1/responses", codexAsk)
+	if code != 400 || !strings.Contains(body, "m refused this request (safety filter") || strings.Contains(body, "response.incomplete") || a.n != 1 {
+		t.Fatalf("%d %s (a %d)", code, body, a.n)
+	}
+	if recs := usage.Load(time.Time{}); len(recs) != 1 || recs[0].Status != 400 || recs[0].CacheRead != 237000 {
+		t.Fatalf("usage: %+v", recs)
+	}
+	if r := s.trace.routes[len(s.trace.routes)-1]; r.Status != 400 || r.Tries[0].Fail != failRefused || r.Tries[0].Rest != nil {
+		t.Fatalf("route: %+v", r)
+	}
+
+	// a model asked by its own name, on Anthropic's API: the vendor's
+	// refusal as it said it, for Claude Code to switch to its fallback
+	// model on, which a 400 isn't to it (DD on Discord)
+	fresh(t)
+	a = &scripted{replies: []reply{{200, "text/event-stream", anthropicRefusal}}}
+	scriptedOn(t, "a", provider.Anthropic, a)
+	code, body = sendTo(New(), "/v1/messages", `{"model":"a/m","max_tokens":10,"stream":true,"messages":[{"role":"user","content":"hi"}]}`)
+	if code != 200 || !strings.Contains(body, `"stop_reason":"refusal"`) || !strings.Contains(body, "message_stop") || strings.Contains(body, "refused this request") || a.n != 1 {
+		t.Fatalf("messages: %d %s (a %d)", code, body, a.n)
+	}
+
+	// and on Chat's
+	fresh(t)
+	a = &scripted{replies: []reply{{200, "text/event-stream", chatFiltered}}}
+	scriptedOn(t, "a", provider.Chat, a)
+	code, body = sendTo(New(), "/v1/chat/completions", `{"model":"a/m","stream":true,"messages":[{"role":"user","content":"hi"}]}`)
+	if code != 400 || !strings.Contains(body, "safety filter: content_filter") || a.n != 1 {
+		t.Fatalf("chat: %d %s (a %d)", code, body, a.n)
 	}
 }

@@ -5,8 +5,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // codexTitleRequest is a title request as Codex's TUI sends one on its own
@@ -162,5 +165,106 @@ func TestDescriptionJSON(t *testing.T) {
 		if got := descriptionJSON(in); got != want {
 			t.Errorf("descriptionJSON(%q) = %s, want %s", in, got, want)
 		}
+	}
+}
+
+// A title Codex asks one of fogway's models for is one it can read
+// (#743): with fogway as Codex's provider the request comes to /v1, where
+// the Codex titles setting is heeded too, and with no model set there the
+// conversation's model's plain answer — a Chat model is never shown the
+// schema — is handed back as {"title": …}, as it is on the ChatGPT path.
+// An answer with no title in it is in the Routing and Usage views as the
+// failure it is to Codex.
+func TestCodexTitleOnFogwayProvider(t *testing.T) {
+	answer := "Fix login bug"
+	f := &fake{t: t}
+	setup(t, provider.Chat, f)
+	reply := func() string {
+		return sse(
+			`data: {"id":"c1","choices":[{"index":0,"delta":{"content":`+strconvQuote(answer)+`}}]}`,
+			`data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":4}}`,
+			`data: [DONE]`)
+	}
+	save := func(v string) {
+		t.Helper()
+		st := settings.Load()
+		st.CodexTitles = v
+		if err := settings.Save(st); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s := New()
+	for _, backend := range []bool{false, true} {
+		f.reply = reply()
+		rec := codexProviderTitle(t, s, backend)
+		if text, _ := outputText(t, rec.Body.String()); rec.Code != 200 || text != `{"title":"Fix login bug"}` {
+			t.Fatalf("backend %v: %d %q", backend, rec.Code, rec.Body.String())
+		}
+	}
+	calls := f.calls
+
+	// the setting holds on /v1 as well
+	save("off")
+	rec := codexProviderTitle(t, s, false)
+	if text, n := outputText(t, rec.Body.String()); rec.Code != 200 || n != 0 || text != "" || f.calls != calls {
+		t.Fatalf("off on /v1: %d %q, upstream calls %d", rec.Code, rec.Body.String(), f.calls-calls)
+	}
+	save("")
+
+	// a turn of the conversation on /v1 is left as it was
+	f.reply = reply()
+	if code, body := post(t, "/v1/responses", `{"model":"fake/m1","stream":true,"input":"hi"}`); code != 200 || strings.Contains(body, `{\"title\"`) {
+		t.Fatalf("a plain turn: %d %q", code, body)
+	}
+
+	// no title in the answer: none for Codex, and the call says why
+	answer = ""
+	f.reply = reply()
+	rec = codexProviderTitle(t, s, false)
+	if text, n := outputText(t, rec.Body.String()); rec.Code != 200 || n != 0 || text != "" {
+		t.Fatalf("no title: %d %q", rec.Code, rec.Body.String())
+	}
+	var last usage.Record
+	for _, u := range usage.Load(time.Time{}) {
+		last = u
+	}
+	if last.Kind != "thread_title" || !strings.HasPrefix(last.Error, "title: ") || !last.Failed() {
+		t.Errorf("the ledger's no-title call %+v", last)
+	}
+	st := s.Trace(t.Context(), 0, 0)
+	var r Route
+	for _, c := range st.Routes {
+		if c.Seq > r.Seq {
+			r = c
+		}
+	}
+	if !isTitleKind(r.Kind) || !strings.HasPrefix(r.Error, "title: ") {
+		t.Errorf("the Routing view's no-title call %+v", r)
+	}
+}
+
+func TestNoDescription(t *testing.T) {
+	f := &fake{t: t, reply: sse(
+		`data: {"id":"c1","choices":[{"index":0,"delta":{"content":"   "}}]}`,
+		`data: {"id":"c1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":1}}`,
+		`data: [DONE]`)}
+	setup(t, provider.Chat, f)
+	st := settings.Load()
+	st.CodexDescriptions = "fake/m1"
+	if err := settings.Save(st); err != nil {
+		t.Fatal(err)
+	}
+	s := New()
+	rec := codexDescriptionRequest(t, s)
+	text, n := outputText(t, rec.Body.String())
+	if rec.Code != 200 || n != 0 || text != "" {
+		t.Fatalf("empty reply: %d %q, %d items", rec.Code, rec.Body.String(), n)
+	}
+	var last usage.Record
+	for _, u := range usage.Load(time.Time{}) {
+		last = u
+	}
+	if last.Kind != "thread_description" || !strings.HasPrefix(last.Error, "description: ") || !last.Failed() {
+		t.Fatalf("unusable reply was not flagged: %+v", last)
 	}
 }

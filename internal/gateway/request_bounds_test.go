@@ -3,6 +3,7 @@ package gateway
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/carey569/fogway/internal/provider"
+	"github.com/klauspost/compress/zstd"
 )
 
 func TestRequestBodySocketTimeout(t *testing.T) {
@@ -193,5 +195,34 @@ func TestRequestBodiesDoNotLimitStreams(t *testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("stream %d refused: %d", i+1, res.StatusCode)
 		}
+	}
+}
+
+func TestCodexExpandedBodyBound(t *testing.T) {
+	for _, enc := range []string{"gzip", "zstd"} {
+		t.Run(enc, func(t *testing.T) {
+			var compressed bytes.Buffer
+			if enc == "gzip" {
+				zw := gzip.NewWriter(&compressed)
+				zw.Write(bytes.Repeat([]byte("x"), 2048))
+				zw.Close()
+			} else {
+				zw, err := zstd.NewWriter(&compressed)
+				if err != nil {
+					t.Fatal(err)
+				}
+				zw.Write(bytes.Repeat([]byte("x"), 2048))
+				zw.Close()
+			}
+			s := New()
+			s.requestLimits.body = 1024
+			r := httptest.NewRequest("POST", CodexPath+"/responses", &compressed)
+			r.Header.Set("Content-Encoding", enc)
+			w := httptest.NewRecorder()
+			s.codexBackend(w, r)
+			if w.Code != 413 {
+				t.Fatalf("inflated %s: status %d", enc, w.Code)
+			}
+		})
 	}
 }

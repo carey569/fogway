@@ -5,9 +5,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/carey569/fogway/internal/provider"
 )
 
 // chatCallUpstream is a Chat upstream (a plugin's provider, a relay) that
@@ -126,3 +129,33 @@ func callAndAnswer(t *testing.T, s *Server, stream bool, sent func() []string) (
 	}
 	return id, got[len(got)-1]
 }
+
+// A call id with a character Claude Code doesn't take, from any upstream
+// (#1304: Devin SWE-2's, here through a Chat provider as a relay gives
+// it), reaches the Anthropic client of [A-Za-z0-9_-] only, and the
+// upstream gets its own id back on the call and on the result answering it.
+func TestAnthropicCallIDsSafeBothWays(t *testing.T) {
+	fresh(t)
+	up, sent := chatCallUpstream(t, devinRawID)
+	if err := provider.Save(provider.Provider{ID: "up", Name: "Up", Key: "k", Chat: up.URL + "/v1", Models: []string{"m1"}}); err != nil {
+		t.Fatal(err)
+	}
+	s := New()
+	for _, stream := range []bool{true, false} {
+		id, next := callAndAnswer(t, s, stream, sent)
+		if !anthropicSafeID.MatchString(id) {
+			t.Fatalf("stream=%v: call id %q, want one of [A-Za-z0-9_-] only", stream, id)
+		}
+		calls, answers := chatIDsSent(t, next)
+		if len(calls) != 1 || calls[0] != devinRawID || len(answers) != 1 || answers[0] != devinRawID {
+			t.Errorf("stream=%v: upstream got calls %q, results %q; want %q for both", stream, calls, answers, devinRawID)
+		}
+	}
+}
+
+// devinRawID is the call id SWE-2 gave in #1304 (StarMoonCity's capture).
+// Claude Code takes a tool_use id only of [A-Za-z0-9_-] and dropped the
+// call: "The model's tool call could not be parsed (retry also failed)".
+const devinRawID = "Bash:0#a65b6a5e02194b87bbc796c4428c946d"
+
+var anthropicSafeID = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)

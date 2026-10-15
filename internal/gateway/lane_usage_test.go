@@ -79,3 +79,29 @@ func ledger429s() int {
 	}
 	return n
 }
+
+// The contrast that makes this a defect rather than a design choice: a refusal
+// turned away the same way, for a model fogway does not know, does reach the
+// ledger, because it goes through turnedAway().
+func TestUnknownModelRefusalIsInTheUsageLedger(t *testing.T) {
+	fresh(t)
+	_, up := slowUp(t)
+	if err := provider.Save(provider.Provider{ID: "slow", Name: "Slow", Key: "k", Models: []string{"m"}, Chat: up + "/v1"}); err != nil {
+		t.Fatal(err)
+	}
+	g := newLaneRig(t)
+
+	g.send(context.Background(), "/v1/chat/completions", "nope/nothing", "a")
+	r := g.reply()
+	if r.status == 200 {
+		t.Fatalf("a = %+v, want a refusal", r)
+	}
+	time.Sleep(500 * time.Millisecond)
+
+	for _, rec := range usage.Load(time.Time{}) {
+		if rec.Rejected {
+			return // an unknown model is logged as the failure it was
+		}
+	}
+	t.Fatalf("an unknown model's refusal is in no usage record either (status %d): the contrast this test needs is gone", r.status)
+}

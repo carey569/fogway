@@ -147,3 +147,109 @@ func vertexTurnsAway(_ int, body map[string]any) (int, string) {
 	}
 	return http.StatusOK, vertexPong
 }
+
+// Every builder of Gemini contents — Vertex AI, Gemini's own API, the
+// envelope they are built in — ends a conversation that ends with the assistant's
+// message with a user turn: Gemini turns away contents ending with the
+// model's. An agent compacting with its ask in the system prompt is asked
+// for the summary, not told to go on with the task.
+func TestGeminiContentsNeverEndWithModel(t *testing.T) {
+	said := []Message{
+		{Role: "user", Parts: []Part{{Kind: Text, Text: "fix the bug"}}},
+		{Role: "assistant", Parts: []Part{{Kind: Thinking, Text: "looking"}, {Kind: Text, Text: "Fixed it in main.go."}}},
+	}
+	builders := map[string]func(r *Request) any{
+		"vertex": func(r *Request) any {
+			b, err := buildVertex(r, "gemini-3.8-flash")
+			if err != nil {
+				t.Fatal(err)
+			}
+			var q map[string]any
+			json.Unmarshal(b, &q)
+			return q["contents"]
+		},
+		"gemini": func(r *Request) any {
+			b, err := buildGemini(r, "gemini-3.8-flash")
+			if err != nil {
+				t.Fatal(err)
+			}
+			var q map[string]any
+			json.Unmarshal(b, &q)
+			return q["contents"]
+		},
+	}
+	for _, c := range []struct{ agent, model string }{{"gemini", "gemini-3.8-flash"}} {
+		builders["code assist "+c.agent+" "+c.model] = func(r *Request) any {
+			var q struct {
+				Request map[string]any `json:"request"`
+			}
+			json.Unmarshal(buildCodeAssist(r, c.model, c.agent), &q)
+			return q.Request["contents"]
+		}
+	}
+	for name, build := range builders {
+		for _, c := range []struct {
+			name, system, want string
+		}{
+			{"a turn", "You are Codex.", continueText},
+			{"a compaction asked in the system prompt", "You are a helpful AI assistant tasked with summarizing conversations.", compactLastText},
+		} {
+			role, text := lastTurn(t, build(&Request{System: c.system, Messages: said}))
+			if role != "user" || text != c.want {
+				t.Errorf("%s, %s: ends with %s %q, want user %q", name, c.name, role, text, c.want)
+			}
+		}
+		// a conversation that already ends with the user's turn is sent as it is
+		asked := append(said[:2:2], Message{Role: "user", Parts: []Part{{Kind: Text, Text: "and the test?"}}})
+		if role, text := lastTurn(t, build(&Request{Messages: asked})); role != "user" || text != "and the test?" {
+			t.Errorf("%s: a user-ended conversation ends with %s %q", name, role, text)
+		}
+	}
+}
+
+// Every builder of Gemini contents puts what the user said after a tool's
+// response in a user turn of its own (#1533), and keeps parallel calls'
+// responses together in one.
+func TestGeminiToolResponseTurnHoldsNoText(t *testing.T) {
+	r := &Request{Messages: []Message{
+		{Role: "user", Parts: []Part{{Kind: Text, Text: "Read a sample file."}}},
+		{Role: "assistant", Parts: []Part{
+			{Kind: ToolCall, ID: "call_diagnostic_1", Name: "read_sample", Args: json.RawMessage(`{"path":"sample.txt"}`)},
+			{Kind: ToolCall, ID: "call_2", Name: "read_sample", Args: json.RawMessage(`{"path":"other.txt"}`)},
+		}},
+		{Role: "user", Parts: []Part{
+			{Kind: ToolResult, CallID: "call_diagnostic_1", Text: "Sample file content: hello.", Images: []Part{{Kind: Image, MediaType: "image/png", Data: "iVBORw0KGgo="}}},
+			{Kind: ToolResult, CallID: "call_2", Text: "other"},
+			{Kind: Text, Text: codexCompactPrompt},
+		}},
+	}}
+	sent := map[string][]byte{}
+	sent["vertex"], _ = buildVertex(r, "gemini-3.8-flash")
+	sent["gemini"], _ = buildGemini(r, "gemini-3.8-flash")
+	for _, agent := range []string{"gemini"} {
+		var q struct {
+			Request json.RawMessage `json:"request"`
+		}
+		json.Unmarshal(buildCodeAssist(r, "gemini-3.8-flash", agent), &q)
+		sent["code assist "+agent] = q.Request
+	}
+	for name, b := range sent {
+		var q struct {
+			Contents []struct {
+				Role  string           `json:"role"`
+				Parts []map[string]any `json:"parts"`
+			} `json:"contents"`
+		}
+		if err := json.Unmarshal(b, &q); err != nil || len(q.Contents) != 4 {
+			t.Errorf("%s: want 4 turns, got %s", name, b)
+			continue
+		}
+		tools, said := q.Contents[2], q.Contents[3]
+		if tools.Role != "user" || len(tools.Parts) != 3 || tools.Parts[0]["functionResponse"] == nil || tools.Parts[1]["inlineData"] == nil || tools.Parts[2]["functionResponse"] == nil {
+			t.Errorf("%s: the tools' turn is %v", name, tools)
+		}
+		if said.Role != "user" || len(said.Parts) != 1 || said.Parts[0]["text"] != codexCompactPrompt {
+			t.Errorf("%s: the user's turn after it is %v", name, said)
+		}
+	}
+}

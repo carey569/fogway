@@ -3,6 +3,7 @@ package gateway
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -128,5 +129,47 @@ func TestCodeAssistTextCalls(t *testing.T) {
 				t.Errorf("%s: call %v, want %v", c.name, cl, c.calls[i])
 			}
 		}
+	}
+}
+
+func TestBuildCodeAssistForGemini(t *testing.T) {
+	var env struct {
+		Model   string         `json:"model"`
+		Request map[string]any `json:"request"`
+	}
+	json.Unmarshal(buildCodeAssist(codeAssistRequest(t), "gemini-2.5-pro", "gemini"), &env)
+	req := env.Request
+	if env.Model != "gemini-2.5-pro" {
+		t.Errorf("model %q", env.Model)
+	}
+	b, _ := json.Marshal(req)
+	s := string(b)
+	for _, want := range []string{
+		`"systemInstruction":{"parts":[{"text":"be brief"}],"role":"user"}`,
+		`"functionCall":{"args":{"path":"a"},"id":"toolu_01:x","name":"read"},"thoughtSignature":"skip_thought_signature_validator"`,
+		`"functionResponse":{"id":"toolu_01:x","name":"read","response":{"output":"A!"}}`,
+		`"parametersJsonSchema":{`,
+		`"thinkingConfig":{"includeThoughts":true,"thinkingBudget":4096}`,
+		`"maxOutputTokens":2000`,
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("missing %s in\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "sig-from-claude") || strings.Contains(s, `"hm"`) {
+		t.Error("thinking was sent back")
+	}
+	// the tool result is a user turn, and the next question one of its own
+	// after it: Gemini turns away the two in one (#1533)
+	contents := req["contents"].([]any)
+	if len(contents) != 4 {
+		t.Fatalf("contents = %v", contents)
+	}
+	tools, asked := contents[2].(map[string]any), contents[3].(map[string]any)
+	if tp := tools["parts"].([]any); tools["role"] != "user" || len(tp) != 1 || tp[0].(map[string]any)["functionResponse"] == nil {
+		t.Errorf("the tool's turn = %v", tools)
+	}
+	if ap := asked["parts"].([]any); asked["role"] != "user" || len(ap) != 1 || ap[0].(map[string]any)["text"] != "and?" {
+		t.Errorf("the question's turn = %v", asked)
 	}
 }

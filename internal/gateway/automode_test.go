@@ -340,3 +340,37 @@ func TestAutoModeReviewOfAWholeReplyStreamed(t *testing.T) {
 		}
 	}
 }
+
+// A turn of Claude Code's translated to an Anthropic endpoint (the
+// candidates' loop, not relayed) asks Claude the review and gives Claude
+// Code its verdict; another vendor's model isn't asked it.
+func TestAutoModeReviewTranslated(t *testing.T) {
+	req, err := parseAnthropic([]byte(reviewAsk("claude-sonnet-5")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out struct {
+		Safeguards json.RawMessage `json:"safeguards"`
+	}
+	json.Unmarshal(buildAnthropic(req, "claude-sonnet-5"), &out)
+	if !sameReview(out.Safeguards, []byte(reviewAsked)) {
+		t.Errorf("safeguards to Claude: %s", out.Safeguards)
+	}
+	if b := buildAnthropic(req, "deepseek-flash"); strings.Contains(string(b), `"safeguards"`) {
+		t.Errorf("safeguards to DeepSeek: %s", b)
+	}
+
+	rec := httptest.NewRecorder()
+	enc := &anthropicEncoder{w: newSSEWriter(rec), model: "claude-sonnet-5"}
+	dec := decoder(provider.Anthropic)
+	for _, e := range events(reviewReply("claude-sonnet-5")) {
+		b, _ := json.Marshal(e)
+		if err := dec(string(b), enc.event); err != nil {
+			t.Fatal(err)
+		}
+	}
+	enc.finish()
+	if got := reviewIn(t, rec.Body.String()); !sameReview([]byte(got), []byte(reviewed)) || !strings.Contains(rec.Body.String(), `"id":"toolu_01Abc"`) {
+		t.Errorf("verdict not given back: %s", rec.Body)
+	}
+}

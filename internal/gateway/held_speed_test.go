@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/carey569/fogway/internal/provider"
 	"github.com/carey569/fogway/internal/usage"
 )
 
@@ -181,6 +184,98 @@ func TestJohnsRowsTellNoSpeed(t *testing.T) {
 	} {
 		if n, w := usage.DecodeOf(c.out, c.reasoning, c.ms, c.ttft, c.firstText, c.flow); w != 0 {
 			t.Errorf("%s: %d tokens in %d ms read %d tok/s; want none", c.name, n, w, int64(n)*1000/w)
+		}
+	}
+}
+
+// The reply's speed as each agent's protocol has it, through the real
+// gateway from a fake Kimi Code: the held replies tell none, the steady one
+// its 50 tok/s. The wait is shorter than John's (first content at 0.5 s,
+// the end at 7 s) to keep the test short; the burst is his, 236 ms.
+// Before, the held call read 1,790 tok/s and the held answer 2,237.
+//
+// The wait is still long enough that a pause of the machine running it
+// doesn't change what the replies tell. The held call is told held by its
+// flow (~245 ms) under a quarter of its window from its first text
+// (usage.HeldShare): a window of 6.3 s takes a flow under ~1.6 s, so the
+// burst can be split by a pause of a second and still tell none. The
+// steady one, timed over the same window, stays within its 20% with a
+// pause as long. With the end at 4 s and the first content at 1.3 s (a
+// window of 2.5 s), one pause of ~520 ms mid-burst on macOS CI under
+// -race read the held call at 176 tok/s (#1469).
+func TestKimiHeldBurstTellsNoSpeed(t *testing.T) {
+	fresh(t)
+	const first, end = 500 * time.Millisecond, 7000 * time.Millisecond
+	agents := []struct{ path, body string }{
+		{"/v1/chat/completions", `{"model":"kimi-code/%s","stream":true,"stream_options":{"include_usage":true},"messages":[{"role":"user","content":"write the file"}],"tools":[{"type":"function","function":{"name":"write","parameters":{"type":"object","properties":{"content":{"type":"string"}}}}}]}`},
+		{"/v1/responses", `{"model":"kimi-code/%s","stream":true,"input":"write the file","tools":[{"type":"function","name":"write","parameters":{"type":"object","properties":{"content":{"type":"string"}}}}]}`},
+		{"/v1/messages", `{"model":"kimi-code/%s","stream":true,"max_tokens":4000,"messages":[{"role":"user","content":"write the file"}],"tools":[{"name":"write","input_schema":{"type":"object","properties":{"content":{"type":"string"}}}}]}`},
+	}
+	// a model for each agent and shape, which the usage is told apart by
+	model := func(a, i int) string { return fmt.Sprintf("k3-%d-%d", a, i) }
+	k := &kimiTimed{steps: map[string][]kimiStep{}}
+	var models []string
+	for a := range agents {
+		for i, sh := range kimiShapes {
+			models = append(models, model(a, i))
+			k.steps[model(a, i)], _ = sh.steps(first, end)
+		}
+	}
+	up := httptest.NewServer(k)
+	t.Cleanup(up.Close)
+	p := provider.Provider{ID: "kimi-code", Name: "Kimi Code", Key: "k", Models: models, Chat: up.URL + "/coding/v1"}
+	if err := provider.Save(p); err != nil {
+		t.Fatal(err)
+	}
+	gw := httptest.NewServer(New().Handler())
+	t.Cleanup(gw.Close)
+	var wg sync.WaitGroup
+	for ai, a := range agents {
+		for i := range kimiShapes {
+			m := model(ai, i)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				res, err := http.Post(gw.URL+a.path, "application/json", strings.NewReader(fmt.Sprintf(a.body, m)))
+				if err != nil {
+					t.Error(err)
+					return
+				}
+				b, _ := io.ReadAll(res.Body)
+				res.Body.Close()
+				if res.StatusCode != 200 {
+					t.Errorf("%s %s: %d %s", a.path, m, res.StatusCode, b)
+				}
+			}()
+		}
+	}
+	wg.Wait()
+	recs := usage.Load(time.Time{})
+	for ai, a := range agents {
+		for i, sh := range kimiShapes {
+			var rec *usage.Record
+			for j := range recs {
+				if strings.HasSuffix(recs[j].Model, "/"+model(ai, i)) || recs[j].Model == model(ai, i) {
+					rec = &recs[j]
+				}
+			}
+			if rec == nil {
+				t.Errorf("%s %s: no usage", a.path, sh.name)
+				continue
+			}
+			n, w := rec.Decode()
+			got := 0.0
+			if w > 0 {
+				got = float64(n) * 1000 / float64(w)
+			}
+			ok := got == 0
+			if sh.want > 0 {
+				ok = got > sh.want*0.8 && got < sh.want*1.2
+			}
+			if !ok {
+				t.Errorf("%s %s: %d tokens in %d ms read %.0f tok/s (out %d, reasoning %d, ms %d, ttft %d, first text %d, flow %d); want %v",
+					a.path, sh.name, n, w, got, rec.Output, rec.Reasoning, rec.Millis, rec.TTFT, rec.FirstText, rec.Flow, sh.want)
+			}
 		}
 	}
 }

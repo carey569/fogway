@@ -41,3 +41,15 @@ func TestCodeAssistDecodesGrounding(t *testing.T) {
 		t.Errorf("search = %+v", search)
 	}
 }
+
+// An image model on Gemini's API is asked for images beside text, or it
+// answers in words only.
+func TestCodeAssistImageModelAsksForImages(t *testing.T) {
+	r := &Request{Messages: []Message{{Role: "user", Parts: []Part{{Kind: Text, Text: "draw a cat"}}}}}
+	if b := string(buildCodeAssist(r, "gemini-3.1-flash-image", "gemini")); !strings.Contains(b, `"responseModalities":["TEXT","IMAGE"]`) {
+		t.Errorf("image model: %s", b)
+	}
+	if b := string(buildCodeAssist(r, "gemini-3.8-flash", "gemini")); strings.Contains(b, "responseModalities") {
+		t.Errorf("text model: %s", b)
+	}
+}

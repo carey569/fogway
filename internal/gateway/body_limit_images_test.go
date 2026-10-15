@@ -48,3 +48,32 @@ func TestImageHeavyCodexTurnIsRead(t *testing.T) {
 		t.Fatalf("read %d bytes of %d", len(body), len(plain))
 	}
 }
+
+// One past the limit is still refused, and the 413 says it is fogway's
+// own limit, that the provider wasn't asked, and to compact (#1422): the
+// reporter saw only "request body exceeds gateway limit" and couldn't
+// tell whose it was.
+func TestOverLimitSaysWhoseAndWhatToDo(t *testing.T) {
+	var compressed bytes.Buffer
+	zw, err := zstd.NewWriter(&compressed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zw.Write([]byte(`{"model":"gpt-5.5","input":"` + strings.Repeat("x", 4096) + `"}`))
+	zw.Close()
+	s := New()
+	s.requestLimits.body = 1024
+	r := httptest.NewRequest("POST", CodexPath+"/responses", &compressed)
+	r.Header.Set("Content-Encoding", "zstd")
+	w := httptest.NewRecorder()
+	s.codexBackend(w, r)
+	if w.Code != 413 {
+		t.Fatalf("status %d, want 413", w.Code)
+	}
+	got := w.Body.String()
+	for _, want := range []string{"fogway's gateway limit of 1 KB", "the provider was not asked", "/compact", "not the model's context"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("413 body %s doesn't say %q", got, want)
+		}
+	}
+}

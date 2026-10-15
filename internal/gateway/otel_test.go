@@ -541,3 +541,243 @@ func TestOTelClaudeHelperClassification(t *testing.T) {
 		t.Fatal("Claude heuristic applied to Codex")
 	}
 }
+
+func TestOTelWaterfallIncludesUnbilledFallback(t *testing.T) {
+	plan := &fake{ctype: "application/json", code: 429, reply: `{"error":{"message":"PRIVATE-ERROR"}}`}
+	spare := &fake{ctype: "application/json", reply: `{"id":"ok","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5}}`}
+	twoProviders(t, plan, spare)
+	received := make(chan []byte, 64)
+	collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		received <- b
+		io.WriteString(w, `{}`)
+	}))
+	defer collector.Close()
+	t.Setenv("FOGWAY_OTEL_ENABLED", "true")
+	t.Setenv("FOGWAY_OTEL_ENDPOINT", collector.URL)
+	t.Setenv("FOGWAY_OTEL_HEADERS", "")
+	t.Setenv("FOGWAY_OTEL_METRICS", "true")
+	t.Setenv("FOGWAY_OTEL_BODIES", "false")
+	fastOTel(t)
+	stop := usage.StartOTel()
+	t.Cleanup(stop)
+	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(chatReq))
+	traceID, parentID := strings.Repeat("a", 32), strings.Repeat("b", 16)
+	req.Header.Set("traceparent", "00-"+traceID+"-"+parentID+"-01")
+	response := httptest.NewRecorder()
+	New().Handler().ServeHTTP(response, req)
+	if response.Code != 200 {
+		t.Fatalf("gateway: %d %s", response.Code, response.Body.String())
+	}
+	stop()
+	traces, metricExports := otelExports(received)
+	type span struct {
+		TraceID    string `json:"traceId"`
+		SpanID     string `json:"spanId"`
+		ParentID   string `json:"parentSpanId"`
+		Start      string `json:"startTimeUnixNano"`
+		End        string `json:"endTimeUnixNano"`
+		Attributes []struct {
+			Key   string
+			Value map[string]string
+		}
+		Status struct{ Code int }
+	}
+	var spans []span
+	for _, exported := range traces {
+		if strings.Contains(string(exported), "PRIVATE-") {
+			t.Fatalf("private data exported: %s", exported)
+		}
+		var wire struct {
+			ResourceSpans []struct{ ScopeSpans []struct{ Spans []span } }
+		}
+		if err := json.Unmarshal(exported, &wire); err != nil {
+			t.Fatal(err)
+		}
+		for _, rs := range wire.ResourceSpans {
+			for _, ss := range rs.ScopeSpans {
+				spans = append(spans, ss.Spans...)
+			}
+		}
+	}
+	if len(spans) != 3 {
+		t.Fatalf("want two attempts and a root, in %d exports: %+v", len(traces), spans)
+	}
+	root := spans[2]
+	if root.TraceID != traceID || root.ParentID != parentID || root.Status.Code != 0 {
+		t.Fatalf("root: %+v", root)
+	}
+	for i, child := range spans[:2] {
+		if child.TraceID != traceID || child.ParentID != root.SpanID || child.SpanID == root.SpanID || child.Start < root.Start || child.End > root.End {
+			t.Fatalf("child %d: %+v, root %+v", i, child, root)
+		}
+	}
+	if spans[0].Status.Code != 2 || spans[1].Status.Code != 0 {
+		t.Fatalf("attempt statuses: %+v", spans)
+	}
+	for _, a := range root.Attributes {
+		if strings.HasPrefix(a.Key, "gen_ai.usage.") {
+			t.Fatalf("root duplicates usage: %+v", a)
+		}
+	}
+	// Accounting remains one successful call; failed attempts are telemetry only.
+	if records := usage.Load(time.Time{}); len(records) != 1 || records[0].Input != 10 {
+		t.Fatalf("ledger: %+v", records)
+	}
+	// Metric histograms count two attempts, not the request parent.
+	if len(metricExports) == 0 {
+		t.Fatal("no metrics exported")
+	}
+	for _, metrics := range metricExports {
+		if strings.Contains(string(metrics), `"stringValue":""`) {
+			t.Fatalf("root included in metrics: %s", metrics)
+		}
+	}
+}
+
+func TestOTelClaudeMainAndChildDedupRetainsHelper(t *testing.T) {
+	for _, agent := range []string{"claude", "claude-desktop"} {
+		t.Run(agent, func(t *testing.T) {
+			upstream := &fake{ctype: "application/json", reply: `{"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5}}`}
+			setup(t, provider.Chat, upstream)
+			t.Setenv("CODEX_HOME", t.TempDir())
+			t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
+			t.Setenv("PI_CODING_AGENT_DIR", t.TempDir())
+			t.Setenv("PI_CODING_AGENT_SESSION_DIR", "")
+			received := make(chan []byte, 16)
+			collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				b, _ := io.ReadAll(r.Body)
+				received <- b
+				io.WriteString(w, `{}`)
+			}))
+			defer collector.Close()
+			t.Setenv("FOGWAY_OTEL_ENABLED", "true")
+			t.Setenv("FOGWAY_OTEL_ENDPOINT", collector.URL)
+			t.Setenv("FOGWAY_OTEL_HEADERS", "")
+			t.Setenv("FOGWAY_OTEL_SESSIONS", "true")
+			t.Setenv("FOGWAY_OTEL_METRICS", "false")
+			t.Setenv("FOGWAY_OTEL_BODIES", "false")
+			fastOTel(t)
+			stop := usage.StartOTel()
+			t.Cleanup(stop)
+			root := filepath.Join(os.Getenv("CLAUDE_CONFIG_DIR"), "projects", "p")
+			paths := []string{filepath.Join(root, "parent.jsonl"), filepath.Join(root, "parent", "subagents", "agent-a.jsonl")}
+			now := time.Now()
+			for _, path := range paths {
+				if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+					t.Fatal(err)
+				}
+				var transcript []byte
+				for _, event := range []map[string]any{
+					{"type": "user", "sessionId": "parent", "uuid": "user", "entrypoint": agent, "timestamp": now, "message": map[string]any{"content": "private"}},
+					{"type": "assistant", "timestamp": now.Add(time.Millisecond), "message": map[string]any{"id": "message", "model": "m1", "stop_reason": "end_turn", "content": []map[string]string{{"type": "text", "text": "answer"}}, "usage": map[string]int{"input_tokens": 10, "output_tokens": 5}}},
+					{"type": "system", "subtype": "turn_duration", "timestamp": now.Add(2 * time.Millisecond)},
+				} {
+					// Real child transcripts end at assistant/end_turn, without turn_duration.
+					if event["type"] == "system" && filepath.Base(filepath.Dir(path)) == "subagents" {
+						continue
+					}
+					b, err := json.Marshal(event)
+					if err != nil {
+						t.Fatal(err)
+					}
+					transcript = append(transcript, append(b, '\n')...)
+				}
+				if err := os.WriteFile(path, transcript, 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			deadline := time.Now().Add(6 * time.Second)
+			for !usage.OTelSession(agent, "parent") && time.Now().Before(deadline) {
+				time.Sleep(10 * time.Millisecond)
+			}
+			if !usage.OTelSession(agent, "parent") {
+				t.Fatal("Claude transcript not available")
+			}
+			// Wait for the final child content blocks to settle and export. Readiness
+			// alone only proves the user/root event was observed, not final coverage.
+			var batches [][]byte
+			generations := 0
+			timer := time.NewTimer(8 * time.Second)
+			for generations < 2 {
+				select {
+				case batch := <-received:
+					batches = append(batches, batch)
+					generations += strings.Count(string(batch), `"key":"gen_ai.usage.input_tokens"`)
+				case <-timer.C:
+					t.Fatal("final child generation did not settle")
+				}
+			}
+			timer.Stop()
+			for _, batch := range batches {
+				received <- batch
+			}
+			// Main and child use the same native header; only the helper is absent
+			// from transcripts. Its requested tier can have been remapped already.
+			for i, body := range []string{
+				`{"model":"m1","max_tokens":8192,"messages":[{"role":"user","content":"main"}]}`,
+				`{"model":"m1","max_tokens":8192,"messages":[{"role":"user","content":"child"}]}`,
+				`{"model":"m1","max_tokens":200,"messages":[{"role":"user","content":"title"}]}`,
+			} {
+				req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(body))
+				req.RemoteAddr = "127.0.0.1:1234"
+				req.Header.Set("Authorization", "Bearer "+TokenFor(agent))
+				req.Header.Set("x-claude-code-session-id", "parent")
+				req.Header.Set("traceparent", fmt.Sprintf("00-%032x-%016x-01", i+1, i+1))
+				reply := httptest.NewRecorder()
+				New().Handler().ServeHTTP(reply, req)
+				if reply.Code != 200 {
+					t.Fatalf("request %d: %d %s", i, reply.Code, reply.Body.String())
+				}
+			}
+			stop()
+			counts := map[string]int{}
+			tokens := 0
+			for len(received) > 0 {
+				var wire struct {
+					ResourceSpans []struct {
+						ScopeSpans []struct {
+							Spans []struct {
+								TraceID    string `json:"traceId"`
+								Attributes []struct {
+									Key   string
+									Value struct {
+										IntValue string `json:"intValue"`
+									}
+								}
+							}
+						}
+					}
+				}
+				if err := json.Unmarshal(<-received, &wire); err != nil {
+					t.Fatal(err)
+				}
+				for _, rs := range wire.ResourceSpans {
+					for _, ss := range rs.ScopeSpans {
+						for _, span := range ss.Spans {
+							counts[span.TraceID]++
+							for _, attr := range span.Attributes {
+								if attr.Key == "gen_ai.usage.input_tokens" {
+									var n int
+									if _, err := fmt.Sscanf(attr.Value.IntValue, "%d", &n); err != nil {
+										t.Fatal(err)
+									}
+									tokens += n
+								}
+							}
+						}
+					}
+				}
+			}
+			if counts[fmt.Sprintf("%032x", 1)] != 0 || counts[fmt.Sprintf("%032x", 2)] != 0 || counts[fmt.Sprintf("%032x", 3)] != 2 {
+				t.Fatalf("main/child/helper gateway coverage: %+v", counts)
+			}
+			if tokens != 30 {
+				t.Fatalf("main + child + helper tokens=%d want 30", tokens)
+			}
+			if got := len(usage.Load(time.Time{})); got != 3 {
+				t.Fatalf("usage ledger changed: %d", got)
+			}
+		})
+	}
+}

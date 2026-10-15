@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -85,5 +86,44 @@ func TestHeldGeminiStreamSendsNoComment(t *testing.T) {
 		if got := strings.Contains(rec.Body.String(), ": keepalive"); got != c.want {
 			t.Fatalf("%s: %q", c.proto, rec.Body.String())
 		}
+	}
+}
+
+// A Chat Completions file part (a PDF) is the request's file: Gemini is
+// given it as inline data, where it was left out and the model answered as
+// if it had read it (#934).
+func TestChatFilePart(t *testing.T) {
+	body := `{"model":"m","messages":[{"role":"user","content":[
+		{"type":"text","text":"Transcribe every page."},
+		{"type":"file","file":{"filename":"excerpt.pdf","file_data":"data:application/pdf;base64,UERG"}},
+		{"type":"file","file":{"filename":"notes.pdf","file_data":"QkFSRQ=="}},
+		{"type":"file","file":{"file_id":"file-abc","filename":"x.pdf"}}]}]}`
+	r, err := parseChat([]byte(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parts := r.Messages[0].Parts
+	if len(parts) != 4 || parts[1].Kind != File || parts[1].MediaType != "application/pdf" || parts[1].Data != "UERG" ||
+		parts[2].Kind != File || parts[2].MediaType != "application/pdf" || parts[2].Data != "QkFSRQ==" ||
+		parts[3].Kind != File || parts[3].URL != "file-abc" {
+		t.Fatalf("parts: %+v", parts)
+	}
+	var sent struct {
+		Request struct {
+			Contents []struct {
+				Parts []map[string]json.RawMessage `json:"parts"`
+			} `json:"contents"`
+		} `json:"request"`
+	}
+	if err := json.Unmarshal(buildCodeAssist(r, "gemini-3.8-flash", "gemini"), &sent); err != nil {
+		t.Fatal(err)
+	}
+	if len(sent.Request.Contents) != 1 || len(sent.Request.Contents[0].Parts) != 4 ||
+		!strings.Contains(string(sent.Request.Contents[0].Parts[1]["inlineData"]), `"application/pdf"`) {
+		t.Fatalf("sent: %+v", sent)
+	}
+	// an upstream that can't carry a file is told of it, not left unaware
+	if b := buildChat(r, "m", "x", false); !strings.Contains(string(b), "[attachment application/pdf]") {
+		t.Fatalf("chat: %s", b)
 	}
 }

@@ -3,10 +3,13 @@ package gateway
 import (
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/provider"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // orAnswers is an aggregator that answers as OpenRouter does (seen
@@ -66,6 +69,71 @@ func TestUpstreamOf(t *testing.T) {
 	} {
 		if got := upstreamOf([]byte(in)); got != want {
 			t.Errorf("upstreamOf(%s) = %q; want %q", in, got, want)
+		}
+	}
+}
+
+// The provider an aggregator says answered behind it (leslie_luo on
+// Discord: "指出实际供应商" for ClinePass, OpenRouter) is kept on the
+// request's route, its try, the request log and the usage ledger, relayed
+// or translated, streamed or not.
+func TestUpstreamRecorded(t *testing.T) {
+	bodies := map[string]string{
+		"/v1/messages":         `{"model":"fake/sol","max_tokens":100,"messages":[{"role":"user","content":"hi"}]`,
+		"/v1/chat/completions": `{"model":"fake/sol","messages":[{"role":"user","content":"hi"}]`,
+		"/v1/responses":        `{"model":"fake/sol","input":"hi"`,
+	}
+	for _, pa := range []struct {
+		name  string
+		proto provider.Protocol // the aggregator's
+		agent string
+	}{
+		{"chat", provider.Chat, "/v1/chat/completions"},
+		{"anthropic", provider.Anthropic, "/v1/messages"},
+		{"anthropic from chat", provider.Chat, "/v1/messages"},
+		{"responses from chat", provider.Chat, "/v1/responses"},
+		{"chat from anthropic", provider.Anthropic, "/v1/chat/completions"},
+		{"responses from anthropic", provider.Anthropic, "/v1/responses"},
+	} {
+		for _, stream := range []bool{true, false} {
+			name := pa.name
+			if stream {
+				name += "/stream"
+			}
+			t.Run(name, func(t *testing.T) {
+				fresh(t)
+				up := httptest.NewServer(orAnswers(pa.proto, "DeepInfra"))
+				t.Cleanup(up.Close)
+				p := provider.Provider{ID: "fake", Name: "Fake", Key: "k", Models: []string{"sol"}}
+				if pa.proto == provider.Chat {
+					p.Chat = up.URL + "/v1"
+				} else {
+					p.Anthropic = up.URL
+				}
+				if err := provider.Save(p); err != nil {
+					t.Fatal(err)
+				}
+				body := bodies[pa.agent]
+				if stream {
+					body += `,"stream":true`
+				}
+				s := New()
+				rec := httptest.NewRecorder()
+				s.Handler().ServeHTTP(rec, httptest.NewRequest("POST", pa.agent, strings.NewReader(body+"}")))
+				if rec.Code != 200 || !strings.Contains(rec.Body.String(), "hi") {
+					t.Fatalf("%d %s", rec.Code, rec.Body)
+				}
+				r := lastRoute(s)
+				if r.Upstream != "DeepInfra" || len(r.Tries) != 1 || r.Tries[0].Upstream != "DeepInfra" {
+					t.Errorf("route upstream %q, tries %+v", r.Upstream, r.Tries)
+				}
+				if calls := s.Recent(); len(calls) == 0 || calls[0].Usage.Upstream != "DeepInfra" {
+					t.Errorf("request log: %+v", calls)
+				}
+				if u := usage.Load(time.Time{}); len(u) != 1 || u[0].Upstream != "DeepInfra" {
+					t.Errorf("usage %+v", u)
+				}
+			})
 		}
 	}
 }

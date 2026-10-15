@@ -5,9 +5,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/provider"
 	"github.com/carey569/fogway/internal/settings"
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // predictionSchema is the schema ChatGPT.app's composer predictions ask
@@ -87,5 +89,26 @@ func TestPredictionJSON(t *testing.T) {
 		if got, ok := predictionJSON(in); got != want.out || ok != want.ok {
 			t.Errorf("predictionJSON(%q) = %s %v, want %s %v", in, got, ok, want.out, want.ok)
 		}
+	}
+}
+
+// A model that talks instead of answering with the object gives Codex no
+// prediction, never its words as the user's next message, and the call
+// is in the Usage view as the failure it is.
+func TestNoPrediction(t *testing.T) {
+	f := &fake{t: t, reply: predictionReply("Sure! The user will probably ask you to run the tests again.")}
+	setup(t, provider.Chat, f)
+	saveCodexPredictions(t, "fake/m1")
+	s := New()
+	rec := codexPredictionRequest(t, s, CodexPath+"/responses", "gpt-6-astra")
+	if text, n := outputText(t, rec.Body.String()); rec.Code != 200 || n != 1 || text != `{"suggestion":null}` {
+		t.Fatalf("talking reply: %d %q", rec.Code, rec.Body.String())
+	}
+	var last usage.Record
+	for _, u := range usage.Load(time.Time{}) {
+		last = u
+	}
+	if last.Kind != "composer_predictions" || !strings.HasPrefix(last.Error, "prediction: ") || !last.Failed() {
+		t.Fatalf("unusable reply was not flagged: %+v", last)
 	}
 }

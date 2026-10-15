@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/carey569/fogway/internal/access"
 	"github.com/carey569/fogway/internal/provider"
@@ -167,5 +168,140 @@ func TestCallerUsageWithRequestArchive(t *testing.T) {
 				t.Fatal("archive lost usage attribution", rec)
 			}
 		})
+	}
+}
+
+func TestCallerUsageAcrossKeys(t *testing.T) {
+	fresh(t)
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer upstream-secret" {
+			t.Error("caller credential reached provider")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Request-Id", "req-caller")
+		io.WriteString(w, `{"choices":[{"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":5}}`)
+	}))
+	defer up.Close()
+	if err := provider.Save(provider.Provider{ID: "plan", Name: "Plan", Key: "upstream-secret", Chat: up.URL + "/v1", Models: []string{"m1"}}); err != nil {
+		t.Fatal(err)
+	}
+	keys, secrets := newCaller(t, "Laptop", "Server", "Work")
+	h := New().Handler()
+	call := func(secret, header string) int {
+		r := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(chatReq))
+		if header == "Authorization" {
+			secret = "Bearer " + secret
+		}
+		r.Header.Set(header, secret)
+		r.Header.Set(SessionHeader, "override-session")
+		r.Header.Set("X-Session-Id", "native-session")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code
+	}
+	for i, secret := range secrets {
+		header := []string{"Authorization", "x-api-key", "x-goog-api-key"}[i]
+		if code := call(secret, header); code != 200 {
+			t.Fatal("request", code)
+		}
+	}
+	recs := usage.Load(time.Time{})
+	if len(recs) != 3 || recs[0].CallerKeyID != keys[0].ID || recs[1].CallerKeyID != keys[1].ID || recs[2].CallerKeyName != "Work" {
+		t.Fatalf("attribution: %+v", recs)
+	}
+	for _, rec := range recs {
+		if rec.Input != 30 || rec.Output != 5 || rec.RequestID != "req-caller" || rec.Endpoint != "/v1/chat/completions" || rec.Session != "override-session" || rec.NativeSession != "native-session" {
+			t.Fatal(rec)
+		}
+	}
+	s := usage.Summarize(usage.All)
+	if len(s.CallerKeys) != 3 || s.Calls != 3 {
+		t.Fatalf("summary: %+v", s)
+	}
+	rows, totals, _ := usage.Ledger(usage.All, usage.Filter{CallerKey: keys[1].ID})
+	if len(rows) != 1 || totals.Input != 30 || rows[0].CallerKeyName != "Server" {
+		t.Fatal(rows, totals)
+	}
+	access.Update("off-key", access.Change{Key: keys[0].ID})
+	if code := call(secrets[0], "Authorization"); code != 401 {
+		t.Fatal("disabled key", code)
+	}
+	if code := call(secrets[2], "Authorization"); code != 200 {
+		t.Fatal("other key", code)
+	}
+	access.Update("remove-key", access.Change{Key: keys[2].ID})
+	if code := call(secrets[2], "Authorization"); code != 401 {
+		t.Fatal("deleted key", code)
+	}
+	log, _ := os.ReadFile(usage.Path())
+	for _, secret := range secrets {
+		if strings.Contains(string(log), secret) {
+			t.Fatal("caller credential in ledger")
+		}
+	}
+}
+
+func TestMigratedLANKeyUsageAndRevocation(t *testing.T) {
+	fresh(t)
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer upstream-secret" {
+			t.Error("caller credential reached provider")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"choices":[{"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":5}}`)
+	}))
+	defer up.Close()
+	if err := provider.Save(provider.Provider{ID: "plan", Name: "Plan", Key: "upstream-secret", Chat: up.URL + "/v1", Models: []string{"m1"}}); err != nil {
+		t.Fatal(err)
+	}
+	s := settings.Load()
+	s.LAN, s.LANKey = true, "sk-fogway-test-legacy-lan"
+	if err := settings.Save(s); err != nil {
+		t.Fatal(err)
+	}
+	if err := access.MigrateLegacyLANKey(); err != nil {
+		t.Fatal(err)
+	}
+	keys, err := access.List()
+	if err != nil || len(keys) != 1 {
+		t.Fatal(keys, err)
+	}
+	h := lanGuard(New().Handler())
+	call := func() int {
+		r := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(chatReq))
+		r.RemoteAddr = "192.168.1.9:5000"
+		r.Header.Set("Authorization", "Bearer "+s.LANKey)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code
+	}
+	if code := call(); code != http.StatusOK {
+		t.Fatal("migrated remote caller", code)
+	}
+	rec := lastUsage(t)
+	if rec.CallerKeyID != keys[0].ID || rec.CallerKeyName != keys[0].Name || rec.Input != 30 || rec.Output != 5 {
+		t.Fatal("remote usage attribution", rec)
+	}
+	if err := access.ConfigureLAN(true, true); err != nil {
+		t.Fatal(err)
+	}
+	if code := call(); code != http.StatusUnauthorized {
+		t.Fatal("rotated LAN credential still works", code)
+	}
+	s.LANKey, err = access.Update("copy-key", access.Change{Key: keys[0].ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code := call(); code != http.StatusOK || lastUsage(t).CallerKeyID != keys[0].ID {
+		t.Fatal("rotation changed remote usage identity", code)
+	}
+	if _, err := access.Update("remove-key", access.Change{Key: keys[0].ID}); err != nil {
+		t.Fatal(err)
+	}
+	if code := call(); code != http.StatusUnauthorized {
+		t.Fatal("revoked old LAN credential still works", code)
+	}
+	if recs := usage.Load(time.Time{}); len(recs) != 2 {
+		t.Fatal("unauthorized request counted as usage", recs)
 	}
 }

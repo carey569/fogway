@@ -3,9 +3,12 @@ package gateway
 import (
 	"io"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/carey569/fogway/internal/usage"
 )
 
 // busyThenAnswers holds its first request for hold and answers it 503, as
@@ -54,5 +57,40 @@ func TestSplitSent(t *testing.T) {
 		if own != c.own || retried != c.retried || waited != c.waited {
 			t.Errorf("%s: own %d retried %d waited %d, want %d %d %d", c.name, own, retried, waited, c.own, c.retried, c.waited)
 		}
+	}
+}
+
+// #1532: a request answered on its second try, after the vendor held the
+// first for a long while and said 503, recorded that wait as fogway's own
+// time ("In fogway" 104 s) — what the detail showed the reporter as fogway
+// being slow. Fogway's own time is only its own; the try that failed first
+// is told apart.
+func TestSentTellsFogwayFromEarlierTries(t *testing.T) {
+	fresh(t)
+	const hold = 1500 * time.Millisecond
+	up := &busyThenAnswers{hold: hold}
+	slowOn(t, "a", up)
+	s := New()
+	code, body := postTo(t, s, "/v1/responses", `{"model":"a/m","stream":true,"input":[{"type":"message","role":"user","content":[{"type":"input_text","text":"hi"}]}]}`)
+	if code != 200 || !strings.Contains(body, "from b") || up.n.Load() != 2 {
+		t.Fatalf("%d %s (tries %d)", code, body, up.n.Load())
+	}
+	recs := usage.Load(time.Time{})
+	if len(recs) == 0 {
+		t.Fatal("no record")
+	}
+	r := recs[len(recs)-1]
+	if r.Tries != 2 {
+		t.Fatalf("tries %d", r.Tries)
+	}
+	// the answering try went out after the failed one and its pause
+	if r.Sent < hold.Milliseconds() || r.Sent > r.TTFT {
+		t.Fatalf("sent %d, ttft %d", r.Sent, r.TTFT)
+	}
+	if r.Retried < hold.Milliseconds() || r.Retried > r.Sent {
+		t.Fatalf("earlier tries %d of sent %d", r.Retried, r.Sent)
+	}
+	if r.Own < 0 || r.Own >= 500 || r.Queued != 0 || r.Own+r.Retried+r.Queued > r.Sent+1 {
+		t.Fatalf("fogway's own %d, earlier tries %d, queued %d, sent %d", r.Own, r.Retried, r.Queued, r.Sent)
 	}
 }
