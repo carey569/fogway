@@ -84,7 +84,7 @@ them, so turning fogway off is picking another provider.
 
 ## 2. A row on the Agents page
 
-The agents fogway lists (Claude Code, Codex, OpenCode, dsh, Alma, Cindy…)
+The agents fogway lists (Claude Code, Codex, OpenCode, dsh, Pi, Cline…)
 are adapters in [`internal/agent`](../internal/agent), one file each,
 listed in [`agents.go`](../internal/agent/agents.go). A row gets your
 app's name and icon, shows when your app is installed, lets the user pick
@@ -115,7 +115,7 @@ app offers decides its shape:
   read-only, whether your app has fogway already. fogway writes nothing of
   yours. This suits an app that keeps its providers in a database or
   encrypted.
-- **Your app has a local API while it runs** (Alma, at `localhost:23001`):
+- **Your app has a local API while it runs** (as Alma's at `localhost:23001` was):
   fogway adds itself as a provider and sets the default model through it.
 
 A pull request needs: the adapter and its registration, `UA` (what your

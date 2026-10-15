@@ -43,17 +43,12 @@ var Vars = []string{
 	"PRIME_AGENT_CODING_AGENT_DIR",
 	// omp
 	"OMP_PROFILE",
-	// Qoder's two builds, the global site's and China's
-	"QODER_CONFIG_DIR", "QODERCN_CONFIG_DIR",
-	// Grok's home
-	"GROK_HOME",
 	// Kimi Code and its shared folder
 	"KIMI_CODE_HOME", "KIMI_SHARE_DIR",
 	// Qwen Code's home, ~/.qwen without it
 	"QWEN_HOME",
-	// MiniMax Code, OpenHanako, Hermes, dsh, WorkBuddy, CodeBuddy Code
-	"MINIMAX_DATA_DIR", "HANA_HOME", "HERMES_HOME", "DSH_HOME",
-	"WORKBUDDY_CONFIG_DIR", "CODEBUDDY_CONFIG_DIR",
+	// OpenHanako, dsh
+	"HANA_HOME", "DSH_HOME",
 	// PI-Desktop's data folder, where Sessions reads its chat titles
 	"PI_DESKTOP_DATA_DIR",
 	// T3 Code's base folder (its settings in userdata/)

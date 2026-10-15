@@ -30,7 +30,7 @@ var ErrNoTranscript = errors.New("this agent's conversations can't be shown")
 // transcript.
 func HasTranscript(agent string) bool {
 	switch agent {
-	case "claude", "qoder", "qoder-cn", "codex", "pi", "omp", "cursor", "opencode":
+	case "claude", "codex", "pi", "omp", "cursor", "opencode":
 		return true
 	}
 	return false

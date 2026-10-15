@@ -60,16 +60,6 @@ func resetCalls() {
 	callRoot = ""
 	callGeneration++
 	resetOCCalls()
-	// ZCode's listing and WorkBuddy's gateway ids name another HOME's files
-	// and models.json: a read after a Reset() would otherwise hand back
-	// sources that are not here. Both are stamped, so the stale stamp alone
-	// would miss; clearing them makes a new HOME read its own
-	zcCallList.Lock()
-	zcCallList.stamp, zcCallList.files = "", nil
-	zcCallList.Unlock()
-	wbGateway.Lock()
-	wbGateway.byPath = nil
-	wbGateway.Unlock()
 }
 
 func pruneCalls(files []file) {
@@ -173,16 +163,11 @@ func keepCalls(path string, st *callFile) {
 // be read on from the middle of one. Every agent in callSources that is not
 // in callFiles needs an entry here, or its calls are never read.
 var wholeCallReaders = map[string]func(file) (*callFile, bool){
-	"opencode":  readOpenCodeCalls,
-	"zcode":     readZCodeCalls,
-	"dsh":       readDshCalls,
-	"workbuddy": readWorkBuddyCalls,
-	"codebuddy": readWorkBuddyCalls, // #1779
-	// #1605
-	"minimax-code": readMiniMaxCalls,
-	"kimi":         readKimiCalls, // #1607
-	"pi":           readPiCalls,   // #1951
-	"omp":          readPiCalls,
+	"opencode": readOpenCodeCalls,
+	"dsh":      readDshCalls,
+	"kimi":     readKimiCalls, // #1607
+	"pi":       readPiCalls,   // #1951
+	"omp":      readPiCalls,
 }
 
 func readCalls(f file) *callFile {
@@ -217,8 +202,8 @@ func readCalls(f file) *callFile {
 	defer readBegin()()
 	// Agents whose calls are read whole rather than line by line: a session
 	// that changed is read again, and one that did not is kept. OpenCode's
-	// and ZCode's are rows of a database or JSON documents; dsh's file is
-	// packed in frames, so it cannot be read on from the middle of one.
+	// are rows of a database or JSON documents; dsh's file is packed in
+	// frames, so it cannot be read on from the middle of one.
 	if read, ok := wholeCallReaders[f.agent]; ok {
 		st, readOK := read(f)
 		if !readOK && old != nil {

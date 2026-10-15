@@ -21,12 +21,10 @@ import (
 // with a note of where each came from, and a restore moves them back.
 //
 // Only the agents whose sessions are files of their own can be deleted:
-// Claude Code's (and Qoder's and WorkBuddy's, kept the same way), Codex's,
-// Pi's, omp's, Cursor CLI's (a chat's folder, its store and meta.json) and
-// DeepSeek Harness's (a session's folder, and its listing's cached row).
-// Hermes's and Alma's are rows in a database the agent keeps open and
-// writes, so they are only listed, and so are Cline's, whose sessions.db
-// lists a session whose files are gone. The agents' indexes are left as they are: Codex's
+// Claude Code's, Codex's, Pi's, omp's, Cursor CLI's (a chat's folder, its
+// store and meta.json) and DeepSeek Harness's (a session's folder, and its
+// listing's cached row). Cline's are only listed: its sessions.db lists a
+// session whose files are gone. The agents' indexes are left as they are: Codex's
 // session_index.jsonl (names by thread id) and its state database, and
 // Claude Code's history.jsonl (the prompts typed, for the up arrow), are
 // written by the agent while it runs, and a name or a prompt left for a
@@ -58,7 +56,7 @@ type AgentCount struct {
 // those kept as files of their own, in a layout fogway knows whole.
 func Deletable(agent string) bool {
 	switch agent {
-	case "claude", "qoder", "qoder-cn", "workbuddy", "codex", "pi", "omp", "cursor", "dsh":
+	case "claude", "codex", "pi", "omp", "cursor", "dsh":
 		return true
 	}
 	return false

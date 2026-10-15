@@ -80,8 +80,8 @@ type ocInfo struct {
 type ocMessage struct {
 	ID   string `json:"id"`
 	Role string `json:"role"`
-	// ZCode's newer messages say modelId, which the key matches too (the
-	// decoder takes a key in any case when none is spelt as it is)
+	// a message that says modelId is matched too (the decoder takes a key
+	// in any case when none is spelt as it is)
 	ModelID string `json:"modelID"`
 	// the provider the reply came from: fogway's gateway is "fogway"
 	ProviderID string `json:"providerID,omitempty"`
@@ -108,7 +108,8 @@ type ocMessage struct {
 			Write int `json:"write"`
 		} `json:"cache"`
 	} `json:"tokens"`
-	// ZCode: who a message is from; a prompt someone typed is a real_user's
+	// who a message is from, where it says (semantics.origin): a prompt
+	// someone typed is a real_user's
 	Semantics *struct {
 		Origin string `json:"origin"`
 	} `json:"semantics"`
@@ -202,7 +203,7 @@ func closeDBs() {
 
 type ocDB struct{ db *sql.DB }
 
-// openCodeDBFiles are the sessions in OpenCode's database, or ZCode's.
+// openCodeDBFiles are the sessions in OpenCode's database.
 func openCodeDBFiles(agent, path string) []file {
 	db := openDB(path)
 	if db == nil {
@@ -215,9 +216,6 @@ func openCodeDBFiles(agent, path string) []file {
 // session's size what the SQL size makes of its messages m.
 func openCodeDBFilesIn(agent, path string, db *sql.DB, size string) []file {
 	var store ocStore = ocDB{db}
-	if agent == "zcode" {
-		store = zcDB{ocDB{db}}
-	}
 	q := `SELECT s.id, COALESCE(s.parent_id, ''), s.time_updated, ` + size + `, COALESCE(MAX(m.time_updated), 0)
 		FROM %s s LEFT JOIN %s m ON m.session_id = s.id %s GROUP BY s.id`
 	parent := map[string]string{}
@@ -492,10 +490,6 @@ func parseOpenCode(f file) *state {
 			}
 			if t := m.Tokens; t != nil && m.ModelID != "" {
 				u := Tokens{Input: t.Input, Output: t.Output + t.Reasoning, CacheRead: t.Cache.Read, CacheWrite: t.Cache.Write}
-				if f.agent == "zcode" {
-					// the AI SDK's counts: input with the cache, output with the reasoning
-					u.Input, u.Output = max(0, t.Input-t.Cache.Read-t.Cache.Write), t.Output
-				}
 				s.use(dateOf(at), m.ModelID, u)
 			}
 		}

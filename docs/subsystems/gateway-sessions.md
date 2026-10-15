@@ -249,8 +249,7 @@ are read (`sessions.Calls`, from `callSources` in
 Code's, Claude Desktop's and Cowork's, Codex's (and both in WSL), and,
 read a file at a time (`wholeCallReaders` in
 [`call_cache.go`](../../internal/sessions/call_cache.go)), OpenCode's
-(#680), ZCode's, DeepSeek Harness's (`dsh`), WorkBuddy's, CodeBuddy
-Code's (#1779), MiniMax Code's (#1605), Kimi Code's (#1607,
+(#680), DeepSeek Harness's (`dsh`), Kimi Code's (#1607,
 [`calls_kimi.go`](../../internal/sessions/calls_kimi.go)) and Pi's and
 omp's, here and in WSL (#1951,
 [`calls_pi.go`](../../internal/sessions/calls_pi.go)). Each skips the
@@ -267,10 +266,9 @@ summary's and a tool result's usage, on the model and provider in use);
 the provider `fogway` (or `dial`) is fogway's entry, a failed call has no
 usage, and a fork's copy of its parent's entries (written before its
 header) is the parent's. The other agents the Sessions page reads (Cline,
-Qoder, Grok, Droid, Cursor, Hermes, Alma) have no reader yet (#1607). The
+Droid, Cursor) have no reader yet (#1607). The
 Context page reads the gateway's own traces, so it shows none of these
-calls. Verification: `TestMiniMaxCodeCalls`, `TestKimiCode*` (the
-reporter's real wire files), `TestCodeBuddyCalls`, `TestWorkBuddyCalls*`,
+calls. Verification: `TestKimiCode*` (the reporter's real wire files),
 `TestPiCalls*` (Pi 1.1.0's and omp 18.9.1's own files) and
 `TestWSLSessionsListed`.
 

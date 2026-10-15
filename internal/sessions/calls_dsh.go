@@ -21,7 +21,7 @@ import (
 //
 // A call through fogway's gateway is logged by the gateway as well, and dsh
 // sends it no session header, so the two records cannot be paired up
-// afterwards: it is left out here as OpenCode's and ZCode's are
+// afterwards: it is left out here as OpenCode's are
 // (dshGatewayProvider), or it would be counted twice — once by the gateway
 // with the provider and account that really answered, and once here as a
 // nameless local session. The provider a session's record names is kept as
@@ -29,10 +29,9 @@ import (
 
 // dshCallFiles are dsh's sessions as call sources. It is dshFiles with the
 // size and time its summary reader already keeps, so a session that has not
-// changed is not read again. A subagent's file is a source of its own, as
-// WorkBuddy's subagents' are: nothing in this path reads a file's main (the
-// Sessions page's mark for a session's own file), so it is left as dshFiles
-// set it.
+// changed is not read again. A subagent's file is a source of its own:
+// nothing in this path reads a file's main (the Sessions page's mark for a
+// session's own file), so it is left as dshFiles set it.
 func dshCallFiles() []file {
 	return dshFiles()
 }
@@ -193,8 +192,8 @@ func dshUpstream(src dshSource) string {
 // through it is logged by the gateway itself, and dsh sends the gateway no
 // session header (unlike Codex and OpenCode), so the two records cannot be
 // paired afterwards: the token counts differ call to call and there is no id
-// to match on. Such a call is therefore left out here, as OpenCode's and
-// ZCode's are (ocGatewayProvider), or it would be counted twice — once by the
+// to match on. Such a call is therefore left out here, as OpenCode's are
+// (ocGatewayProvider), or it would be counted twice — once by the
 // gateway, with the provider and account that really answered, and once
 // here as a nameless local session.
 //

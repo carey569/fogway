@@ -1,10 +1,10 @@
 // Package sessions lists the agents' recent sessions from their own session
-// files — Claude Code's projects/*/<id>.jsonl (and Qoder's, the same kind),
-// Codex's rollout files, OpenCode's database (or its older JSON files) and
-// ZCode's, Pi's session files and omp's, DeepSeek Harness's, Cline's, Grok
-// Build's, WorkBuddy's, Droid's, Cursor CLI's and Alma's chat stores — with the tokens each spent, what that cost at the
-// effective price, and the command that resumes it. It only ever reads the
-// agents' folders.
+// files — Claude Code's projects/*/<id>.jsonl, Codex's rollout files,
+// OpenCode's database (or its older JSON files), Pi's session files and
+// omp's, DeepSeek Harness's, Cline's, Droid's, Kimi Code's and Cursor CLI's
+// chat stores — with the tokens each spent, what that cost at the effective
+// price, and the command that resumes it. It only ever reads the agents'
+// folders.
 //
 // The files grow long (hundreds of MB), so each one's parse is kept by path,
 // size and time, and a file that only grew is read on from where it was left.
@@ -97,7 +97,7 @@ type Session struct {
 	// Gateway: seen only through fogway's gateway, with no file of the
 	// agent's on this computer (external.go)
 	Gateway bool      `json:"gateway,omitempty"`
-	Agent   string    `json:"agent"` // fogway agent id: claude, codex, opencode, pi, omp, zcode, dsh, cline, qoder, qoder-cn, grok, workbuddy, droid, cursor, hermes, alma, kimi
+	Agent   string    `json:"agent"` // fogway agent id: claude, codex, opencode, pi, omp, dsh, cline, droid, cursor, kimi
 	ID      string    `json:"id"`
 	Cwd     string    `json:"cwd"`
 	Title   string    `json:"title"` // the name it was given, else the agent's own title, else the first prompt
@@ -339,16 +339,12 @@ type file struct {
 	main  bool // the session's own file, not a subagent's
 	size  int64
 	mod   time.Time
-	// OpenCode and ZCode: the session, and where it is kept
+	// OpenCode: the session, and where it is kept
 	sid string
 	oc  ocStore
-	// Cline: the session's manifest, beside its messages; Grok Build: its
-	// summary.json, beside its updates; Droid: its settings, beside its
-	// transcript
+	// Cline: the session's manifest, beside its messages; Droid: its
+	// settings, beside its transcript
 	manifest string
-	hermes   *hermesDB
-	// Alma: its database, and what tells the chat's rows changed
-	alma     *almaStore
 	rev      string
 	readOnly bool
 	editor   *cursorEditorMeta
@@ -430,8 +426,7 @@ func ccFiles(agent, dir string) []file {
 func allFiles() []file {
 	var out []file
 	for _, fs := range [][]file{callFiles(), openCodeFiles(), piFiles(),
-		wslFiles("pi", "omp", "kimi"), zcodeFiles(), dshFiles(), clineFiles(), ccFiles("qoder", QoderDir("qoder")), ccFiles("qoder-cn", QoderDir("qoder-cn")),
-		grokFiles(), workbuddyFiles(), droidFiles(), ompFiles(), cursorFiles(), hermesFiles(), almaFiles(), kimiFiles()} {
+		wslFiles("pi", "omp", "kimi"), dshFiles(), clineFiles(), droidFiles(), ompFiles(), cursorFiles(), kimiFiles()} {
 		out = append(out, fs...)
 	}
 	return out
@@ -444,27 +439,19 @@ func Dirs() []string {
 	for _, d := range []struct{ dir, sessions string }{
 		{OpenCodeDir(), OpenCodeDir()},
 		{PiDir(), PiDir()},
-		{ZCodeDir(), zcodeDB()},
 		{DshDir(), filepath.Join(DshDir(), "sessions")},
 		{ClineSessionDir(), ClineSessionDir()},
-		{QoderDir("qoder"), filepath.Join(QoderDir("qoder"), "projects")},
-		{QoderDir("qoder-cn"), filepath.Join(QoderDir("qoder-cn"), "projects")},
-		{GrokDir(), filepath.Join(GrokDir(), "sessions")},
-		{WorkBuddyDir(), filepath.Join(WorkBuddyDir(), "projects")},
 		{OmpDir(), filepath.Join(OmpDir(), "sessions")},
 		{FactoryDir(), filepath.Join(FactoryDir(), "sessions")},
 		{CursorDir(), filepath.Join(CursorDir(), "chats")},
 		{cursorDataDir(), filepath.Join(cursorDataDir(), "projects")},
 		{filepath.Dir(cursorEditorDB()), cursorEditorDB()},
-		{AlmaDir(), almaDB()},
-		{MiniMaxDir(), minimaxSessions()},
 		{KimiCodeDir(), kimiSessions()},
 	} {
 		if _, err := os.Stat(d.sessions); err == nil {
 			out = append(out, d.dir)
 		}
 	}
-	out = append(out, HermesDirs()...)
 	out = append(out, wslDirs()...)
 	return out
 }
@@ -683,7 +670,7 @@ func refresh(want, all []file) {
 		if f.cold {
 			continue // in a stopped WSL distro: what was read of it stands
 		}
-		if s := cache[f.path]; s == nil || s.Size != f.size || s.Mod != f.mod.UnixNano() || (f.agent == "hermes" && (f.hermes == nil || f.hermes.revision == "" || s.DBRevision != f.hermes.revision)) || ((f.agent == "alma" || f.agent == "cursor") && s.DBRevision != f.rev) {
+		if s := cache[f.path]; s == nil || s.Size != f.size || s.Mod != f.mod.UnixNano() || (f.agent == "cursor" && s.DBRevision != f.rev) {
 			todo = append(todo, f)
 		}
 	}
@@ -984,7 +971,7 @@ func assemble(fs []file, price func(string) *catalog.Price) (Session, bool) {
 			if first == "" {
 				first = st.First
 			}
-			if (s.Agent == "codex" || s.Agent == "pi" || s.Agent == "omp" || s.Agent == "dsh" || s.Agent == "grok" || s.Agent == "droid") && st.ID != "" && f.path == fs[0].path {
+			if (s.Agent == "codex" || s.Agent == "pi" || s.Agent == "omp" || s.Agent == "dsh" || s.Agent == "droid") && st.ID != "" && f.path == fs[0].path {
 				s.ID = st.ID
 			}
 		}
@@ -1046,7 +1033,7 @@ func assemble(fs []file, price func(string) *catalog.Price) (Session, bool) {
 }
 
 // parserFor is the source of truth for both parsing and window admission.
-// A default line reader is Claude-compatible, including both Qoder variants.
+// A default line reader is Claude-compatible.
 type sessionParser struct {
 	whole  func(file) *state
 	line   func(*state, []byte, bool)
@@ -1055,18 +1042,12 @@ type sessionParser struct {
 
 func parserFor(agent string) sessionParser {
 	switch agent {
-	case "hermes":
-		return sessionParser{whole: parseHermes}
-	case "alma":
-		return sessionParser{whole: parseAlma}
-	case "opencode", "zcode":
+	case "opencode":
 		return sessionParser{whole: parseOpenCode}
 	case "dsh":
 		return sessionParser{whole: parseDsh}
 	case "cline":
 		return sessionParser{whole: parseCline}
-	case "grok":
-		return sessionParser{whole: parseGrok}
 	case "kimi":
 		return sessionParser{whole: parseKimi}
 	case "droid":
@@ -1077,8 +1058,6 @@ func parserFor(agent string) sessionParser {
 		return sessionParser{line: codexBody}
 	case "pi", "omp":
 		return sessionParser{line: piParse}
-	case "workbuddy":
-		return sessionParser{line: workbuddyLine}
 	default:
 		return sessionParser{line: claudeLine, claude: true}
 	}
@@ -1120,9 +1099,6 @@ func parse(f file, old *state) *state {
 	})
 	if err == nil {
 		s.Off = off
-	}
-	if f.agent == "workbuddy" && s.Cwd == "" {
-		workbuddyMeta(s, f.path)
 	}
 	return s
 }
@@ -1361,12 +1337,6 @@ func resumeCommand(distro, agent, id, cwd, path string) string {
 		run = "pi --session " + id
 	case "cline":
 		run = "cline --id " + id
-	case "qoder":
-		run = "qodercli --resume " + id
-	case "qoder-cn":
-		run = "qoderclicn --resume " + id
-	case "grok":
-		run = "grok --resume " + id
 	case "omp":
 		run = "omp --resume " + id
 		if profile := ompProfile(path); profile != "" {

@@ -82,36 +82,6 @@ func count(ss []Session, agent string) int {
 	return n
 }
 
-func TestZCode(t *testing.T) {
-	inZone(t, 0)
-	setupAgents(t)
-	ss := List(0)
-	if n := count(ss, "zcode"); n != 2 {
-		t.Fatalf("want 2 ZCode sessions (the subagent in its parent), got %d", n)
-	}
-	z := find(t, ss, "zcode", "ses_zcA")
-	if z.Cwd != "/work/zc" || z.Title != "Port the parser to Go" || z.Resume != "" {
-		t.Fatalf("zcode: %+v", z)
-	}
-	// input without the cache, output with its reasoning already
-	if m := model(z, "glm-5.1"); m.Tokens != (Tokens{300, 40, 1000, 200, 0}) {
-		t.Fatalf("glm-5.1: %+v", m)
-	}
-	if m := model(z, "glm-5.1-air"); m.Tokens != (Tokens{50, 5, 0, 0, 0}) {
-		t.Fatalf("the subagent's: %+v", m)
-	}
-	if !z.Start.Equal(at("2026-09-27T08:00:00Z")) || !z.Last.Equal(at("2026-09-27T08:00:30Z")) {
-		t.Fatalf("zcode times %s %s", z.Start, z.Last)
-	}
-	// a default title is no title
-	if c := find(t, ss, "zcode", "ses_zcC"); c.Title != "" {
-		t.Fatalf("default title kept: %q", c.Title)
-	}
-	if len(dbs) != 0 {
-		t.Fatalf("databases left open: %v", dbs)
-	}
-}
-
 func checkDsh(t *testing.T, ss []Session) {
 	t.Helper()
 	if n := count(ss, "dsh"); n != 4 {
@@ -151,8 +121,7 @@ func checkDsh(t *testing.T, ss []Session) {
 func TestDirsMore(t *testing.T) {
 	home := setupAgents(t)
 	d := Dirs()
-	want := []string{filepath.Join(home, ".zcode"), filepath.Join(home, ".dsh"), filepath.Join(home, ".cline", "data", "sessions"), filepath.Join(home, ".qoder"), filepath.Join(home, ".qoder-cn"),
-		filepath.Join(home, ".grok"), filepath.Join(home, ".workbuddy"), filepath.Join(home, ".omp", "agent")}
+	want := []string{filepath.Join(home, ".dsh"), filepath.Join(home, ".cline", "data", "sessions"), filepath.Join(home, ".omp", "agent")}
 	if len(d) != 2+len(want) {
 		t.Fatalf("dirs %v", d)
 	}
