@@ -1,6 +1,6 @@
 # fogway reference
 
-The full manual: every agent fogway wires, every provider option, the gateway, routing, built-in plugins, the CLI, Docker and the files fogway keeps. For the overview, see the [README](../README.md).
+The full manual: every agent fogway wires, every provider option, the gateway, routing, the CLI, Docker and the files fogway keeps. For the overview, see the [README](../README.md).
 
 Renamed a project folder? See [relocating Claude Code sessions](session-relocation.md).
 
@@ -647,20 +647,6 @@ When a request fails:
 - `impersonating …: the sign-in was refused (403)`: the account signed in
   needs Service Account Token Creator (`roles/iam.serviceAccountTokenCreator`)
   on that service account.
-
-### Built-in plugins
-
-Parts of fogway not everyone needs are built-in plugins, each switched on
-or off by itself: routing groups (`groups`) and sessions (`sessions`). They
-are kept in `~/.config/fogway/plugins.yml`.
-
-```sh
-fogway plugin                 # the built-in plugins and whether each is on
-fogway plugin on groups       # off turns one off
-```
-
-How they are applied and disposed of is in the
-[plugin runtime](subsystems/plugin-runtime.md).
 
 ### What a model costs
 

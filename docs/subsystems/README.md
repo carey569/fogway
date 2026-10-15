@@ -4,7 +4,6 @@ These pages describe current responsibilities, runtime paths, state, and contrac
 
 | Subsystem | Reference |
 | --- | --- |
-| Built-in plugins: registry, lifecycle, plugins.yml, presets | [Plugin runtime](plugin-runtime.md) |
 | How the gateway picks a provider, key or account, and falls back | [Gateway routing and fallback](gateway-routing.md) |
 | Gateway Session Aggregation | [Gateway Session Aggregation](gateway-sessions.md) |
 | Connecting an agent's config to the gateway, drift, disconnect, WSL twins | [Agent wiring](agent-wiring.md) |

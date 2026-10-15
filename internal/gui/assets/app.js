@@ -18,28 +18,6 @@ const web = !!window.bootPrefs?.web;
 // they are back.
 let gatewayMode = web && !!window.bootPrefs?.gateway;
 const GATEWAY_HIDES = ["agents"];
-// The built-in features (builtins.go; Lxxyx on X: too much to look through):
-// the optional parts of the window switched off, by id. Whatever is marked
-// data-feature="<id>" leaves the page while its feature is off — by a
-// style, so what a page draws later goes too — a page's tab leaves the nav
-// (navHides), a link to the page opens Agents (show), and Settings and its
-// search pass over its rows. boot.js says which before the first paint,
-// each read of the settings after (applyFeatures). The gateway is the
-// same either way.
-let featuresOff = new Set(window.bootPrefs?.featuresOff || []);
-const featureSel = () => [...featuresOff].map((id) => `[data-feature~="${id}"]`).join(",");
-const featureHides = (n) => { const sel = featureSel(); return !!sel && !!n?.closest(sel); };
-function featureStyle() {
-  let st = document.getElementById("featureStyle");
-  if (!st) {
-    st = document.createElement("style");
-    st.id = "featureStyle";
-    document.head.append(st);
-  }
-  const sel = featureSel();
-  st.textContent = sel ? sel + "{display:none!important}" : "";
-}
-featureStyle();
 // The window is dragged by its header, and only where the header says so
 // (--wails-draggable), so the tabs and buttons in it stay plain clicks.
 // Outside the app — a browser on the gateway's page, or on `fogway web` —
@@ -1556,7 +1534,6 @@ function guideCard(g) {
   const three = guideStep(3, g.routing, t("Set up routing (optional)"),
     g.routing ? g.own.map((x) => x.name || x.id).join(", ") : t("A routing group sends each request to the right model, and to the next one when a model fails"));
   three.li.dataset.step = "routing";
-  three.li.dataset.feature = "groups";
   three.li.classList.add("optional");
   if (!g.routing && g.source) {
     guideLoadGroups();
@@ -10634,7 +10611,6 @@ function renderModels(p) {
   cb.onchange = () => { draft.unlisted = cb.checked; draw(); };
   tk.title = t("Its models leave the list agents pick from; the routing groups they are in still use them");
   // with routing groups switched off, only while it is ticked: then it is in use
-  if (!draft.unlisted) tk.dataset.feature = "groups";
   box.append(tk);
   const lost = el("div", "hint model-hint warn");
   box.append(why, lost);
@@ -17369,7 +17345,6 @@ function sessionItem(s) {
   r.append(go);
   const open = (e) => {
     if (window.getSelection()?.toString()) return;
-    if (featuresOff.has("sessions")) return; // Sessions is switched off: there is no page to open it on
     window.openSessionOnPage?.(s, e);
   };
   r.onclick = open;
@@ -17671,7 +17646,6 @@ async function loadSettings() {
   if (!prefsSettled(since) && prefs) return; // the save draws the page when it's in
   // the state's copy too, which the other pages draw from (#1433)
   prefs = state.settings = s;
-  applyFeatures(s.builtins);
   // gateway mode turned in another tab, or the agents here come and gone
   if (web && !!s.gatewayOn !== gatewayMode) setGatewayMode(!!s.gatewayOn);
   renderSettings();
@@ -17729,7 +17703,7 @@ const partShows = (page) => {
   const rows = [...page.querySelectorAll(".row")];
   return !rows.length || rows.some((r) => {
     for (let n = r; n && n !== page; n = n.parentElement) if (n.hidden && !n.matches('[role="tabpanel"]')) return false;
-    return !featureHides(r);
+    return true;
   });
 };
 function setSetTab(tab, remember) {
@@ -17737,7 +17711,7 @@ function setSetTab(tab, remember) {
     setTab = tab;
     try { localStorage.setItem("fogway.settingsTab", tab); } catch {}
   }
-  for (const id of SET_TABS) $("#setTab-" + id).hidden = featureHides($("#setTab-" + id)) || !partShows($("#setPage-" + id));
+  for (const id of SET_TABS) $("#setTab-" + id).hidden = !partShows($("#setPage-" + id));
   if (!SET_TABS.includes(tab) || $("#setTab-" + tab).hidden) tab = SET_TABS.find((id) => !$("#setTab-" + id).hidden) || "general";
   for (const id of SET_TABS) {
     const b = $("#setTab-" + id), on = id === tab;
@@ -17802,7 +17776,6 @@ function findSettings() {
       let shows = hit;
       for (let a = n; shows && a && a !== page; a = a.parentElement) if (a.hidden && a !== pane) shows = false;
       if (shows && pane && $('[aria-controls="' + pane.id + '"]').hidden) shows = false;
-      if (shows && featureHides(n)) shows = false; // a built-in plugin switched off
       if (!shows) continue;
       hits++;
       lit.add(n.closest(".list") || n.parentElement);
@@ -20212,8 +20185,6 @@ for (const v of document.querySelectorAll(".view")) {
 async function show(v) {
   // a page gateway mode leaves out (a link to it, an address kept) opens Providers
   if (gatewayMode && GATEWAY_HIDES.includes(v)) v = "providers";
-  // and one a built-in plugin switched off has, Agents
-  if (featureHides($(`#nav button[data-view="${v}"]`))) v = gatewayMode ? "providers" : "agents";
   if (v !== view) {
     if (view === "providers" && (editing !== null || importing || importingApps)) {
       if (!await cancelEdit(true)) return false;
@@ -20286,28 +20257,10 @@ function setGatewayMode(on) {
   else if (!sideNav()) slide($("#nav"), "nav");
   navSubs();
 }
-// navHides leaves out the tabs of the pages gateway mode or a built-in
-// plugin switched off leaves out
+// navHides leaves out the tabs of the pages gateway mode leaves out
 function navHides() {
   if (mode !== "window") return;
-  for (const b of $("#nav").querySelectorAll("button[data-view]")) b.hidden = (gatewayMode && GATEWAY_HIDES.includes(b.dataset.view)) || featureHides(b);
-}
-// applyFeatures takes the built-in plugins' state from a read of the
-// settings, or a switch on Plugins › Built-in:
-// what is off leaves the window, and the page open, if it went, gives way
-// to Agents (Providers in gateway mode)
-function applyFeatures(list) {
-  if (!Array.isArray(list)) return;
-  const off = new Set(list.filter((f) => !f.on).map((f) => f.id));
-  if (off.size === featuresOff.size && [...off].every((id) => featuresOff.has(id))) return;
-  featuresOff = off;
-  featureStyle();
-  if (mode !== "window") return;
-  navHides();
-  if (featureHides($(`#nav button[data-view="${view}"]`))) show(gatewayMode ? "providers" : "agents");
-  else if (!sideNav()) slide($("#nav"), "nav");
-  setSetTab(setTab);
-  navSubs();
+  for (const b of $("#nav").querySelectorAll("button[data-view]")) b.hidden = gatewayMode && GATEWAY_HIDES.includes(b.dataset.view);
 }
 // openSettings: the Settings page, in the window (the panel opens it there)
 function openSettings() {

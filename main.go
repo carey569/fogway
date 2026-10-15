@@ -5,7 +5,6 @@ package main
 import (
 	"github.com/carey569/fogway/internal/cli"
 	// the built-in plugins, registered with the runtime (internal/pluginrt)
-	_ "github.com/carey569/fogway/plugins/all"
 )
 
 // version is set at build time: -ldflags "-X main.version=…" (Makefile,

@@ -18,7 +18,6 @@ import (
 	"github.com/carey569/fogway/internal/catalog"
 	"github.com/carey569/fogway/internal/gateway"
 	"github.com/carey569/fogway/internal/netproxy"
-	"github.com/carey569/fogway/internal/pluginrt"
 	"github.com/carey569/fogway/internal/proc"
 	"github.com/carey569/fogway/internal/profile"
 	"github.com/carey569/fogway/internal/provider"
@@ -197,15 +196,6 @@ func run(args []string) error {
 	update.AwaitPredecessor()
 	makeDirs()
 	settings.Migrate()
-	// a new install starts with the Essentials preset of built-in plugins
-	// (plugins.yml), one that ran before with all of them, told by no file
-	// of a fogway run before: so before anything below writes one
-	if _, err := pluginrt.Settle(!settings.RanBefore()); err != nil {
-		fmt.Fprintf(os.Stderr, "fogway: plugins.yml: %v\n", err)
-	}
-	if _, err := pluginrt.Refresh(); err != nil {
-		fmt.Fprintf(os.Stderr, "fogway: plugins.yml: %v\n", err)
-	}
 	// the providers and settings read once for every agent's fields, which
 	// the moves below look at (a write among them reads them again)
 	release := provider.Hold()
@@ -316,8 +306,6 @@ func run(args []string) error {
 		return quotaCmd(args)
 	case "update":
 		return updateCmd(args)
-	case "plugin", "plugins":
-		return pluginCmd(args)
 	case "local":
 		return localCmd(args)
 	}
