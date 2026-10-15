@@ -263,3 +263,36 @@ func TestKimiCodeSessionFork(t *testing.T) {
 }
 
 func jsonInt(n int64) string { b, _ := json.Marshal(n); return string(b) }
+
+// Kimi Code in a WSL distro: its sessions listed with the distro and its
+// calls counted (#1607's reader reaches the distro too).
+func TestWSLKimiCode(t *testing.T) {
+	home, _ := wslDistro(t)
+	kimiSessionsIn(t, filepath.Join(home, ".kimi-code"))
+	Reset()
+	var e *Session
+	for _, s := range List(0) {
+		if s.Agent == "kimi" && s.ID == kimiEarly {
+			e = &s
+		}
+	}
+	if e == nil || e.WSL != "Ubuntu" || e.Tokens != (Tokens{20888, 2176, 317440, 0, 0}) {
+		t.Fatalf("the distro's Kimi session: %+v", e)
+	}
+	want := `wsl.exe -d 'Ubuntu' --cd '/work/kimi' -e sh -lc 'exec ${SHELL:-sh} -lic ''kimi --session ` + kimiEarly + `'''`
+	if e.Resume != want {
+		t.Fatalf("resume\n got %s\nwant %s", e.Resume, want)
+	}
+	n := 0
+	for _, c := range Calls(time.Time{}) {
+		if c.Agent == "kimi" {
+			n++
+		}
+	}
+	if n != 32+6+10 {
+		t.Fatalf("the distro's Kimi calls: %d, want 48", n)
+	}
+	if !strings.Contains(strings.Join(Dirs(), "\n"), filepath.Join(home, ".kimi-code")) {
+		t.Fatalf("Kimi's folder in the distro isn't listed: %v", Dirs())
+	}
+}

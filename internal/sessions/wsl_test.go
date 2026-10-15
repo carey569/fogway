@@ -342,3 +342,33 @@ func TestWSLStoppedSinceNotOpened(t *testing.T) {
 		t.Fatalf("running again: want 8 sessions, got %d", len(ss))
 	}
 }
+
+// A stopped distro's sessions are listed as last read, and nothing in it is
+// opened: that would start it.
+func TestWSLStoppedDistroKept(t *testing.T) {
+	home, running := wslDistro(t)
+	if n := len(List(0)); n != 7 {
+		t.Fatalf("want the 7 sessions, got %d", n)
+	}
+	wslSettle()
+	Saved()
+	// fogway starts again; the distro has stopped, and its files can't be
+	// read (a read would start it): here they are gone
+	*running = false
+	Reset()
+	if err := os.RemoveAll(home); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		ss := List(0)
+		if len(ss) != 7 {
+			t.Fatalf("pass %d: want the 7 sessions as last read, got %+v", i, ss)
+		}
+		for _, s := range ss {
+			if s.WSL != "Ubuntu" || s.Tokens.zero() || s.Resume == "" {
+				t.Fatalf("pass %d: %+v", i, s)
+			}
+		}
+		wslSettle()
+	}
+}

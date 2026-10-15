@@ -1,6 +1,7 @@
 package usage
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -477,6 +478,46 @@ func TestLedgerPricesAModelListedUnderItsCanonicalID(t *testing.T) {
 		// (73723*0.15 + 2612*0.6 + 124288*0.003) / 1e6
 		if want := 0.012998514; !got[0].Priced || math.Abs(got[0].Cost-want) > 1e-9 {
 			t.Fatalf("priced=%v cost=%v, want %v", got[0].Priced, got[0].Cost, want)
+		}
+	}
+}
+
+// A call read from a session file has the model asked for, the one sent (as
+// asked, with nothing between, less the size of the context Claude Code names it
+// by) and the one that answered: the 1M-context model answered under its plain
+// name is no swap, another model is; Codex's file has the model asked for only.
+func TestLedgerLogModels(t *testing.T) {
+	now := time.Now()
+	logs := []sessions.Call{
+		{Time: now.Add(-time.Minute), Agent: "claude-desktop", Session: "a", Model: "claude-opus-5", Requested: "claude-opus-5[1m]", Tokens: sessions.Tokens{Input: 1, Output: 1}, Millis: 4200},
+		{Time: now.Add(-2 * time.Minute), Agent: "claude", Session: "b", Model: "claude-sonnet-5-5", Requested: "claude-opus-5-5", Tokens: sessions.Tokens{Input: 1, Output: 1}},
+		{Time: now.Add(-3 * time.Minute), Agent: "claude", Session: "c", Model: "claude-opus-5-5", Tokens: sessions.Tokens{Input: 1, Output: 1}}, // no note before it
+		{Time: now.Add(-4 * time.Minute), Agent: "codex", Session: "d", Model: "gpt-6-luna", Tokens: sessions.Tokens{Input: 1, Output: 1}},
+	}
+	rows, _, _, _ := ledgerWith(now.Add(-time.Hour), Filter{}, nil, logs)
+	type m struct {
+		req, sent, served string
+		swapped           bool
+	}
+	var got []m
+	for _, r := range rows {
+		got = append(got, m{r.Requested, r.Model, r.Served, r.Swapped})
+	}
+	want := []m{
+		{"claude-opus-5[1m]", "claude-opus-5", "claude-opus-5", false},
+		{"claude-opus-5-5", "claude-opus-5-5", "claude-sonnet-5-5", true},
+		{"", "claude-opus-5-5", "claude-opus-5-5", false},
+		{"gpt-6-luna", "gpt-6-luna", "", false},
+	}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("got  %v\nwant %v", got, want)
+	}
+	if rows[0].Millis != 4200 {
+		t.Fatalf("the time the file's stamps tell is kept: %+v", rows[0])
+	}
+	for _, c := range [][2]string{{"claude-opus-5[1m]", "claude-opus-5"}, {"Claude-Opus-5[200K]", "claude-opus-5"}, {"claude-opus-5", "claude-opus-5-20261001"}} {
+		if Swapped(c[0], c[1]) {
+			t.Errorf("%s answered as %s is the same model", c[0], c[1])
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,5 +93,96 @@ func TestDshSegment(t *testing.T) {
 		if got := dshSegment(in); got != want {
 			t.Errorf("dshSegment(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+// lc on Discord: "deepseek harness无法删除会话". A dsh session goes to the
+// trash whole — its folder, its subagent's, their cached rows — and
+// nothing of another session's goes with it.
+func TestDshDeleteRestore(t *testing.T) {
+	home := dshManageSetup(t)
+	list := ListAgent("dsh")
+	if len(list) != 2 {
+		t.Fatalf("dsh sessions %d, want 2 (the subagent in its parent)", len(list))
+	}
+	m, ok := findManaged(list, dshP)
+	if !ok || !m.Deletable || m.Files != 2 || m.Cwd != dshCwd {
+		t.Fatalf("listed as %+v", m)
+	}
+	for _, a := range Agents() {
+		if a.Agent == "dsh" && !a.Deletable {
+			t.Fatal("dsh not deletable")
+		}
+	}
+	proj := filepath.Join(home, "sessions", dshProjD)
+	cache := filepath.Join(home, "storages", "session_projcache", "sessions")
+	pDir, cDir, oDir := filepath.Join(proj, dshP), filepath.Join(proj, dshC), filepath.Join(proj, dshO)
+
+	// one being written to is left alone
+	now := time.Now()
+	os.Chtimes(filepath.Join(cDir, "session.v4.jsonl.zstd"), now, now)
+	if _, err := Delete("dsh", dshP); !errors.Is(err, ErrActive) {
+		t.Fatalf("a session just written: %v", err)
+	}
+	ageDsh(home)
+
+	tr, err := Delete("dsh", dshP)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tr.Items) != 4 || tr.Cwd != dshCwd || tr.Title != "Tidy the build script" {
+		t.Fatalf("trashed %+v, want its folder, its subagent's and their two cached rows", tr)
+	}
+	for _, p := range []string{pDir, cDir, filepath.Join(cache, dshP+".json"), filepath.Join(cache, dshC+".json")} {
+		if _, err := os.Lstat(p); err == nil {
+			t.Fatalf("%s is still there", p)
+		}
+	}
+	// the other session, its row and the project folder are as they were
+	for _, p := range []string{filepath.Join(oDir, "session.v4.jsonl.zstd"), filepath.Join(oDir, "session.lock"), filepath.Join(cache, dshO+".json")} {
+		if _, err := os.Stat(p); err != nil {
+			t.Fatalf("another session's %s: %v", p, err)
+		}
+	}
+	if l := ListAgent("dsh"); len(l) != 1 || l[0].ID != dshO {
+		t.Fatalf("after the delete: %+v", l)
+	}
+
+	if _, err := Restore(tr.Key); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{filepath.Join(pDir, "session.v4.jsonl.zstd"), filepath.Join(pDir, "session.v3.jsonl.zstd"), filepath.Join(pDir, "session.lock"), filepath.Join(cDir, "session.v4.jsonl.zstd"), filepath.Join(cache, dshP+".json"), filepath.Join(cache, dshC+".json")} {
+		if _, err := os.Stat(p); err != nil {
+			t.Fatalf("%s isn't back: %v", p, err)
+		}
+	}
+	Reset()
+	if s, ok := findSession(List(0), "dsh", dshP); !ok || s.Title != "Tidy the build script" {
+		t.Fatalf("the restored session: %+v", s)
+	}
+}
+
+// A session file that isn't in the folder dsh names by its id is no folder
+// of its own to take: nothing is moved.
+func TestDshDeleteOnlyItsOwnFolder(t *testing.T) {
+	home := dshManageSetup(t)
+	proj := filepath.Join(home, "sessions", dshProjD)
+	// the other session's file, in a folder named as dsh wouldn't
+	odd := filepath.Join(proj, "shared")
+	os.Rename(filepath.Join(proj, dshO), odd)
+	os.WriteFile(filepath.Join(odd, "notes.txt"), []byte("someone's"), 0o600)
+	ageDsh(home)
+	Reset()
+	if _, ok := findManaged(ListAgent("dsh"), dshO); !ok {
+		t.Fatal("the session isn't listed")
+	}
+	if _, err := Delete("dsh", dshO); err == nil {
+		t.Fatal("deleted a folder that isn't the session's")
+	}
+	if _, err := os.Stat(filepath.Join(odd, "notes.txt")); err != nil {
+		t.Fatal("the folder was touched")
+	}
+	if len(Trash()) != 0 {
+		t.Fatal("something went to the trash")
 	}
 }

@@ -3,10 +3,13 @@ package usage
 import (
 	"bytes"
 	"encoding/csv"
+	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 	"time"
 
+	"github.com/carey569/fogway/internal/catalog"
 	"github.com/carey569/fogway/internal/sessions"
 )
 
@@ -82,5 +85,70 @@ func TestZeroTokenFailuresDeduplicateAndRejectedStayVisible(t *testing.T) {
 	}
 	if col := slices.Index(csvRows[0], "rejected"); col < 0 || csvRows[1][col] != "true" {
 		t.Fatal("CSV omits rejection")
+	}
+}
+
+func TestCalendarBucketsAcrossDST(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	catalog.Reset()
+	t.Cleanup(catalog.Reset)
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, date := range []struct {
+		month      time.Month
+		day, hours int
+	}{{time.March, 8, 23}, {time.November, 1, 25}} {
+		now := time.Date(2026, date.month, date.day, 23, 30, 0, 0, loc)
+		since, bucket, pts := timeline(Today, now, time.Time{})
+		if len(pts) != date.hours || bucketIndex(bucket, since, now) != len(pts)-1 {
+			t.Fatalf("hourly DST: %d points, bucket %d", len(pts), bucketIndex(bucket, since, now))
+		}
+		next := now.AddDate(0, 0, 1)
+		start, bucket, pts := timeline(Week, next, time.Time{})
+		r := Record{Time: next, Provider: "p", Input: 1, Status: 200}
+		if bucketIndex(bucket, start, next) != 6 {
+			t.Fatal("next calendar day is in the wrong bucket")
+		}
+		s := summarize(Week, next, []Record{r})
+		if s.Series[len(pts)-1].Calls != 1 {
+			t.Fatal("overview bucket lost the call")
+		}
+		first := now.AddDate(0, 0, -90)
+		start, bucket, pts = timeline(All, next, first)
+		if bucket != "week" || bucketIndex(bucket, start, next) != len(pts)-1 {
+			t.Fatal("weekly calendar bucket mismatch")
+		}
+	}
+}
+
+func TestUsageLogIncrementalAndReplacement(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	Append(Record{Model: "first"})
+	if len(Load(time.Time{})) != 1 {
+		t.Fatal("initial read")
+	}
+	f, err := os.OpenFile(Path(), os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.WriteString(`{"model":"second"`)
+	f.Close()
+	if len(Load(time.Time{})) != 1 {
+		t.Fatal("partial line was consumed")
+	}
+	f, _ = os.OpenFile(Path(), os.O_APPEND|os.O_WRONLY, 0600)
+	f.WriteString("}\n")
+	f.Close()
+	if rs := Load(time.Time{}); len(rs) != 2 || rs[1].Model != "second" {
+		t.Fatalf("completed line %+v", rs)
+	}
+	replacement := filepath.Join(dir, "replacement")
+	os.WriteFile(replacement, []byte("{\"model\":\"replacement\"}\n"), 0600)
+	os.Rename(replacement, Path())
+	if rs := Load(time.Time{}); len(rs) != 1 || rs[0].Model != "replacement" {
+		t.Fatalf("replacement %+v", rs)
 	}
 }

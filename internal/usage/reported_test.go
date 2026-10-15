@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -103,5 +104,65 @@ func TestIngestReported(t *testing.T) {
 	}
 	if rows, _, _ := Ledger(All, Filter{Through: SourceReported}); len(rows) != 4 {
 		t.Fatalf("ledger via=reported: %d", len(rows))
+	}
+}
+
+// Posts at once, and the gateway's own calls between them, keep every
+// line whole, and a rid posted by several at once is written once.
+func TestIngestReportedConcurrent(t *testing.T) {
+	reportedHome(t)
+	now := time.Now().Add(-time.Hour)
+	const posts, each = 16, 40
+	var wg sync.WaitGroup
+	accepted := make([]int, posts)
+	for p := range posts {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			var recs []Record
+			for i := range each {
+				// half the rids every post sends, half its own
+				rid := fmt.Sprintf("shared-%d", i)
+				if i%2 == 1 {
+					rid = fmt.Sprintf("own-%d-%d", p, i)
+				}
+				recs = append(recs, Record{Time: now, Agent: "my-app", Provider: "claude", Model: "claude-opus-5-5", Input: 1, Output: 1, Status: 200, RequestID: rid})
+			}
+			took, err := IngestReported(recs)
+			if err != nil {
+				t.Error(err)
+			}
+			for _, ok := range took {
+				if ok {
+					accepted[p]++
+				}
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			Append(Record{Time: now, Agent: "claude", Provider: "claude", Model: "claude-opus-5-5", Input: 1, Output: 1, Status: 200})
+		}()
+	}
+	wg.Wait()
+	total := 0
+	for _, n := range accepted {
+		total += n
+	}
+	if want := each/2 + posts*each/2; total != want {
+		t.Fatalf("accepted %d, want %d", total, want)
+	}
+	recs := Load(time.Time{})
+	if len(recs) != total+posts {
+		t.Fatalf("%d lines, want %d", len(recs), total+posts)
+	}
+	seen := map[string]bool{}
+	for _, r := range recs {
+		if r.Source != SourceReported {
+			continue
+		}
+		if seen[r.RequestID] {
+			t.Fatal("written twice:", r.RequestID)
+		}
+		seen[r.RequestID] = true
 	}
 }

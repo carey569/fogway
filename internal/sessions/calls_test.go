@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/carey569/fogway/internal/agentenv"
+	"github.com/carey569/fogway/internal/desktopdir"
 )
 
 var callT0 = time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC)
@@ -595,5 +596,71 @@ func TestCallsWorkflowAgents(t *testing.T) {
 		if bare(cs[i]) != want[i] {
 			t.Errorf("call %d:\n got %+v\nwant %+v", i, bare(cs[i]), want[i])
 		}
+	}
+}
+
+func TestCallsNewestFirst(t *testing.T) {
+	d := setupCalls(t)
+	writeLines(t, filepath.Join(d.claude, "projects", "-p", "a.jsonl"),
+		claudeMsg("a1", "claude-opus-5-5", 1, 1, 0, 0, 5),
+		claudeMsg("a2", "claude-opus-5-5", 2, 1, 0, 0, 1))
+	writeLines(t, filepath.Join(d.claude, "projects", "-p", "b.jsonl"),
+		claudeMsg("b1", "claude-opus-5-5", 3, 1, 0, 0, 3),
+		claudeMsg("b2", "claude-opus-5-5", 4, 1, 0, 0, 7))
+	writeLines(t, filepath.Join(d.codex, "sessions", "2026", "09", "20", "rollout-2026-09-20T10-00-00-0190aaaa-1111-7222-8333-444455556666.jsonl"),
+		tokenCountLine(4, cxUse(10, 0, 0, 1, 0), cxUse(10, 0, 0, 1, 0)))
+	var got []int
+	for _, c := range Calls(time.Time{}) {
+		got = append(got, int(c.Time.Sub(callT0)/time.Second))
+	}
+	if fmt.Sprint(got) != "[7 5 4 3 1]" {
+		t.Fatalf("order: %v", got)
+	}
+	// calls of one instant come in the same order every time
+	writeLines(t, filepath.Join(d.claude, "projects", "-p", "c.jsonl"),
+		claudeMsg("c1", "claude-opus-5-5", 20, 1, 0, 0, 5),
+		claudeMsg("c2", "claude-opus-5-5", 21, 1, 0, 0, 5))
+	first := Calls(time.Time{})
+	Reset()
+	again := Calls(time.Time{})
+	if fmt.Sprint(first) != fmt.Sprint(again) {
+		t.Fatalf("order changed:\n%v\n%v", first, again)
+	}
+	if first[1].Tokens.Input != 21 || first[2].Tokens.Input != 20 || first[3].Tokens.Input != 1 {
+		t.Fatalf("ties: the later line first: %+v", first)
+	}
+}
+
+// Kilig on Discord: an MSIX Claude Desktop (Windows 10 LTSC) keeps Cowork's
+// sessions in its package's LocalCache\Roaming\Claude, nothing in
+// %APPDATA%\Claude; their calls are read from there.
+func TestCallsCoworkMSIX(t *testing.T) {
+	d := setupCalls(t)
+	old := desktopdir.OS
+	desktopdir.OS = "windows"
+	callDesktopDirs = desktopDataDirs
+	t.Cleanup(func() { desktopdir.OS = old })
+	home := filepath.Join(t.TempDir(), "home")
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	local, roaming := filepath.Join(home, "AppData", "Local"), filepath.Join(home, "AppData", "Roaming")
+	t.Setenv("LOCALAPPDATA", local)
+	t.Setenv("APPDATA", roaming)
+	os.MkdirAll(roaming, 0o755)
+	data := filepath.Join(local, "Packages", "Claude_pzs8sxrjxfjjc", "LocalCache", "Roaming", "Claude")
+	writeLines(t, filepath.Join(data, "Local State"), `{}`)
+
+	// the package's first, then the real ones a newer packaged Desktop
+	// (2.31226) keeps its 3p mode in
+	if ds := desktopDataDirs(); len(ds) != 6 || ds[0] != data || ds[5] != filepath.Join(local, "Claude-3p") {
+		t.Fatalf("dirs: %v", ds)
+	}
+	cw := filepath.Join(data, "local-agent-mode-sessions", "acct", "org", "local_abc", ".claude", "projects", "-sessions-x")
+	writeLines(t, filepath.Join(cw, "cw1.jsonl"), swap(claudeMsg("c1", "claude-sonnet-5-5", 5, 6, 7, 8, 3), `"entrypoint":"cli"`, `"entrypoint":"local-agent"`))
+	writeLines(t, filepath.Join(d.claude, "projects", "-p", "sess1.jsonl"), claudeMsg("m1", "claude-opus-5-5", 1, 2, 3, 4, 1))
+	Reset()
+	cs := Calls(time.Time{})
+	if len(cs) != 2 || cs[0].Agent != "claude-desktop" || cs[0].Tokens != (Tokens{5, 6, 7, 8, 0}) || cs[1].Agent != "claude" {
+		t.Fatalf("calls: %+v", cs)
 	}
 }

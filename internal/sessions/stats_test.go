@@ -241,3 +241,48 @@ func sortedByLast(ss []Summary) bool {
 	}
 	return true
 }
+
+// A session that runs past midnight counts on both days: each message on
+// its own day, a message whose blocks straddle midnight once, on the day of
+// its last word, and the work across midnight on the day it ended.
+func TestStatsMidnight(t *testing.T) {
+	inZone(t, 8) // 16:00Z is midnight
+	claude, _ := setup(t)
+	path := filepath.Join(claude, "projects", "-work-night", "33333333-2222-3333-4444-555555555555.jsonl")
+	os.MkdirAll(filepath.Dir(path), 0o755)
+	first := ccMsg("m1", "2026-09-20T15:56:00.000Z", 100, 10) + // 23:56
+		ccMsg("m2", "2026-09-20T15:59:00.000Z", 200, 20) // 23:59, a block of m2
+	rest := ccMsg("m2", "2026-09-20T16:01:00.000Z", 200, 25) + // 00:01, m2's last word
+		ccMsg("m3", "2026-09-20T16:03:00.000Z", 400, 40) + // 00:03
+		ccMsg("m4", "2026-09-20T18:00:00.000Z", 800, 80) // 02:00, after a long pause
+	os.WriteFile(path, []byte(first), 0o644)
+
+	check := func(when string, d20, d21 Tokens, a20, a21 int64) {
+		t.Helper()
+		s := statsAt(0, statsNow)
+		if got, sec := usageOn(s, "2026-09-20", "/work/night"); got != d20 || sec != a20 {
+			t.Fatalf("%s, the 20th: %+v %ds, want %+v %ds", when, got, sec, d20, a20)
+		}
+		if got, sec := usageOn(s, "2026-09-21", "/work/night"); got != d21 || sec != a21 {
+			t.Fatalf("%s, the 21st: %+v %ds, want %+v %ds", when, got, sec, d21, a21)
+		}
+	}
+	check("before midnight", Tokens{300, 30, 20, 0, 0}, Tokens{}, 180, 0)
+
+	// read on from where it was left: m2 moves to the 21st, counted once
+	f, _ := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0)
+	f.WriteString(rest)
+	f.Close()
+	after20, after21 := Tokens{100, 10, 10, 0, 0}, Tokens{1400, 145, 30, 0, 0}
+	check("read on", after20, after21, 180, 240)
+
+	// the same from the start, and from the parse kept on disk
+	full := parse(file{agent: "claude", path: path, main: true, size: int64(len(first + rest)), mod: time.Now()}, nil)
+	if got := full.Days["2026-09-21"].Models["claude-opus-5-5"]; got != after21 {
+		t.Fatalf("read whole: %+v", got)
+	}
+	Reset()
+	check("kept on disk", after20, after21, 180, 240)
+	// and read again unchanged, nothing counts twice
+	check("again", after20, after21, 180, 240)
+}

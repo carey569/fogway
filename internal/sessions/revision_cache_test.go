@@ -126,3 +126,24 @@ func TestCallFrameOmitsRuntimeTypeGraph(t *testing.T) {
 	}
 	t.Logf("empty frame: %d bytes", b.Len())
 }
+
+func TestCodexCounterResetAtNonIncreasingTime(t *testing.T) {
+	for _, second := range []int{10, 5} {
+		t.Run(fmt.Sprint(second), func(t *testing.T) {
+			u := cxUse(100, 40, 0, 10, 2)
+			small := cxUse(40, 10, 0, 4, 1)
+			lines := append(cxTurnLines(0, "t1", "m", "high"), tokenCountLine(10, u, u), tokenCountLine(second, small, small), tokenCountLine(second+1, cxUse(80, 20, 0, 8, 2), small))
+			codexUsageLog(t, lines)
+			for _, restart := range []bool{false, true} {
+				if restart {
+					Reset()
+				}
+				cs := Calls(time.Time{})
+				ss := List(0)
+				if len(cs) != 3 || len(ss) != 1 || ss[0].Output != 18 {
+					t.Fatalf("restart=%v calls=%+v summary=%+v", restart, cs, ss)
+				}
+			}
+		})
+	}
+}

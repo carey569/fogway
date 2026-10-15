@@ -240,3 +240,50 @@ func TestCodexArchivedDivergentFiles(t *testing.T) {
 		t.Fatal("discovery order changed")
 	}
 }
+
+// Archiving changes where a rollout lives, not its usage. A temporary
+// byte-for-byte copy during that move must not count twice, even if packed.
+func TestCodexArchivedRollouts(t *testing.T) {
+	for _, compressed := range []bool{false, true} {
+		t.Run(map[bool]string{false: "plain", true: "packed"}[compressed], func(t *testing.T) {
+			d := setupCalls(t)
+			name := "rollout-2026-09-20T10-00-00-0190aaaa-1111-7222-8333-444455556666.jsonl"
+			live := filepath.Join(d.codex, "sessions", "2026", "09", "20", name)
+			archived := filepath.Join(d.codex, "archived_sessions", name)
+			lines := append(cxTurnLines(1, "turn-1", "gpt-6-astra", "low"),
+				tokenCountLine(3, cxUse(1000, 0, 0, 50, 0), cxUse(1000, 0, 0, 50, 0)))
+			writeLines(t, live, lines...)
+			before := codexOf(t, List(0))
+			calls := Calls(time.Time{})
+			if len(calls) != 1 {
+				t.Fatalf("calls: %d", len(calls))
+			}
+			writeLines(t, archived, lines...)
+			if compressed {
+				archived = pack(t, archived, false)
+			}
+			if fs := codexFiles(); len(fs) != 1 {
+				t.Fatalf("copied rollout counted %d times", len(fs))
+			}
+			if got := codexOf(t, List(0)); got.Tokens != before.Tokens {
+				t.Fatalf("copy: %+v != %+v", got.Tokens, before.Tokens)
+			}
+			if err := os.Remove(live); err != nil {
+				t.Fatal(err)
+			}
+			for _, reset := range []bool{false, true} {
+				if reset {
+					Reset()
+				}
+				got := codexOf(t, List(0))
+				if got.ID != before.ID || got.Tokens != before.Tokens || got.Path != archived {
+					t.Fatalf("archive (reset=%v): %+v", reset, got)
+				}
+				gotCalls := Calls(time.Time{})
+				if len(gotCalls) != 1 || gotCalls[0].Tokens != calls[0].Tokens || !gotCalls[0].Time.Equal(calls[0].Time) {
+					t.Fatalf("archive calls: %+v", gotCalls)
+				}
+			}
+		})
+	}
+}

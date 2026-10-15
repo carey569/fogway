@@ -1,9 +1,13 @@
 package sessions
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
+
+	"github.com/klauspost/compress/zstd"
 )
 
 const (
@@ -156,5 +160,101 @@ func TestDirsMore(t *testing.T) {
 		if d[2+i] != w {
 			t.Fatalf("dirs %v, want %v after Claude Code's and Codex's", d, want)
 		}
+	}
+}
+
+func TestDsh(t *testing.T) {
+	inZone(t, 0)
+	home := setupAgents(t)
+	checkDsh(t, List(0))
+
+	// a reply more: the session is read again
+	p := filepath.Join(home, ".dsh", "sessions", "work-dsh-3f2a", "dsh-a", "session.v3.jsonl")
+	more := []byte(`{"type":"assistant/message","seq":6,"time":1790503290000,"data":{"message":{"source":{"model":"deepseek-v4-flash"}},"usage":{"inputTokens":1,"outputTokens":1,"cacheReadTokens":0}}}` + "\n")
+	b, _ := os.ReadFile(p)
+	os.WriteFile(p, append(b, more...), 0o644)
+	a := find(t, List(0), "dsh", "dsh-a")
+	if m := model(a, "deepseek-v4-flash"); m.Tokens != (Tokens{18, 9, 200, 0, 0}) || !a.Last.Equal(at("2026-09-27T10:01:30Z")) {
+		t.Fatalf("after a new reply: %+v %s", m, a.Last)
+	}
+	os.WriteFile(p, b, 0o644)
+
+	// compressed, in frames appended a batch at a time
+	for _, id := range []string{"dsh-a", "dsh-b", "dsh-c"} {
+		p := filepath.Join(home, ".dsh", "sessions", "work-dsh-3f2a", id, "session.v3.jsonl")
+		b, _ := os.ReadFile(p)
+		enc, _ := zstd.NewWriter(nil)
+		half := bytes.IndexByte(b[len(b)/2:], '\n') + len(b)/2 + 1
+		z := enc.EncodeAll(b[half:], enc.EncodeAll(b[:half], nil))
+		enc.Close()
+		os.Remove(p)
+		os.WriteFile(p+".zstd", z, 0o644)
+	}
+	Reset()
+	checkDsh(t, List(0))
+
+	// $DSH_HOME, elsewhere
+	other := filepath.Join(filepath.Dir(home), "dsh-home")
+	if err := os.Rename(filepath.Join(home, ".dsh"), other); err != nil {
+		t.Fatal(err)
+	}
+	Reset()
+	if n := count(List(0), "dsh"); n != 0 {
+		t.Fatalf("%d dsh sessions with no ~/.dsh", n)
+	}
+	t.Setenv("DSH_HOME", other)
+	Reset()
+	checkDsh(t, List(0))
+}
+
+func TestCline(t *testing.T) {
+	inZone(t, 0)
+	home := setupAgents(t)
+	ss := List(0)
+	if n := count(ss, "cline"); n != 2 {
+		t.Fatalf("want 2 Cline sessions (the subagent in its session), got %d", n)
+	}
+	c := find(t, ss, "cline", clineMain)
+	// the prompt typed, out of Cline's tags, before its title
+	if c.Cwd != "/work/cline" || c.Title != "Importer speed-up" {
+		t.Fatalf("cline: %+v", c)
+	}
+	if m := model(c, "claude-opus-5-5"); m.Tokens != (Tokens{100, 50, 1000, 500, 0}) || !m.Priced {
+		t.Fatalf("opus: %+v", m)
+	}
+	if m := model(c, "claude-haiku-4-5"); m.Tokens != (Tokens{130, 30, 100, 0, 0}) {
+		t.Fatalf("haiku, the subagent's in: %+v", m)
+	}
+	if !c.Start.Equal(at("2026-09-27T10:00:00Z")) || !c.Last.Equal(at("2026-09-27T10:02:00Z")) {
+		t.Fatalf("cline times %s %s", c.Start, c.Last)
+	}
+	want := "cd '/work/cline' && cline --id " + clineMain
+	if runtime.GOOS == "windows" {
+		want = "Set-Location -LiteralPath '/work/cline'; cline --id " + clineMain
+	}
+	if c.Resume != want {
+		t.Fatalf("resume %q", c.Resume)
+	}
+	// the fork: what it copied counted in the session it came from
+	f := find(t, ss, "cline", clineFork)
+	if f.Tokens != (Tokens{100, 30, 300, 0, 0}) || f.Title != "Speed up the importer" {
+		t.Fatalf("fork: %+v", f)
+	}
+	if !f.Start.Equal(at("2026-09-27T12:00:00Z")) || !f.Last.Equal(at("2026-09-27T12:01:00Z")) {
+		t.Fatalf("fork times %s %s", f.Start, f.Last)
+	}
+
+	// the sessions folder of $CLINE_DIR, and of $CLINE_SESSION_DATA_DIR
+	moved := filepath.Join(filepath.Dir(home), "cline-dir")
+	if err := os.Rename(filepath.Join(home, ".cline"), moved); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CLINE_DIR", moved)
+	Reset()
+	find(t, List(0), "cline", clineMain)
+	t.Setenv("CLINE_SESSION_DATA_DIR", filepath.Join(moved, "none"))
+	Reset()
+	if n := count(List(0), "cline"); n != 0 {
+		t.Fatalf("$CLINE_SESSION_DATA_DIR comes first: %d", n)
 	}
 }
