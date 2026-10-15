@@ -320,7 +320,7 @@ func fogwayProviderJSONAt(shape, catalog, gw string) any {
 			ms[m.ID] = e
 		}
 		return map[string]any{"npm": "@ai-sdk/openai-compatible", "name": "fogway",
-			"options": map[string]any{"baseURL": gw + "/v1", "apiKey": openCodeKeyAt(catalog, gw)}, "models": ms}
+			"options": map[string]any{"baseURL": gw + "/v1", "apiKey": keyAt(gw)}, "models": ms}
 	case "crush":
 		var ms []map[string]any
 		for _, m := range models {
@@ -570,9 +570,9 @@ func piThinkingLevels(efforts []string, claudeOff bool) map[string]any {
 	return levels
 }
 
-// openCodeLike is OpenCode and the forks that keep its config shape
-// (mimocode): a provider block with npm/@ai-sdk/openai-compatible, model and
-// small_model fields, and its own auth file beside its config.
+// openCodeLike is OpenCode, or a fork that keeps its config shape: a
+// provider block with npm/@ai-sdk/openai-compatible, model and small_model
+// fields, and its own auth file beside its config.
 // at is where it lives: this machine, or a WSL distro (see wsl.go), whose
 // gateway address its provider names.
 func openCodeLike(at place, id, name, icon, bin, dir, auth string, ua []string, aliases ...string) *Agent {
@@ -625,7 +625,7 @@ func openCodeLike(at place, id, name, icon, bin, dir, auth string, ua []string, 
 				return ""
 			}
 			return wiringOff(name, path, func(k string) (string, bool) { return edit.GetJSON(path, "provider."+fogwayID+".options."+k) },
-				"baseURL", at.v1(), "apiKey", openCodeKeyAt(id, at.gw()))
+				"baseURL", at.v1(), "apiKey", keyAt(at.gw()))
 		},
 		Sync: func() error {
 			// a model of fogway's chosen, but its provider gone from the
@@ -640,17 +640,6 @@ func openCodeLike(at place, id, name, icon, bin, dir, auth string, ua []string, 
 			{Key: "small", Label: "small", Get: jsonGet(path, "small_model"), Set: set("small_model"), Options: opts("small")},
 		},
 	}
-}
-
-// openCodeKeyAt is the key an OpenCode-shaped agent (id) sends the gateway
-// at gw: the gateway's own, which OpenCode and MiMo Code are told apart by
-// their User-Agents with, or for DevEco Code, parts of whose code still
-// send OpenCode's User-Agent, one that names it.
-func openCodeKeyAt(id, gw string) string {
-	if id == "deveco" {
-		return agentKeyAt(id, gw)
-	}
-	return keyAt(gw)
 }
 
 // openCodeRefAt is openCodeRef for the agent at a place, which reaches the

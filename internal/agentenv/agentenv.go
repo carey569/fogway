@@ -40,19 +40,16 @@ var Vars = []string{
 	"CLINE_DIR", "CLINE_DATA_DIR", "CLINE_SESSION_DATA_DIR",
 	// Pi, whose profile and config are apart
 	"PI_CODING_AGENT_DIR", "PI_CODING_AGENT_SESSION_DIR", "PI_CONFIG_DIR", "PI_PROFILE",
-	"PRIME_AGENT_CODING_AGENT_DIR",
 	// omp
 	"OMP_PROFILE",
 	// Kimi Code and its shared folder
 	"KIMI_CODE_HOME", "KIMI_SHARE_DIR",
 	// Qwen Code's home, ~/.qwen without it
 	"QWEN_HOME",
-	// OpenHanako, dsh
-	"HANA_HOME", "DSH_HOME",
+	// dsh
+	"DSH_HOME",
 	// PI-Desktop's data folder, where Sessions reads its chat titles
 	"PI_DESKTOP_DATA_DIR",
-	// T3 Code's base folder (its settings in userdata/)
-	"T3CODE_HOME",
 	// Cursor's CLI: its config folder (its chats) and its data folder
 	"CURSOR_CONFIG_DIR", "CURSOR_DATA_DIR",
 	// OpenCode

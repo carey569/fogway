@@ -34,7 +34,7 @@ func TestRelativeFolderVariablesIgnoredNotUnset(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", abs)
 	t.Setenv("XDG_DATA_HOME", "data")
 	t.Setenv("CODEX_HOME", "./codex")
-	t.Setenv("HANA_HOME", "~/.hanako")
+	t.Setenv("PI_CODING_AGENT_DIR", "~/.pi/agent")
 	t.Setenv("PI_PROFILE", "work")
 	t.Setenv("FOGWAY_ZED_CONFIG_DIR", "./zedg-config")
 	t.Setenv("FOGWAY_ZED_BIN", "zedg")
@@ -48,7 +48,7 @@ func TestRelativeFolderVariablesIgnoredNotUnset(t *testing.T) {
 	if want := []string{"CODEX_HOME", "FOGWAY_ZED_CONFIG_DIR", "XDG_DATA_HOME"}; !slices.Equal(ignored, want) {
 		t.Errorf("ignored %v, want %v", ignored, want)
 	}
-	for v, want := range map[string]string{"XDG_CONFIG_HOME": abs, "HANA_HOME": "~/.hanako", "PI_PROFILE": "work", "FOGWAY_ZED_CONFIG_DIR": "", "FOGWAY_ZED_BIN": "zedg", "FOGWAY_ZED_PROCESS_NAMES": "zedg,ZedG", "XDG_DATA_HOME": "", "CODEX_HOME": ""} {
+	for v, want := range map[string]string{"XDG_CONFIG_HOME": abs, "PI_CODING_AGENT_DIR": "~/.pi/agent", "PI_PROFILE": "work", "FOGWAY_ZED_CONFIG_DIR": "", "FOGWAY_ZED_BIN": "zedg", "FOGWAY_ZED_PROCESS_NAMES": "zedg,ZedG", "XDG_DATA_HOME": "", "CODEX_HOME": ""} {
 		if got := Getenv(v); got != want {
 			t.Errorf("Getenv(%s) = %q, want %q", v, got, want)
 		}
@@ -87,15 +87,9 @@ func TestTildeFolderVariables(t *testing.T) {
 		{"OPENCODE_CONFIG_DIR", "~/opencode", false},
 		{"PI_CODING_AGENT_DIR", "~/pi", true},
 		{"PI_CODING_AGENT_SESSION_DIR", "~/sessions", true},
-		{"HANA_HOME", "~", true},
-		{"T3CODE_HOME", "~/.t3", true},
-		{"HANA_HOME", "~other/hanako", false},
+		{"PI_CODING_AGENT_DIR", "~", true},
 		{"PI_CODING_AGENT_DIR", "~other/pi", false},
 		{"PI_CODING_AGENT_DIR", `~\pi`, runtime.GOOS == "windows"},
-		{"PRIME_AGENT_CODING_AGENT_DIR", "~", true},
-		{"PRIME_AGENT_CODING_AGENT_DIR", "~/pa", true},
-		{"PRIME_AGENT_CODING_AGENT_DIR", "~other/pa", false},
-		{"PRIME_AGENT_CODING_AGENT_DIR", `~\pa`, runtime.GOOS == "windows"},
 	} {
 		t.Run(tc.name+"="+tc.value, func(t *testing.T) {
 			t.Setenv(tc.name, tc.value)
