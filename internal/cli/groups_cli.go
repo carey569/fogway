@@ -72,9 +72,9 @@ const groupUsage = `usage:
            or max — sent whatever the agent asks or effort=auto picks, at the level the model has nearest;
            without one it reasons as the group's effort says. The same model at two efforts is two members
            (a rule can send to either). A model whose own id ends so (a :free, :7b or :0) stays as it is
-           provider/model[:effort]:fast sends the member in its vendor's fast mode: priority processing on a
-           ChatGPT account (Codex's Fast) or an OpenAI key, Cursor's -fast model, Claude's fast mode on an
-           Anthropic key for Opus 4.8 and 5; a model without one is refused (codex/gpt-6.1-sol:high:fast)
+           provider/model[:effort]:fast sends the member in its vendor's fast mode: priority processing on an
+           OpenAI key, Claude's fast mode on an Anthropic key for Opus 4.8 and 5; a model without one is
+           refused (openai/gpt-6.1-sol:high:fast)
            a pattern puts in every model it matches, as fogway models lists them now and later: a glob, where
            * is any run of characters, / too, over the provider/model id in any case (openrouter/*:free,
            *-free, opencode-zen/*), or re:<regexp> matching the whole id (re:openrouter/.*:(free|beta)).
@@ -105,16 +105,16 @@ const groupUsage = `usage:
                    rates how hard it is, and the turn's requests
                    reason at low, medium, high or xhigh; only those the agent asked to reason
 
-  e.g. fogway group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=order
-       fogway group set opus-anywhere stays=session models+=openrouter/anthropic/claude-opus-5.5
+  e.g. fogway group add "Opus anywhere" models=anthropic/claude-opus-5-5,openrouter/anthropic/claude-opus-5.5 routing=order
+       fogway group set opus-anywhere stays=session models+=aihubmix/claude-opus-5-5
        fogway group set auto-gpt-6-astra id=gpt-6-astra
        fogway group add Everything models=group/opus-anywhere,deepseek/deepseek-v4-flash routing=order
        fogway group set opus-anywhere effort=auto classifier=deepseek/deepseek-v4-flash
-       fogway group add Fast models=codex/gpt-5.6-luna:low,deepseek/deepseek-v4-flash,glm/glm-5.3-flash:high
-       fogway group set fast models+=gcloud/gemini-3.8-flash:medium
+       fogway group add Fast models=openai/gpt-5.6-luna:low,deepseek/deepseek-v4-flash,zhipu/glm-5.3-flash:high
+       fogway group set fast models+=google/gemini-3.8-flash:medium
        fogway group add my-free-pool models='openrouter/*:free,opencode-zen/*-free' routing=order
-       fogway group set opus-anywhere routing=weight weight=claude/claude-opus-5-5=3
-       fogway group pick opus-anywhere copilot/claude-opus-5.5
+       fogway group set opus-anywhere routing=weight weight=anthropic/claude-opus-5-5=3
+       fogway group pick opus-anywhere openrouter/anthropic/claude-opus-5.5
        fogway claude group/opus-anywhere`
 
 // routingNames: each routing's value in the file, what the CLI calls it,
@@ -221,7 +221,7 @@ func inGroup(members []string) func(string) bool {
 // memberResolver spells a model the user typed as the catalog's
 // provider/model id: the id itself, or a bare model id one provider
 // serves — with the effort it is fixed at after it, when one was typed
-// ("glm/glm-5.3-flash:high"; see provider.MemberEffort). keep are ids the
+// ("zhipu/glm-5.3-flash:high"; see provider.MemberEffort). keep are ids the
 // group has already, kept though no provider serves them now (the Routing
 // view keeps them too, skipped).
 func memberResolver(keep []string) func(string) (string, error) {

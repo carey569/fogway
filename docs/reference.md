@@ -1234,7 +1234,7 @@ window that stops it used up — then exits 0, so a long task stopped by its
 limit can go on unattended:
 
 ```sh
-until codex exec "…"; do fogway quota wait codex || break; done
+until codex exec "…"; do fogway quota wait kimi-code || break; done
 ```
 
 It reads the vendors itself, whether or not the gateway runs, and again

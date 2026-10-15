@@ -28,12 +28,13 @@ const quotaUsage = `usage: fogway quota [<provider>…] [--json]
   on-demand spending); --balance 5 when a balance falls to 5 or under, in its own
   currency or credits, once until topped up past it. off turns either off, and alone
   it says what is set. Both are off until set.
-  quota wait codex returns once any Codex account fogway has on has allowance again
-  (a window that stops it no longer used up), and an account's email or login, or
-  <provider>/<account>, waits for that one alone: it reads the vendors itself, gateway
-  running or not, again shortly after the soonest reset (every 1 to 10 minutes), and
-  says on stderr what it waits for. For a script to go on with work it stopped:
-  until codex exec …; do fogway quota wait codex || break; done. Exit 0 once there
+  quota wait kimi-code returns once any Kimi Code plan fogway has on has allowance
+  again (a window that stops it no longer used up), and the name fogway quota shows
+  after a provider, or <provider>/<that name>, waits for that one alone: it reads the
+  vendors itself, gateway running or not, again shortly after the soonest reset
+  (every 1 to 10 minutes), and says on stderr what it waits for. For a script to go
+  on with work it stopped:
+  until codex exec …; do fogway quota wait kimi-code || break; done. Exit 0 once there
   is allowance, 1 when --timeout (30m, 6h) passes first, 2 for a name it doesn't
   know, 130 on Ctrl+C.
   quota history is what fogway has read of each subscription's and plan's windows

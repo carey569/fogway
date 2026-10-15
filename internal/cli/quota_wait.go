@@ -226,7 +226,7 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 // quotaWaitCmd: fogway quota wait <provider|account> [--timeout <d>]
 // [--quiet] — blocks until the subscription (any of its accounts) or the
 // account has allowance again, for a script to go on with the work it
-// stopped (#720): until codex exec …; do fogway quota wait codex; done.
+// stopped (#720): until codex exec …; do fogway quota wait kimi-code; done.
 // Exits 0 then, 1 on --timeout, 2 on a name it doesn't know, 130 on Ctrl+C.
 func quotaWaitCmd(args []string) error {
 	var arg string

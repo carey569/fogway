@@ -19,7 +19,7 @@ const ruleUsage = `usage:
                         [folders=<folder>,…] [except-folders=<folder>,…] [classifier=<model>] [at=<n>]
                                           a rule: a turn that matches it goes to <model>, one of the group's
                                           (or group/<id>, a group in it), first; a model in the group at an
-                                          effort of its own is named with it (use=glm/glm-5.3-flash:high)
+                                          effort of its own is named with it (use=zhipu/glm-5.3-flash:high)
   fogway group rule add <group> pause=<model> [time=HH:MM-HH:MM] [days=mon-fri] [agents=a,b…]
                         [folders=<folder>,…] [except-folders=<folder>,…] [at=<n>]
                                           a pause: while it holds, <model> is left out of the group — sent
@@ -66,12 +66,12 @@ const ruleUsage = `usage:
 
   e.g. fogway group rule add opus-anywhere use=openrouter/google/gemini-3-pro tokens=200k
        fogway group rule add opus-anywhere use=a/vision-model images
-       fogway group rule add fast use=codex/gpt-5.6-sol:xhigh effort=high
+       fogway group rule add fast use=openai/gpt-5.6-sol:xhigh effort=high
        fogway group rule add opus-anywhere use=deepseek/deepseek-v4-flash compact
-       fogway group rule add cheap use=glm/glm-5.3 time=14:00-18:00 days=mon-fri
-       fogway group rule add cheap pause=glm/glm-5.3 time=14:00-18:00 days=mon-fri
-       fogway group rule add opus-anywhere use=kimi/kimi-k2.6 folders=~/oss
-       fogway group rule add auto-claude-opus-5-5 pause=claude/claude-opus-5-5 except-folders=~/big-task
+       fogway group rule add cheap use=zhipu/glm-5.3 time=14:00-18:00 days=mon-fri
+       fogway group rule add cheap pause=zhipu/glm-5.3 time=14:00-18:00 days=mon-fri
+       fogway group rule add opus-anywhere use=moonshot/kimi-k2.6 folders=~/oss
+       fogway group rule add auto-claude-opus-5-5 pause=anthropic/claude-opus-5-5 except-folders=~/big-task
        fogway group rule add opus-anywhere use=deepseek/deepseek-v4-flash intent="a quick question" classifier=groq/llama-3.1-8b-instant`
 
 // parseTokens reads 200000, 200k, 1.5m.

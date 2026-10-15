@@ -46,18 +46,15 @@ func (g Group) IsFast(id string) bool {
 }
 
 // CanFast reports whether model, as p serves it, has a fast mode fogway
-// can ask for: a ChatGPT account's GPT models (Codex's Fast), Cursor's
-// models with a -fast one, an OpenAI key's GPT and o-series models on its
-// Responses API (priority processing), and an Anthropic key's Opus models with fast mode.
-// A Claude subscription runs Claude Code itself, and a cloud (Bedrock,
-// Vertex) refuses the field, so neither is. A provider the user added by
+// can ask for: an OpenAI key's GPT and o-series models on its Responses API
+// (priority processing), and an Anthropic key's Opus models with fast mode.
+// A cloud (Bedrock, Vertex) refuses the field. A provider the user added by
 // its address (AddedByAddress) is asked for priority on a GPT model it
 // serves on an OpenAI API, when the user switches it fast themselves
 // (#1615): it is sent service_tier "priority" there, as Codex's own Fast
 // already is (#1234), and one that turns the field away is asked again
 // without it and not sent it again (the gateway's optional fields).
 func CanFast(p Provider, model string) bool {
-
 	if p.IsBedrock() {
 		return false
 	}

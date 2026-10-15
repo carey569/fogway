@@ -84,7 +84,7 @@ const modelUsage = `usage:
   usage and session totals report, and nothing an agent can see, and it is saved without
   rewriting the model lists in the agents' own files.
 
-  e.g. fogway model name claude/claude-opus-5-5 "Opus 5.5"
+  e.g. fogway model name anthropic/claude-opus-5-5 "Opus 5.5"
        fogway model efforts openai/gpt-6 low,medium,high
        fogway model price relay-a/gpt-5.5 0.12,0.60,0.01,0.15
        fogway model context relay-a/claude-opus-5-5 1m`
