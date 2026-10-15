@@ -164,7 +164,7 @@ and otherwise a known gateway session from what its transcript reads
 (`sessions.WriteGatewayMarkdown`, "Recorded by: fogway's gateway", with a note
 when turns or a part's end weren't kept). A fogway that other computers'
 agents reach has no file of their sessions, so this is the only way it can
-export them. Its test, `TestGatewaySessionExportsMarkdown`, went in 36b17d5.
+export them (`TestGatewaySessionExportsMarkdown`).
 
 A gateway session without a saved Desktop name is titled by what it was
 first asked (YOU on Discord), not its `ses_…` id: `sessions.GatewayTitle` reads the first 8 complete turns of
