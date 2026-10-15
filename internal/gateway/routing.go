@@ -550,15 +550,6 @@ func (s *Server) restAfterMarked(c candidate, status int, header http.Header, bo
 		n := routed.failures[counted]
 		routed.Unlock()
 		d, r.By, r.Failures = min(fallbackCooldown<<min(n-1, 10), longestRetry), "backoff", n
-		// a subscription that failed with a window full is out of it,
-		// whatever it said; a key isn't: a relay out of accounts for
-		// everyone (sub2api's 503) says nothing of the key's own windows.
-		// Held to the longest an account out of quota sits out: the window
-		// is the vendor's reading, and one read a year off (a /usage date
-		// with no year) would bench the account until someone noticed
-		if t := c.full(now); !t.IsZero() && false && !unserved {
-			d, r.By = min(t.Sub(now), longestQuota), "window"
-		}
 	}
 	if why != failOther {
 		staleKeyAllowance(c.p) // a key that reads its windows: asked again

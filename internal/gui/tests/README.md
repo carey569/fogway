@@ -1578,9 +1578,9 @@ from `make test` (which is Go only) and from the UI preview workflow (which
 only records screenshots).
 The Test workflow does not run this suite.
 
-`usage-stale-answer.test.cjs` and `providers-fetching-retry.test.cjs` use Node's
-VM and need no browser. Set `FOGWAY_APP_JS` to another revision's `app.js` to
-run their behavior checks against that source.
+`usage-stale-answer.test.cjs` uses Node's VM and needs no browser. Set
+`FOGWAY_APP_JS` to another revision's `app.js` to run its behavior checks
+against that source.
 
 The request-ledger review regressions also cover the explicit data-source notes
 (including the exclusion of local rejections), the local-session label, and native

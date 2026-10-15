@@ -342,9 +342,6 @@ type providersJSON struct {
 	// the page says so over what is listed, never "add your first
 	// provider".
 	FileError string `json:"fileError,omitempty"`
-	// Fetching: accounts' lists are still being asked for
-	// (provider.FetchingNew); the page asks again until they are in
-	Fetching bool `json:"fetching,omitempty"`
 }
 
 // agentModel is the model an agent is on, as fogway's catalog names it.
@@ -568,10 +565,6 @@ func providerInfo(p provider.Provider, agents []agentUse) providerJSON {
 var keyRestOf = gateway.RestOf
 
 func providersState() providersJSON {
-	// an account signed in since start-up is listed with its vendor's
-	// models, not fogway's own list of them (#204): asked behind the page,
-	// which is told so and asks again, never waited for (#541)
-	provider.FetchNewBehind(8 * time.Second)
 	agents := agent.Detected()
 	s := providersJSON{Providers: []providerJSON{}, Presets: []presetJSON{}}
 	if err := provider.FileError(); err != nil {
@@ -633,7 +626,6 @@ func providersState() providersJSON {
 		s.Gateway.Running, s.Gateway.Window, s.Gateway.Version = o.Running, o.Window, o.Version
 		s.Gateway.Older = o.Running && update.Newer(gateway.Version, o.Version)
 	}
-	s.Fetching = provider.FetchingNew()
 	return s
 }
 
@@ -671,11 +663,6 @@ func providerRoutes(mux *http.ServeMux, w Windows) {
 		writeJSON(rw, map[string]any{"vendors": upstream.Wait(4*time.Second, ids...), "providers": of})
 	})
 	mux.HandleFunc("GET /api/providers", func(rw http.ResponseWriter, r *http.Request) {
-		// ?wait: an account just signed in opens in the editor with its
-		// vendor's list, worth the wait there (#204)
-		if r.URL.Query().Has("wait") {
-			provider.FetchNew(8 * time.Second)
-		}
 		writeJSON(rw, providersState())
 	})
 	// Recent-call bodies are read only when their row is opened, not with

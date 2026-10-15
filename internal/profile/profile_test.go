@@ -72,7 +72,7 @@ func TestOldProfiles(t *testing.T) {
 	if p.Fields["claude.model"] != "acme/m1" || len(p.Fields) != 2 {
 		t.Fatalf("work: %+v", p)
 	}
-	if s := LongSummary(p); s != "claude acme/m1 · codex acme/m2" {
+	if s := Summary(p); s != "claude acme/m1 · codex acme/m2" {
 		t.Errorf("summary %q", s)
 	}
 	if err := store(ps); err != nil {

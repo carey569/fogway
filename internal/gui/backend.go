@@ -10,7 +10,6 @@ import (
 	"github.com/carey569/fogway/internal/agent"
 	"github.com/carey569/fogway/internal/catalog"
 	"github.com/carey569/fogway/internal/gateway"
-	"github.com/carey569/fogway/internal/provider"
 	"github.com/carey569/fogway/internal/update"
 )
 
@@ -51,9 +50,6 @@ func startBackend() (gw *gateway.Server) {
 			}
 		}
 		cancel()
-		// A signed-in agent's list exists only at the vendor; fill it in the
-		// first time so the picker never shows a stale snapshot.
-		provider.FetchNew(20 * time.Second)
 		// lists an older fogway wrote into agents' files, without what
 		// it has learnt since (context windows, providers added)
 		agent.SyncCatalog()

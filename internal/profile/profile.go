@@ -332,11 +332,3 @@ func Summary(p Profile) string {
 	}
 	return strings.Join(parts, " · ")
 }
-
-// LongSummary is Summary.
-func LongSummary(p Profile) string { return Summary(p) }
-
-// Report is what applying a profile did beyond its fields, a line each,
-// for the terminal: nothing now that profiles carry fields and model lists
-// alone.
-func Report(Applied) []string { return nil }

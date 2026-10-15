@@ -107,16 +107,10 @@ func clineProbe(body string) string {
 }
 
 // ModelTest says why p's models can't each be sent a test request ("" when
-// they can): "decide" for a decision API whose models can't each be sent
-// a System One question (AsksDecideModels), whose endpoint Test asks it
-// for them; "own-api" for a sign-in reached
-// through its agent's own API (Cursor, Devin, Kiro, Zed, Qoder, a Google
-// sign-in), which the gateway translates every request for, so a probe
-// has no endpoint to go to. A Google sign-in's are asked through the
-// gateway's translator (testsTranslated). Vertex AI's generateContent is
-// asked as it is.
+// they can): "own-api" for a provider with no endpoint of an API a probe
+// is written for (Chat, Responses, Anthropic, Gemini's). Vertex AI's
+// generateContent is asked as it is.
 func (p Provider) ModelTest() string {
-
 	if p.IsVertex() {
 		return ""
 	}
@@ -127,15 +121,6 @@ func (p Provider) ModelTest() string {
 	}
 	return "own-api"
 }
-
-// AsksDecideModels reports whether each of p's decision models can be
-// sent a System One question of its own (TestModels): where the API is
-// System One's, TypeSafe's or a gateway's that serves it as it is
-// (Vercel's TypeSafe API, OpenRouter's), or Workers AI's, which DecideAsk
-// wraps it for (ARNO on Discord: cloudflare-jev's models couldn't be
-// tested from their right-click); not Vercel's evaluation models, which
-// name the model in headers of their own.
-func (p Provider) AsksDecideModels() bool { return false }
 
 func tinyBody(q Provider, proto Protocol, model string) (url, body string) {
 	switch proto {

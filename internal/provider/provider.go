@@ -1043,11 +1043,6 @@ func (p Provider) Speaks() []Protocol {
 	return out
 }
 
-// FactoryGemini is Factory's sign-in, whose Gemini models are asked on its
-// own generate route (…/generate, the model in the body), not at
-// models/{model}:streamGenerateContent as Google's Gemini API asks them.
-func (p Provider) FactoryGemini() bool { return false }
-
 // ResponsesFirst: an OpenAI model on OpenAI's API, Copilot's, PipeLLM's or Bedrock's,
 // which is best asked on the Responses API though Chat serves it too; and
 // every model where only the Responses API tells what the vendor's cache

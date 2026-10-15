@@ -5303,31 +5303,8 @@ async function loadProviders() {
     backToReader($("#view-gateway"));
   } else renderProviders();
   renderArchive();
-  providersWhileFetching();
   if (view === "providers") loadUpstream();
   discoverLocalProviders();
-}
-
-// Accounts' lists still on their way from their vendors (#541: the page no
-// longer waits for them): asked again every few seconds until they are in,
-// and drawn again only when something changed — never under an open editor.
-// A read that failed, or a reload that did, is asked again rather than ending
-// the asking: this timer is what brings the lists in.
-function providersWhileFetching() {
-  clearTimeout(providersWhileFetching.timer);
-  if (!providers?.fetching) return;
-  providersWhileFetching.timer = setTimeout(async () => {
-    if (!["providers", "gateway", "routing"].includes(view) || editing !== null || adding || document.hidden) return;
-    let next;
-    try { next = await api("providers"); } catch { providersWhileFetching(); return; }
-    const json = (p) => JSON.stringify({ ...p, fetching: false, gateway: { ...p.gateway, calls: 0 } });
-    if (json(next) !== json(providers)) {
-      // a reload that failed says nothing about the lists being in: it is
-      // asked again too, as loadProviders would have
-      try { await loadProviders(); } catch { providersWhileFetching(); }
-    }
-    else { providers.fetching = next.fetching; providersWhileFetching(); }
-  }, 2500);
 }
 
 // What the vendors' own status pages say of the APIs the providers call

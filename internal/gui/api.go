@@ -717,10 +717,6 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 	omarchyRoutes(mux, w)
 	fontRoutes(mux, isWeb(w) || !fonts.Available, fonts.List)
 	mux.HandleFunc("GET /api/state", func(rw http.ResponseWriter, r *http.Request) {
-		// the panel and its model picker load from here: an account still
-		// without its vendor's list (one whose try at start-up failed) is
-		// asked again in the background, not only from the Providers page
-		provider.FetchNewSoon(8 * time.Second)
 		// ?last=1: the state kept from the last read, at once (#1519);
 		// null when none is kept
 		if r.URL.Query().Get("last") == "1" {

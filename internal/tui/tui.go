@@ -218,27 +218,11 @@ func (m *model) goTo(p page) tea.Cmd {
 }
 
 func (m model) Init() tea.Cmd {
-	// a signed-in account's list exists only at its vendor: asked for at
-	// start, as the app does, or Cursor offered its fallback Auto alone
-	// until m on the Providers page asked for it (#1789)
 	if m.syncing {
-		return tea.Batch(syncCmd, fetchModelsCmd)
+		return syncCmd
 	}
-	return fetchModelsCmd
+	return nil
 }
-
-// modelsMsg says FetchNew is done; missing, that an account is left
-// without its list.
-type modelsMsg struct{ missing bool }
-
-func fetchModelsCmd() tea.Msg {
-	return modelsMsg{missing: provider.FetchNew(20 * time.Second)}
-}
-
-// modelsRetry is how long the terminal waits to ask again for a list it
-// couldn't get (the network not up yet at start, a vendor slow to answer),
-// while it stays open: the app asks again each time its page is read.
-var modelsRetry = time.Minute
 
 // modelsChanged shows the models as they are now: the page, and a picker
 // of models open meanwhile, its filter and the model on its cursor kept.
@@ -304,12 +288,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.flash, m.flashOK = "group/"+msg.from+" is group/"+msg.to+" now", true
 		m.reload()
-		return m, nil
-	case modelsMsg:
-		m.modelsChanged()
-		if msg.missing {
-			return m, tea.Tick(modelsRetry, func(time.Time) tea.Msg { return fetchModelsCmd() })
-		}
 		return m, nil
 	case syncedMsg:
 		m.syncing = false
@@ -461,7 +439,7 @@ func (m *model) openProfiles() {
 	var items []agent.Option
 	detected := agent.Detected()
 	for _, n := range profile.Names(ps) {
-		note := profile.LongSummary(ps[n])
+		note := profile.Summary(ps[n])
 		if profile.InUse(ps[n], detected, nil) {
 			note = strings.TrimSuffix("in use · "+note, " · ")
 		}
@@ -482,11 +460,7 @@ func (m *model) openProfiles() {
 				if err != nil {
 					return flashMsg{text: err.Error()}
 				}
-				text := fmt.Sprintf("profile %s applied · %d change%s", n, a.Changed, plural(a.Changed))
-				for _, line := range profile.Report(a) {
-					text += " · " + line
-				}
-				return flashMsg{text: text, ok: true}
+				return flashMsg{text: fmt.Sprintf("profile %s applied · %d change%s", n, a.Changed, plural(a.Changed)), ok: true}
 			}
 		},
 		onDel: func(n string) tea.Cmd {

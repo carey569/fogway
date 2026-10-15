@@ -599,7 +599,7 @@ func profiles(args []string) error {
 			if profile.InUse(ps[n], detected, nil) {
 				mark = green.Render("✓")
 			}
-			fmt.Printf("%s %s  %s\n", mark, bold.Render(n), muted.Render(profile.LongSummary(ps[n])))
+			fmt.Printf("%s %s  %s\n", mark, bold.Render(n), muted.Render(profile.Summary(ps[n])))
 		}
 		return nil
 	case "save":
@@ -632,9 +632,6 @@ func profiles(args []string) error {
 			return err
 		}
 		fmt.Println(green.Render("✓"), "applied", bold.Render(args[1]), muted.Render(fmt.Sprintf("(%d changed)", a.Changed)))
-		for _, line := range profile.Report(a) {
-			fmt.Println(" ", muted.Render(line))
-		}
 		return nil
 	case "rm":
 		if len(args) < 2 {

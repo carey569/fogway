@@ -1097,14 +1097,6 @@ func advertisedURL() string {
 func serve() error {
 	s := gateway.New()
 	go catalog.KeepFresh() // new models' prices, in a gateway left running
-	// a signed-in account's list exists only at its vendor: asked for here
-	// as the app and the terminal ask (#1789), or a headless gateway offered
-	// the agents Cursor's fallback Auto alone; asked again while one is left
-	go func() {
-		for provider.FetchNew(20 * time.Second) {
-			time.Sleep(time.Minute)
-		}
-	}()
 	public := advertisedURL()
 	fmt.Println(green.Render("●"), "fogway gateway on", bold.Render(gateway.URL()))
 	fmt.Println(muted.Render("  OpenAI  "), public+"/v1/chat/completions", muted.Render("·"), public+"/v1/responses")
