@@ -311,10 +311,6 @@ func weighed(c candidate, p provider.Provider, wg weighing, fallback bool, from 
 	w := Weighed{ID: c.rest, Provider: p.ID, Name: p.Name, Icon: p.Icon, Preset: p.Preset, Model: c.model, Fixed: c.effort, Fast: c.fast,
 		Routing: p.Routing, Fallback: fallback, Shared: c.rest != p.ID, Rank: c.rank, NoURL: c.noURL}
 	switch {
-
-	// a plugin's account is told as its provider's: a moved Grok's
-	// plan reads as the built-in's did
-
 	case c.rest != p.ID:
 		w.Kind, w.Who = "key", c.p.KeyName
 		if w.Who == "" {

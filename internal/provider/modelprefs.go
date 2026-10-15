@@ -1012,11 +1012,4 @@ func (p Provider) UpstreamNames() map[string]string {
 func (p Provider) asksOwnBackend() bool {
 
 	return false
-
-	// Qoder is one backend however many sites it is signed in to, and the
-	// gateway's dispatch covers the whole family rather than the site the
-	// account was made on, so the family is asked of rather than one id of
-	// it: a name refused for the one subscription has to be refused for
-	// the other too, which is as much fogway's own there.
-
 }

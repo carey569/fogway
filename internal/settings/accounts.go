@@ -13,12 +13,6 @@ func AccountDiscoveryOff() bool {
 	return noAccountsEnv() || Load().NoAccountDiscovery
 }
 
-// AccountDiscoveryOffIn is AccountDiscoveryOff with the settings already
-// read, for a caller asking it many times in one look.
-func AccountDiscoveryOffIn(s Settings) bool {
-	return noAccountsEnv() || s.NoAccountDiscovery
-}
-
 func noAccountsEnv() bool {
 	v := strings.ToLower(strings.TrimSpace(os.Getenv("FOGWAY_NO_ACCOUNTS")))
 	return v != "" && v != "0" && v != "false"

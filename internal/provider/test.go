@@ -63,8 +63,6 @@ func (p Provider) Test(ctx context.Context) []Result {
 		out = append(out, probe(ctx, q, proto, url, q.tested(body), model, testWait))
 	}
 
-	// The model list already checked its key and named its decisions.
-
 	return out
 }
 
@@ -137,8 +135,6 @@ func tinyBody(q Provider, proto Protocol, model string) (url, body string) {
 		if q.IsVertex() {
 			return vertexTest(q, model)
 		}
-
-		// Factory's generate route. droid sends no stream field.
 
 		return q.Gemini + GeminiPath(model, false), `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"generationConfig":{"maxOutputTokens":16}}`
 	}

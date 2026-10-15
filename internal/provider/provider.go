@@ -20,7 +20,6 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"sync"
 	"sync/atomic"
 
 	"github.com/carey569/fogway/internal/appdir"
@@ -440,13 +439,7 @@ func store(f file) error {
 func All() []Provider {
 	held := heldOf("all", allProviders)
 	out := make([]Provider, 0, len(held))
-	// asked once, from the settings a held look has read already: asked for
-	// each account, settings.json was parsed for every account of every
-	// model's price (agent.fogwayModels, the GUI's drift every 15s and dsh's
-	// round every 30s), most of an idle fogway's CPU (xsw on Discord)
-	_ = sync.OnceValue(func() bool { return settings.AccountDiscoveryOffIn(heldSettings()) })
 	for _, p := range held {
-
 		out = append(out, p.clone()) // callers change theirs, Keys[i] and Headers included
 	}
 	return out
@@ -1019,16 +1012,12 @@ func (p Provider) Base(proto Protocol) string {
 
 // Speaks lists the protocols the vendor serves natively, preferred first.
 func (p Provider) Speaks() []Protocol {
-	// a Google sign-in speaks Code Assist, and only that
-
 	var out []Protocol
 	for _, pr := range Protocols {
 		if p.Base(pr) != "" {
 			out = append(out, pr)
 		}
 	}
-	// a plugin's Gemini models, beside what else it serves
-
 	// Factory's Gemini models, on generateContent. A model droid didn't
 	// list stays on the other three (factoryAPIs); this is not one of them.
 	// A custom provider's Gemini API comes after the others it has.
@@ -1150,8 +1139,6 @@ func (p Provider) Native(model string) Protocol {
 
 // Host is the vendor's API host, for display.
 func (p Provider) Host() string {
-
-	// not plugin://<id>
 
 	for _, pr := range p.Speaks() {
 		if u := p.Base(pr); u != "" {

@@ -146,9 +146,6 @@ func (p Provider) Fetch(ctx context.Context) ([]catalog.Model, error) {
 // fetch that fails, or that answers no model at all, changes nothing.
 func (p Provider) Refetch(ctx context.Context) ([]catalog.Model, []string, error) {
 
-	// its plugin's list, read again: a pick it had and has no more
-	// goes as a built-in's does (plugin_relist.go)
-
 	before := liveIDs(p.ID)
 	ms, err := p.fetch(ctx)
 	if err != nil || len(before) == 0 {
@@ -206,9 +203,6 @@ func dropGonePicks(id string, before, now map[string]bool) ([]string, error) {
 // fetch is Fetch without the picks looked after.
 func (p Provider) fetch(ctx context.Context) ([]catalog.Model, error) {
 	ctx = p.Via(ctx)
-
-	// a plan with no list to ask (ZCode's, WorkBuddy's): its models
-	// are the ones it has, and its endpoint's /models isn't one
 
 	// a vendor with no list to ask (Bedrock's runtime): the preset's
 	// models are it, unless the user said where one is or the provider
@@ -1044,17 +1038,6 @@ func (p Provider) Exposed() []catalog.Model {
 		return out
 	}
 	picks := p.Models
-	{
-		_, _, _ = p.live()
-	}
-	// A Copilot account is served what its list offers it, less what
-	// it was refused: a pick its list doesn't have (#371: gpt-6-luna,
-	// not in a Student plan's) or that it was refused is left out;
-	// with none left, as if none were picked.
-
-	// with no list fetched, a pick the account can't be served (a
-	// ZCode Start Plan account's GLM-5.3) is left out all the same
-
 	if len(picks) > 0 {
 		return pick(p.withNewlyListed(picks, avail))
 	}
@@ -1723,11 +1706,9 @@ func entryFor(p Provider, m catalog.Model, s settings.Settings) Entry {
 	e.Reasoning = m.Reasoning || len(e.Efforts) > 0 || catalog.Thinks(m.ID)
 	e.Efforts = effortsKept(e.Efforts, s.ModelEfforts[e.ID])
 	// Codex's Ultra on a model OpenAI offers it on, served by another
-	// vendor (Copilot's gpt-6.1-sol, #656): a ChatGPT account's list says it
-	// already. Its subagents take their tasks as text from a fogway-served
-	// lead, so Codex is told V2 for it, where Ultra hands work to them
-	// (codexcat.Entries).
-
+	// vendor (#656). Its subagents take their tasks as text from a
+	// fogway-served lead, so Codex is told V2 for it, where Ultra hands
+	// work to them (codexcat.Entries).
 	e.Efforts = withUltra(m.ID, e.Efforts)
 	e.AgentsV2 = slices.Contains(e.Efforts, "ultra")
 

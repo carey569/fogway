@@ -90,9 +90,6 @@ func searchFor(ctx context.Context) *CallFor {
 // asked on this API.
 func searchesItself(p provider.Provider, proto provider.Protocol) bool {
 
-	// Grok by its id: moved to its plugin, its account is the plugin's;
-	// its plugin beside the built-in (grok-plugin) by the plugin's id
-
 	// a relay said to search (#359), on an API it has an address for: one
 	// with only a Chat address would be sent no search tool at all
 	if p.Searches && (proto == provider.Anthropic || proto == provider.Responses) && p.Base(proto) != "" {

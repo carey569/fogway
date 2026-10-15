@@ -172,14 +172,10 @@ func (m model) updateProviders(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			now = p.Responses
 		}
 
-		// the address as typed, without /v1
-
 		id, name := p.ID, p.Name
 		m.openAsk(endpointAsk(*pr, []string{"providers", name, "address"}, now, func(v string) tea.Cmd {
 			return saveProvider(id, func(p *provider.Provider) {
 				p.Chat, p.Responses = v, v
-
-				// put again from the address typed
 
 				provider.ForgetBalances()
 			}, name+" address "+v)

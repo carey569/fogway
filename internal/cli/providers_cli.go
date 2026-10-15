@@ -717,9 +717,6 @@ func showProvider(p provider.Provider) error {
 		kv("unmasked", "yes"+muted.Render(why))
 	}
 	switch {
-
-	// as the built-in said
-
 	case p.IsVertex():
 		// no key: where its requests go, and the Google credentials that
 		// sign them

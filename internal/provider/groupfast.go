@@ -58,12 +58,6 @@ func (g Group) IsFast(id string) bool {
 // without it and not sent it again (the gateway's optional fields).
 func CanFast(p Provider, model string) bool {
 
-	// Cursor's plugin runs a model as its fast variant when the chat
-	// request says service_tier "priority". From 0.2.2 it lists a model
-	// once per context size (claude-opus-5-5@300k) and says fast on
-	// the ones Cursor has a fast variant of (#1360); 0.1.x listed the
-	// fast one as a model of its own, -fast, as the built-in does
-
 	if p.IsBedrock() {
 		return false
 	}

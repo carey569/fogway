@@ -895,12 +895,6 @@ func (s *Server) countTokens(w http.ResponseWriter, r *http.Request) {
 
 // countOn counts body's tokens for model on p, resolved when ok.
 func (s *Server) countOn(w http.ResponseWriter, r *http.Request, p provider.Provider, model string, ok bool, body []byte) {
-	// Claude Subscription generations run through the Claude Code binary. Its
-	// OAuth token must not take a direct HTTP side path just for token counting.
-
-	// ZCode itself never counts, and zcode.z.ai answers count_tokens
-	// with an error every time: one more request its firewall weighs
-
 	var counts []candidate
 	if ok {
 		// Keep the provider's key order and cooldowns, but never count a
@@ -2232,11 +2226,6 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request, from provider.Pro
 			}
 			continue
 		}
-		// the account's plan doesn't take the level, which the
-		// model has (#520: a Free ChatGPT account, gpt-6-luna at
-		// high): another account is asked, and this one doesn't
-		// rest, as it serves the model at other levels
-
 		if !last && !hw.passing && !hw.refused && (hw.code() == http.StatusRequestEntityTooLarge || overflowed(hw.code(), hw.errBody())) {
 			// too long for this member's model, and as long on every
 			// account of it, but another member — another model, or this
@@ -2727,15 +2716,6 @@ func markOpenRouterSharedPool(w http.ResponseWriter) {
 func (s *Server) forward(ctx context.Context, p provider.Provider, to provider.Protocol, path string, body []byte, in http.Header) (*http.Response, error) {
 	res, err := s.forwardOnce(ctx, p, to, path, body, in)
 
-	// an account that can mend what the refusal names (a Factory org
-	// the server won't take; a model Copilot's Auto picked that the
-	// account is refused, for which Auto picks another) is asked again
-
-	// Auto's next pick isn't served on this API (gpt-4.1 on
-	// chat alone, after gpt-5.3-codex on /responses, #256): the
-	// refusal is passed on, and the request made again for it
-	// on its own API (the candidates' loop)
-
 	// and what of Claude Code's newest asks it turns away (thinking.display
 	// "updates", a turn's output_config in messages: anthropic_shapes.go),
 	// each learned once
@@ -2865,21 +2845,12 @@ func (s *Server) forwardOnce(ctx context.Context, p provider.Provider, to provid
 		provider.KiloClient(req.Header, p.Key, conversationID(in, body))
 	}
 
-	// what Codex says about the request goes on as codexUpstream
-	// relays it — a subagent's kind, the turn's metadata, a turn on
-	// Luna Reserve — the account signing it being the pool's
-
 	if err := p.Sign(ctx, req, to, body); err != nil {
 		return nil, err
 	}
 	if to == provider.Anthropic {
 		s.fitUserBetas(p, req.Header)
 	}
-	_ = len(body)
-
-	// a turn goes zstd-compressed, as Codex's own client sends it;
-	// sent plain, ChatGPT answered a 1.1 MB one 503 (ylorn on X)
-
 	res, err := p.Do(s.client, req)
 	if err == nil && to == provider.Anthropic {
 		// a vendor that takes the key in x-api-key or Authorization
@@ -2899,9 +2870,6 @@ func (s *Server) forwardOnce(ctx context.Context, p provider.Provider, to provid
 	// Cline's whole replies come in {success, data}; a web page or
 	// nothing at all, served 200, is the 502 it stands for (#1012)
 	res = notAnAPIReply(clineUnwrapped(p, res), "")
-
-	// a large request ChatGPT closed the connection on: asked again,
-	// nobody resting for it, and said what may help (#1628)
 
 	return res, nil
 }
@@ -2986,8 +2954,6 @@ func (s *Server) passthrough(w http.ResponseWriter, r *http.Request, p provider.
 		if !strings.HasSuffix(p.Host(), "openai.com") {
 			body = liftAdditionalTools(body)
 		}
-		// only the ChatGPT backend runs Codex's tool search as Codex sends it
-
 		body, searchFn = searchAsFunction(body)
 
 		body = forVendor(p, body)
