@@ -4,8 +4,7 @@
 // editor's Names & levels, beside its name. Each box shows the model's list
 // price until one is typed, a part left empty takes the list's, and
 // Restore default gives it its list price again; all made with the
-// provider's Save. A Remote fogway's model says its list price is what the
-// other fogway counts it at (Sorghum on Discord). English and Chinese.
+// provider's Save. English and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -22,7 +21,7 @@ function serve(lang, posts) {
     { id: "model-2", name: "Model 2", on: true, efforts: [], images: false, list, price: { input: 0.5, output: 2, cache_read: 0.05, cache_write: 0 } },
     { id: "model-3", name: "Model 3", on: true, efforts: [], images: false },
     // a Remote fogway's: its list price is what that fogway counts it at
-    { id: "model-4", name: "Model 4", on: true, efforts: [], images: false, list, remoteList: true },
+    { id: "model-4", name: "Model 4", on: true, efforts: [], images: false, list },
   ];
   const provider = { id: "relay", name: "Relay", icon: "generic", chat: "https://relay.example/v1", responses: "", anthropic: "", models, agents: [], key: { set: true, masked: "sk-…1234" }, ready: true };
   const providers = { providers: [provider], presets: [], excluded: [], gateway: { running: true, window: true } };
@@ -75,9 +74,8 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
       assert.deepEqual(await boxes("model-2").evaluateAll((is) => is.map((i) => i.value)), ["0.5", "2", "0.05", "0", ""]);
       assert.equal(await row("model-1").getByRole("textbox", { name: L.input, exact: true }).count(), 1);
       assert.equal(await row("model-1").locator("select").count(), 0);
-      // whose list price it is: models.dev's, or the other fogway's
+      // whose list price it is: models.dev's
       assert.match(await row("model-1").locator(".mprice").getAttribute("title"), zh ? /留空即官方价格/ : /empty: its list price/);
-      assert.match(await row("model-4").locator(".mprice").getAttribute("title"), zh ? /留空即另一台 fogway 计费用的价格/ : /empty: what the other fogway counts it at/);
 
       // a part typed, the others the list's; Restore default drops a price
       const y = await page.evaluate(() => scrollY);
