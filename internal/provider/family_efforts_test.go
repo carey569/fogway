@@ -1,11 +1,14 @@
 package provider
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/carey569/fogway/internal/catalog"
+	"github.com/carey569/fogway/internal/codexcat"
 )
 
 // newModelCatalog is models.dev as it listed gpt-6.1-sol the day it was
@@ -41,4 +44,92 @@ func newModelHome(t *testing.T) {
 	}
 	catalog.Reset()
 	t.Cleanup(catalog.Reset)
+}
+
+// A model models.dev has just added, listed as thinking but without its
+// levels yet, offers its family's (NextCommit on Discord: a relay's
+// gpt-6.1-sol had no effort picker in Codex, gpt-6-astra had one), and so
+// does one newer than the catalog on this machine. A family that takes a
+// thinking switch alone still offers none (#214), and a model that doesn't
+// reason none either.
+func TestNewModelTakesItsFamilysLevels(t *testing.T) {
+	newModelHome(t)
+	if err := Save(Provider{ID: "relay", Name: "Relay", Chat: "https://relay.test/v1", Key: "k",
+		Models: []string{"gpt-6.1-sol", "gpt-6-astra", "gpt-6.2-sol", "mimo-v2.6-flash", "mimo-v2.7-flash", "gpt-4.1"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := catalog.SaveLive("relay", "https://relay.test/v1", []catalog.Model{
+		{ID: "gpt-6.1-sol"}, {ID: "gpt-6-astra"}, {ID: "gpt-6.2-sol"}, {ID: "mimo-v2.6-flash"}, {ID: "mimo-v2.7-flash"}, {ID: "gpt-4.1"}}); err != nil {
+		t.Fatal(err)
+	}
+	openai, err := FromPreset("openai")
+	if err != nil {
+		t.Fatal(err)
+	}
+	openai.Key, openai.Models = "k", []string{"gpt-6.1-sol"}
+	if err := Save(openai); err != nil {
+		t.Fatal(err)
+	}
+	sol := "none,low,medium,high,xhigh,max"
+	got := map[string]string{}
+	for _, e := range Catalog() {
+		// without Codex's ultra, added where OpenAI offers it (ultra.go)
+		got[e.ID] = strings.TrimSuffix(strings.Join(e.Efforts, ","), ",ultra")
+	}
+	for id, want := range map[string]string{
+		"relay/gpt-6.1-sol":        sol,
+		"relay/gpt-6-astra":        "low,medium,high,xhigh,max",
+		"relay/gpt-6.2-sol":        sol, // newer than the catalog
+		"relay/mimo-v2.6-flash":    "",
+		"relay/mimo-v2.7-flash":    "",
+		"relay/gpt-4.1":            "",
+		openai.ID + "/gpt-6.1-sol": sol,
+	} {
+		if g, ok := got[id]; !ok || g != want {
+			t.Errorf("%s: levels %q (listed %v), want %q", id, g, ok, want)
+		}
+	}
+	relay, err := Find("relay")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if k := strings.Join(relay.Known("gpt-6.1-sol"), ","); k != sol {
+		t.Errorf("Known(gpt-6.1-sol) = %q, want %q", k, sol)
+	}
+	if relay.Levelless("gpt-6.1-sol") {
+		t.Error("gpt-6.1-sol reads as having no levels")
+	}
+	if !relay.Levelless("mimo-v2.6-flash") {
+		t.Error("mimo-v2.6-flash reads as having levels")
+	}
+
+	// what Codex is handed: the picker's levels and a default
+	var cat struct {
+		Models []struct {
+			Slug   string `json:"slug"`
+			Levels []struct {
+				Effort string `json:"effort"`
+			} `json:"supported_reasoning_levels"`
+		} `json:"models"`
+	}
+	if err := json.Unmarshal(codexcat.Catalog(CodexListed()), &cat); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, m := range cat.Models {
+		if m.Slug != "relay/gpt-6.1-sol" {
+			continue
+		}
+		found = true
+		var ls []string
+		for _, l := range m.Levels {
+			ls = append(ls, l.Effort)
+		}
+		if strings.TrimSuffix(strings.Join(ls, ","), ",ultra") != sol {
+			t.Errorf("Codex's levels for relay/gpt-6.1-sol: %v, want %s", ls, sol)
+		}
+	}
+	if !found {
+		t.Error("relay/gpt-6.1-sol isn't in Codex's catalog")
+	}
 }

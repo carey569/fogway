@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"encoding/json"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -105,4 +107,15 @@ func TestGroupToldItsLargestWindow(t *testing.T) {
 		}
 	}
 	t.Fatal("no group deepseek")
+}
+
+func writeFile(t *testing.T, path string, v any) {
+	t.Helper()
+	b, _ := json.Marshal(v)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, b, 0o600); err != nil {
+		t.Fatal(err)
+	}
 }

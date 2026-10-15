@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/carey569/fogway/internal/lastgood"
 	"github.com/carey569/fogway/internal/steady"
 )
 
@@ -22,5 +23,24 @@ func TestWritePrivateSyncsBeforeRename(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(p); string(b) != `["old"]` {
 		t.Fatalf("a failed flush left %q", b)
+	}
+}
+
+// providers.json zeroed: its providers are its last good generation's.
+func TestZeroedProvidersReadFromBackup(t *testing.T) {
+	providerFileHome(t)
+	lastgood.Reset()
+	t.Cleanup(lastgood.Reset)
+	writeProviderFile(t, originalProviderFile)
+	if err := Save(Provider{ID: "new", Name: "New", Chat: "https://new.example.invalid/v1", Key: "synthetic-new"}); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(Path(), make([]byte, 2048), 0o600)
+	if err := FileError(); err != nil {
+		t.Fatalf("a zeroed providers.json with a backup: %v", err)
+	}
+	ps := load().Providers
+	if len(ps) != 1 || ps[0].ID != "original" {
+		t.Fatalf("providers = %+v, want the backup's", ps)
 	}
 }
