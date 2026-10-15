@@ -384,10 +384,6 @@ var presets = []PresetDef{
 		Note:    "Qwen AI platform · subscription",
 		Website: "https://platform.qianwenai.com/docs/token-plan/overview", KeysURL: "https://platform.qianwenai.com/home/analytics/token-plan/individual",
 		Models: alibabaPlanModels},
-	// Bailian's also answers its decision model, decision-model-preview, on
-	// System One at /compatible-mode/v1/systemone with the same key
-	// (token-plan-decision-model; the personal plan only), so a routing
-	// group can be classified by it
 	{ID: "bailian-token-plan", Name: "Bailian Token Plan", Short: "Bailian Plan", Icon: "bailian-color", Kind: KindVendor,
 		Chat: "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1", Anthropic: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic",
 		Note:    "Alibaba Cloud Bailian · subscription",
@@ -440,9 +436,6 @@ var presets = []PresetDef{
 
 	{ID: "openrouter", Name: "OpenRouter", Icon: "openrouter", Kind: KindRelay, Catalog: "openrouter",
 		Chat: "https://openrouter.ai/api/v1", Anthropic: "https://openrouter.ai/api",
-		// its decision models (liquid/d1, cloudflare/clef, Jev …), listed
-		// apart from its chat models, answer System One at /systemone, so
-		// a routing group can be classified by one with the same key
 		Website: "https://openrouter.ai", KeysURL: "https://openrouter.ai/keys",
 		// app attribution, for OpenRouter's rankings and analytics
 		HeaderHints: []string{"HTTP-Referer", "X-OpenRouter-Title"}},
@@ -465,10 +458,6 @@ var presets = []PresetDef{
 	{ID: "opencode-zen", Name: "OpenCode Zen", Icon: "opencode", Kind: KindRelay, Catalog: "opencode", NoKey: true,
 		KeyHint: "optional: free models need no key",
 		Chat:    "https://opencode.ai/zen/v1", Responses: "https://opencode.ai/zen/v1", Anthropic: "https://opencode.ai/zen",
-		// TypeSafe's Jev (jev-1.13, jev-1.13-free) is no chat model there:
-		// Zen serves it on System One at /zen/v1/systemone alone, as its
-		// docs' model table says (packages/web/src/content/docs/zen.mdx),
-		// so it routes groups like TypeSafe's own (#609's mixed provider)
 		// its free models (-free, big-pickle) are served to OpenCode
 		// alone, which fogway asks them as (OpenCodeFree)
 		Website: "https://opencode.ai/docs/zen", KeysURL: "https://opencode.ai/auth"},

@@ -196,7 +196,7 @@ client sends, and doesn't take it.
 Each request records the fingerprint and saved name of the key that actually
 served it, including image calls and account/key failover. The CSV adds
 `provider_key_id` and `provider_key_name`. JSON uses `providerKeyId` and `providerKeyName`, distinct from gateway caller
-keys. System One calls use the same attribution. No raw credential is stored
+keys. No raw credential is stored
 in usage records.
 Rotating the provider's first key does not move old usage to its replacement;
 deleted keys keep their historical identity. Older records appear as
@@ -493,7 +493,7 @@ file is repaired. `fogway web`'s page honours the same list.
 the provider's credential. **Usage → Requests** offers the same filter;
 CSV includes `caller_key_id` and `caller_key_name`. Deleted keys keep their
 history. The usual local `fogway` token and older records stay unattributed.
-Caller attribution includes chat, images, video creation and System One.
+Caller attribution includes chat and embeddings.
 Provider attribution stays independent; CSV puts `provider_key_*` before
 `caller_key_*`.
 An existing LAN key becomes **Fogway** without changing the credential.
@@ -526,12 +526,7 @@ that only its own host takes: on the Qwen AI platform as `qwen-token-plan`
 `bailian-token-plan` (`token-plan.cn-beijing.maas.aliyuncs.com`). Both serve
 Chat Completions at `/compatible-mode/v1` and Anthropic Messages at
 `/apps/anthropic`, and carry the plans' documented text models for when the
-host lists none. Bailian's also answers its decision model,
-`decision-model-preview`, on System One at `/compatible-mode/v1/systemone`
-with the same key, so a routing group can pick it as its classifier. The
-same model on the Qwen AI platform's pay as you go is `qwen-decision`
-(`maas.qianwenaiapi.com`), and on a Bailian workspace `bailian-decision`.
-Neither plan has an API for its credits: the console's subscription page
+host lists none. Neither plan has an API for its credits: the console's subscription page
 shows them, so fogway shows no plan usage for these keys.
 
 iFlytek Spark (讯飞星火) is `iflytek`, with four plans, each on a key that
@@ -1161,7 +1156,7 @@ header, such as Pi's or Claude Code's, works too) and read
 `GET /v1/fogway/route?session=<id>`. It answers the session's latest
 request as routing has it so far — `asked` (the model the agent named),
 `group`, `rule` (the group's rule that matched, and `rule.pick`, the
-effort its decision model picked), `model` and `effort` (the member being
+effort its classifier picked), `model` and `effort` (the member being
 tried now, as `provider/model`, and the reasoning it was sent at), and
 `tries`, one per member tried, each failed one a fallback with its `fail`
 — then `done`, `status` and `served` once the reply is over; `route` is

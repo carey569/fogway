@@ -20,9 +20,6 @@ type groupsJSON struct {
 	Groups []groupJSON `json:"groups"`
 	Models []modelRef  `json:"models"`
 	Pools  []poolJSON  `json:"pools"`
-	// Deciders: the decision providers' models (Jev), which may only be a
-	// group's classifier
-	Deciders []modelRef `json:"deciders"`
 	// Found: fogway finds groups on its own (provider.AutoGroupsOn)
 	Found bool `json:"found"`
 	// Moved: the agents turning found groups off moved off one of them,
@@ -55,9 +52,6 @@ type groupJSON struct {
 	// Patterns: its patterns, each with how many models it matches now
 	// (#766), so one that matches nothing is said on its card
 	Patterns []provider.PatternHit `json:"patterns"`
-	// Decides: it is a group of decision models, asked at /v1/systemone
-	// and by a group's classifier, never by an agent
-	Decides bool `json:"decides,omitempty"`
 	// ClassifierFailed: its classifier couldn't say the last time it was
 	// asked, and why (gateway.ClassifierFailure), which its card says
 	// (#1929): otherwise only each request's details did
@@ -208,7 +202,7 @@ func keyPools(p provider.Provider) []poolJSON {
 }
 
 func groupsState() groupsJSON {
-	out := groupsJSON{Groups: []groupJSON{}, Models: []modelRef{}, Pools: []poolJSON{}, Deciders: []modelRef{}, Found: provider.AutoGroupsOn(), Templates: provider.Templates()}
+	out := groupsJSON{Groups: []groupJSON{}, Models: []modelRef{}, Pools: []poolJSON{}, Found: provider.AutoGroupsOn(), Templates: provider.Templates()}
 	for i := range out.Templates {
 		if out.Templates[i].Group.Members == nil {
 			out.Templates[i].Group.Members = []string{} // one that can't be made has none
@@ -232,7 +226,6 @@ func groupsState() groupsJSON {
 			gj.Members = []string{}
 		}
 		gj.Patterns = append(gj.Patterns, provider.PatternHits(g)...)
-		gj.Decides = false
 		if g.Classifier != "" {
 			if why, at, ok := classifierFailure(g.Classifier); ok {
 				gj.ClassifierFailed = &classifierFailedJSON{Error: why, At: at}

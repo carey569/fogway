@@ -194,9 +194,8 @@ type Group struct {
 	// Rules with an intent need one; a small, fast model without reasoning
 	// does.
 	Classifier string `json:"classifier,omitempty"`
-	// Effort "auto" has the classifier — Jev, from TypeSafe's decision API,
-	// or any model, asked in words — judge how hard each turn is to think
-	// about as it begins, and the turn asks its model for that much
+	// Effort "auto" has the classifier — any model, asked in words — judge
+	// how hard each turn is to think about as it begins, and the turn asks its model for that much
 	// reasoning, where the agent asked for some (see EffortAuto).
 	Effort string `json:"effort,omitempty"`
 	// Context is how long a request the user says the group takes, in
@@ -759,7 +758,7 @@ func groupEntries(entries []Entry) []Entry {
 		}
 		ms := membersIn(entries, all, g)
 		if len(ms) == 0 {
-			continue // a decision group answers System One, no agent's conversation
+			continue // none of its members is served now
 		}
 		e := Entry{ID: GroupPrefix + g.ID, Model: ms[0].Model, Name: g.Name, Provider: ms[0].Provider, Group: g.ID, Named: !g.Auto}
 		var fixed []string // the efforts members are fixed at

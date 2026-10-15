@@ -805,8 +805,8 @@ type recorder struct {
 	body   bytes.Buffer
 }
 
-// jevLevels are the efforts Jev chooses among, with what each is for,
-// lowest first.
+// jevLevels are the efforts the classifier chooses among, with what each
+// is for, lowest first (named for Jev, which asked them first).
 var jevLevels = []struct{ effort, what string }{
 	{"low", "Little to think about: a greeting, a question answered from what is already known, a mechanical or one-line change, running a command"},
 	{"medium", "Some thought: an ordinary bug fix or a small feature in code already understood"},

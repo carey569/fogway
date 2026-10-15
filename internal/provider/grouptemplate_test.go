@@ -47,7 +47,7 @@ func TestTemplatesPickStrongAndCheap(t *testing.T) {
 		tm("google", "gemini-3-flash", 3, true, "2026-06-01"),
 		tm("openrouter", "openai/gpt-6-mini", 4, true, "2026-07-01"),
 	}
-	smart := templateOf(TemplateSmart, ms, nil)
+	smart := templateOf(TemplateSmart, ms)
 	if smart.Why != "" || !slices.Equal(smart.Group.Members, []string{"openai/gpt-6.1", "openai/gpt-6-mini"}) {
 		t.Fatalf("smart = %+v, want the newest flagship then the newest cheap model that isn't tiny", smart)
 	}
@@ -73,14 +73,11 @@ func TestTemplatesPickStrongAndCheap(t *testing.T) {
 	if hard < 0 || easy < hard {
 		t.Errorf("rules %+v: want the hard intent before the easy one", smart.Group.Rules)
 	}
-	if c := templateOf(TemplateSmart, ms, []Entry{{ID: "typesafe/jev"}}).Group.Classifier; c != "typesafe/jev" {
-		t.Errorf("classifier %q, want the decision API when there is one", c)
-	}
 	if !slices.ContainsFunc(smart.Group.Rules, func(r Rule) bool { return r.Compact && r.Use == "openai/gpt-6-mini" }) {
 		t.Errorf("rules %+v: want compaction on the cheap model", smart.Group.Rules)
 	}
 
-	thrifty := templateOf(TemplateThrifty, ms, nil)
+	thrifty := templateOf(TemplateThrifty, ms)
 	// the second cheap one is another model from another provider, not
 	// the same mini through a router
 	if want := []string{"openai/gpt-6-mini", "google/gemini-3-flash", "openai/gpt-6.1"}; !slices.Equal(thrifty.Group.Members, want) {
@@ -90,7 +87,7 @@ func TestTemplatesPickStrongAndCheap(t *testing.T) {
 		t.Errorf("thrifty rules %+v: want high reasoning on the strong model", thrifty.Group.Rules)
 	}
 
-	steady := templateOf(TemplateSteady, ms, nil)
+	steady := templateOf(TemplateSteady, ms)
 	if want := []string{"openai/gpt-6.1", "anthropic/claude-opus-5.5", "openrouter/openai/gpt-6-mini"}; !slices.Equal(steady.Group.Members, want) {
 		t.Errorf("steady members = %v, want %v", steady.Group.Members, want)
 	}
@@ -102,23 +99,23 @@ func TestTemplatesPickStrongAndCheap(t *testing.T) {
 }
 
 func TestTemplatesSayWhatIsMissing(t *testing.T) {
-	if tp := templateOf(TemplateSmart, nil, nil); tp.Need != NeedProvider || len(tp.Group.Members) > 0 {
+	if tp := templateOf(TemplateSmart, nil); tp.Need != NeedProvider || len(tp.Group.Members) > 0 {
 		t.Errorf("no models: %+v", tp)
 	}
 	one := []rated{tm("openai", "gpt-6.1", 40, true, ""), tm("openai", "gpt-6-mini", 4, true, "")}
-	if tp := templateOf(TemplateSteady, one, nil); tp.Need != NeedProviders || tp.Of != "openai" || len(tp.Group.Members) > 0 {
+	if tp := templateOf(TemplateSteady, one); tp.Need != NeedProviders || tp.Of != "openai" || len(tp.Group.Members) > 0 {
 		t.Errorf("one provider: %+v", tp)
 	}
-	if tp := templateOf(TemplateSmart, one, nil); tp.Why != "" {
+	if tp := templateOf(TemplateSmart, one); tp.Why != "" {
 		t.Errorf("one provider is enough for smart: %+v", tp)
 	}
 	dear := []rated{tm("openai", "gpt-6.1", 40, true, ""), tm("anthropic", "claude-opus-5.5", 50, true, "")}
-	if tp := templateOf(TemplateSmart, dear, nil); tp.Need != NeedCheap || !strings.Contains(tp.Why, "cheap") {
+	if tp := templateOf(TemplateSmart, dear); tp.Need != NeedCheap || !strings.Contains(tp.Why, "cheap") {
 		t.Errorf("no cheap model: %+v", tp)
 	}
 	// with no prices, a small model by its id is the cheap one
 	unpriced := []rated{tm("sub", "big-model", 0, false, ""), tm("sub", "big-model-mini", 0, false, "")}
-	if tp := templateOf(TemplateSmart, unpriced, nil); !slices.Equal(tp.Group.Members, []string{"sub/big-model", "sub/big-model-mini"}) {
+	if tp := templateOf(TemplateSmart, unpriced); !slices.Equal(tp.Group.Members, []string{"sub/big-model", "sub/big-model-mini"}) {
 		t.Errorf("unpriced: %+v", tp)
 	}
 }

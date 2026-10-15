@@ -203,10 +203,6 @@ func (p Provider) testOne(ctx context.Context, model string) Result {
 		return Result{Model: model, Error: fmt.Sprintf("model %s/%s is disabled in fogway (it matches %q in Settings › Models › Disabled models)", p.ID, model, pat)}
 	}
 
-	// a decision model is sent the smallest System One question, a
-	// yes-or-no (ARNO on Discord: a System One model typed in by hand
-	// couldn't be tested from its right-click)
-
 	client := testClient(ctx)
 	if why := p.TestsAs(client); why != "" {
 		return Result{Protocol: clientProto(client, p.Speaks()), Model: model, Error: why}

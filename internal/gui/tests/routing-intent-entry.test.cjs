@@ -1,11 +1,12 @@
 // Run with Node's test runner and Playwright on the module path; see README.md.
 // A routing group's rule by intent has an entry of its own (CherryL1quor on
-// X took Jev for picking the effort only: the intent was one of a rule's
-// seven conditions). Beside "Add a rule", "Route by what it asks for" adds a
-// rule with its intent box focused and Jev picked as the classifier when
-// there is one, the button kept under the pointer as the rule comes in
-// above it; it saves as {use, intent} with the classifier. A group whose effort Jev picks offers, under the classifier,
-// to add a rule with an intent. At a narrow window both buttons stay inside
+// X took the classifier for picking the effort only: the intent was one of
+// a rule's seven conditions). Beside "Add a rule", "Route by what it asks
+// for" adds a rule with its intent box focused and the group's classifier
+// shown for it, the button kept under the pointer as the rule comes in
+// above it; it saves as {use, intent} with the classifier. A group whose
+// effort the classifier picks offers, under it, to add a rule with an
+// intent. At a narrow window both buttons stay inside
 // the editor. In English and Chinese.
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
@@ -21,10 +22,9 @@ const models = [
 const member = (id, context) => ({ id, ready: true, context });
 const groups = () => ({
   models,
-  deciders: [{ id: "typesafe/jev-latest", name: "Jev", providerName: "TypeSafe", icon: "generic" }],
   groups: [
-    { id: "main", name: "Main", members: ["a/opus", "b/flash"], routing: "order", ready: true, memberInfo: [member("a/opus", 1000000), member("b/flash", 128000)] },
-    { id: "hard", name: "Hard", members: ["a/opus", "b/flash"], routing: "order", ready: true, effort: "auto", classifier: "typesafe/jev-latest", memberInfo: [member("a/opus", 1000000), member("b/flash", 128000)] },
+    { id: "main", name: "Main", members: ["a/opus", "b/flash"], routing: "order", ready: true, classifier: "b/flash", memberInfo: [member("a/opus", 1000000), member("b/flash", 128000)] },
+    { id: "hard", name: "Hard", members: ["a/opus", "b/flash"], routing: "order", ready: true, effort: "auto", classifier: "b/flash", memberInfo: [member("a/opus", 1000000), member("b/flash", 128000)] },
   ],
   pools: [],
 });
@@ -101,7 +101,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         // no classifier yet: no rule has an intent
         assert.equal(await ed.locator(".rt-classifier").isVisible(), false);
 
-        // a rule, its intent box focused, Jev picked; nothing scrolled
+        // a rule, its intent box focused, the classifier shown; nothing scrolled
         await page.mouse.move(Math.min(550, width / 2), 300);
         for (let i = 0; i < 12 && (await byIntent.boundingBox()).y > height - 160; i++) {
           await page.mouse.wheel(0, 300);
@@ -122,7 +122,7 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert(await box.evaluate((b) => b === document.activeElement), "the intent box has the focus");
         const cls = ed.locator(".rt-classifier");
         assert(await cls.isVisible(), "the classifier shows for the rule");
-        assert.match(await cls.locator("button.rt-cond").first().textContent(), /Jev/);
+        assert.match(await cls.locator("button.rt-cond").first().textContent(), /flash/);
         assert(await ed.evaluate((e, s) => e.innerText.includes(s), w.told), "labelled as telling the intent");
 
         await page.keyboard.type("a quick question");
@@ -131,9 +131,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         const save = posts.find((p) => p.path === "/api/groups/save");
         assert(save, `saved: ${JSON.stringify(posts)}`);
         assert.deepEqual(save.body.rules.map((r) => [r.use, r.intent]), [["b/flash", "a quick question"]]);
-        assert.equal(save.body.classifier, "typesafe/jev-latest");
+        assert.equal(save.body.classifier, "b/flash");
 
-        // Jev picking the effort alone offers to pick the model too
+        // the classifier picking the effort alone offers to pick the model too
         const hard = page.locator(".rt-group").nth(1);
         await press(page, hard.locator("button", { hasText: w.edit }), height);
         await ed.waitFor();

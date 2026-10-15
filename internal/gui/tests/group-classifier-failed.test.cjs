@@ -16,12 +16,13 @@ const why = "mlx-serve/clef-flash-4bit: This is a typed-decision model; it canno
 const models = [
   { id: "mlx-serve/qwen", name: "qwen", providerName: "MLX-Serve", icon: "generic" },
   { id: "or/b", name: "b", providerName: "OpenRouter", icon: "generic" },
+  { id: "mlx-serve/clef-flash-4bit", name: "clef-flash-4bit", providerName: "MLX-Serve", icon: "generic" },
 ];
 const members = ["mlx-serve/qwen", "or/b"];
 const group = (id, name, extra) => ({ id, name, members, fast: [], off: [], routing: "order", ready: true, patterns: [],
   memberInfo: members.map((m) => ({ id: m, ready: true })), rules: [{ use: "or/b", intent: "planning" }], ...extra });
 const groups = () => ({
-  models, pools: [], deciders: [{ id: "mlx-serve/clef-flash-4bit", name: "clef-flash-4bit", providerName: "MLX-Serve", icon: "generic" }],
+  models, pools: [],
   groups: [
     group("local", "Local", { classifier: "mlx-serve/clef-flash-4bit", classifierFailed: { error: why, at: new Date(Date.now() - 3 * 60000).toISOString() } }),
     group("fine", "Fine", { classifier: "or/b" }),

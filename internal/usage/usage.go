@@ -656,8 +656,8 @@ func (g *Group) addOwn(r Record, price *catalog.Price) {
 }
 
 // ByFogway is whether fogway made the call by itself rather than an agent:
-// its routing classifier, System One's decision, a web search or an
-// image description it asked for (#1839).
+// its routing classifier, a web search or an image description it asked
+// for (#1839).
 func (r Record) ByFogway() bool {
 	id := AgentOf(r.Agent)
 	// "fogway" as the agents know it; its own User-Agents (fogway-router/1,

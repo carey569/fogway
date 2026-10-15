@@ -573,8 +573,6 @@ func addCmd(p provider.Provider) tea.Cmd {
 		text := "added " + saved.Name
 		ms, err := saved.Fetch(ctx)
 
-		// a System One API: its list isn't what it is for
-
 		if err != nil {
 			return flashMsg{text: text + " · " + fetchNote(err)}
 		}

@@ -75,7 +75,6 @@ let flavor = params.get("flavor") || localStorage.getItem("fogway.flavor") || "o
 let lang = params.get("lang") || localStorage.getItem("fogway.lang") || "shell";        // which snippet
 let snipOS = localStorage.getItem("fogway.snipOS") || "";                               // the shell the Shell and curl snippets are for (#1514)
 let exampleModel = localStorage.getItem("fogway.model") || "";  // the model in the snippets
-let decideModel = localStorage.getItem("fogway.decideModel") || ""; // the System One snippets' decision model
 let connectFolded = false; // Connect folded away under its heading
 try { connectFolded = localStorage.getItem("fogway.gwConnectFolded") === "1"; } catch {}
 const expandedCalls = new Set(); // recent-call ids whose wire bodies are open
@@ -6016,45 +6015,6 @@ const ai = new GoogleGenAI({
 const r = await ai.models.generateContent({ model: "${m}", contents: "hi" });
 console.log(r.text);`,
   },
-  // fogway's own System One API (ARNO on Discord: gateway添加system one
-  // api 有想法吗): a decision model — Jev, Clef, Bailian's — answers typed
-  // questions about a state; no SDK speaks it, so no shell variables
-  systemone: {
-    name: "System One", base: (u) => u + "/v1", decide: true,
-    note: "TypeSafe's decision API: a Jev or Clef model answers typed questions (choice, noul, score) about a state, with how sure it is. Clef also reads images: add \"images\": [\"data:image/png;base64,…\"].",
-    curl: (b, m, k = "fogway") => ({ url: `${b}/systemone`, headers: [`Authorization: Bearer ${k}`],
-      body: `{"model": "${m}",\n "state": {"message": "My order never arrived, refund it"},\n "questions": {"team": {"type": "choice",\n   "instructions": "Which team should answer the message?",\n   "criteria": {"billing": "Payments and refunds", "shipping": "Deliveries", "other": "Anything else"}}}}` }),
-    python: (b, m, k = "fogway") => `import requests
-
-r = requests.post("${b}/systemone",
-    headers={"Authorization": "Bearer ${k}"},
-    json={
-        "model": "${m}",
-        "state": {"message": "My order never arrived, refund it"},
-        "questions": {"team": {
-            "type": "choice",
-            "instructions": "Which team should answer the message?",
-            "criteria": {"billing": "Payments and refunds", "shipping": "Deliveries", "other": "Anything else"},
-        }},
-    })
-a = r.json()["answers"]["team"]
-print(a["choice"], a["confidence"])`,
-    node: (b, m, k = "fogway") => `const r = await fetch("${b}/systemone", {
-  method: "POST",
-  headers: { Authorization: "Bearer ${k}", "Content-Type": "application/json" },
-  body: JSON.stringify({
-    model: "${m}",
-    state: { message: "My order never arrived, refund it" },
-    questions: { team: {
-      type: "choice",
-      instructions: "Which team should answer the message?",
-      criteria: { billing: "Payments and refunds", shipping: "Deliveries", other: "Anything else" },
-    } },
-  }),
-});
-const a = (await r.json()).answers.team;
-console.log(a.choice, a.confidence);`,
-  },
 };
 // The Shell and curl snippets are written for one shell: PowerShell on
 // Windows ($env: in place of export, and the curl.exe that ships with it,
@@ -6100,9 +6060,6 @@ function curlSnippet({ url, headers, body }) {
 function envSnippet(vars) {
   return vars.map(([k, v]) => (snipWin() ? `$env:${k}=${psHeader(v)}` : `export ${k}=${shQuote(v)}`)).join("\n");
 }
-
-// a decision model on the list: one only System One asks, never an agent
-const decideEntry = (m) => !m.group && !!m.provider?.id && decidesModel(m.provider, m.id.slice(m.provider.id.length + 1));
 
 // every exposed model, as the ids agents use
 function gatewayModels() {
@@ -6218,18 +6175,10 @@ function renderConnect() {
   const box = $("#connect");
   box.replaceChildren();
   const f = FLAVORS[flavor] || FLAVORS.openai;
-  // System One's snippets take a decision model, the others any other
-  const models = gatewayModels().filter((m) => decideEntry(m) === !!f.decide);
-  let model;
-  if (f.decide) {
-    if (!models.some((m) => m.id === decideModel)) decideModel = models[0]?.id || "";
-    model = decideModel || "provider/jev-latest";
-  } else {
-    if (!models.some((m) => m.id === exampleModel)) exampleModel = models[0]?.id || "";
-    model = exampleModel || "provider/model";
-  }
-  // no SDK speaks System One, so it has no shell variables to set
-  const langs = f.baseEnv ? langs4() : langs4().filter(([id]) => id !== "shell");
+  const models = gatewayModels();
+  if (!models.some((m) => m.id === exampleModel)) exampleModel = models[0]?.id || "";
+  const model = exampleModel || "provider/model";
+  const langs = langs4();
   const snipLang = langs.some(([id]) => id === lang) ? lang : "curl";
   const urls = [g.url, ...(g.lanURLs || [])];
   // the address picked is kept (coeo91): an address not offered right now
@@ -6273,7 +6222,7 @@ function renderConnect() {
     (u) => { connectWant = u; keepPick("fogway.connectAddress", u); renderConnect(); }));
   else b.append(el("code", "", base));
   b.append(copyBtn(base, "Base URL"));
-  box.append(...field("Base URL", b, f.baseEnv ? t("What {env} takes.", { env: f.baseEnv }) : t("Requests go to POST {url}.", { url: base + "/systemone" })));
+  box.append(...field("Base URL", b, t("What {env} takes.", { env: f.baseEnv })));
 
   const k = el("div", "val");
   const options = keys.map((k) => ({ v: k.id, name: k.name, literalName: true, note: k.masked }));
@@ -6285,17 +6234,13 @@ function renderConnect() {
   else k.append(el("code", "", t("Create a gateway key above to connect")));
   if (key) k.append(copyCallerKeyBtn(key));
   else if (!remote) k.append(copyBtn("fogway", t("Key")));
-  box.append(...field(t(keyLabel), k, !f.keyEnv ? t(g.lan && (remote || gatewayKeys?.length)
-    ? "Choose a gateway key to send as Authorization: Bearer; usage is tracked by key."
-    : "Sent as Authorization: Bearer. The gateway trusts everything on loopback, so any value works.") : t(g.lan && (remote || gatewayKeys?.length)
+  box.append(...field(t(keyLabel), k, t(g.lan && (remote || gatewayKeys?.length)
     ? "Choose a gateway key to use as {env}; usage is tracked by key."
     : "{env}=fogway. The gateway trusts everything on loopback, so any value works.", { env: f.keyEnv })));
 
   const m = el("div", "val");
   m.append(el("code", "", model), copyBtn(model, t("Model id")));
-  box.append(...field(t("Model"), m, f.decide
-    ? t(models.length ? "A decision model (Jev, Clef), as listed below. Click one there to put it in the snippets." : "No decision models yet. Add a System One, Jev or Workers AI provider.")
-    : t(models.length ? "provider/model, as listed below. Click a model there to put it in the snippets." : "No models yet. Add a provider, or sign in to Codex or Copilot.")));
+  box.append(...field(t("Model"), m, t(models.length ? "provider/model, as listed below. Click a model there to put it in the snippets." : "No models yet. Add a provider.")));
 
   const ex = el("div", "stack");
   const tabs = el("div", "snip-tabs");
@@ -6426,22 +6371,17 @@ function renderGatewayModels() {
     return;
   }
   for (const m of models) {
-    const row = el("div", "row model" + (m.id === (FLAVORS[flavor]?.decide ? decideModel : exampleModel) ? " selected" : ""));
+    const row = el("div", "row model" + (m.id === exampleModel ? " selected" : ""));
     const who = el("div", "who");
     const name = el("div", "name", m.id);
     if (namedFree(m.id, m.name)) name.append(freeBadge(false));
     who.append(name, el("div", "sub", m.name && m.name !== m.id.split("/")[1] ? `${m.name} · ${m.provider.name}` : m.provider.name));
     row.append(m.group ? stackIcon(m.icons) : icon(m.provider.icon || "generic"), who, modelInfo(m), copyBtn(m.id, t("Model id")));
     row.title = t("Use this model in the snippets");
-    // a decision model is put in System One's snippets, any other in the
-    // other APIs'; the API follows the model clicked
     row.onclick = () => {
       const selection = window.getSelection();
       if (selection && !selection.isCollapsed && row.contains(selection.anchorNode)) return;
-      const so = decideEntry(m);
-      if (so) { decideModel = m.id; localStorage.setItem("fogway.decideModel", m.id); }
-      else { exampleModel = m.id; localStorage.setItem("fogway.model", m.id); }
-      if (so !== !!FLAVORS[flavor]?.decide) { flavor = so ? "systemone" : "openai"; localStorage.setItem("fogway.flavor", flavor); }
+      exampleModel = m.id; localStorage.setItem("fogway.model", m.id);
       renderConnect(); renderGatewayModels();
     };
     list.append(row);
@@ -6462,9 +6402,7 @@ function modelInfo(m) {
   const box = el("span", "minfo");
   const lines = [];
   const levels = m.efforts || [];
-  // a decision model answers a routing group's questions, it doesn't reason
-  if (decideEntry(m)) lines.push(t("Decision model: routing groups ask it, agents never see it"));
-  else if (levels.length) {
+  if (levels.length) {
     box.append(el("span", "badge mi-effort", effortSpan(levels)));
     // a group's levels are not its own: they are the ones every model in it
     // has, as its images are whichever member's and its window the largest's
@@ -7588,8 +7526,6 @@ function asTyped() {
   const keys = splitKeys(draft.key || "");
   const body = { typed: true, key: keys.length > 1 ? keys[0] : (draft.key || "").trim(), chat: (draft.chat || "").trim(), responses: (draft.responses || "").trim(), anthropic: (draft.anthropic || "").trim(), gemini: (draft.gemini || "").trim(), modelsURL: (draft.modelsURL || "").trim() };
   Object.assign(body, movedURLs(draft));
-  // a System One base is asked at POST …/systemone, not on the three APIs
-  if (draft.api === "decide") body.decide = (draft.decide || "").trim();
   // a Vertex AI provider is asked at the project typed, with the
   // credentials typed, as a pasted key is
   if (draft.vertex) body.vertex = vertexOfDraft();
@@ -8255,7 +8191,7 @@ function slide(box, key) {
   th.animate([f, t], { duration: THUMB_MS, easing: THUMB_EASE, id: "thumb" });
 }
 
-const PROTOS = [["chat", "OpenAI", "Chat Completions — most agents"], ["responses", "Responses", "OpenAI Responses — what Codex speaks"], ["anthropic", "Anthropic", "Anthropic Messages — what Claude Code speaks"], ["gemini", "Gemini", "Gemini generateContent — what the Gemini CLI speaks"], ["decide", "System One", "A decision API on System One (TypeSafe's Jev, a gateway's, or Bailian's decision model) — what a routing group asks as a turn begins"]];
+const PROTOS = [["chat", "OpenAI", "Chat Completions — most agents"], ["responses", "Responses", "OpenAI Responses — what Codex speaks"], ["anthropic", "Anthropic", "Anthropic Messages — what Claude Code speaks"], ["gemini", "Gemini", "Gemini generateContent — what the Gemini CLI speaks"]];
 // Gemini generateContent at a Vertex AI provider's project, as its
 // endpoint is shown and tested
 const VERTEX_EP_HINT = "Gemini generateContent — what Vertex AI serves at your Google Cloud project";
@@ -8275,10 +8211,6 @@ function vertexOfDraft() {
   const v = draft.vertex || {};
   return { project: (v.project || "").trim(), location: (v.location || "").trim(), credentials: (v.credentials || "").trim(), impersonate: (v.impersonate || "").trim() };
 }
-const decideOnly = (p) => !!p?.decide && !(p.chat || p.responses || p.anthropic || p.gemini);
-// a provider that lists its decision models apart (OpenRouter) says which
-// they are: its Jev Router (typesafe/jev-router) is a chat model
-const decidesModel = (p, id) => !!p.decide && (decideOnly(p) || (p.deciders ? p.deciders.includes(id) : id.split("/").some((s) => /^jev(?:-|$)/i.test(s))));
 // modelAPIs: the APIs one of p's models can be asked on alone, those it has
 // a URL for when it has more than one — a custom provider's, a preset's or
 // a subscription's alike (01huadalang on Discord: 一个 api 里有很多模型但是不同协议;
@@ -8310,12 +8242,12 @@ function pickedOf(p) {
 function baseAPIOf(p) {
   const picked = p.baseAPI === "chat" ? "openai" : p.baseAPI;
   if (picked && p[apiField[picked]]) return picked;
-  return p.chat ? "openai" : p.anthropic ? "anthropic" : p.responses ? "responses" : p.gemini ? "gemini" : p.decide ? "decide" : "openai";
+  return p.chat ? "openai" : p.anthropic ? "anthropic" : p.responses ? "responses" : p.gemini ? "gemini" : "openai";
 }
 
 // draftOf is a saved provider as its editor's form holds it.
 function draftOf(p) {
-  return { id: p.id, name: p.name, preset: p.preset, chat: p.chat, responses: p.responses, anthropic: p.anthropic, gemini: p.gemini || "", catalog: p.catalog, decide: p.decide || "", key: "", api: baseAPIOf(p), chosen: pickedOf(p), none: !!p.noModels, extra: [], headers: headerRows(p.headers), extraBody: extraBodyText(p.extraBody), icon: p.icon || "", fallback: [...(p.fallback || [])], unlisted: !!p.unlisted, searches: !!p.searches, unredacted: !!p.unredacted, passUserAgent: !!p.passUserAgent, pinUpstream: !!p.pinUpstream, authHeader: p.authHeader || "", balanceURL: p.balanceURL || "", balancePath: p.balancePath || "", modelsURL: p.modelsURL || "", contexts: contextsText(p.contexts), outputs: contextsText(p.outputs), compacts: contextsText(p.compacts), keysUrl: p.keysUrl || "", ...proxyDraft(p), ...concurrencyDraft(p) };
+  return { id: p.id, name: p.name, preset: p.preset, chat: p.chat, responses: p.responses, anthropic: p.anthropic, gemini: p.gemini || "", catalog: p.catalog, key: "", api: baseAPIOf(p), chosen: pickedOf(p), none: !!p.noModels, extra: [], headers: headerRows(p.headers), extraBody: extraBodyText(p.extraBody), icon: p.icon || "", fallback: [...(p.fallback || [])], unlisted: !!p.unlisted, searches: !!p.searches, unredacted: !!p.unredacted, passUserAgent: !!p.passUserAgent, pinUpstream: !!p.pinUpstream, authHeader: p.authHeader || "", balanceURL: p.balanceURL || "", balancePath: p.balancePath || "", modelsURL: p.modelsURL || "", contexts: contextsText(p.contexts), outputs: contextsText(p.outputs), compacts: contextsText(p.compacts), keysUrl: p.keysUrl || "", ...proxyDraft(p), ...concurrencyDraft(p) };
 }
 
 // duplicateProvider opens the Add form on a copy of p (#268): its URLs,
@@ -8348,7 +8280,7 @@ function renderEditor(p, presetID) {
 }
 function drawEditor(p, presetID) {
   const pr = presetID ? providers.presets.find((x) => x.id === presetID) : p?.preset ? providers.presets.find((x) => x.id === p.preset) : null;
-  const isNew = !p, custom = !pr, decides = !!(p?.decide || pr?.decide);
+  const isNew = !p, custom = !pr;
   // a preset already added is added again only through "Add another": one
   // more provider of it, under a name and id of its own
   const another = isNew && !!pr?.added;
@@ -8359,7 +8291,7 @@ function drawEditor(p, presetID) {
     ? draftOf(p)
     : pr
       ? { id: pr.id, name: pr.name, preset: pr.id, key: "", chosen: [], extra: [], headers: [] }
-      : { id: "", name: "", preset: "", chat: "", responses: "", anthropic: "", decide: "", catalog: "", key: "", api: "openai", chosen: [], extra: [], headers: [], icon: "" });
+      : { id: "", name: "", preset: "", chat: "", responses: "", anthropic: "", catalog: "", key: "", api: "openai", chosen: [], extra: [], headers: [], icon: "" });
   const ed = el("div", "editor" + (isNew ? " new" : ""));
   ed.onclick = (e) => e.stopPropagation();
 
@@ -8442,7 +8374,7 @@ function drawEditor(p, presetID) {
     const hint = el("div", "hint");
     const idOf = () => slug(draft.id) || p.id;
     const show = () => {
-      hint.textContent = t(decideOnly(p) ? "Routing groups name its models as {id} for their classifier" : "Agents pick its models as {id}", { id: idOf() + "/…" }) +
+      hint.textContent = t("Agents pick its models as {id}", { id: idOf() + "/…" }) +
         (idOf() !== p.id ? " · " + t("agents and routing groups on {id} move to it", { id: p.id + "/…" }) : "");
     };
     idIn.oninput = () => { draft.id = idIn.value; show(); };
@@ -8476,7 +8408,7 @@ function drawEditor(p, presetID) {
     // that serves only the Responses API is added (and tested) with that
     // alone, since /chat/completions would only fail (#73)
     const seg = el("div", "segs base-apis");
-    for (const [v, hint] of [["openai", "…/v1 — chat completions, and responses when the vendor has it"], ["responses", "…/v1 — for a vendor that serves only the Responses API, not chat completions"], ["anthropic", "the root URL, what ANTHROPIC_BASE_URL would take"], ["gemini", "…/v1beta — Google's Gemini API (generateContent), or one that answers as it does; the key goes in x-goog-api-key"], ["decide", "a decision API's root, POST …/systemone under it: its models are a routing group's classifier, never an agent's"]]) {
+    for (const [v, hint] of [["openai", "…/v1 — chat completions, and responses when the vendor has it"], ["responses", "…/v1 — for a vendor that serves only the Responses API, not chat completions"], ["anthropic", "the root URL, what ANTHROPIC_BASE_URL would take"], ["gemini", "…/v1beta — Google's Gemini API (generateContent), or one that answers as it does; the key goes in x-goog-api-key"]]) {
       const b = el("button", "opt" + (draft.api === v ? " on" : ""), t(API_NAMES[v]));
       b.title = t(hint);
       b.onclick = () => {
@@ -8532,7 +8464,7 @@ function drawEditor(p, presetID) {
         if (x.ok) draft[x.protocol] = x.base;
         else if ((x.status === 404 || x.status === 405) && (draft[x.protocol] || "").trim().replace(/\/+$/, "") === x.base) draft[x.protocol] = "";
       }
-      const v = draft[apiField[draft.api]] ? draft.api : ["openai", "responses", "anthropic", "gemini", "decide"].find((a) => draft[apiField[a]]);
+      const v = draft[apiField[draft.api]] ? draft.api : ["openai", "responses", "anthropic", "gemini"].find((a) => draft[apiField[a]]);
       showApi(v || draft.api);
       draft.onModelPrefs?.(); // the APIs a model can be given follow the URLs
     };
@@ -8572,21 +8504,16 @@ function drawEditor(p, presetID) {
     // a saved provider's URLs (or a duplicate's) start it; a new one's are
     // the preset's, sent as none unless moved, so the gateway takes them
     const own = draft.chat !== undefined;
-    // oMLX's decision API (#1641) is the same server's, and moves with it
-    draft.addressFrom ??= { chat: draft.chat ?? pr.chat ?? "", responses: draft.responses ?? pr.responses ?? "", anthropic: draft.anthropic ?? pr.anthropic ?? "", decide: draft.decide ?? (p?.decide || pr.decide || "") };
+    draft.addressFrom ??= { chat: draft.chat ?? pr.chat ?? "", responses: draft.responses ?? pr.responses ?? "", anthropic: draft.anthropic ?? pr.anthropic ?? "" };
     draft.addressWas ??= own ? originOf(draft.addressFrom) : "";
     const from = draft.addressFrom, addressWas = draft.addressWas;
     draft.address ??= addressWas;
     address = input(draft.address, originOf(pr));
     address.inputMode = "url";
     address.classList.add("address");
-    // the Jev endpoint field shows where the decision API moved to, until
-    // one is typed there
     address.oninput = () => {
       draft.address = address.value;
       refreshEndpoints();
-      const du = ed.querySelector("input.decide-url");
-      if (du && draft.decide === draft.addressFrom.decide) du.value = movedURLs(draft)?.decide || draft.decide;
     };
     const keys = address.onkeydown;
     address.onkeydown = (e) => { keys(e); if (e.key === "Enter" && isNew) save(); };
@@ -8757,7 +8684,7 @@ function drawEditor(p, presetID) {
   // Discord). Only the user can say it is local all the way: a relay run
   // locally, or Ollama's cloud models, pass a request on to a vendor
   const addressOf = (k) => (draft[k] ?? (isNew && pr ? pr[k] : "")) || "";
-  const onLAN = () => localAddresses(["chat", "responses", "anthropic", "gemini", "decide"].map(addressOf));
+  const onLAN = () => localAddresses(["chat", "responses", "anthropic", "gemini"].map(addressOf));
   {
     const [ltk, lcb] = tick(t("Send requests unmasked"), !!draft.unredacted);
     lcb.onchange = () => { draft.unredacted = lcb.checked; };
@@ -8870,11 +8797,11 @@ function drawEditor(p, presetID) {
 
   // a relay that offers several regional endpoints, or a vendor whose plans
   // are served at their own: one selector, and the provider's base URLs follow it
-  let refreshEndpoints = () => {}, onRegion = () => {};
+  let refreshEndpoints = () => {};
   if (pr?.regions?.length) {
     // Bedrock's ten regions don't fit the editor's width: they scroll
     const seg = el("div", "segs regions");
-    const cur = regionAt(pr, draft) || pr.regions.find((r) => r.decide && (r.id === draft.region || (!draft.region && workspaceOf(r.decide, draft.decide ?? p?.decide ?? pr.decide) !== null))) || pr.regions[0];
+    const cur = regionAt(pr, draft) || pr.regions[0];
     for (const r of pr.regions) {
       const b = el("button", "opt" + (r.id === cur.id ? " on" : ""), t(r.name));
       b.onclick = () => {
@@ -8885,7 +8812,6 @@ function drawEditor(p, presetID) {
           site.dataset.url = r.website || pr.website;
           site.textContent = hostOf(site.dataset.url) + " ↗";
         }
-        onRegion(r);
         accessAt(r);
         for (const x of seg.querySelectorAll(".opt")) x.classList.toggle("on", x === b);
         slide(seg, "regions");
@@ -8909,11 +8835,11 @@ function drawEditor(p, presetID) {
     // the window agents are told a model has, over what the vendor or
     // models.dev says: one for all of them, and model=size for one
     const cx = input(draft.contexts || "", t("e.g. 128k · or gpt-6=1m, comma separated"));
-    if (!decideOnly(p || pr)) ed.append(...field(t("Context window"), contextPicks(p, cx), t("How long a request the models take, told to the agents; empty leaves it to the vendor and models.dev")));
-    if (!decideOnly(p || pr)) ed.append(...outputField());
-    if (!decideOnly(p || pr)) ed.append(...compactField());
+    ed.append(...field(t("Context window"), contextPicks(p, cx), t("How long a request the models take, told to the agents; empty leaves it to the vendor and models.dev")));
+    ed.append(...outputField());
+    ed.append(...compactField());
   }
-  if (p && !decideOnly(p)) ed.append(...field(t("Fallback"), renderFallback(p), fallbackHint(p)));
+  if (p) ed.append(...field(t("Fallback"), renderFallback(p), fallbackHint(p)));
   else if (custom) {
     const ex = input(draft.extra.join(", "), t("model ids, comma separated · e.g. gpt-5.5, claude-sonnet-5"));
     const pick = addFormModels(ex);
@@ -8921,40 +8847,12 @@ function drawEditor(p, presetID) {
     ed.append(...field(t("Models"), pick.box, t("Optional: Fetch models to pick from the vendor's list, or type ids; none picked, fogway asks for the list after saving.")));
   }
 
-  // Jev's endpoint can be the one its gateway's docs give — Cloudflare's
-  // names the account, …/accounts/<id>/ai/run — in place of the preset's
-  if (decides && !custom) {
-    if (draft.decide === undefined) draft.decide = p?.decide || pr?.decide || "";
-    const du = input((address && movedURLs(draft)?.decide) || draft.decide, pr?.decide || "https://…", "url");
-    du.classList.add("decide-url");
-    // Bailian's is at the host of the key's workspace (#647): its id is
-    // typed on its own, the plan's address filled in with it
-    if (!draft.region && pr?.regions?.some((r) => r.decide)) draft.region = (pr.regions.find((r) => r.decide && workspaceOf(r.decide, draft.decide) !== null) || pr.regions[0]).id;
-    const tmpl = () => (pr?.regions || []).find((r) => r.id === draft.region)?.decide || (draft.region ? "" : pr?.decide) || "";
-    const wsIn = input((draft.workspace ?? workspaceOf(tmpl(), draft.decide)) || "", t("e.g. ws-…, from the Bailian console"));
-    wsIn.classList.add("workspace-id");
-    const wsRow = field(t("Workspace ID"), wsIn, t("The workspace your API key belongs to, in the Bailian console; its decision model is asked at that workspace's host"));
-    const fill = () => {
-      const tp = tmpl();
-      const ws = tp.includes(WORKSPACE);
-      for (const x of wsRow) x.hidden = !ws;
-      if (!ws) return;
-      draft.decide = du.value = tp.split(WORKSPACE).join((draft.workspace ?? wsIn.value).trim() || WORKSPACE);
-    };
-    wsIn.oninput = () => { draft.workspace = wsIn.value; fill(); };
-    du.oninput = () => { draft.decide = du.value; };
-    onRegion = (r) => { draft.region = r.id; if (r.decide) { draft.decide = du.value = r.decide; fill(); } };
-    ed.append(...wsRow);
-    fill();
-    ed.append(...field(t(decideOnly(p || pr) && !/jev/i.test(pr?.name || p?.name || "") ? "System One endpoint" : "Jev endpoint"), du, tmpl().includes(WORKSPACE) ? t("The address the decision model is asked at, POST …/systemone under it; the workspace ID above fills it in") : t("The address Jev is asked at; paste the one from your gateway's docs, e.g. Cloudflare's …/accounts/<account id>/ai/run")));
-  }
-
-  if (!custom && !(decides && !p)) {
+  if (!custom) {
     const ebox = el("div");
     const row = field(t("Endpoints"), ebox, "");
     refreshEndpoints = () => {
       const base = p || pr || {};
-      const src = { chat: draft.chat || base.chat || "", responses: draft.responses || base.responses || "", anthropic: draft.anthropic || base.anthropic || "", decide: base.decide || "" };
+      const src = { chat: draft.chat || base.chat || "", responses: draft.responses || base.responses || "", anthropic: draft.anthropic || base.anthropic || "" };
       // Vertex AI's is the address its project and location make, shown
       // with its Test once a project is typed, saved one or not: with none
       // there is nowhere to ask
@@ -9066,12 +8964,10 @@ function drawEditor(p, presetID) {
     const xb = extraBodyOf(draft.extraBody);
     if (xb.error) { ed.querySelector(".extra-body textarea")?.focus({ preventScroll: true }); return editorError(t("Extra body: {why}", { why: xb.error }), "warn"); }
     body.extraBody = xb.value;
-    if (decides || custom) body.decide = (custom && draft.api !== "decide" && !p?.decide ? "" : draft.decide || "").trim();
-    if ((body.decide || "").includes(WORKSPACE)) { ed.querySelector(".workspace-id")?.focus({ preventScroll: true }); return editorError(t("Give the workspace ID your API key belongs to, or pick the Token Plan"), "warn"); }
     if (custom) {
       // the API picked for the Base URL is saved with it, and one left with
       // no URL is said rather than lost: the editor would open on another
-      if (!(draft[apiField[draft.api]] || "").trim() && ["chat", "responses", "anthropic", "gemini", "decide"].some((k) => (draft[k] || "").trim())) {
+      if (!(draft[apiField[draft.api]] || "").trim() && ["chat", "responses", "anthropic", "gemini"].some((k) => (draft[k] || "").trim())) {
         ed.querySelector(".base-url")?.focus({ preventScroll: true });
         return editorError(t("Base URL: type the {api} URL, or pick the API the URL you have is for", { api: t(API_NAMES[draft.api]) }), "warn");
       }
@@ -9087,7 +8983,7 @@ function drawEditor(p, presetID) {
     const cx = parseContexts(draft.contexts || "");
     if (cx.error) return editorError(t("Context window: {v} is not a length like 128k or 1m", { v: cx.error }), "warn");
     body.contexts = cx.map;
-    if (!decideOnly(p || pr)) {
+    {
       const ox = parseContexts(draft.outputs || "");
       if (ox.error) return outputError(ed, ox.error);
       body.outputs = ox.map;
@@ -9132,7 +9028,7 @@ function drawEditor(p, presetID) {
     }
     if (vertex) body.vertex = vertexOfDraft();
     if (isNew && custom && !body.name) { name.focus(); return editorError(t("Give it a name"), "warn"); }
-    if (isNew && custom && !body.chat && !body.anthropic && !body.responses && !body.decide) { url.focus(); return editorError(t("A base URL is needed"), "warn"); }
+    if (isNew && custom && !body.chat && !body.anthropic && !body.responses) { url.focus(); return editorError(t("A base URL is needed"), "warn"); }
     if (endpoint && !body.chat && !body.responses) { endpoint.focus(); return editorError(t(pr.endpointNeeded || "Your resource's endpoint is needed"), "warn"); }
     if (vertex && !body.vertex.project) { vertexProject?.focus({ preventScroll: true }); return editorError(t("Google Vertex AI needs the id of your Google Cloud project"), "warn"); }
     if (address) {
@@ -9916,7 +9812,6 @@ function detectAPIs(p, base, use) {
     if (!Object.keys(prefs[id]).length) delete prefs[id];
   };
   each.onclick = async () => {
-    if (draft.api === "decide") { say(t("A decision API is asked with one model: type it and press Detect APIs"), "warn"); return; }
     const ids = picked();
     if (!ids.length) { say(t("Pick models first, or type one and press Detect APIs"), "warn"); return; }
     const r = await ask(each, { detectModels: ids });
@@ -9978,7 +9873,6 @@ function detectAPIs(p, base, use) {
 // modelTestWhy: why a provider's models can't each be sent a test request
 // (the server's providerJSON.modelTest), in words, or "" when they can
 function modelTestWhy(p) {
-  if (p.modelTest === "decide") return t("A classifier's models aren't sent test requests: Test under Endpoints asks Jev's endpoint for them.");
   if (p.modelTest === "own-api") return t("{name} is reached through its own API, which fogway translates each agent request for, so a test request can't be sent to it on its own. Ask the model from an agent to try it.", { name: p.name });
   return "";
 }
@@ -10072,9 +9966,7 @@ function renderModels(p) {
     }, "What this model makes", "model-kind-menu");
   };
   const menu = (c, id) => {
-    // a decision model is asked a System One question where the server
-    // says its API takes one (decideTest)
-    const noTest = decidesModel(p, id) ? (p.decideTest ? "" : modelTestWhy({ modelTest: "decide" })) : modelTestWhy(p);
+    const noTest = modelTestWhy(p);
     if (!noTest) c.title = (c.title ? c.title + "\n" : "") + t("Right-click to test just this model");
     c.oncontextmenu = (e) => {
       e.preventDefault();
@@ -10087,7 +9979,7 @@ function renderModels(p) {
       // asked as Codex or Claude Code asks, for a relay that serves only
       // them (耍赖天都爱 on Discord); Claude Code's once it has come
       // through fogway, its headers being the ones it came with
-      if (!noTest && !decidesModel(p, id)) {
+      if (!noTest) {
         for (const [as, agent, name] of [["codex", "Codex", "Test as Codex"], ["claude-code", "Claude Code", "Test as Claude Code"]]) {
           if (!(as in (p.testsAs || {}))) continue;
           const why = p.testsAs[as] ? t(p.testsAs[as]) : "";
@@ -10097,24 +9989,24 @@ function renderModels(p) {
       // its id as agents and the gateway name it, to paste where a model is
       // typed (ARNO, Discord: 右击菜单除了测试模型外，还能添加拷贝模型id的功能)
       acts.push({ name: "Copy model ID", icon: COPY_ICON, tip: id, run: () => copy(id, id, null, t("Model ID {model} copied", { model: id })) });
-      if (apis.length && !decidesModel(p, id)) {
+      if (apis.length) {
         const now = apiNow(id);
         acts.push({ name: now ? t("Asked on {api}…", { api: apiLabel(now) }) : t("Asked on: Auto…"), icon: "M2.5 5h11M2.5 11h11M10.5 2.5 13.5 5l-3 2.5M5.5 8.5 2.5 11l3 2.5", tip: t("Pick the API this model is asked on"), run: () => pickAPI(c, id) });
       }
-      if (p.marksKinds && !decidesModel(p, id)) {
+      if (p.marksKinds) {
         const k = kindNow(id);
         acts.push({ name: k ? t("Makes: {kind}…", { kind: t(KIND_NAMES[k]) }) : t("Makes: Auto…"), icon: "M2.5 4h11v8h-11zM6.5 6.25v3.5L9.5 8z", tip: t("Say this model makes images or videos, when the provider's model list doesn't"), run: () => pickKind(c, id) });
       }
       openRowMenu(c, acts);
     };
     // the API it is asked on, when one is picked (or staged)
-    const now = apis.length && !decidesModel(p, id) ? apiNow(id) : "";
+    const now = apis.length ? apiNow(id) : "";
     if (now) {
       const tag = el("span", "badge mapi-tag", apiLabel(now));
       tag.title = t("Asked on {api} alone; right-click to change", { api: apiLabel(now) });
       c.append(tag);
     }
-    const kind = p.marksKinds && !decidesModel(p, id) ? kindNow(id) : "";
+    const kind = p.marksKinds ? kindNow(id) : "";
     if (kind) {
       const tag = el("span", "badge mkind-tag", t(kind === "video" ? "video" : "image"));
       tag.title = t("{kind}, as you said; right-click to change", { kind: t(KIND_NAMES[kind]) });
@@ -10163,7 +10055,7 @@ function renderModels(p) {
     // groups alone, those are what the groups use (#1818: drawn as none
     // while the card and the auto groups had all 17); after Select none,
     // none is served
-    const served = draft.chosen.length || decideOnly(p) || draft.none ? new Set() : new Set(p.models.slice(0, 24).map((m) => m.id));
+    const served = draft.chosen.length || draft.none ? new Set() : new Set(p.models.slice(0, 24).map((m) => m.id));
     // a filter is a search: what it doesn't match is left out, picked or not
     for (const m of p.models) {
       const on = draft.chosen.includes(m.id);
@@ -10222,8 +10114,7 @@ function renderModels(p) {
     drawFold();
     drawWorkOn();
     drawServes();
-    why.textContent = decideOnly(p) ? t("Agents never see them: a routing group picks one as its classifier.")
-      : !draft.chosen.length && draft.none ? t("None selected: no agent or routing group uses its models. Its balance and usage still show. Click a model to pick it.")
+    why.textContent = !draft.chosen.length && draft.none ? t("None selected: no agent or routing group uses its models. Its balance and usage still show. Click a model to pick it.")
       : draft.unlisted ? t(draft.chosen.length ? "Agents don't see them: only the routing groups they are in use them." : "Vendor's list: agents don't see it, the routing groups its models are in use up to {n} of it (dashed). Click a model to pick just it.", { n: 24 })
       : t(draft.chosen.length ? "Agents see the models picked." : "Vendor's list: agents see up to {n} of its models (dashed), and those it lists later. Click a model to pick just it.", { n: 24 });
     drawLost();
@@ -10235,7 +10126,7 @@ function renderModels(p) {
   const drawLost = () => {
     lost.replaceChildren();
     const ids = servedIds(p);
-    const none = decideOnly(p) || !draft.unlisted ? [] : ids.filter((id) => !p.groups?.[id]?.length && !decidesModel(p, id));
+    const none = !draft.unlisted ? [] : ids.filter((id) => !p.groups?.[id]?.length);
     lost.hidden = !none.length;
     if (!none.length) return;
     lost.append(t("In no routing group, so no agent can use them now: {models}.", { models: none.slice(0, 8).join(", ") + (none.length > 8 ? " …" : "") }));
@@ -10636,7 +10527,7 @@ function renderModels(p) {
     workOn.title = bad ? t("Unpick the models whose last test failed; those that answered, and those not tested, stay picked")
       : t("Every picked model that was tested answered");
   };
-  if (!decideOnly(p)) { box.append(serves); queueMicrotask(drawServes); }
+  box.append(serves); queueMicrotask(drawServes);
   if (q || p.models.length > 1) {
     if (q) { q.oninput = draw; bulk.prepend(q); }
     box.append(bulk);
@@ -10684,7 +10575,7 @@ function renderModels(p) {
   const testAll = el("button", "text action", t("Test models"));
   testAll.title = t("Send a tiny request to each model agents see, to find the ones that don't answer") + "\n" + t("Right-click a model to test just it");
   testAll.onclick = async () => {
-    const ids = servedIds(p).filter((id) => p.decideTest || !decidesModel(p, id));
+    const ids = servedIds(p);
     if (!ids.length) { status(t("Pick a model first."), "err"); return; }
     testAll.classList.add("busy");
     const got = modelTests[p.id] = {};
@@ -10723,7 +10614,7 @@ function renderModels(p) {
   foot.append(testAll);
   foot.append(rename);
   if (p.fetched) foot.append(el("span", "hint", t("vendor list · {when}", { when: ago(p.fetched) })));
-  else if (p.models.length) foot.append(el("span", "hint", t(decideOnly(p) ? "Jev's names · Fetch models asks the vendor" : "from models.dev · Fetch models asks the vendor")));
+  else if (p.models.length) foot.append(el("span", "hint", t("from models.dev · Fetch models asks the vendor")));
   if (p.fetched) {
     // the fetched list stands in for the picks when none are made
     const forget = el("button", "text action", t("Forget"));
@@ -10744,7 +10635,7 @@ function renderModels(p) {
   tk.title = t("Its models leave the list agents pick from; the routing groups they are in still use them");
   // with routing groups switched off, only while it is ticked: then it is in use
   if (!draft.unlisted) tk.dataset.feature = "groups";
-  if (!decideOnly(p)) box.append(tk);
+  box.append(tk);
   const lost = el("div", "hint model-hint warn");
   box.append(why, lost);
   draw();
@@ -11981,35 +11872,18 @@ async function keyFingerprint(key) {
 
 // apiField is the draft's URL a custom provider's base URL fills, by the
 // protocol chosen for it.
-const apiField = { openai: "chat", responses: "responses", anthropic: "anthropic", gemini: "gemini", decide: "decide" };
+const apiField = { openai: "chat", responses: "responses", anthropic: "anthropic", gemini: "gemini" };
 // the Base URL's APIs as the custom provider's editor names them
-const API_NAMES = { openai: "OpenAI compatible", responses: "OpenAI Responses", anthropic: "Anthropic compatible", gemini: "Gemini compatible", decide: "System One" };
+const API_NAMES = { openai: "OpenAI compatible", responses: "OpenAI Responses", anthropic: "Anthropic compatible", gemini: "Gemini compatible" };
 // urlHint: the Base URL's placeholder for the API it is for
 const urlHint = (api) => api === "anthropic" ? "https://…" : api === "gemini" ? "https://…/v1beta" : "https://…/v1";
 
 // respellURL turns a base URL into the one protocol api is asked at: the
 // root for Anthropic, which adds /v1 itself, …/v1 for OpenAI's two,
 // …/v1beta for Gemini's (as Google's SDKs add it).
-// WORKSPACE stands for a Bailian workspace's id in a decision API's
-// address (provider.WorkspaceID); workspaceOf is the id url has in its
-// place in tmpl ("" for none), or null when url isn't at tmpl's host.
-const WORKSPACE = "{WorkspaceId}";
-function workspaceOf(tmpl, url) {
-  if (!tmpl || !url) return null;
-  const strip = (u) => u.trim().replace(/\/+$/, "").replace(/\/systemone$/, "");
-  const [a, b] = strip(tmpl).split(WORKSPACE);
-  const u = strip(url);
-  if (b === undefined) return u === a ? "" : null;
-  if (u.length < a.length + b.length || !u.startsWith(a) || !u.endsWith(b)) return null;
-  const ws = u.slice(a.length, u.length - b.length);
-  if (ws === WORKSPACE) return "";
-  return /[/.]/.test(ws) ? null : ws;
-}
-
 function respellURL(u, api) {
   u = u.trim().replace(/\/+$/, "");
   if (api === "anthropic") return u.replace(/\/v1$/, "");
-  if (api === "decide") u = u.replace(/\/systemone$/, "");
   if (api === "gemini") return /^https?:\/\/[^/]+\/v1$/.test(u) ? u + "beta" : /^https?:\/\/[^/]+$/.test(u) ? u + "/v1beta" : u;
   return /\/v\d+[a-z]*$/.test(u) || !/^https?:\/\/[^/]+$/.test(u) ? u : u + "/v1";
 }
@@ -12138,11 +12012,7 @@ function movedURLs(d) {
   if (!d?.addressFrom) return null;
   const at = localAddress(d.address);
   if (!at || at === d.addressWas) return null;
-  const out = atAddress(d.addressFrom, at);
-  // a decision endpoint typed in its own field is the user's: kept as typed
-  // (and one with none has none to move)
-  if (!out.decide || (d.decide !== undefined && d.decide !== d.addressFrom.decide)) delete out.decide;
-  return out;
+  return atAddress(d.addressFrom, at);
 }
 // atAddress is urls each moved to origin, its path kept.
 function atAddress(urls, origin) {

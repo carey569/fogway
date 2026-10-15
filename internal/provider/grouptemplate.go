@@ -206,10 +206,10 @@ func btoi(b bool) int {
 
 // Templates are every template as the user's models make it now.
 func Templates() []Template {
-	ms, ds := templateModels(), []Entry(nil)
+	ms := templateModels()
 	out := make([]Template, 0, len(TemplateKinds))
 	for _, k := range TemplateKinds {
-		out = append(out, templateOf(k, ms, ds))
+		out = append(out, templateOf(k, ms))
 	}
 	return out
 }
@@ -220,7 +220,7 @@ func MakeTemplate(kind string) (Template, error) {
 	if !slices.Contains(TemplateKinds, kind) {
 		return Template{}, fmt.Errorf("no template %q: one of %s", kind, strings.Join(TemplateKinds, ", "))
 	}
-	t := templateOf(kind, templateModels(), nil)
+	t := templateOf(kind, templateModels())
 	if t.Why != "" {
 		return t, fmt.Errorf("%s", t.Why)
 	}
@@ -239,9 +239,8 @@ var TemplateNames = map[string]string{
 // number when one is in use.
 var TemplateIDs = map[string]string{TemplateSmart: "smart-split", TemplateThrifty: "cheap-first", TemplateSteady: "never-stuck"}
 
-// templateOf is the template kind made of ms, its classifier a decider of
-// ds when there is one.
-func templateOf(kind string, ms []rated, ds []Entry) Template {
+// templateOf is the template kind made of ms.
+func templateOf(kind string, ms []rated) Template {
 	t := Template{Kind: kind, Group: Group{Name: TemplateNames[kind], ID: TemplateIDs[kind], Routing: Ordered}}
 	strong := strongest(ms)
 	if len(strong) == 0 {
@@ -284,7 +283,7 @@ func templateOf(kind string, ms []rated, ds []Entry) Template {
 			t.Group.Rules = append(t.Group.Rules, Rule{Use: best.e.ID, Images: true})
 		}
 		t.Group.Rules = append(t.Group.Rules, Rule{Use: best.e.ID, Intent: IntentHard}, Rule{Use: low.e.ID, Intent: IntentEasy})
-		t.Group.Classifier = classifierFor(ms, ds, low)
+		t.Group.Classifier = classifierFor(ms, low)
 	case TemplateThrifty:
 		t.Group.Members = []string{low.e.ID}
 		// a second cheap one from another provider, before the dear one:
@@ -307,14 +306,10 @@ func templateOf(kind string, ms []rated, ds []Entry) Template {
 	return t
 }
 
-// classifierFor is the model TemplateSmart asks which intent a turn is: a
-// decision API (Jev) when one is on, else the cheapest priced model that
-// doesn't reason — quick, as the classifier is asked each turn — else the
-// group's cheap one.
-func classifierFor(ms []rated, ds []Entry, low rated) string {
-	if len(ds) > 0 {
-		return ds[0].ID
-	}
+// classifierFor is the model TemplateSmart asks which intent a turn is: the
+// cheapest priced model that doesn't reason — quick, as the classifier is
+// asked each turn — else the group's cheap one.
+func classifierFor(ms []rated, low rated) string {
 	var pick *rated
 	for i, m := range ms {
 		if m.out > 0 && !m.e.Reasoning && !m.tiny && (pick == nil || m.out < pick.out) {

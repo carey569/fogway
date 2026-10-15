@@ -101,16 +101,15 @@ const groupUsage = `usage:
            strict  for the whole session and never moved: resting, used up or past its cap, the
                    account that answered is still asked and its error goes to the agent
   effort   agent   (default) each request reasons as much as the agent asked, but at a member's own :<effort>
-           auto    as a turn begins, the group's classifier — Jev, from a TypeSafe provider
-                   (fogway provider add typesafe key=…), or any model, as Jev Router on OpenRouter,
-                   asked in words — rates how hard it is, and the turn's requests
+           auto    as a turn begins, the group's classifier — any model, asked in words —
+                   rates how hard it is, and the turn's requests
                    reason at low, medium, high or xhigh; only those the agent asked to reason
 
   e.g. fogway group add "Opus anywhere" models=claude/claude-opus-5-5,copilot/claude-opus-5.5 routing=order
        fogway group set opus-anywhere stays=session models+=openrouter/anthropic/claude-opus-5.5
        fogway group set auto-gpt-6-astra id=gpt-6-astra
        fogway group add Everything models=group/opus-anywhere,deepseek/deepseek-v4-flash routing=order
-       fogway group set opus-anywhere effort=auto classifier=typesafe/jev-latest
+       fogway group set opus-anywhere effort=auto classifier=deepseek/deepseek-v4-flash
        fogway group add Fast models=codex/gpt-5.6-luna:low,deepseek/deepseek-v4-flash,glm/glm-5.3-flash:high
        fogway group set fast models+=gcloud/gemini-3.8-flash:medium
        fogway group add my-free-pool models='openrouter/*:free,opencode-zen/*-free' routing=order

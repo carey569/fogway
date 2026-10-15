@@ -20,8 +20,7 @@ import (
 // goes out counts: each try of the forward loop (a retry, the next key or
 // account, a fallback), each request a try makes on the way (a second ask
 // after the vendor refused a beta or a shape), and the gateway's own asks
-// of the provider (count_tokens, System One's decisions, embeddings,
-// drawing, video and search). One more waits until the oldest of the
+// of the provider (count_tokens, embeddings and search). One more waits until the oldest of the
 // minute is a minute old: in the order they came, and never longer than
 // rpmWait (2 minutes, or the provider's QueueWait when that is shorter).
 // One that would wait longer is turned away at once with a 429 whose

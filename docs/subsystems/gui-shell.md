@@ -76,8 +76,7 @@ ends when its last try's reply ended, not when `serve` returns: what the
 gateway writes down after an answer (`answered`'s sticks, the provider's
 last answer in `NoteServed`) goes to disk, and on a busy disk took
 seconds, which made a paced reply read as held back and tell no speed
-(#1939, `TestSpeedEndsWithTheReply`). A decision group's row is timed the
-same way.
+(#1939, `TestSpeedEndsWithTheReply`).
 
 `TestVisibleReasoningSpeed`, `TestReasoningSpeedEvidence`,
 `TestReasoningSpeedThroughGateway`, `TestMixedRedactedReasoning`,

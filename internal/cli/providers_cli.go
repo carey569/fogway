@@ -74,16 +74,13 @@ const providerUsage = `usage:
   e.g. fogway provider add "My Relay" url=https://relay.example.com/v1 key=sk-…
        fogway provider add "Own Claude" anthropic=https://gw.example.com key=sk-… catalog=anthropic
        fogway provider add "My Relay" url=https://relay.example.com/v1 key=sk-… header.X-Org-Id=acme
-       fogway provider add bailian-token-plan sk-sp-…   (Bailian's Token Plan: its chat models, and its decision model for routing groups;
-                                    qwen-token-plan is the Qwen AI platform's, qwen-decision its pay-as-you-go decision model)
+       fogway provider add bailian-token-plan sk-sp-…   (Bailian's Token Plan; qwen-token-plan is the Qwen AI platform's)
        fogway provider add google-vertex project=my-project impersonate=vertex@my-project.iam.gserviceaccount.com
                                    (Google Vertex AI in your Google Cloud project, with no key: signed with gcloud's
                                     Application Default Credentials (gcloud auth application-default login) unless
                                     credentials=<file> names another, a service account key too; impersonate= needs
                                     roles/iam.serviceAccountTokenCreator on that account; location= global (the
                                     default), us, eu or a region such as us-central1; set changes them, empty clears)
-       fogway provider add "My Decider" decide=https://decide.example.com/v1 key=sk-… models=my-decision-model
-                                   (a System One API, POST …/systemone: it routes groups, its models are never an agent's)
        fogway provider add anthropic sk-… id=anthropic-ws2 name="Anthropic WS2" header.anthropic-workspace-id=wrkspc_…
        fogway provider set my-relay models.url=https://relay.example.com/api/models catalog=
        fogway provider set my-relay search=yes
@@ -804,7 +801,7 @@ func applyPairs(p *provider.Provider, pairs []string) error {
 		if !ok {
 			return fmt.Errorf("expected key=value, got %q\n\n%s", kv, providerUsage)
 		}
-		if p.IsVertex() && slices.Contains([]string{"url", "chat", "openai", "responses", "anthropic", "decide"}, strings.ToLower(k)) {
+		if p.IsVertex() && slices.Contains([]string{"url", "chat", "openai", "responses", "anthropic"}, strings.ToLower(k)) {
 			// asked only at the address its project and location make, so
 			// that its Google token goes nowhere else: one given here would
 			// be dropped without a word

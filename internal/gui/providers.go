@@ -70,7 +70,6 @@ type providerJSON struct {
 	Responses string            `json:"responses"`
 	Anthropic string            `json:"anthropic"`
 	Gemini    string            `json:"gemini,omitempty"` // a Gemini API's base (#1346)
-	Decide    string            `json:"decide,omitempty"` // a decision API: it only routes groups
 	Catalog   string            `json:"catalog"`
 	Website   string            `json:"website"`
 	KeysURL   string            `json:"keysUrl"`
@@ -144,16 +143,9 @@ type providerJSON struct {
 	// (provider.TestAs), for a relay that serves only them: the chip's
 	// right-click offers each, and says why one can't be when it can't
 	TestsAs map[string]string `json:"testsAs,omitempty"`
-	// DecideTest is set when its decision models can each be sent a
-	// System One question (provider.AsksDecideModels): a mixed
-	// provider's Jev too, beside its conversation models
-	DecideTest bool `json:"decideTest,omitempty"`
 	// MarksKinds is set when its models can be said to make images or
 	// videos (provider.MarksKinds, #1399): a chip's right-click offers it
 	MarksKinds bool `json:"marksKinds,omitempty"`
-	// Deciders explicitly identifies decision models for OpenRouter and
-	// remote fogway. An empty remote list suppresses name-based guessing.
-	Deciders *[]string `json:"deciders,omitempty"`
 
 	Key struct {
 		Set      bool   `json:"set"`

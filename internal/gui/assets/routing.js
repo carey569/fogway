@@ -3215,7 +3215,7 @@
       rules: opt(g.rules, (rs) => objs(rs).map((r) => ({ ...r, agents: opt(r.agents, ids), folders: opt(r.folders, ids), exceptFolders: opt(r.exceptFolders, ids) }))) });
     const refs = (v) => objs(v).filter((m) => typeof m.id === "string");
     return { ...x, groups: objs(x.groups).filter((g) => typeof g.id === "string" && g.id).map(group),
-      models: refs(x.models), deciders: refs(x.deciders), pools: objs(x.pools),
+      models: refs(x.models), pools: objs(x.pools),
       templates: objs(x.templates).filter((tp) => tp.group && typeof tp.group === "object").map((tp) => ({ ...tp, group: group(tp.group) })) };
   }
   // quiet: the window focused again; the same groups aren't drawn again
@@ -3273,11 +3273,7 @@
     const m = /^(.+):(none|minimal|low|medium|high|xhigh|max)$/i.exec(id);
     return m ? [m[1], m[2].toLowerCase()] : [id, ""];
   }
-  // a decision model (Jev) is a member of a group of decision models only,
-  // asked at /v1/systemone (provider/decide_group.go): it is in
-  // groups.deciders, not groups.models
-  const deciderOf = (id) => groups?.deciders?.find((m) => m.id === splitMember(id)[0]);
-  const modelOf = (id) => groups?.models.find((m) => m.id === id) || groups?.models.find((m) => m.id === splitMember(id)[0]) || deciderOf(id);
+  const modelOf = (id) => groups?.models.find((m) => m.id === id) || groups?.models.find((m) => m.id === splitMember(id)[0]);
   // a group's patterns (#766, provider.IsPattern): a glob, * any run of
   // characters over the provider/model id in any case, or re:<regexp> over
   // the whole id. The group keeps them, and the models they match now
@@ -4123,8 +4119,7 @@
         // the reasoning the model is sent at in this group: the group's
         // (blank), or one of its own whatever the agent asks. A group in
         // it reasons as it says.
-        // a decision model reasons at no level of the group's or its own
-        if (!s && !deciderOf(id)) {
+        if (!s) {
           const [base, fixed] = splitMember(id);
           const fx = el("button", "rt-cond rt-fixed" + (fixed ? " on" : ""), fixed ? fixedWords(fixed) : t("Group's reasoning"));
           fx.title = fixed ? t("Sent at {level} reasoning whatever the agent asks, at the model's nearest level", { level: fixed }) : t("Reasons as the group's effort says");
@@ -4211,15 +4206,10 @@
     addBtn.onclick = (ev) => {
       // a group in it may be any other, but never one it is in already:
       // that would put it in itself
-      // a group is of decision models only, or of models that hold
-      // conversations (provider.cleanDecisionGroup): one holding either
-      // is offered more of the same, an empty one both. A group of
-      // decision models is never in another: it holds no conversation
-      const decides = d.members.some((m) => !subOf(m) && deciderOf(m)), chats = d.members.some((m) => subOf(m) || !deciderOf(m));
-      const subs = decides ? [] : groups.groups.filter((x) => !x.hidden && !x.decides && x.id !== g?.id && !(g && x.holds?.includes(g.id)))
+      const subs = groups.groups.filter((x) => !x.hidden && x.id !== g?.id && !(g && x.holds?.includes(g.id)))
         .map((x) => ({ value: "group/" + x.id, label: x.name, note: noted("group/" + x.id, "group/" + x.id), icons: groupIcons(x), group: ROUTING_GROUPS, ref: "group/" + x.id }));
       const ref = (x) => ({ value: x.id, label: x.name || x.id, note: noted(x.providerName, x.id), icon: x.icon, group: x.providerName, ref: x.id, context: x.context });
-      const options = [...subs, ...(decides ? [] : groups.models.map(ref)), ...(chats ? [] : (groups.deciders || []).map(ref))];
+      const options = [...subs, ...groups.models.map(ref)];
       // the member a model is in the group as: itself, or with its
       // reasoning fixed (deepseek/x:max), which is ticked as it and taken
       // out by it rather than added twice (#907)
@@ -4435,8 +4425,6 @@
         ii.maxLength = 200;
         ii.oninput = () => {
           r.intent = ii.value; it.classList.toggle("on", !!r.intent.trim());
-          // Jev, when there is one, as the effort picked per turn takes it
-          if (r.intent.trim() && !d.classifier && deciders.length) d.classifier = deciders[0].id;
           drawClassifier();
         };
         if (r === asking) focusIntent = ii;
@@ -4563,14 +4551,12 @@
     const addIntentRule = () => {
       asking = newRule();
       d.rules.push(asking);
-      if (!d.classifier && deciders.length) d.classifier = deciders[0].id;
       drawRules();
     };
     rIntent.onclick = addIntentRule;
     // the classifier, once a rule has an intent or the effort is picked
     // per turn: the model asked which intent a turn's message is and how
-    // hard it is. Jev (a decision provider's model) answers both in one
-    // call; any other model is asked each in words.
+    // hard it is, each in words.
     const cls = el("div", "rt-classifier");
     const clabel = el("label", "");
     // its cell in the editor's grid: hidden with the label, or the rows
@@ -4578,8 +4564,6 @@
     // choices under the labels)
     const cw = el("div");
     cw.append(cls);
-    const deciders = groups.deciders || [];
-    const isJev = (id) => deciders.some((x) => x.id === id);
     const drawClassifier = () => {
       const auto = d.effort === "auto";
       const intents = d.rules.some((r) => r.intent?.trim() || (r === asking && d.rules.includes(r)));
@@ -4590,7 +4574,7 @@
       // a model, or another group: its models are asked in turn, failing
       // over as any request to it does (never this group: it would ask
       // itself)
-      const m = [...deciders, ...groups.models].find((x) => x.id === d.classifier), sg = subOf(d.classifier);
+      const m = groups.models.find((x) => x.id === d.classifier), sg = subOf(d.classifier);
       const cb = el("button", "rt-cond" + (d.classifier ? " on" : ""));
       if (sg) cb.append(stackIcon(groupIcons(sg)), el("span", "", `${sg.name} · ${t("routing group")}`));
       else if (d.classifier) cb.append(icon(m?.icon || "generic"), el("span", "", m ? `${m.name || m.id} · ${m.providerName}` : d.classifier));
@@ -4598,15 +4582,11 @@
       const opt = (x) => ({ value: x.id, label: x.name || x.id, note: x.providerName, icon: x.icon, group: x.providerName, ref: x.id, context: x.context });
       const subs = groups.groups.filter((x) => !x.hidden && x.id !== g?.id)
         .map((x) => ({ value: "group/" + x.id, label: x.name, note: "group/" + x.id, icons: groupIcons(x), group: ROUTING_GROUPS, ref: "group/" + x.id }));
-      cb.onclick = (ev) => openPicker({ id: "", name: "", fields: [] }, { key: "classifier", label: "model", value: d.classifier, options: [...deciders.map(opt), ...subs, ...groups.models.map(opt)],
+      cb.onclick = (ev) => openPicker({ id: "", name: "", fields: [] }, { key: "classifier", label: "model", value: d.classifier, options: [...subs, ...groups.models.map(opt)],
         onPick: (id) => { if (id) d.classifier = id; drawClassifier(); } }, cb, ev);
       cls.replaceChildren(cb,
         ...(sg ? [el("div", "hint", t("A routing group classifies as any request to it goes: if its first model fails, the next is asked."))] : []),
-        el("div", "hint", t(isJev(d.classifier) && !intents
-          ? "Jev is asked once as each turn begins, with the message and what it said of the turn before. Its calls show in the usage as fogway’s own."
-          : isJev(d.classifier)
-          ? "As a turn begins, Jev is asked once which of the intents the message is, and how hard the turn is when it picks the effort. An intent it isn't sure of matches no rule. Its calls show in the usage as fogway’s own."
-          : auto && !intents
+        el("div", "hint", t(auto && !intents
           ? "As a turn begins, this model is asked how hard the turn is — once; a small, fast one without reasoning is best. If it fails or can't say, the turn reasons as the agent asked. Its calls show in the usage as fogway’s own."
           : auto
           ? "As a turn begins, this model is asked which of the intents the message is and how hard the turn is, each once; a small, fast one without reasoning is best. If it can't say, no intent matches and the turn reasons as the agent asked. Its calls show in the usage as fogway’s own."
@@ -4632,7 +4612,6 @@
     };
     ew.append(segs([["", t("Agent's")], ["auto", t("Picked per turn")]], d.effort, (v) => {
       d.effort = v;
-      if (v === "auto" && !d.classifier && deciders.length) d.classifier = deciders[0].id;
       drawEffort(); drawClassifier();
     }), eHint);
     drawEffort();

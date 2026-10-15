@@ -10,7 +10,7 @@ package gateway
 // once the tool has run, and the last reply asks for none. So a session's
 // turn is done when a reply that called no tool has ended, nothing of the
 // session is going, and nothing more came for turnQuiet after it. A
-// request fogway makes itself (System One, titles answered here), one an
+// request fogway makes itself (titles answered here), one an
 // agent makes on the side (Kind: titles, compaction …) and a Claude Code
 // subagent's (its x-claude-code-agent-id) aren't the turn's: a subagent's
 // last reply is not its parent's.
